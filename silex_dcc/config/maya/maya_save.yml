@@ -1,0 +1,20 @@
+save:
+  default:
+    - pre:
+      - ""
+    - action:
+      - ""
+    - post:
+      - ""
+
+  anim:
+    - ""
+
+  rig:
+    - ""
+
+  fx:
+    - ""
+
+  compositing:
+    - ""
