@@ -7,7 +7,10 @@ name = "pypi"
 pyyaml = "*"
 
 [dev-packages]
-black = "*"
+autopep8 = "*"
+isort = "*"
+yapf = "*"
+pylint = "*"
 
 [requires]
-python_version = "3.9"
+python_version = "3.7"

@@ -1,0 +1,33 @@
+save:
+  pre:
+  action:
+    - command: "maya.file.save"
+      increment: true
+  post:
+    - "maya.utils.close":
+
+  modeling:
+    pre:
+    action:
+      - command: "maya.file.save"
+        name: "firstsave"
+        increment: false
+    post:
+
+  compositing:
+    pre:
+    action:
+    post:
+
+open:
+  pre:
+  action:
+  post:
+
+on_close:
+  pre:
+  action:
+  post:
+
+  modeling:
+    action:

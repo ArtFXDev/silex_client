@@ -1,0 +1,29 @@
+save:
+  default:
+    pre:
+    action:
+    post:
+
+  modeling:
+    default:
+      action:
+
+  compositing:
+    default:
+      action:
+
+open:
+  default:
+    pre:
+    action:
+    post:
+
+on_close:
+  default:
+    pre:
+    action:
+    post:
+
+  modeling:
+    default:
+      action:

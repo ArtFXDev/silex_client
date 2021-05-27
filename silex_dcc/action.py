@@ -11,7 +11,7 @@ def open():
     """
 
     print("open")
-    context.execute_script("open")
+    context.execute_action("open")
 
 
 def save():
