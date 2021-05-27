@@ -19,7 +19,7 @@ class Config(dict):
                        user=None,
                        **kwargs):
 
-        layers = [action, task, project, user]
+        layers = [action, task]
         config = {"post": [], "action": [], "pre": []}
 
         config_path = f"{self.config_root}/{dcc}.yml"
@@ -56,5 +56,3 @@ class Config(dict):
                         else:
                             # Add the command to the config
                             config[key].append(command.copy())
-
-        print(config)

@@ -1,0 +1,17 @@
+push:
+  pre:
+    - command: "action.save"
+    - command: "action.qc"
+  action:
+    - command: "filesystem.push"
+
+pull:
+  action:
+
+publish:
+  pre:
+    - command: "action.push"
+
+qc:
+
+submit:

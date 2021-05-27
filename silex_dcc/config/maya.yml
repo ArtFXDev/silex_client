@@ -1,33 +1,31 @@
 save:
-  pre:
   action:
-    - command: "maya.file.save"
-      increment: true
-  post:
-    - "maya.utils.close":
-
-  modeling:
-    pre:
-    action:
-      - command: "maya.file.save"
-        name: "firstsave"
-        increment: false
-    post:
-
-  compositing:
-    pre:
-    action:
-    post:
+    - command: "mayalib.file.save"
 
 open:
-  pre:
   action:
-  post:
+    - command: "mayalib.file.open"
 
-on_close:
-  pre:
-  action:
-  post:
-
+publish:
+  rig:
+    action:
+      - command: "mayalib.export.scene"
+        publish: true
+  animation:
+    action:
+      - command: "mayalib.utils.playblast"
+        publish: true
+      - command: "mayalib.export.animation"
+        publish: true
   modeling:
     action:
+      - command: "mayalib.utils.turntable"
+        publish: true
+      - command: "mayalib.export.geometry"
+        publish: true
+  surfacing:
+    action:
+      - command: "mayalib.render.submit"
+        publish: true
+      - command: "mayalib.export.scene"
+        publish: true
