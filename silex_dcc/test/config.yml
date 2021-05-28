@@ -1,0 +1,26 @@
+foo:
+  pre:
+    - command: "test.empty"
+  action:
+    - command: "test.print"
+      name: "print_a"
+      string: "printing A from foo"
+    - command: "test.print"
+      name: "print_b"
+      string: "printing B from foo"
+  post:
+    - command: "test.print"
+      name: "print_c"
+      string: "printing C from foo"
+
+
+  task_a:
+    action:
+      - command: "test.print"
+        name: "print_a"
+        string: "printing A from foo/task_a"
+    post:
+      - command: "test.empty"
+      - command: "test.print"
+        name: "print_d"
+        string: "printing D from foo/task_a"

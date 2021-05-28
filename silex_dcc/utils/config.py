@@ -7,12 +7,13 @@ class Config(dict):
     """
     Utility class that lazy load the configuration files on demand
     """
-    def __init__(self):
-        config_root_path = os.getenv("SILEX_DCC_CONFIG")
+    def __init__(self, config_root_path=None):
+        if not config_root_path:
+            config_root_path = os.getenv("SILEX_DCC_CONFIG")
         self.config_root = config_root_path.replace(os.sep, '/')
 
     def resolve_config(self,
-                       dcc,
+                       file,
                        action,
                        task,
                        project=None,
@@ -22,23 +23,26 @@ class Config(dict):
         layers = [action, task]
         config = {"post": [], "action": [], "pre": []}
 
-        config_path = f"{self.config_root}/{dcc}.yml"
+        config_path = f"{self.config_root}/{file}.yml"
         # Loop over all the layers
         with open(config_path, "r") as config_file:
             config_yaml = yaml.load(config_file, Loader=yaml.FullLoader)
 
-            # If no name is given for this layer just skip it
             for layer in layers:
-                if not layer:
-                    continue
+                # stop if the current layer name wasn't provided or the given layer does not exist
+                if not layer or layer not in config_yaml or not config_yaml[
+                        layer]:
+                    break
 
                 config_yaml = config_yaml[layer]
 
                 # Loop over pre, action, post
                 for key, item in config.items():
-                    commands = config_yaml[key]
-                    if not commands:
+                    # Skip if the layer does not provide any commands for this key
+                    if key not in config_yaml or not config_yaml[key]:
                         continue
+
+                    commands = config_yaml[key]
                     # Loop over all the command in this section
                     for command in commands:
                         # If the command has no name append it without conditions
@@ -56,3 +60,5 @@ class Config(dict):
                         else:
                             # Add the command to the config
                             config[key].append(command.copy())
+
+        return config
