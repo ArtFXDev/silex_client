@@ -40,7 +40,7 @@ class Config():
             # Skip if no name for the file was given
             if not file[0]:
                 continue
-            config_path = os.path.join(self.config_root, file[1],
+            config_path = os.path.join(self.config_root, "action", file[1],
                                        f"{file[0]}.yml")
 
             with open(config_path, "r") as config_file:
