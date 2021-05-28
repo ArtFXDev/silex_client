@@ -3,7 +3,7 @@ import os
 import yaml
 
 
-class Config(dict):
+class Config():
     """
     Utility class that lazy load and resolve the configurations on demand
     """
@@ -11,7 +11,8 @@ class Config(dict):
         # Initialize the root of all the config files
         if not config_root_path:
             config_root_path = os.getenv("SILEX_DCC_CONFIG")
-        self.config_root = config_root_path.replace(os.sep, '/')
+        self.config_root = config_root_path.replace("/", os.sep).replace(
+            "\\", os.sep)
         # Initialize the name of the default config file
         if not default_config:
             default_config = "default"
@@ -39,7 +40,8 @@ class Config(dict):
             # Skip if no name for the file was given
             if not file[0]:
                 continue
-            config_path = f"{self.config_root}/{file[1]}/{file[0]}.yml"
+            config_path = os.path.join(self.config_root, file[1],
+                                       f"{file[0]}.yml")
 
             with open(config_path, "r") as config_file:
                 config_yaml = yaml.load(config_file, Loader=yaml.FullLoader)

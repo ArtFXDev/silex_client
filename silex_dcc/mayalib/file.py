@@ -1,5 +1,5 @@
 """
-Maya file actions
+Maya file commands
 """
 
 import os

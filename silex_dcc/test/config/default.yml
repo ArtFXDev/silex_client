@@ -1,0 +1,16 @@
+foo:
+  pre:
+    - command: "test.command.empty"
+    - command: "test.command.log"
+      name: "log_e"
+      parm:
+        string: "loging E from default/foo"
+  post:
+    - command: "test.command.log"
+      name: "log_c"
+      parm:
+        string: "loging C from default/foo"
+
+  task_a:
+    action:
+      - command: "test.command.empty"
