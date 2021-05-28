@@ -5,60 +5,82 @@ import yaml
 
 class Config(dict):
     """
-    Utility class that lazy load the configuration files on demand
+    Utility class that lazy load and resolve the configurations on demand
     """
-    def __init__(self, config_root_path=None):
+    def __init__(self, config_root_path=None, default_config=None):
+        # Initialize the root of all the config files
         if not config_root_path:
             config_root_path = os.getenv("SILEX_DCC_CONFIG")
         self.config_root = config_root_path.replace(os.sep, '/')
+        # Initialize the name of the default config file
+        if not default_config:
+            default_config = "default"
+        self.default_config = default_config
 
     def resolve_config(self,
-                       file,
+                       dcc,
                        action,
                        task,
                        project=None,
                        user=None,
                        **kwargs):
+        """
+        Create a config by inheritance in the order : action, task 
+        By reading the files in the order : default, dcc, project, user
+        """
 
+        files = [self.default_config, dcc, project, user]
         layers = [action, task]
         config = {"post": [], "action": [], "pre": []}
 
-        config_path = f"{self.config_root}/{file}.yml"
-        # Loop over all the layers
-        with open(config_path, "r") as config_file:
-            config_yaml = yaml.load(config_file, Loader=yaml.FullLoader)
+        # Loop over all the files
+        for file in files:
+            # Skip if no name for the file was given
+            if not file:
+                continue
+            config_path = f"{self.config_root}/{file}.yml"
 
-            for layer in layers:
-                # stop if the current layer name wasn't provided or the given layer does not exist
-                if not layer or layer not in config_yaml or not config_yaml[
-                        layer]:
-                    break
+            with open(config_path, "r") as config_file:
+                config_yaml = yaml.load(config_file, Loader=yaml.FullLoader)
 
-                config_yaml = config_yaml[layer]
+                # Loop over all the layers
+                for layer in layers:
+                    # stop if the current layer name wasn't provided or the given layer does not exist
+                    if not layer or layer not in config_yaml or not config_yaml[
+                            layer]:
+                        break
 
-                # Loop over pre, action, post
-                for key, item in config.items():
-                    # Skip if the layer does not provide any commands for this key
-                    if key not in config_yaml or not config_yaml[key]:
-                        continue
+                    config_yaml = config_yaml[layer]
 
-                    commands = config_yaml[key]
-                    # Loop over all the command in this section
-                    for command in commands:
-                        # If the command has no name append it without conditions
-                        if "name" not in command:
-                            config[key].append(command.copy())
+                    # Loop over pre, action, post
+                    for key, item in config.items():
+                        # Skip if the layer does not provide any commands for this key
+                        if key not in config_yaml or not config_yaml[key]:
                             continue
 
-                        # If a command with the same name already exist
-                        match = [
-                            index for index, cmd in enumerate(config[key])
-                            if "name" in cmd and cmd["name"] == command["name"]
-                        ]
-                        if len(match) > 0:
-                            config[key][match[0]] = command.copy()
-                        else:
-                            # Add the command to the config
-                            config[key].append(command.copy())
+                        # Merge the command set of the layer in to the config's command set
+                        self._combine_commands(config[key], config_yaml[key])
 
         return config
+
+    def _combine_commands(self, commands_a, commands_b):
+        """
+        Merge the set of commands_b into the set of commands_a by replacing the one that has the same name and appending the new ones
+        """
+        for command in commands_b:
+            # If the command has no name append it without conditions
+            if "name" not in command:
+                commands_a.append(command.copy())
+                continue
+
+            # Find the commands that have the same name
+            match = [
+                index for index, cmd in enumerate(commands_a)
+                if "name" in cmd and cmd["name"] == command["name"]
+            ]
+            # If a command with the same name already exist
+            if len(match) > 0:
+                commands_a[match[0]] = command.copy()
+            else:
+                # Add the command to the config
+                commands_a.append(command.copy())

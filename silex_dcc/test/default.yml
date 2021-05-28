@@ -1,0 +1,14 @@
+foo:
+  pre:
+    - command: "test.empty"
+    - command: "test.print"
+      name: "print_e"
+      string: "printing E from default/foo"
+  post:
+    - command: "test.print"
+      name: "print_c"
+      string: "printing C from default/foo"
+
+  task_a:
+    action:
+      - command: "test.empty"
