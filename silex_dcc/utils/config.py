@@ -29,16 +29,17 @@ class Config(dict):
         By reading the files in the order : default, dcc, project, user
         """
 
-        files = [self.default_config, dcc, project, user]
+        files = [(self.default_config, ""), (dcc, "dcc"), (project, "project"),
+                 (user, "user")]
         layers = [action, task]
         config = {"post": [], "action": [], "pre": []}
 
         # Loop over all the files
         for file in files:
             # Skip if no name for the file was given
-            if not file:
+            if not file[0]:
                 continue
-            config_path = f"{self.config_root}/{file}.yml"
+            config_path = f"{self.config_root}/{file[1]}/{file[0]}.yml"
 
             with open(config_path, "r") as config_file:
                 config_yaml = yaml.load(config_file, Loader=yaml.FullLoader)
