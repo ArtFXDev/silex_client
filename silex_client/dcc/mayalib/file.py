@@ -5,6 +5,7 @@ Maya file commands
 import os
 
 import maya.cmds as cmds
+from silex_client.utils.log import logger
 
 
 def get_path():
@@ -31,7 +32,7 @@ def save():
     try:
         cmds.file(save=True)
     except Exception as ex:
-        print("ERROR: Failed to save the current scene")
+        logger.error("Failed to save the current scene")
 
 
 def save_as(path):
@@ -48,4 +49,4 @@ def save_as(path):
         elif ext_file == ".mb":
             cmds.file(save=True, type="mayaBinary")
     except Exception as ex:
-        print("ERROR: Failed to save as to the given path")
+        logger.error("Failed to save as to the given path")

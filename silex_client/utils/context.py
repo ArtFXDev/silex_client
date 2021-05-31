@@ -15,6 +15,8 @@ class Context:
 
     @property
     def metadata(self):
+        # TODO: Check if the context is outdated and update it automaticaly if it is
+        # Lazy load the context's metadata
         if self._metadata == {}:
             self._metadata = {
                 "dcc": "maya",

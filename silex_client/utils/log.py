@@ -15,7 +15,7 @@ import logging
 import logzero
 from logzero import logger
 
-__logFormat = '[%(asctime)s] %(levelname)-8s| %(color)s[%(module)s.%(funcName)s] %(message)-80s (%(lineno)d)%(end_color)s'
+__logFormat = '[SILEX]    [%(asctime)s] %(color)s%(levelname)-8s%(end_color)s| [%(module)s.%(funcName)s] %(color)s%(message)-80s%(end_color)s (%(lineno)d)'
 
 handler = logging.StreamHandler(sys.stdout)  # stream to stdout for pycharm
 handler.setFormatter(logzero.LogFormatter(fmt=__logFormat))

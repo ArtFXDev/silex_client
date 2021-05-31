@@ -10,7 +10,7 @@ class Config():
     def __init__(self, config_root_path=None, default_config=None):
         # Initialize the root of all the config files
         if not config_root_path:
-            config_root_path = os.getenv("SILEX_DCC_CONFIG")
+            config_root_path = os.getenv("SILEX_CLIENT_CONFIG")
         self.config_root = config_root_path.replace("/", os.sep).replace(
             "\\", os.sep)
         # Initialize the name of the default config file
