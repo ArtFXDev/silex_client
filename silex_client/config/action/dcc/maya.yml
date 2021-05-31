@@ -1,31 +1,31 @@
 save:
   action:
-    - command: "mayalib.file.save"
+    - command: "dcc.mayalib.file.save"
 
 open:
   action:
-    - command: "mayalib.file.open"
+    - command: "dcc.mayalib.file.open"
 
 publish:
   rig:
     action:
-      - command: "mayalib.export.scene"
+      - command: "dcc.mayalib.export.scene"
         publish: true
   animation:
     action:
-      - command: "mayalib.utils.playblast"
+      - command: "dcc.mayalib.utils.playblast"
         publish: true
-      - command: "mayalib.export.animation"
+      - command: "dcc.mayalib.export.animation"
         publish: true
   modeling:
     action:
-      - command: "mayalib.utils.turntable"
+      - command: "dcc.mayalib.utils.turntable"
         publish: true
-      - command: "mayalib.export.geometry"
+      - command: "dcc.mayalib.export.geometry"
         publish: true
   surfacing:
     action:
-      - command: "mayalib.render.submit"
+      - command: "dcc.mayalib.render.submit"
         publish: true
-      - command: "mayalib.export.scene"
+      - command: "dcc.mayalib.export.scene"
         publish: true
