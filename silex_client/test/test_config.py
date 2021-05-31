@@ -3,7 +3,7 @@ import pprint
 
 import pytest
 
-from silex_dcc.utils.config import Config
+from silex_client.utils.config import Config
 
 
 @pytest.fixture

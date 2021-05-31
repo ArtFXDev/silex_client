@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from silex_dcc.utils.context import Context
+from silex_client.utils.context import Context
 
 
 @pytest.fixture

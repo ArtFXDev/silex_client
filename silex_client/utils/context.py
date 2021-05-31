@@ -1,6 +1,6 @@
 import importlib
 
-from silex_dcc.utils.config import Config
+from silex_client.utils.config import Config
 
 
 class Context:
@@ -60,7 +60,7 @@ class Context:
                 # Import the given module
                 split = command["command"].split(".")
                 package = importlib.import_module(
-                    f"silex_dcc.{command['command'].replace('.' + split[-1], '')}"
+                    f"silex_client.{command['command'].replace('.' + split[-1], '')}"
                 )
                 module = getattr(package, split[-1])
 

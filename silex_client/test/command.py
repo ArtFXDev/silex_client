@@ -2,6 +2,8 @@
 Test commands
 """
 
+from silex_client.utils.log import logger
+
 
 def empty():
     """
@@ -10,8 +12,8 @@ def empty():
     pass
 
 
-def log(string="none"):
+def log(string="testing"):
     """
     Simple logger that just print
     """
-    print(string)
+    logger.info(string)

@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 pyyaml = "*"
+logzero = "*"
 
 [dev-packages]
 isort = "*"
