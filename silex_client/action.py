@@ -2,7 +2,7 @@
 Actions definitions
 """
 
-from silex_dcc.utils.context import context
+from silex_client.utils.context import context
 
 
 def open():

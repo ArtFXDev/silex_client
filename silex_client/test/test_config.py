@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+
+Unit testing functions for the module utils.config
+"""
+
 import os
 import pprint
 
@@ -9,7 +15,8 @@ from silex_client.utils.config import Config
 @pytest.fixture
 def dummy_config():
     """
-    Return a config initialized in the test folder to work the configuration files that has been created only for test purpose
+    Return a config initialized in the test folder to work the configuration
+    files that has been created only for test purpose
     """
     config_root_path = os.path.dirname(__file__)
     return Config(os.path.join(config_root_path, "config"))
@@ -18,19 +25,21 @@ def dummy_config():
 @pytest.fixture
 def maya_config():
     """
-    Return a config initialized with the real configuration folder to work with the real dcc configuration files
+    Return a config initialized with the real configuration folder to work with the
+    real dcc configuration files
     """
     return Config()
 
 
 def test_resolve_config(dummy_config):
     """
-    Test the resolving of a configuration for the action 'foo' and the task 'task_a' with a dummy config file
+    Test the resolving of a configuration for the action 'foo' and the task 'task_a'
+    with a dummy config file
     """
     resolved_config = dummy_config.resolve_config("dcc", "foo", "task_a")
     # Pretty print the resolved config
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(resolved_config)
+    pretty_print = pprint.PrettyPrinter(indent=4)
+    pretty_print.pprint(resolved_config)
 
     # Make sure the inheritance has been resolved corectly
     assert len(resolved_config["action"]) == 3
@@ -43,7 +52,8 @@ def test_resolve_config(dummy_config):
 
 def test_resolve_not_existing_action(dummy_config):
     """
-    Test the resolving of a configuration for the non existing action 'foobar' and a task 'task_a' with a dummy config file
+    Test the resolving of a configuration for the non existing action 'foobar' and
+    a task 'task_a' with a dummy config file
     """
     resolved_config = dummy_config.resolve_config("dcc", "foobar", "task_a")
     # Pretty print the resolved config
@@ -56,7 +66,8 @@ def test_resolve_not_existing_action(dummy_config):
 
 def test_resolve_not_existing_task(dummy_config):
     """
-    Test the resolving of a configuration for the action 'foo' and a non existing task 'task_z' with a dummy config file
+    Test the resolving of a configuration for the action 'foo' and a non existing
+    task 'task_z' with a dummy config file
     """
     resolved_config = dummy_config.resolve_config("dcc", "foo", "task_z")
     # Pretty print the resolved config
