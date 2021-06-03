@@ -22,7 +22,7 @@ tests = {
     },
     "lint": {
         "command":
-        "pylint --rcfile={root}/silex_client/.pylintrc --fail-under=8 {root}/silex_client",
+        "pylint --rcfile={root}/.pylintrc --fail-under=8 {root}/silex_client",
         "requires": ["pylint", "pytest"],
         "run_on": ["default", "pre_release"]
     }
