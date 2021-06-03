@@ -30,7 +30,7 @@ def build(source_path, build_path, install_path, targets):
                 print("WARNING : Could not clear the install folder")
                 print(ex)
 
-        shutil.copytree(src, install_path)
+        shutil.copytree(src, os.path.join(install_path, "silex_client"))
         shutil.copy(config, install_path)
 
 

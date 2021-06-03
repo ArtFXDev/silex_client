@@ -16,12 +16,13 @@ vcs = "git"
 
 tests = {
     "unit": {
-        "command": "python -m pytest {root}",
+        "command": "python -m pytest {root}/silex_client",
         "requires": ["pytest"],
         "run_on": ["default", "pre_release"]
     },
     "lint": {
-        "command": "pylint --rcfile={root}/.pylintrc {root}",
+        "command":
+        "pylint --rcfile={root}/silex_client/.pylintrc --fail-under=8 {root}/silex_client",
         "requires": ["pylint"],
         "run_on": ["default", "pre_release"]
     }
