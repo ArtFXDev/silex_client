@@ -20,10 +20,13 @@ def dummy_context():
     config_root_path = os.path.dirname(__file__)
     context = Context()
     context.config.config_root = os.path.join(config_root_path, "config")
+    # Change the context's metadata with test values
     context.metadata = {
         "dcc": "dcc",
         "task": "task_a",
     }
+    # Little hack to make sure the context will not try to update itself
+    context.is_outdated = False
     return context
 
 

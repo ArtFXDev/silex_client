@@ -1,6 +1,8 @@
 import importlib
+import os
 
 from silex_client.utils.config import Config
+from silex_client.utils.log import logger
 
 
 class Context:
@@ -12,21 +14,18 @@ class Context:
 
     def __init__(self):
         self.config = Config()
+        self.is_outdated = True
 
     @property
     def metadata(self):
-        # TODO: Check if the context is outdated and update it automaticaly if it is
         # Lazy load the context's metadata
-        if self._metadata == {}:
-            self._metadata = {
-                "dcc": "maya",
-                "task": "modeling",
-                "project": "TEST_PIPE",
-                "user": "slambin",
-                "entity": "shot",
-                "sequence": 50,
-                "shot": 120,
-            }
+        if self.is_outdated:
+            self.is_outdated = False
+            self.update_dcc()
+            self.update_task()
+            self.update_project()
+            self.update_user()
+            self.update_entity()
 
         return self._metadata
 
@@ -36,6 +35,51 @@ class Context:
 
     def update_metadata(self, data):
         self._metadata.update(data)
+
+    def update_dcc(self):
+        request = os.getenv("REZ_USED_REQUEST", "")
+        # Get the correct dcc using the rez environment variable
+        if "maya" in request:
+            self._metadata["dcc"] = "maya"
+            logger.info("Setting maya as dcc context")
+        elif "houdini" in request:
+            self._metadata["dcc"] = "houdini"
+            logger.info("Setting houdini as dcc context")
+        elif "nuke" in request:
+            self._metadata["dcc"] = "nuke"
+            logger.info("Setting nuke as dcc context")
+        elif "blender" in request:
+            self._metadata["dcc"] = "blender"
+            logger.info("Setting blender as dcc context")
+        else:
+            logger.critical("No supported dcc detected")
+            self.is_outdated = True
+
+    def update_task(self):
+        # Get the current task
+        # TODO: Get the current task from filesystem
+        self._metadata["task"] = "modeling"
+
+    def update_project(self):
+        # Get the current project
+        # TODO: Get the current project from the filesystem
+        self._metadata["project"] = "TEST_PIPE"
+
+    def update_user(self):
+        # Get the current entity
+        # TODO: Get the current user from the database using authentification
+        self._metadata["user"] = "slambin"
+
+    def update_entity(self):
+        # Clear the current entity
+        for entity in ["sequence", "shot", "asset"]:
+            if entity in self._metadata:
+                self._metadata.pop(entity)
+        # Get the current entity
+        # TODO: Get the current entity from the filesystem
+        self._metadata["entity"] = "shot"
+        self._metadata["sequence"] = 50
+        self._metadata["shot"] = 120
 
     def get_action(self, action_name):
         """
