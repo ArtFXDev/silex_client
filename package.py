@@ -10,7 +10,7 @@ description = \
     Part of the Silex ecosystem
     """
 
-requires = ["python-2", "PyYAML", "logzero"]
+requires = ["python-3.7", "PyYAML", "logzero"]
 
 vcs = "git"
 
@@ -23,7 +23,7 @@ tests = {
     "lint": {
         "command":
         "pylint --rcfile={root}/silex_client/.pylintrc --fail-under=8 {root}/silex_client",
-        "requires": ["pylint"],
+        "requires": ["pylint", "pytest"],
         "run_on": ["default", "pre_release"]
     }
 }
