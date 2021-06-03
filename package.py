@@ -17,7 +17,12 @@ vcs = "git"
 tests = {
     "unit": {
         "command": "python -m pytest {root}",
-        "requires": "pytest",
+        "requires": ["pytest"],
+        "run_on": ["default", "pre_release"]
+    },
+    "lint": {
+        "command": "pylint --rcfile={root}/.pylintrc {root}",
+        "requires": ["pylint"],
         "run_on": ["default", "pre_release"]
     }
 }
