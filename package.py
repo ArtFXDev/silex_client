@@ -10,7 +10,7 @@ description = \
     Part of the Silex ecosystem
     """
 
-requires = ["python-3.7+", "PyYAML", "logzero"]
+requires = ["python-2", "PyYAML", "logzero"]
 
 vcs = "git"
 
