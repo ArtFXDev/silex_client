@@ -10,20 +10,19 @@ description = \
     Part of the Silex ecosystem
     """
 
-requires = ["python-3.7+", "PyYAML", "logzero", "pytest"]
+requires = ["python-3.7+", "PyYAML", "logzero"]
 
 vcs = "git"
 
-tests = {"unit": "python -m pytest {root}"}
+tests = {
+    "unit": {
+        "command": "python -m pytest {root}",
+        "requires": "pytest",
+        "run_on": ["default", "pre_release"]
+    }
+}
 
 build_command = "python {root}/script/build.py {install}"
-
-
-def pre_build_commands():
-    """
-    Run the test before each build
-    """
-    pass
 
 
 def commands():

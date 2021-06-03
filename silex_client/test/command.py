@@ -9,10 +9,10 @@ def empty():
     """
     Dummy function that does nothing
     """
-    pass
+    logger.info("testing test.command.empty")
 
 
-def log(string="testing"):
+def log(string="testing test.command.log"):
     """
     Simple logger that just print
     """

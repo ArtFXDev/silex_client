@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+
+Utility class that lazy load and resolve the configurations on demand
+"""
+
 import os
 
 import yaml
@@ -26,7 +32,7 @@ class Config():
                        user=None,
                        **kwargs):
         """
-        Create a config by inheritance in the order : action, task 
+        Create a config by inheritance in the order : action, task
         By reading the files in the order : default, dcc, project, user
         """
 
@@ -48,7 +54,8 @@ class Config():
 
                 # Loop over all the layers
                 for layer in layers:
-                    # stop if the current layer name wasn't provided or the given layer does not exist
+                    # Stop if the current layer name wasn't provided
+                    # or the given layer does not exist
                     if not layer or layer not in config_yaml or not config_yaml[
                             layer]:
                         break
@@ -56,7 +63,7 @@ class Config():
                     config_yaml = config_yaml[layer]
 
                     # Loop over pre, action, post
-                    for key, item in config.items():
+                    for key in config:
                         # Skip if the layer does not provide any commands for this key
                         if key not in config_yaml or not config_yaml[key]:
                             continue
@@ -66,9 +73,11 @@ class Config():
 
         return config
 
-    def _combine_commands(self, commands_a, commands_b):
+    @staticmethod
+    def _combine_commands(commands_a, commands_b):
         """
-        Merge the set of commands_b into the set of commands_a by replacing the one that has the same name and appending the new ones
+        Merge the set of commands_b into the set of commands_a by replacing
+        the one that has the same name and appending the new ones
         """
         for command in commands_b:
             # If the command has no name append it without conditions
