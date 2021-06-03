@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+
+Utility class that lazy load and resolve the configurations on demand
+"""
+
 import os
 
 import yaml
@@ -57,7 +63,7 @@ class Config():
                     config_yaml = config_yaml[layer]
 
                     # Loop over pre, action, post
-                    for key in config.keys():
+                    for key in config:
                         # Skip if the layer does not provide any commands for this key
                         if key not in config_yaml or not config_yaml[key]:
                             continue
@@ -70,7 +76,7 @@ class Config():
     @staticmethod
     def _combine_commands(commands_a, commands_b):
         """
-        Merge the set of commands_b into the set of commands_a by replacing 
+        Merge the set of commands_b into the set of commands_a by replacing
         the one that has the same name and appending the new ones
         """
         for command in commands_b:

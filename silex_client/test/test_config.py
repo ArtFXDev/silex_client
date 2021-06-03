@@ -57,8 +57,8 @@ def test_resolve_not_existing_action(dummy_config):
     """
     resolved_config = dummy_config.resolve_config("dcc", "foobar", "task_a")
     # Pretty print the resolved config
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(resolved_config)
+    pretty_print = pprint.PrettyPrinter(indent=4)
+    pretty_print.pprint(resolved_config)
 
     # Make sure the the config is empty
     assert resolved_config == {"post": [], "action": [], "pre": []}
@@ -71,8 +71,8 @@ def test_resolve_not_existing_task(dummy_config):
     """
     resolved_config = dummy_config.resolve_config("dcc", "foo", "task_z")
     # Pretty print the resolved config
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(resolved_config)
+    pretty_print = pprint.PrettyPrinter(indent=4)
+    pretty_print.pprint(resolved_config)
 
     # Make sure the config only has the config from the action
     assert len(resolved_config["action"]) == 2
