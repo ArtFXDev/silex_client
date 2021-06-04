@@ -12,15 +12,15 @@ from silex_client.utils.context import context
 from silex_client.utils.log import logger
 
 
-class WebsocketHandler():
+class WebsocketClient():
     """
-    Server that connect the the given url throught websockets,
-    receive and handle the incomming messages
+    Websocket client that connect the the given url
+    and receive and handle the incomming messages
     """
     def __init__(self, url="ws://localhost:8080"):
-        self.loop = asyncio.get_event_loop()
         self.url = url
-        self.loop = asyncio.get_event_loop()
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
 
     async def receive_message(self):
         """
@@ -32,6 +32,7 @@ class WebsocketHandler():
                 while True:
                     try:
                         message = await websocket.recv()
+                        # The queue of incomming message is already handled by the library
                         await self.handle_message(message)
                     except websockets.ConnectionClosed:
                         logger.warning(

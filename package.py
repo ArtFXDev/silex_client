@@ -37,7 +37,7 @@ def commands():
     Set the environment variables for silex_client
     """
     env.PATH.append("{root}/silex_client")
-    env.PYTHONPATH.append("{root}/silex_client")
+    env.PYTHONPATH.append("{root}")
     env.SILEX_LOG_LEVEL = "DEBUG"
 
 
