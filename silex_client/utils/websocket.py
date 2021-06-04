@@ -38,8 +38,8 @@ class WebsocketClient():
                         logger.warning(
                             "Websocket connection on {self.url} lost")
                         asyncio.get_running_loop().stop()
-        except Exception as ex:
-            logger.warning(f"Could not connect to {self.url} retrying...")
+        except OSError:
+            logger.warning("Could not connect to %s retrying...", self.url)
             await asyncio.sleep(1)
             self.loop.create_task(self.receive_message())
 
@@ -48,7 +48,7 @@ class WebsocketClient():
         Parse the incomming messages and run appropriate function
         """
         # TODO: Define a json protocol and handle the messages accordingly
-        logger.info(f"Websocket message recieved : {message}")
+        logger.info("Websocket message recieved : %s", message)
 
     def run(self):
         """
