@@ -8,6 +8,7 @@ import os
 
 import yaml
 
+from silex_client.utils.log import logger
 
 class Config():
     """
@@ -16,7 +17,10 @@ class Config():
     def __init__(self, config_root_path=None, default_config=None):
         # Initialize the root of all the config files
         if not config_root_path:
-            config_root_path = os.getenv("SILEX_CLIENT_CONFIG")
+            config_root_path = os.getenv("SILEX_CLIENT_CONFIG", "not_found")
+            # If no environment variable has been found
+            if config_root_path == "not_found":
+                logger.critical("Config root path not found")
         self.config_root = config_root_path.replace("/", os.sep).replace(
             "\\", os.sep)
         # Initialize the name of the default config file
