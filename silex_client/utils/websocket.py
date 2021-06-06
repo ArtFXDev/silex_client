@@ -6,6 +6,8 @@ receive and handle the incomming messages
 """
 
 import asyncio
+import gc
+from contextlib import suppress
 from threading import Thread
 
 import websockets
@@ -56,7 +58,6 @@ class WebsocketClient():
         """
         # TODO: Define a json protocol and handle the messages accordingly
         logger.info("Websocket message recieved : %s", message)
-        print('Active tasks count: ', len([task for task in asyncio.Task.all_tasks() if not task.done()]))
 
     def _start_loop(self, loop):
         """
@@ -105,9 +106,18 @@ class WebsocketClient():
             return
 
         # Clear the loop
+        for task in asyncio.Task.all_tasks():
+            # The cancel method will raise CancelledError on the running task to stop it
+            task.cancel()
+        # Wait for the task's cancellation in a suppress context to mute the CancelledError
+        with suppress(asyncio.CancelledError):
+            for task in asyncio.Task.all_tasks():
+                self.loop.run_until_complete(task)
         self.loop.stop()
-        # TODO: Find a way to clear the loop instead of let it get garbage collected
+        # Create a new loop and let the old one get garbage collected
         self.loop = asyncio.new_event_loop()
+        # Trigger the garbage collection
+        gc.collect()
         # If the loop was running in a different thread stop it
         if self.thread is not None:
             self.thread.join()
