@@ -17,3 +17,6 @@ pyreadline = "*"
 
 [requires]
 python_version = "3.7"
+
+[scripts]
+lint = "echo %cd%"

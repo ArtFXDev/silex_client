@@ -16,7 +16,7 @@ from silex_client.utils.context import context
 from silex_client.utils.log import logger
 
 
-class WebsocketConnexion():
+class WebsocketConnection():
     """
     Websocket client that connect the the given url
     and receive and handle the incomming messages
@@ -39,7 +39,7 @@ class WebsocketConnexion():
                     try:
                         message = await websocket.recv()
                         # The queue of incomming message is already handled by the library
-                        await self._handle_message(message)
+                        await self._handle_message(message, websocket)
                     except websockets.ConnectionClosed:
                         logger.warning(
                             "Websocket connection on %s lost retrying...", self.url)
@@ -53,14 +53,17 @@ class WebsocketConnexion():
             await asyncio.sleep(1)
             self.loop.create_task(self._receive_message())
 
-    async def _handle_message(self, message):
+    async def _handle_message(self, message, websocket):
         """
         Parse the incomming messages and run appropriate function
         """
         # TODO: Define a json protocol and handle the messages accordingly
-        logger.info("Websocket message recieved : %s", message)
+        if message == "ping":
+            await websocket.send("pong")
+        else:
+            logger.info("Websocket message recieved : %s", message)
 
-    def _start_loop(self, loop):
+    def _start_loop(self):
         """
         Set the event loop for the current thread and run it
         This method is called by self.run() or self.run_multithreaded()
@@ -69,7 +72,7 @@ class WebsocketConnexion():
             logger.info("Event loop already running")
             return
 
-        asyncio.set_event_loop(loop)
+        asyncio.set_event_loop(self.loop)
         try:
             self.loop.run_until_complete(self._receive_message())
         except KeyboardInterrupt:
@@ -82,6 +85,7 @@ class WebsocketConnexion():
     def _clear_loop(self):
         """
         Clear the event loop from its pending task and delete it
+        This method is called by self._start_loop()
         """
         if self.loop.is_running():
             logger.info("The event loop needs to be stopped before being cleared")
@@ -114,7 +118,7 @@ class WebsocketConnexion():
             return
 
         self.is_running = True
-        self._start_loop(self.loop)
+        self._start_loop()
 
 
     def run_multithreaded(self):
@@ -126,7 +130,7 @@ class WebsocketConnexion():
             return
 
         self.is_running = True
-        self.thread = Thread(target=lambda: self._start_loop(self.loop))
+        self.thread = Thread(target=lambda: self._start_loop())
         self.thread.start()
 
     def stop(self):
@@ -139,9 +143,6 @@ class WebsocketConnexion():
         if self.thread is not None:
             self.thread.join(3)
             if self.thread.is_alive():
-                logger.warn("Could not stop the websocket thread for %s", self.url)
+                logger.warn("Could not stop the websocket connection thread for %s", self.url)
             else:
                 self.thread = None
-    
-
-server = WebsocketConnexion()
