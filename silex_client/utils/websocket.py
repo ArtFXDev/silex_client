@@ -42,12 +42,14 @@ class WebsocketConnection:
                 self.loop.create_task(self._listen_outgoing(websocket))
                 # Listen to pending stop or restart
                 while not self.pending_stop and not self.pending_restart:
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(3)
         except (OSError, ConnectionResetError,
                 websockets.exceptions.InvalidMessage):
             logger.warning("Could not connect to %s retrying...", self.url)
             self.pending_restart = True
+
         logger.info("Leaving event loop...")
+        self.loop.stop()
 
     async def _listen_incomming(self, websocket):
         """
@@ -60,8 +62,11 @@ class WebsocketConnection:
                 await self._handle_message(message, websocket)
             except (websockets.ConnectionClosed,
                     websockets.exceptions.ConnectionClosedError):
-                logger.warning("Connection on %s lost retrying...", self.url)
-                self.pending_restart = True
+                # If the connection closed was not planned
+                if not self.pending_stop:
+                    logger.warning("Connection on %s lost retrying...",
+                                   self.url)
+                    self.pending_restart = True
                 break
 
     async def _listen_outgoing(self, websocket):
@@ -91,14 +96,14 @@ class WebsocketConnection:
             logger.info("Event loop already running")
             return
 
-        asyncio.set_event_loop(self.loop)
-
         while True:
             self.pending_stop = False
             self.pending_restart = False
+            asyncio.set_event_loop(self.loop)
+            self.loop.create_task(self._connect())
 
             try:
-                self.loop.run_until_complete(self._connect())
+                self.loop.run_forever()
             except KeyboardInterrupt:
                 # Catch keyboard interrupt to allow stopping the event loop with ctrl+c
                 self.stop()
