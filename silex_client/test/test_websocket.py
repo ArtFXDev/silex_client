@@ -14,8 +14,6 @@ from silex_client.utils.websocket import WebsocketConnection
 from silex_client.utils.context import context
 
 
-temp = []
-
 @pytest.fixture
 def server():
     async def time(websocket, path):
@@ -54,8 +52,9 @@ def client():
 
 def test_websocket_pingpong(server, client):
     pass
-    # server.start()
-    # client.run_multithreaded()
-    # time.sleep(3)
-    # client.stop()
-    # server.join(3)
+    server.start()
+    client.run_multithreaded()
+    time.sleep(3)
+    client.stop()
+    server.join(3)
+    assert False

@@ -16,11 +16,12 @@ from silex_client.utils.context import context
 from silex_client.utils.log import logger
 
 
-class WebsocketConnection():
+class WebsocketConnection:
     """
     Websocket client that connect the the given url
     and receive and handle the incomming messages
     """
+
     def __init__(self, url="ws://localhost:8080"):
         self.is_running = False
         self.pending_stop = False
@@ -28,30 +29,44 @@ class WebsocketConnection():
         self.url = url
         self.loop = asyncio.new_event_loop()
 
-    async def _receive_message(self):
+    async def _connect(self):
         """
         Connect to the server, wait for the incomming messages and handle disconnection
         """
         try:
             async with websockets.connect(self.url) as websocket:
                 await websocket.send(str(context.metadata))
-                while not self.pending_stop:
-                    try:
-                        message = await websocket.recv()
-                        # The queue of incomming message is already handled by the library
-                        await self._handle_message(message, websocket)
-                    except websockets.ConnectionClosed:
-                        logger.warning(
-                            "Websocket connection on %s lost retrying...", self.url)
-                        # Restart the loop to retry connection
+                self.loop.create_task(self._receive_message(websocket))
+                self.loop.create_task(self._listen_event(websocket))
+                while True:
+                    if self.pending_stop:
+                        asyncio.get_event_loop().stop()
+                    else:
                         await asyncio.sleep(1)
-                        self.loop.create_task(self._receive_message())
-                        break
         except OSError:
             logger.warning("Could not connect to %s retrying...", self.url)
             # Restart the loop to retry connection
             await asyncio.sleep(1)
-            self.loop.create_task(self._receive_message())
+            self.loop.create_task(self._connect())
+
+    async def _receive_message(self, websocket):
+        while True:
+            try:
+                message = await websocket.recv()
+                # The queue of incomming message is already handled by the library
+                await self._handle_message(message, websocket)
+            except websockets.ConnectionClosed:
+                logger.warning("Websocket connection on %s lost retrying...", self.url)
+                # TODO: Handle the restart of the connection
+                break
+
+    async def _listen_event(self, websocket):
+        """
+        Parse the incomming messages and run appropriate function
+        """
+        while True:
+            # TODO: Execute all the pending event in the list
+            await asyncio.sleep(1)
 
     async def _handle_message(self, message, websocket):
         """
@@ -73,11 +88,13 @@ class WebsocketConnection():
             return
 
         asyncio.set_event_loop(self.loop)
+        self.loop.create_task(self._connect())
         try:
-            self.loop.run_until_complete(self._receive_message())
+            self.loop.run_forever()
         except KeyboardInterrupt:
             # Catch keyboard interrupt to allow stopping the event loop with ctrl+c
             self.stop()
+        print("loop completed")
         # Clean the event loop once completed
         self._clear_loop()
         self.pending_stop = False
@@ -91,7 +108,7 @@ class WebsocketConnection():
             logger.info("The event loop needs to be stopped before being cleared")
             return
 
-        #TODO: Find a way to clear the loop that works properly everytime
+        # TODO: Find a way to clear the loop that works properly everytime
         logger.info("Clearing event loop...")
         # Clear the loop
         for task in asyncio.Task.all_tasks():
@@ -120,7 +137,6 @@ class WebsocketConnection():
         self.is_running = True
         self._start_loop()
 
-
     def run_multithreaded(self):
         """
         Initialize the event loop's task and run it in a different thread
@@ -143,6 +159,8 @@ class WebsocketConnection():
         if self.thread is not None:
             self.thread.join(3)
             if self.thread.is_alive():
-                logger.warn("Could not stop the websocket connection thread for %s", self.url)
+                logger.warn(
+                    "Could not stop the websocket connection thread for %s", self.url
+                )
             else:
                 self.thread = None
