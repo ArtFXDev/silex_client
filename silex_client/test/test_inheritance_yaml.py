@@ -4,7 +4,7 @@
 Unit testing functions for the module utils.context
 """
 import os
-from yaml_with_include import YamlWithInclude
+from silex_client.libs.yaml_with_include import YamlWithInclude
 
 def test_inheritance():
     """

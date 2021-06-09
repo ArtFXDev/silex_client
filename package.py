@@ -11,7 +11,7 @@ description = \
     Part of the Silex ecosystem
     """
 
-requires = ["python-3.7", "PyYAML", "logzero", "websockets", "Yaml_with_include"]
+requires = ["python-3.7", "PyYAML", "logzero", "websockets"]
 
 vcs = "git"
 
