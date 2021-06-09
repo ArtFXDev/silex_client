@@ -25,17 +25,11 @@ jobs:
       - name: Install pipenv
         run: pip install pipenv
         
-      - run: pip list
-        
-      - name: Install dependencies
-        run: pipenv install --dev
-        
-      - run: pip list
+      - name: Generate requirement
+        run: pipenv run pip freeze > requirements.txt
 
-      - name: Activate pipenv
-        run: pipenv shell
-        
-      - run: pip list
+      - name: Install dependencies
+        run: pip install -r ./requirement.tx
         
       - name: Run test
         run: python -m pytest silex_client
@@ -56,11 +50,11 @@ jobs:
       - name: Install pipenv
         run: pip install pipenv
         
-      - name: Install dependencies
-        run: pipenv install --dev
+      - name: Generate requirement
+        run: pipenv run pip freeze > requirements.txt
 
-      - name: Activate pipenv
-        run: pipenv shell
+      - name: Install dependencies
+        run: pip install -r ./requirement.tx
         
       - name: Run test
         run: python -m pytest silex_client
