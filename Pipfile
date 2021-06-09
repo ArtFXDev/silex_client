@@ -6,12 +6,17 @@ name = "pypi"
 [packages]
 pyyaml = "*"
 logzero = "*"
+websockets = "*"
 
 [dev-packages]
 isort = "*"
 yapf = "*"
 pylint = "*"
 pytest = "*"
+pyreadline = "*"
 
 [requires]
 python_version = "3.7"
+
+[scripts]
+lint = "echo %cd%"

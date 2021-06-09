@@ -1,3 +1,4 @@
+# pylint: skip-file
 name = "silex_client"
 
 version = "0.0.0"
@@ -10,7 +11,7 @@ description = \
     Part of the Silex ecosystem
     """
 
-requires = ["python-3.7", "PyYAML", "logzero"]
+requires = ["python-3.7", "PyYAML", "logzero", "websockets"]
 
 vcs = "git"
 
@@ -36,7 +37,7 @@ def commands():
     Set the environment variables for silex_client
     """
     env.PATH.append("{root}/silex_client")
-    env.PYTHONPATH.append("{root}/silex_client")
+    env.PYTHONPATH.append("{root}")
     env.SILEX_LOG_LEVEL = "DEBUG"
 
 
