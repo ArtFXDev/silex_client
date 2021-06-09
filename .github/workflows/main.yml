@@ -24,12 +24,37 @@ jobs:
 
       - name: Install pipenv
         run: pip install pipenv
+        
+      - name: Install dependencies
+        run: pipenv install --dev
 
       - name: Activate pipenv
         run: pipenv shell
         
+      - name: Run test
+        run: python -m pytest silex_client
+
+  pytest-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.3.4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v2.2.2
+        with:
+          python-version: 3.7
+          architecture: x64
+
+      - name: Install pipenv
+        run: pip install pipenv
+        
       - name: Install dependencies
         run: pipenv install --dev
+
+      - name: Activate pipenv
+        run: pipenv shell
         
       - name: Run test
         run: python -m pytest silex_client
