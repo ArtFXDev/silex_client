@@ -1,6 +1,6 @@
 # pylint: skip-file
 name = "silex_client"
-
+timestamp = 0
 version = "0.0.0"
 
 authors = ["ArtFx TD gang"]
@@ -30,13 +30,14 @@ tests = {
 }
 
 build_command = "python {root}/script/build.py {install}"
-
+tools = ["run_test.sh"]
 
 def commands():
     """
     Set the environment variables for silex_client
     """
     env.PATH.append("{root}/silex_client")
+    env.PATH.append("{root}/tools")
     env.PYTHONPATH.append("{root}")
     env.SILEX_LOG_LEVEL = "DEBUG"
 
