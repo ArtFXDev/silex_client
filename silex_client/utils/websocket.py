@@ -62,12 +62,9 @@ class WebsocketConnection:
             # The queue of incomming message is already handled by the library
             try:
                 # Wait for a response with a timeout
-                try:
+                with suppress(asyncio.TimeoutError):
                     message = await asyncio.wait_for(websocket.recv(), 0.5)
-                except asyncio.TimeoutError:
-                    pass
-                else:
-                    await self._handle_message(message, websocket)
+                await self._handle_message(message, websocket)
             except (ConnectionClosed, ConnectionClosedError):
                 # If the connection closed was not planned
                 if not self.pending_stop:
@@ -140,7 +137,8 @@ class WebsocketConnection:
             # The cancel method will raise CancelledError on the running task to stop it
             task.cancel()
         # Wait for the task's cancellation in a suppress context to mute the CancelledError
-        with suppress(asyncio.CancelledError):
+        with suppress(asyncio.CancelledError, ConnectionClosedError,
+                      ConnectionClosed):
             for task in asyncio.Task.all_tasks():
                 self.loop.run_until_complete(task)
 
