@@ -25,11 +25,15 @@ jobs:
       - name: Install pipenv
         run: pip install pipenv
         
+      - run: pip list
+        
       - name: Generate requirement
         run: pipenv run pip freeze > requirements.txt
 
       - name: Install dependencies
         run: pip install -r ./requirements.txt
+        
+      - run: pip list
         
       - name: Run test
         run: python -m pytest silex_client
