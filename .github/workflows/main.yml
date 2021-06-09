@@ -1,0 +1,29 @@
+name: Unit testing base
+
+on:
+  push:
+    branches: [ dev, beta, prod ]
+  pull_request:
+    branches: [ dev, beta, prod ]
+
+  workflow_dispatch:
+
+jobs:
+  pytest-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.3.4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v2.2.2
+        with:
+          python-version: 3.7
+          architecture: x64
+
+      - name: Install pipenv
+        run: pip install pipenv
+
+      - name: Activate pipenv
+        run: (dir 2>&1 *`|echo CMD);&<# rem #>echo PowerShell
