@@ -42,7 +42,7 @@ class WebsocketConnection:
                 self.loop.create_task(self._listen_outgoing(websocket))
                 # Listen to pending stop or restart
                 while not self.pending_stop and not self.pending_restart:
-                    await asyncio.sleep(3)
+                    await asyncio.sleep(0.5)
         except (OSError, ConnectionResetError,
                 websockets.exceptions.InvalidMessage):
             logger.warning("Could not connect to %s retrying...", self.url)
@@ -56,9 +56,10 @@ class WebsocketConnection:
         Async infinite loop waiting for messages to receive
         """
         while not self.pending_stop and not self.pending_restart:
+            # The queue of incomming message is already handled by the library
             try:
-                # The queue of incomming message is already handled by the library
-                message = await websocket.recv()
+                # Wait for a response with a timeout
+                message = await asyncio.wait_for(websocket.recv, 0.5)
                 await self._handle_message(message, websocket)
             except (websockets.ConnectionClosed,
                     websockets.exceptions.ConnectionClosedError):
@@ -175,7 +176,7 @@ class WebsocketConnection:
         self.pending_stop = True
         # If the loop was running in a different thread stop it
         if self.thread is not None:
-            self.thread.join(3)
+            self.thread.join(2)
             if self.thread.is_alive():
                 logger.warn("Could not stop the connection thread for %s",
                             self.url)
