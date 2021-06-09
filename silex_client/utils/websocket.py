@@ -10,7 +10,9 @@ import gc
 from contextlib import suppress
 from threading import Thread
 
-import websockets
+from websockets import client
+from websockets.exceptions import (ConnectionClosed, ConnectionClosedError,
+                                   InvalidMessage)
 
 from silex_client.utils.context import context
 from silex_client.utils.log import logger
@@ -24,6 +26,8 @@ class WebsocketConnection:
     def __init__(self, url="ws://localhost:8080"):
         self.is_running = False
         self.thread = None
+        self.pending_stop = False
+        self.pending_restart = False
         self.url = url
         self.loop = asyncio.new_event_loop()
 
@@ -34,7 +38,7 @@ class WebsocketConnection:
         """
         self.pending_restart = False
         try:
-            async with websockets.connect(self.url) as websocket:
+            async with client.connect(self.url) as websocket:
                 # Initialize the connection by sending the context's metadata
                 await websocket.send(str(context.metadata))
                 # Create two async tasks
@@ -43,8 +47,7 @@ class WebsocketConnection:
                 # Listen to pending stop or restart
                 while not self.pending_stop and not self.pending_restart:
                     await asyncio.sleep(0.5)
-        except (OSError, ConnectionResetError,
-                websockets.exceptions.InvalidMessage):
+        except (OSError, ConnectionResetError, InvalidMessage):
             logger.warning("Could not connect to %s retrying...", self.url)
             self.pending_restart = True
 
@@ -61,8 +64,7 @@ class WebsocketConnection:
                 # Wait for a response with a timeout
                 message = await asyncio.wait_for(websocket.recv, 0.5)
                 await self._handle_message(message, websocket)
-            except (websockets.ConnectionClosed,
-                    websockets.exceptions.ConnectionClosedError):
+            except (ConnectionClosed, ConnectionClosedError):
                 # If the connection closed was not planned
                 if not self.pending_stop:
                     logger.warning("Connection on %s lost retrying...",
@@ -150,7 +152,7 @@ class WebsocketConnection:
         Initialize the event loop's task and run it in main thread
         """
         if self.is_running:
-            logger.warn("Websocket server already running")
+            logger.warning("Websocket server already running")
             return
 
         self.is_running = True
@@ -161,14 +163,18 @@ class WebsocketConnection:
         Initialize the event loop's task and run it in a different thread
         """
         if self.is_running:
-            logger.warn("Websocket server already running")
+            logger.warning("Websocket server already running")
             return
 
         self.is_running = True
-        self.thread = Thread(target=lambda: self._start_loop())
+        self.thread = Thread(target=self._start_loop)
         self.thread.start()
 
     def stop(self):
+        """
+        Ask to all the event loop's tasks to stop and join the thread to the main thread
+        if there is one running
+        """
         if not self.is_running:
             logger.info("Websocket server was not running")
             return
@@ -178,7 +184,7 @@ class WebsocketConnection:
         if self.thread is not None:
             self.thread.join(2)
             if self.thread.is_alive():
-                logger.warn("Could not stop the connection thread for %s",
-                            self.url)
+                logger.warning("Could not stop the connection thread for %s",
+                               self.url)
             else:
                 self.thread = None
