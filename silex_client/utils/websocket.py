@@ -62,7 +62,7 @@ class WebsocketConnection:
             # The queue of incomming message is already handled by the library
             try:
                 # Wait for a response with a timeout
-                message = await asyncio.wait_for(websocket.recv, 0.5)
+                message = await asyncio.wait_for(websocket.recv(), 0.5)
                 await self._handle_message(message, websocket)
             except (ConnectionClosed, ConnectionClosedError):
                 # If the connection closed was not planned
