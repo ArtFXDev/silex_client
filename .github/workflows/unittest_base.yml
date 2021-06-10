@@ -34,8 +34,8 @@ jobs:
       - name: Run unit test
         run: pipenv run unit
 
-      - name: Run unit test
-        run: pipenv run unit
+      - name: Run linter
+        run: pipenv run lint
         
   pytest-linux:
     runs-on: ubuntu-latest
@@ -62,5 +62,5 @@ jobs:
       - name: Run unit test
         run: pipenv run unit
 
-      - name: Run unit test
-        run: pipenv run unit
+      - name: Run linter
+        run: pipenv run lint

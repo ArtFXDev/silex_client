@@ -26,11 +26,8 @@ def pingpong_server():
     Return a server that will wait for the metadata, send a a ping and wait for a pong
     """
     async def pingpong(websocket, path):
-        try:
-            message = await websocket.recv()
-            assert message == str(context.metadata)
-        except (ConnectionClosed, ConnectionClosedError):
-            asyncio.get_event_loop().stop()
+        assert path == WebsocketConnection.parameters_to_url(
+            "/", context.metadata)
 
         ping = "ping"
         try:
@@ -62,11 +59,8 @@ def echo_server():
     Return a server that will wait for the metadata, send a a ping and wait for a pong
     """
     async def pingpong(websocket, path):
-        try:
-            message = await websocket.recv()
-            assert message == str(context.metadata)
-        except (ConnectionClosed, ConnectionClosedError):
-            asyncio.get_event_loop().stop()
+        assert path == WebsocketConnection.parameters_to_url(
+            "/", context.metadata)
 
         for message in MESSAGES:
             try:
@@ -102,9 +96,10 @@ def test_websocket_pingpong(pingpong_server, client):
     pingpong_server.start()
     client.run_multithreaded()
     # Wait a bit to let the exchange happend
-    time.sleep(1)
+    time.sleep(2)
     client.stop()
     pingpong_server.join()
+    time.sleep(2)
 
 
 def test_websocket_echo(echo_server, client):
