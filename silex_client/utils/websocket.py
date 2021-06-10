@@ -9,6 +9,7 @@ import asyncio
 import gc
 from contextlib import suppress
 from threading import Thread
+from typing import List, Union
 
 from websockets import client
 from websockets.exceptions import (ConnectionClosed, ConnectionClosedError,
@@ -30,8 +31,9 @@ class WebsocketConnection:
         self.pending_restart = False
         self.url = url
         self.loop = asyncio.new_event_loop()
+        self.pending_message = []
 
-    async def _connect(self):
+    async def _connect(self) -> None:
         """
         Connect to the server, wait for the incomming messages and handle disconnection
         Called by self.run() or self.run_multithreaded()
@@ -49,12 +51,14 @@ class WebsocketConnection:
                     await asyncio.sleep(0.5)
         except (OSError, ConnectionResetError, InvalidMessage):
             logger.warning("Could not connect to %s retrying...", self.url)
+            await asyncio.sleep(1)
             self.pending_restart = True
 
         logger.info("Leaving event loop...")
         self.loop.stop()
 
-    async def _listen_incomming(self, websocket):
+    async def _listen_incomming(
+            self, websocket: client.WebSocketClientProtocol) -> None:
         """
         Async infinite loop waiting for messages to receive
         """
@@ -64,22 +68,32 @@ class WebsocketConnection:
                 # Wait for a response with a timeout
                 with suppress(asyncio.TimeoutError):
                     message = await asyncio.wait_for(websocket.recv(), 0.5)
-                await self._handle_message(message, websocket)
+                    await self._handle_message(message, websocket)
             except (ConnectionClosed, ConnectionClosedError):
                 # If the connection closed was not planned
                 if not self.pending_stop:
                     logger.warning("Connection on %s lost retrying...",
                                    self.url)
                     self.pending_restart = True
-                break
 
-    async def _listen_outgoing(self, websocket):
+    async def _listen_outgoing(
+            self, websocket: client.WebSocketClientProtocol) -> None:
         """
         Async infinite loop waiting for messages to be sent
         """
         while not self.pending_stop and not self.pending_restart:
-            # TODO: Execute all the pending event in the list
-            await asyncio.sleep(1)
+            # Send all the pending messges
+            for message in self.pending_message:
+                try:
+                    await websocket.send(message)
+                except (ConnectionClosed, ConnectionClosedError):
+                    # If the connection closed was not planned
+                    if not self.pending_stop:
+                        logger.warning("Connection on %s lost retrying...",
+                                       self.url)
+                        self.pending_restart = True
+            # Sleep a bit between each iteration
+            await asyncio.sleep(0.5)
 
     async def _handle_message(self, message, websocket):
         """
@@ -91,7 +105,7 @@ class WebsocketConnection:
         else:
             logger.info("Websocket message recieved : %s", message)
 
-    def _start_loop(self):
+    def _start_loop(self) -> None:
         """
         Set the event loop for the current thread and run it
         This method is called by self.run() or self.run_multithreaded()
@@ -121,7 +135,7 @@ class WebsocketConnection:
 
         self.is_running = False
 
-    def _clear_loop(self):
+    def _clear_loop(self) -> None:
         """
         Clear the event loop from its pending task and delete it
         This method is called by self._start_loop()
@@ -149,7 +163,7 @@ class WebsocketConnection:
 
         logger.info("Event loop cleared")
 
-    def run(self):
+    def run(self) -> None:
         """
         Initialize the event loop's task and run it in main thread
         """
@@ -172,7 +186,7 @@ class WebsocketConnection:
         self.thread = Thread(target=self._start_loop)
         self.thread.start()
 
-    def stop(self):
+    def stop(self) -> None:
         """
         Ask to all the event loop's tasks to stop and join the thread to the main thread
         if there is one running
@@ -190,3 +204,12 @@ class WebsocketConnection:
                                self.url)
             else:
                 self.thread = None
+
+    def send(self, message: Union[str, List[str]]) -> None:
+        """
+        Add the given message to the list of pending message to be sent
+        """
+        if message is str:
+            self.pending_message.append(message)
+        elif message is List[str]:
+            self.pending_message.extend(message)
