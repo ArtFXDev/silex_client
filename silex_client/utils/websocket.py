@@ -149,9 +149,11 @@ class WebsocketConnection:
             return
 
         # TODO: Find a way to clear the loop that works without warnings everytime
+        # (the warning is ignored in the pytest.ini)
         logger.info("Clearing event loop...")
         # Clear the loop
-        for task in asyncio.Task.all_tasks():
+        for task in asyncio.all_tasks(self.loop):
+            print(task)
             # The cancel method will raise CancelledError on the running task to stop it
             task.cancel()
             # Wait for the task's cancellation in a suppress context to mute the CancelledError
