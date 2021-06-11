@@ -54,7 +54,7 @@ def pingpong_server():
 
 
 @pytest.fixture
-def echo_server():
+def queue_server():
     """
     Return a server that will wait for the metadata, send a a ping and wait for a pong
     """
@@ -96,19 +96,20 @@ def test_websocket_pingpong(pingpong_server, client):
     pingpong_server.start()
     client.run_multithreaded()
     # Wait a bit to let the exchange happend
-    time.sleep(2)
+    time.sleep(1)
+    # Stop the server and the client
     client.stop()
     pingpong_server.join()
-    time.sleep(2)
 
 
-def test_websocket_echo(echo_server, client):
+def test_websocket_echo(queue_server, client):
     """
     Test the message sending queue
     """
-    echo_server.start()
+    queue_server.start()
     client.run_multithreaded()
     # Wait a bit to let the exchange happend
     time.sleep(1)
+    # Stop the server and the client
     client.stop()
-    echo_server.join()
+    queue_server.join()

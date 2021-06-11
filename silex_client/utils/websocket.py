@@ -60,7 +60,6 @@ class WebsocketConnection:
             self.pending_restart = True
 
         logger.info("Leaving event loop...")
-        self.loop.stop()
 
     async def _listen_incomming(
             self, websocket: client.WebSocketClientProtocol) -> None:
@@ -123,10 +122,10 @@ class WebsocketConnection:
             self.pending_stop = False
             self.pending_restart = False
             asyncio.set_event_loop(self.loop)
-            self.loop.create_task(self._connect())
+            connect_task = self.loop.create_task(self._connect())
 
             try:
-                self.loop.run_forever()
+                self.loop.run_until_complete(connect_task)
             except KeyboardInterrupt:
                 # Catch keyboard interrupt to allow stopping the event loop with ctrl+c
                 self.stop()
@@ -135,7 +134,7 @@ class WebsocketConnection:
             self._clear_loop()
 
             # If no restart is required leave the loop
-            if not self.pending_restart:
+            if not self.pending_restart or self.pending_stop:
                 break
 
         self.is_running = False
