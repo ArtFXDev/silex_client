@@ -7,14 +7,16 @@ Do not instanciate the Context class, use the already instanciated variable cont
 
 import importlib
 import os
+import sys
 
-from silex_client.utils.config import Config
+from silex_client.action.config import Config
 from silex_client.utils.log import logger
 
 
 class Context:
     """
-    Singleton like class that keeps track of the current context
+    Data class that keeps track of the current context
+    This class should not be instanciated use the already instanciated object from this module
     """
 
     _metadata = {}
@@ -22,6 +24,14 @@ class Context:
     def __init__(self):
         self.config = Config()
         self.is_outdated = True
+
+    @staticmethod
+    def get():
+        """
+        Return a globaly instanciated context. This static method is just for conveniance
+        """
+        # Get the instance of Context created in this same module
+        return getattr(sys.modules[__name__], "context")
 
     @property
     def metadata(self):
@@ -59,19 +69,17 @@ class Context:
         Update the metadata's dcc key using rez environment variable
         """
         request = os.getenv("REZ_USED_REQUEST", "")
-        if "maya" in request:
-            self._metadata["dcc"] = "maya"
-            logger.info("Setting maya as dcc context")
-        elif "houdini" in request:
-            self._metadata["dcc"] = "houdini"
-            logger.info("Setting houdini as dcc context")
-        elif "nuke" in request:
-            self._metadata["dcc"] = "nuke"
-            logger.info("Setting nuke as dcc context")
-        elif "blender" in request:
-            self._metadata["dcc"] = "blender"
-            logger.info("Setting blender as dcc context")
-        else:
+        # TODO: Get the list of DCCs from a centralised database or config
+        handled_dcc = ["maya", "houdini", "nuke", "unreal", "substance", "mari", "clarisse"]
+        # Look for dcc in rez request
+        self._metadata["dcc"] = None
+        for dcc in handled_dcc:
+            if dcc in request:
+                self._metadata["dcc"] = dcc
+                logger.info("Setting %s as dcc context" % dcc)
+                break
+        # Handle the case where no DCC has been found
+        if self._metadata["dcc"] == None
             logger.critical("No supported dcc detected")
             self.is_outdated = True
 
@@ -101,6 +109,7 @@ class Context:
         Update the metadata's entity related keys using the filesystem
         """
         # Clear the current entity
+        # TODO: Get the list of possible entities from a database of config
         for entity in ["sequence", "shot", "asset"]:
             if entity in self._metadata:
                 self._metadata.pop(entity)
