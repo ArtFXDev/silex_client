@@ -8,6 +8,7 @@ Do not instanciate the Context class, use the already instanciated variable cont
 import importlib
 import os
 import sys
+from typing import Dict, Any
 
 from silex_client.action.config import Config
 from silex_client.utils.log import logger
@@ -23,6 +24,7 @@ class Context:
 
     def __init__(self):
         self.config = Config()
+        self._metadata = {}
         self.is_outdated = True
 
     @staticmethod
@@ -50,14 +52,14 @@ class Context:
         return self._metadata
 
     @metadata.setter
-    def metadata(self, data):
+    def metadata(self, data: Dict[str, Any]):
         """
         Set the _metadata private attribute.
         This should not be used unless for test purposes, let the metadata update utself instead
         """
         self._metadata = data
 
-    def update_metadata(self, data):
+    def update_metadata(self, data: Dict[str, Any]):
         """
         Merge the provided dict with the current metadata
         This should not be used unless for test purposes, let the metadata update utself instead
@@ -70,7 +72,10 @@ class Context:
         """
         request = os.getenv("REZ_USED_REQUEST", "")
         # TODO: Get the list of DCCs from a centralised database or config
-        handled_dcc = ["maya", "houdini", "nuke", "unreal", "substance", "mari", "clarisse"]
+        handled_dcc = [
+            "maya", "houdini", "nuke", "unreal", "substance", "mari",
+            "clarisse"
+        ]
         # Look for dcc in rez request
         self._metadata["dcc"] = None
         for dcc in handled_dcc:
@@ -79,8 +84,8 @@ class Context:
                 logger.info("Setting %s as dcc context" % dcc)
                 break
         # Handle the case where no DCC has been found
-        if self._metadata["dcc"] == None
-            logger.critical("No supported dcc detected")
+        if self._metadata["dcc"] == None:
+            logger.error("No supported dcc detected")
             self.is_outdated = True
 
     def update_task(self):
@@ -125,8 +130,7 @@ class Context:
         """
 
         config_metadata = self.metadata
-        config_metadata["action"] = action_name
-        action = self.config.resolve_config(**config_metadata)
+        action = self.config.resolve_config(action_name, **config_metadata)
 
         return action
 
