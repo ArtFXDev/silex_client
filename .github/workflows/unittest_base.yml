@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  pytest-windows:
+  ci-windows:
     runs-on: windows-latest
 
     steps:
