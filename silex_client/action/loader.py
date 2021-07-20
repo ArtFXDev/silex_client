@@ -130,7 +130,7 @@ class Loader(yaml.SafeLoader):
             if key not in data_b.keys():
                 data_b[key] = value
             # Replace the non mergeable corresponding keys
-            elif value is type(data_b[key]):
+            elif type(value) is not type(data_b[key]):
                 data_b[key] = value
             # Merge the mergeable corresponding keys
             else:
@@ -238,7 +238,7 @@ class Loader(yaml.SafeLoader):
                 return node_data
 
         # Merge the two data
-        if inherit_data is not type(node_data):
+        if type(inherit_data) is not type(node_data):
             logger.warning(
                 "The node and the inherited node are not the same time, \
                 skipping inheritance for yaml config %s",
