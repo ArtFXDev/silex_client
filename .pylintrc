@@ -3,7 +3,7 @@
 # can either give multiple identifier separated by comma (,) or put this option
 # multiple time (only on the command line, not in the configuration file where
 # it should appear only once).
-disable=R0903,R0914,W0621
+disable=R0903,R0914,W0621,R1705
 
 [REPORTS]
 # Set the output format. Available formats are text, parseable, colorized, msvs

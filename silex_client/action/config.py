@@ -56,15 +56,15 @@ class Config():
                     and os.path.splitext(file)[1] in [".yaml", ".yml"])
 
                 config_path = os.path.abspath(os.path.join(path, config_file))
-                logger.debug("Found action config at %s" % config_path)
+                logger.debug("Found action config at %s", config_path)
                 break
             except StopIteration:
                 continue
 
         if config_path is None:
-            logger.error("Could not resolve config for the action %s" %
+            logger.error("Could not resolve config for the action %s",
                          action_name)
-            return
+            return None
 
         # Load the config
         with open(config_path, "r") as config_data:

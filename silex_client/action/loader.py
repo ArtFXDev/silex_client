@@ -7,8 +7,8 @@ Custom YAML loader to load action config files
 import os
 from typing import Any, IO, Dict, List, Tuple
 
-import yaml
 import json
+import yaml
 
 from silex_client.utils.log import logger
 
@@ -96,24 +96,24 @@ class Loader(yaml.SafeLoader):
             resolved_path = os.path.abspath(os.path.join(str(path), file))
             if os.path.isfile(resolved_path):
                 filename = resolved_path
-                logger.debug("Found imported config at %s" % filename)
+                logger.debug("Found imported config at %s", filename)
                 break
 
         if not filename:
             logger.error(
-                "Could not resolve config, the file %s does not exist" % file)
-            return
+                "Could not resolve config, the file %s does not exist", file)
+            return None
 
         # Get the file type to load it correctly
         extension = os.path.splitext(filename)[1].lstrip('.')
         # Load and return the included file
-        with open(filename, 'r') as f:
+        with open(filename, 'r') as import_data:
             if extension in ('yaml', 'yml'):
-                return yaml.load(f, Loader)
-            elif extension in ('json', ):
-                return json.load(f)
+                return yaml.load(import_data, Loader)
+            elif extension == 'json':
+                return json.load(import_data)
             else:
-                return ''.join(f.readlines())
+                return ''.join(import_data.readlines())
 
     @classmethod
     def _merge_dict(cls, data_a: Dict, data_b: Dict) -> Dict:
@@ -130,7 +130,7 @@ class Loader(yaml.SafeLoader):
             if key not in data_b.keys():
                 data_b[key] = value
             # Replace the non mergeable corresponding keys
-            elif type(value) != type(data_b[key]):
+            elif value is type(data_b[key]):
                 data_b[key] = value
             # Merge the mergeable corresponding keys
             else:
@@ -153,7 +153,7 @@ class Loader(yaml.SafeLoader):
             try:
                 match_index = next(index for index, item_b in enumerate(data_b)
                                    if item_b["name"] == item_a["name"])
-                data_b[match_index]
+                data_b[match_index] = item_a
                 continue
             except (KeyError, TypeError, StopIteration):
                 pass
@@ -188,7 +188,7 @@ class Loader(yaml.SafeLoader):
         # Find the file in the list of search path
         if "file" not in include_kwargs:
             logger.error("No file given for !include statement in yaml config")
-            return
+            return None
 
         include_data = self._import_file(include_kwargs["file"])
 
@@ -203,8 +203,8 @@ class Loader(yaml.SafeLoader):
                 include_data = include_data[include_key]
             return include_data
         except (KeyError, TypeError):
-            logger.warn(
-                "The given key could not be found in the included file %s" %
+            logger.warning(
+                "The given key could not be found in the included file %s",
                 include_kwargs["file"])
             return include_data
 
@@ -221,7 +221,7 @@ class Loader(yaml.SafeLoader):
         # Get the inherited file data
         if "parent" not in inherit_kwargs:
             logger.error("No file given for !inherit statement in yaml config")
-            return
+            return None
         inherit_data = self._import_file(inherit_kwargs["parent"])
 
         # If the file is a yaml or json and a key has been specified,
@@ -232,16 +232,17 @@ class Loader(yaml.SafeLoader):
                 for inherit_key in inherit_keys:
                     inherit_data = inherit_data[inherit_key]
             except (KeyError, TypeError):
-                logger.warn(
-                    "The given key could not be found in the inherited file %s"
-                    % inherit_kwargs["file"])
+                logger.warning(
+                    "The given key could not be found in the inherited file %s",
+                    inherit_kwargs["file"])
                 return node_data
 
         # Merge the two data
-        if type(inherit_data) != type(node_data):
+        if inherit_data is not type(node_data):
             logger.warning(
-                "The node and the inherited node are not the same time, skipping inheritance for yaml config %s"
-                % inherit_kwargs["parent"])
+                "The node and the inherited node are not the same time, \
+                skipping inheritance for yaml config %s",
+                inherit_kwargs["parent"])
             return node_data
 
         return self._merge_data(node_data, inherit_data)

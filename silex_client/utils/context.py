@@ -81,10 +81,10 @@ class Context:
         for dcc in handled_dcc:
             if dcc in request:
                 self._metadata["dcc"] = dcc
-                logger.info("Setting %s as dcc context" % dcc)
+                logger.info("Setting %s as dcc context", dcc)
                 break
         # Handle the case where no DCC has been found
-        if self._metadata["dcc"] == None:
+        if self._metadata["dcc"] is None:
             logger.error("No supported dcc detected")
             self.is_outdated = True
 
