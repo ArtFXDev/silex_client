@@ -1,8 +1,0 @@
-!include ../base/base.yml
-      
-config:
-  modeling:
-    <<: *Obj
-    name: overrided name
-    <<: *LoremIpsum
-    name: new lorem name

@@ -96,6 +96,7 @@ class Loader(yaml.SafeLoader):
             resolved_path = os.path.abspath(os.path.join(str(path), file))
             if os.path.isfile(resolved_path):
                 filename = resolved_path
+                logger.debug("Found imported config at %s" % filename)
                 break
 
         if not filename:

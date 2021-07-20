@@ -28,7 +28,7 @@ class Context:
         self.is_outdated = True
 
     @staticmethod
-    def get():
+    def get() -> "Context":
         """
         Return a globaly instanciated context. This static method is just for conveniance
         """
@@ -36,7 +36,7 @@ class Context:
         return getattr(sys.modules[__name__], "context")
 
     @property
-    def metadata(self):
+    def metadata(self) -> Dict[str, Any]:
         """
         Lazy loaded property that updates when the is_outdated attribute is set to True
         """
@@ -52,21 +52,21 @@ class Context:
         return self._metadata
 
     @metadata.setter
-    def metadata(self, data: Dict[str, Any]):
+    def metadata(self, data: Dict[str, Any]) -> None:
         """
         Set the _metadata private attribute.
         This should not be used unless for test purposes, let the metadata update utself instead
         """
         self._metadata = data
 
-    def update_metadata(self, data: Dict[str, Any]):
+    def update_metadata(self, data: Dict[str, Any]) -> None:
         """
         Merge the provided dict with the current metadata
         This should not be used unless for test purposes, let the metadata update utself instead
         """
         self._metadata.update(data)
 
-    def update_dcc(self):
+    def update_dcc(self) -> None:
         """
         Update the metadata's dcc key using rez environment variable
         """
@@ -88,28 +88,28 @@ class Context:
             logger.error("No supported dcc detected")
             self.is_outdated = True
 
-    def update_task(self):
+    def update_task(self) -> None:
         """
         Update the metadata's task key using the filesystem
         """
         # TODO: Get the current task from filesystem
         self._metadata["task"] = "modeling"
 
-    def update_project(self):
+    def update_project(self) -> None:
         """
         Update the metadata's project key using the filesystem
         """
         # TODO: Get the current project from the filesystem
         self._metadata["project"] = "TEST_PIPE"
 
-    def update_user(self):
+    def update_user(self) -> None:
         """
         Update the metadata's user key using authentification
         """
         # TODO: Get the current user from the database using authentification
         self._metadata["user"] = "slambin"
 
-    def update_entity(self):
+    def update_entity(self) -> None:
         """
         Update the metadata's entity related keys using the filesystem
         """
@@ -124,7 +124,7 @@ class Context:
         self._metadata["sequence"] = 50
         self._metadata["shot"] = 120
 
-    def get_action(self, action_name):
+    def get_action(self, action_name: str) -> Any:
         """
         Return a list of modules to execute for an action
         """
@@ -134,7 +134,7 @@ class Context:
 
         return action
 
-    def execute_action(self, action_name):
+    def execute_action(self, action_name: str) -> None:
         """
         Create and execute a list of modules according to
         the given action name and the context data

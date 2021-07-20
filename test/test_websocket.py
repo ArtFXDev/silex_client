@@ -12,7 +12,7 @@ from websockets import server
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 
 from silex_client.utils.context import context
-from silex_client.utils.websocket import WebsocketConnection
+from silex_client.network.websocket import WebsocketConnection
 
 MESSAGES = [
     "message_A", "message_B", "message_C", "message_C", "message_D",
@@ -58,7 +58,7 @@ def queue_server():
     """
     Return a server that will wait for the metadata, send a a ping and wait for a pong
     """
-    async def pingpong(websocket, path):
+    async def queue(websocket, path):
         assert path == WebsocketConnection.parameters_to_url(
             "/", context.metadata)
 
@@ -74,7 +74,7 @@ def queue_server():
     def job():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        start_server = server.serve(pingpong, "127.0.0.1", 8080)
+        start_server = server.serve(queue, "127.0.0.1", 8080)
         asyncio.get_event_loop().run_until_complete(start_server)
         asyncio.get_event_loop().run_forever()
 
