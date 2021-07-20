@@ -38,4 +38,4 @@ jobs:
         run: pipenv run lint
 
       - name: Run formatter
-        run: pipenv run format
+        run: pipenv run format > $null
