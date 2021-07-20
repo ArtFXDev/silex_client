@@ -1,5 +1,11 @@
+"""
+@author: TD gang
+
+Custom YAML loader to load action config files
+"""
+
 import os
-from typing import Any, IO, Dict, Tuple, List
+from typing import Any, IO, Dict, List, Tuple
 
 import yaml
 import json
@@ -11,17 +17,16 @@ class Loader(yaml.SafeLoader):
     """
     Override of the default loader to be able to create custom constructors
     """
+    def __init__(self, stream: IO, path: Tuple[str, ...] = ("/", )) -> None:
+        # Get the list of the path to look for any included file from context
+        self.search_path = list(path)
 
-    # List of the path to look for any included file
-    search_path = ["/"]
-
-    def __init__(self, stream: IO) -> None:
         try:
             # Add the path of the file in the search path
-            self.search_path.append(os.path.split(stream.name)[0])
+            self.search_path.insert(0, os.path.split(stream.name)[0])
         except AttributeError:
             # Add the current working directory if there is not file path
-            self.search_path.append(os.path.curdir)
+            self.search_path.insert(0, os.path.curdir)
 
         super().__init__(stream)
 

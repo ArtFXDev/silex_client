@@ -9,7 +9,7 @@ import pprint
 
 import pytest
 
-from silex_client.utils.config import Config
+from silex_client.action.config import Config
 
 
 @pytest.fixture

@@ -130,7 +130,7 @@ class Context:
         """
 
         config_metadata = self.metadata
-        action = self.config.resolve_config(action_name, **config_metadata)
+        action = self.config.resolve_action(action_name, **config_metadata)
 
         return action
 

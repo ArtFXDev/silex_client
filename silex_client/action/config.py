@@ -5,9 +5,9 @@ Utility class that lazy load and resolve the configurations on demand
 """
 
 import os
-from typing import Dict, Any
-
-import yaml
+import copy
+import importlib
+from typing import Dict, List
 
 from silex_client.utils.log import logger
 from silex_client.action.loader import Loader
@@ -17,40 +17,55 @@ class Config():
     """
     Utility class that lazy load and resolve the configurations on demand
     """
-    def __init__(self, config_root_path=None, default_config=None):
-        # Initialize the root of all the config files
-        if not config_root_path:
-            config_root_path = os.getenv("SILEX_CLIENT_CONFIG", None)
-            if config_root_path is None:
-                logger.error("Config root path not found")
+    def __init__(self, config_search_path: List[str] = None):
+        # List of the path to look for any included file
+        self.config_search_path = ["/"]
 
-        # Initialize the name of the default config file
-        self.default_config = default_config
+        # Add the custom config search path
+        if config_search_path is not None:
+            self.config_search_path += config_search_path
 
-    def resolve_config(self, action_name: str, **kwargs: Dict[str, Any]):
+        # Look for config search path in the environment variables
+        env_config_path = os.getenv("SILEX_CLIENT_CONFIG", None)
+        if env_config_path is not None:
+            self.config_search_path += env_config_path.split(os.pathsep)
+
+        # Add the config folder of this repo to the config search path
+        repo_root = importlib.import_module("silex_client")
+        repo_dir = os.path.dirname(repo_root.__file__)
+        repo_config = os.path.abspath(
+            os.path.join(repo_dir, "..", "config", "action"))
+        self.config_search_path.append(repo_config)
+
+    def resolve_action(self, action_name: str, **kwargs: Dict):
         """
         Resolve a config file from its name by looking in the stored root path
         """
-        # Find the config file
-        # TODO: Get the config root location from the kwargs
-        dirname = os.path.dirname(__file__)
-        config_root = os.path.abspath(
-            os.path.join(dirname, "..", "..", "config", "action"))
-        try:
-            config_file = next(
-                file for file in os.listdir(config_root)
-                if os.path.splitext(file)[0] == action_name
-                and os.path.splitext(file)[1] in [".yaml", ".yml"])
-        except (StopIteration, FileNotFoundError):
-            logger.error("Could not find config file for action %s" %
+        # TODO: Add some search path according to the given kwargs
+        search_path = copy.deepcopy(self.config_search_path)
+        # Find the file in the list of search path
+        config_path = None
+        for path in search_path:
+            try:
+                config_file = next(
+                    file for file in os.listdir(path)
+                    if os.path.splitext(file)[0] == action_name
+                    and os.path.splitext(file)[1] in [".yaml", ".yml"])
+
+                config_path = os.path.abspath(os.path.join(path, config_file))
+                break
+            except StopIteration:
+                continue
+
+        if config_path is None:
+            logger.error("Could not resolve config for the action %s" %
                          action_name)
             return
-        config_path = os.path.join(config_root, config_file)
 
         # Load the config
-        config = {}
         with open(config_path, "r") as config_data:
-            config_yaml = yaml.load(config_data, Loader)
-            config = config_yaml
-
-        return config
+            loader = Loader(config_data, tuple(search_path))
+            try:
+                return loader.get_single_data()
+            finally:
+                loader.dispose()
