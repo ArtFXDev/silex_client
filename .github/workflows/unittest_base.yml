@@ -36,3 +36,6 @@ jobs:
 
       - name: Run linter
         run: pipenv run lint
+
+      - name: Run formatter
+        run: pipenv run format

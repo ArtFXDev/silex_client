@@ -20,3 +20,4 @@ python_version = "3.7"
 [scripts]
 lint = "python -m pylint --fail-under=8 ./silex_client"
 unit = "python -m pytest silex_client"
+format = "yapf silex_client --recursive --verbose"
