@@ -13,7 +13,7 @@ from silex_client.utils.log import logger
 from silex_client.action.loader import Loader
 
 
-class Config():
+class ActionConfig():
     """
     Utility class that lazy load and resolve the configurations on demand
     """

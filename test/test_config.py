@@ -9,7 +9,7 @@ import pprint
 
 import pytest
 
-from silex_client.action.config import Config
+from silex_client.action.config import ActionConfig
 
 
 @pytest.fixture
@@ -19,7 +19,7 @@ def dummy_config():
     files that has been created only for test purpose
     """
     config_root = os.path.join(os.path.dirname(__file__), "config", "action")
-    return Config(config_root)
+    return ActionConfig(config_root)
 
 
 @pytest.fixture
@@ -28,10 +28,10 @@ def maya_config():
     Return a config initialized with the real configuration folder to work with the
     real dcc configuration files
     """
-    return Config()
+    return ActionConfig()
 
 
-def test_resolve_action(dummy_config: Config):
+def test_resolve_action(dummy_config: ActionConfig):
     """
     Test the resolving of a configuration for the action 'foo' and the task 'task_a'
     with a dummy config file

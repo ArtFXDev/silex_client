@@ -10,7 +10,7 @@ import os
 import sys
 from typing import Dict, Any
 
-from silex_client.action.config import Config
+from silex_client.action.config import ActionConfig
 from silex_client.utils.log import logger
 
 
@@ -23,7 +23,7 @@ class Context:
     _metadata = {}
 
     def __init__(self):
-        self.config = Config()
+        self.config = ActionConfig()
         self._metadata = {}
         self.is_outdated = True
 
