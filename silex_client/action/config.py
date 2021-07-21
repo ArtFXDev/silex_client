@@ -7,7 +7,7 @@ Utility class that lazy load and resolve the configurations on demand
 import os
 import copy
 import importlib
-from typing import Dict, List, Union, Any
+from typing import Union, Any
 
 from silex_client.utils.log import logger
 from silex_client.action.loader import Loader
@@ -17,7 +17,7 @@ class ActionConfig():
     """
     Utility class that lazy load and resolve the configurations on demand
     """
-    def __init__(self, config_search_path: Union[List[str], str] = None):
+    def __init__(self, config_search_path: Union[list, str] = None):
         # List of the path to look for any included file
         self.config_search_path = ["/"]
 
@@ -40,7 +40,7 @@ class ActionConfig():
             os.path.join(repo_dir, "..", "config", "action"))
         self.config_search_path.append(repo_config)
 
-    def resolve_action(self, action_name: str, **kwargs: Dict) -> Any:
+    def resolve_action(self, action_name: str, **kwargs: dict) -> Any:
         """
         Resolve a config file from its name by looking in the stored root path
         """

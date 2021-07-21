@@ -11,10 +11,12 @@ class ActionQuery():
     """
     Initialize and execute a given action
     """
-    def __init__(self, action_name: str, ws_connection: WebsocketConnection):
+    def __init__(self, action_name: str, ws_connection: WebsocketConnection,
+                 **kwargs: dict):
         self.action_name = action_name
         self.config = ActionConfig()
         self.buffer = ActionBuffer(ws_connection)
+        self.environment = kwargs
         pass
 
     def execute(self) -> ActionBuffer:
@@ -28,7 +30,15 @@ class ActionQuery():
         """
         Initialize the buffer from the config
         """
-        pass
+        resolved_action = self.config.resolve_action(self.action_name,
+                                                     **(self.environment))
+
+        if self.action_name not in resolved_action:
+            logger.error("Invalid resolved action")
+            return
+
+        action_commands = resolved_action[self.action_name]
+        self.buffer.commands = action_commands
 
     def _run_command(self, command: str, args: Union[list, dict,
                                                      tuple]) -> None:

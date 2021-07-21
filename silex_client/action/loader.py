@@ -5,19 +5,20 @@ Custom YAML loader to load action config files
 """
 
 import os
-from typing import Any, IO, Dict, List, Tuple
+from typing import Any, IO, Union
 
 import json
 import yaml
 
 from silex_client.utils.log import logger
+from silex_client.utils.merge import merge_data
 
 
 class Loader(yaml.SafeLoader):
     """
     Override of the default loader to be able to create custom constructors
     """
-    def __init__(self, stream: IO, path: Tuple[str, ...] = ("/", )) -> None:
+    def __init__(self, stream: IO, path: Union[tuple, list] = ("/", )) -> None:
         # Get the list of the path to look for any included file from context
         self.search_path = list(path)
 
@@ -56,7 +57,7 @@ class Loader(yaml.SafeLoader):
         return {}
 
     def _construct_kwargs(
-        self, node: yaml.Node, keys: Tuple[str, ...] = ()) -> Dict[str, Any]:
+        self, node: yaml.Node, keys: Union[tuple, list] = ()) -> dict:
         """
         Construct data from node, allow to handle multiple types of data
         in a custom statement
@@ -68,13 +69,13 @@ class Loader(yaml.SafeLoader):
 
         # Handle the different type of returned data from the node
         construct_kwargs = {}
-        if isinstance(node_data, Dict):
+        if isinstance(node_data, dict):
             # Handle dictionary data
             construct_kwargs = {
                 key: value
                 for key, value in node_data.items() if key in keys
             }
-        elif isinstance(node_data, List):
+        elif isinstance(node_data, list):
             # Handle list data
             for index, value in enumerate(node_data):
                 try:
@@ -115,69 +116,6 @@ class Loader(yaml.SafeLoader):
             else:
                 return ''.join(import_data.readlines())
 
-    @classmethod
-    def _merge_dict(cls, data_a: Dict, data_b: Dict) -> Dict:
-        """
-        Merge the dict A into the dict B by merging their values recursively
-        """
-        # Check if the types are correct
-        if not isinstance(data_a, Dict) or not isinstance(data_b, Dict):
-            return data_a
-
-        # Loop over data A and override data B
-        for key, value in data_a.items():
-            # Append the non existing keys
-            if key not in data_b.keys():
-                data_b[key] = value
-            # Replace the non mergeable corresponding keys
-            elif type(value) is not type(data_b[key]):
-                data_b[key] = value
-            # Merge the mergeable corresponding keys
-            else:
-                data_b[key] = cls._merge_data(value, data_b[key])
-        # Return the overriden data B
-        return data_b
-
-    @classmethod
-    def _merge_list(cls, data_a: List, data_b: List) -> List:
-        """
-        Merge the list A into the list B by appending there values and replacing if
-        the values matches in a certain way
-        """
-        # Check if the types are correct
-        if not isinstance(data_a, List) or not isinstance(data_b, List):
-            return data_a
-
-        for item_a in data_a:
-            # Find if some items in data B needs to be replaced
-            try:
-                match_index = next(index for index, item_b in enumerate(data_b)
-                                   if item_b["name"] == item_a["name"])
-                data_b[match_index] = item_a
-                continue
-            except (KeyError, TypeError, StopIteration):
-                pass
-
-            # Otherwise just append the item into data B
-            data_b.append(item_a)
-
-        return data_b
-
-    @classmethod
-    def _merge_data(cls, data_a: Any, data_b: Any) -> Any:
-        """
-        Merge the data A into the data B by chosing the apropriate merge method
-        """
-        # Mapp the data types to their merge function
-        mapping = {Dict: cls._merge_dict, List: cls._merge_list}
-        for data_type, handler in mapping.items():
-            if isinstance(data_a, data_type) and isinstance(data_b, data_type):
-                # Execute the apropriate merge function
-                return handler(data_a, data_b)
-
-        # Just return the data A if no handler has been found
-        return data_a
-
     def include(self, node: yaml.Node) -> Any:
         """
         Contructor function to handle the !include statement
@@ -194,7 +132,7 @@ class Loader(yaml.SafeLoader):
 
         # If the file is a yaml or json and a key has been specified,
         # return the content of that key in the file
-        if include_data is not Dict or "key" not in include_kwargs:
+        if include_data is not dict or "key" not in include_kwargs:
             return include_data
 
         include_keys = include_kwargs["key"].split(".")
@@ -226,7 +164,7 @@ class Loader(yaml.SafeLoader):
 
         # If the file is a yaml or json and a key has been specified,
         # return the content of that key in the file
-        if isinstance(inherit_data, Dict) and "key" in inherit_kwargs:
+        if isinstance(inherit_data, dict) and "key" in inherit_kwargs:
             inherit_keys = inherit_kwargs["key"].split(".")
             try:
                 for inherit_key in inherit_keys:
@@ -245,7 +183,7 @@ class Loader(yaml.SafeLoader):
                 inherit_kwargs["parent"])
             return node_data
 
-        return self._merge_data(node_data, inherit_data)
+        return merge_data(node_data, inherit_data)
 
 
 # Set the include method as a handler for the !include statement
