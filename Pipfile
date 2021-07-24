@@ -13,6 +13,7 @@ isort = "*"
 yapf = "*"
 pylint = "*"
 pytest = "*"
+pyreadline = "*"
 
 [requires]
 python_version = "3.7"

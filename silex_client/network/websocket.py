@@ -7,6 +7,7 @@ receive and handle the incomming messages
 
 import asyncio
 import gc
+import sys
 from contextlib import suppress
 from threading import Thread
 from typing import List, Union, Dict, Any
@@ -15,7 +16,6 @@ from websockets import client
 from websockets.exceptions import (ConnectionClosed, ConnectionClosedError,
                                    InvalidMessage)
 
-from silex_client.utils.context import context
 from silex_client.utils.log import logger
 
 
@@ -24,7 +24,7 @@ class WebsocketConnection:
     Websocket client that connect the the given url
     and receive and handle the incomming messages
     """
-    def __init__(self, url=None):
+    def __init__(self, url: str = None):
         self.is_running = False
         self.thread = None
         self.pending_stop = False
@@ -34,10 +34,8 @@ class WebsocketConnection:
 
         # Set the url accordingly
         if url is None:
-            self.url = self.parameters_to_url("ws://localhost:8080",
-                                              context.metadata)
-        else:
-            self.url = url
+            url = "ws://localhost:8080"
+        self.url = url
 
     async def _connect(self) -> None:
         """
@@ -53,6 +51,7 @@ class WebsocketConnection:
                 self.loop.create_task(self._listen_outgoing(websocket))
                 # Listen to pending stop or restart
                 while not self.pending_stop and not self.pending_restart:
+                    logger.debug("Websocket event loop running...")
                     await asyncio.sleep(0.5)
         except (OSError, ConnectionResetError, InvalidMessage):
             logger.warning("Could not connect to %s retrying...", self.url)
@@ -71,8 +70,10 @@ class WebsocketConnection:
             try:
                 # Wait for a response with a timeout
                 with suppress(asyncio.TimeoutError):
+                    logger.debug("Websocket client listening incomming...")
                     message = await asyncio.wait_for(websocket.recv(), 0.5)
-                    await self._handle_message(message)
+                    if message:
+                        await self._handle_message(message)
             except (ConnectionClosed, ConnectionClosedError):
                 # If the connection closed was not planned
                 if not self.pending_stop:
@@ -89,6 +90,7 @@ class WebsocketConnection:
             # Send all the pending messges
             for message in self.pending_message:
                 try:
+                    logger.debug("Websocket client sending %s" % message)
                     await websocket.send(message)
                 except (ConnectionClosed, ConnectionClosedError):
                     # If the connection closed was not planned
@@ -97,6 +99,7 @@ class WebsocketConnection:
                                        self.url)
                         self.pending_restart = True
             # Sleep a bit between each iteration
+            logger.debug("Websocket client listening outgoing...")
             await asyncio.sleep(0.5)
 
     async def _handle_message(self, message: Any) -> None:
@@ -104,6 +107,7 @@ class WebsocketConnection:
         Parse the incomming messages and run appropriate function
         """
         # TODO: Define a json protocol and handle the messages accordingly
+        logger.debug("Websocket client receiving %s" % message)
         if message == "ping":
             self.send("pong")
         else:
@@ -125,6 +129,7 @@ class WebsocketConnection:
             connect_task = self.loop.create_task(self._connect())
 
             try:
+                logger.debug("Starting websocket event loop")
                 self.loop.run_until_complete(connect_task)
             except KeyboardInterrupt:
                 # Catch keyboard interrupt to allow stopping the event loop with ctrl+c
@@ -153,7 +158,6 @@ class WebsocketConnection:
         logger.info("Clearing event loop...")
         # Clear the loop
         for task in asyncio.all_tasks(self.loop):
-            print(task)
             # The cancel method will raise CancelledError on the running task to stop it
             task.cancel()
             # Wait for the task's cancellation in a suppress context to mute the CancelledError
@@ -253,7 +257,7 @@ class WebsocketConnection:
         output += "?"
         for key, value in parameters.items():
             output += f"{key}={value}&"
-        # Remove the dandeling '&' (a bit gross i know)
+        # Remove the dandeling '&'
         output = output[:-1]
 
         return output

@@ -1,25 +1,55 @@
 import uuid
+from collections import OrderedDict
+from collections.abc import Iterator
 
 from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.merge import merge_data
 from silex_client.utils.log import logger
 
 
-class ActionBuffer():
+class ActionBuffer(Iterator):
     """
     Store the state of an action, it is used as a comunication entry with the UI
     """
 
-    COMMANDS_TEMPLATE = {"pre_action": [], "action": [], "post_action": []}
-    COMMAND_TEMPLATE = {"command": "", "name": ""}
+    # Define the mandatory keys and types for each attribibutes of a buffer
+    STEP_TEMPLATE = {"index": int, "commands": list}
+    COMMAND_TEMPLATE = {"command": str}
 
-    def __init__(self, ws_connection: WebsocketConnection):
+    def __init__(self, name: str, ws_connection: WebsocketConnection):
+        self.name = name
         self.ws_connection = ws_connection
         self.uid = uuid.uuid1()
 
         self._parameters = {}
         self._variables = {}
-        self._commands = {"pre_action": [], "action": [], "post_action": []}
+        self._commands = OrderedDict()
+
+    def __iter__(self):
+        if not self._commands:
+            return iter([])
+
+        # Initialize the step iterator
+        self._step_iter = iter(self.commands.items())
+        self._current_step = next(self._step_iter)
+
+        # Initialize the command iterator
+        self._command_iter = iter(self._current_step[1]["commands"])
+        return self
+
+    def __next__(self) -> dict:
+        # Get the next command in the current step if available
+        try:
+            command = next(self._command_iter)
+            return command
+        # Get the next step available and rerun the loop
+        except StopIteration:
+            # No need to catch the StopIteration exception
+            # Since it will just end the loop has we would want
+            self._current_step = next(self._step_iter)
+            self._command_iter = iter(self._current_step[1]["commands"])
+            # TODO: Return a silex_client.commands.iter_step command instead
+            return self.__next__()
 
     def _serialize(self):
         """
@@ -46,7 +76,7 @@ class ActionBuffer():
         pass
 
     @property
-    def parameters(self):
+    def parameters(self) -> dict:
         return self._parameters
 
     @parameters.setter
@@ -55,7 +85,7 @@ class ActionBuffer():
         self._parameters.update(parameters)
 
     @property
-    def variables(self):
+    def variables(self) -> dict:
         return self._variables
 
     @variables.setter
@@ -64,22 +94,44 @@ class ActionBuffer():
         self._variables.update(variables)
 
     @property
-    def commands(self):
+    def commands(self) -> dict:
         return self._commands
 
     @commands.setter
     def commands(self, commands: dict):
-        # Check if the commands are valid
-        filtered_commands = self.COMMANDS_TEMPLATE
-        for step in self.COMMANDS_TEMPLATE.keys():
-            for command in commands.get(step, []):
-                # Check if the command has the required keys
-                if not all(key in command.keys()
-                           for key in self.COMMAND_TEMPLATE):
-                    logger.warning("Invalid command %s", command)
-                    continue
-                # Append validated command
-                filtered_commands[step].append(command)
+        if not isinstance(commands, dict):
+            logger.error("Invalid commands for action %s", self.name)
 
-        # Override the data that has the same name and append the new names
-        self._commands = merge_data(filtered_commands, self.commands)
+        filtered_commands = commands
+
+        # Check if the steps are valid
+        for name, step in commands.items():
+            for key, value in self.STEP_TEMPLATE.items():
+                if not isinstance(step, dict):
+                    del filtered_commands[name]
+                    break
+                if key not in step or not isinstance(step[key], value):
+                    del filtered_commands[name]
+                    break
+
+            # If the step has been deleted don't check the commands
+            if name not in filtered_commands:
+                continue
+
+            # Check if the commands are valid
+            for command in step["commands"]:
+                for key, value in self.COMMAND_TEMPLATE.items():
+                    if not isinstance(step["commands"][command], dict):
+                        del filtered_commands[name]["commands"][command]
+                        break
+                    if key not in step["commands"][command] or not isinstance(
+                            step["commands"][command], value):
+                        del filtered_commands[name]["commands"][command]
+                        break
+
+        # Override the existing commands with the new ones
+        commands = merge_data(filtered_commands, dict(self.commands))
+
+        # Sort the steps using the index key
+        sort = sorted(commands.items(), key=lambda item: item[1]["index"])
+        self._commands = OrderedDict(sort)

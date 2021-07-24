@@ -6,7 +6,6 @@ Unit testing functions for the module utils.context
 
 import pytest
 import os
-import pprint
 
 from silex_client.utils.context import Context
 from silex_client.action.loader import Loader
@@ -43,5 +42,5 @@ def test_get_action(dummy_context: Context):
     # Load the file manualy and check if it correspond to the resolved file
     with open(action_file, "r") as config_data:
         loader = Loader(config_data, tuple(config_root))
-        assert resolved_action == loader.get_single_data()
+        assert resolved_action.commands == loader.get_single_data()
         loader.dispose()

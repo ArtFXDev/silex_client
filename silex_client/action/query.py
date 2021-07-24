@@ -1,9 +1,9 @@
 import importlib
 from typing import Union
 
-from silex_client.network.websocket import WebsocketConnection
 from silex_client.action.config import ActionConfig
 from silex_client.action.buffer import ActionBuffer
+from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.log import logger
 
 
@@ -11,13 +11,14 @@ class ActionQuery():
     """
     Initialize and execute a given action
     """
-    def __init__(self, action_name: str, ws_connection: WebsocketConnection,
-                 **kwargs: dict):
-        self.action_name = action_name
-        self.config = ActionConfig()
-        self.buffer = ActionBuffer(ws_connection)
+    def __init__(self, name: str, ws_connection: WebsocketConnection,
+                 config: ActionConfig, **kwargs: dict):
+        self.action_name = name
+        self.config = config
+        self.buffer = ActionBuffer(name, ws_connection)
         self.environment = kwargs
-        pass
+
+        self._initialize_buffer()
 
     def execute(self) -> ActionBuffer:
         """
@@ -69,3 +70,15 @@ class ActionQuery():
         else:
             logger.error("Invalid arugment for command %s", command)
             return
+
+    @property
+    def parameters(self) -> dict:
+        return self.buffer.parameters
+
+    @property
+    def variables(self) -> dict:
+        return self.buffer.variables
+
+    @property
+    def commands(self) -> dict:
+        return self.buffer.commands

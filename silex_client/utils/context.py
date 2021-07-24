@@ -5,12 +5,13 @@ Context variables that is meant to be shared across all the modules
 Do not instanciate the Context class, use the already instanciated variable context instead
 """
 
-import importlib
 import os
 import sys
 from typing import Dict, Any
 
+from silex_client.action.query import ActionQuery
 from silex_client.action.config import ActionConfig
+from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.log import logger
 
 
@@ -22,10 +23,13 @@ class Context:
 
     _metadata = {}
 
-    def __init__(self):
+    def __init__(self, ws_url: str = "ws://localhost:8080"):
         self.config = ActionConfig()
         self._metadata = {}
         self.is_outdated = True
+
+        url = WebsocketConnection.parameters_to_url(ws_url, self.metadata)
+        self.ws_connection = WebsocketConnection(url)
 
     @staticmethod
     def get() -> "Context":
@@ -126,37 +130,11 @@ class Context:
 
     def get_action(self, action_name: str) -> Any:
         """
-        Return a list of modules to execute for an action
+        Return an ActionQuery object initialized with this context
         """
 
-        config_metadata = self.metadata
-        action = self.config.resolve_action(action_name, **config_metadata)
-
-        return action
-
-    def execute_action(self, action_name: str) -> None:
-        """
-        Create and execute a list of modules according to
-        the given action name and the context data
-        """
-        action = self.get_action(action_name)
-        for item in action.values():
-            for command in item:
-                # Skip in no module path is given
-                if "command" not in command:
-                    continue
-                # Import the given module
-                split = command["command"].split(".")
-                package = importlib.import_module(
-                    f"silex_client.{command['command'].replace('.' + split[-1], '')}"
-                )
-                module = getattr(package, split[-1])
-
-                # If some parameters where given pass them when calling the module
-                if "parm" in command:
-                    module(**(command["parm"]))
-                else:
-                    module()
+        return ActionQuery(action_name, self.ws_connection, self.config,
+                           **self.metadata)
 
 
 context = Context()

@@ -11,7 +11,7 @@ import pytest
 from websockets import server
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 
-from silex_client.utils.context import context
+from silex_client.utils.context import Context
 from silex_client.network.websocket import WebsocketConnection
 
 MESSAGES = [
@@ -20,23 +20,26 @@ MESSAGES = [
 ]
 
 
-@pytest.fixture
 def pingpong_server():
     """
     Return a server that will wait for the metadata, send a a ping and wait for a pong
     """
     async def pingpong(websocket, path):
-        assert path == WebsocketConnection.parameters_to_url(
-            "/", context.metadata)
+        # assert path == WebsocketConnection.parameters_to_url(
+        # "/",
+        # Context.get().metadata)
 
-        ping = "ping"
         try:
-            await websocket.send(ping)
-        except (ConnectionClosed, ConnectionClosedError):
+            print("CCCCCCCCCCCCCC")
+            await websocket.send("ping")
+        except (ConnectionClosed, ConnectionClosedError) as e:
             asyncio.get_event_loop().stop()
 
         try:
+            print("DDDDDDDDDDDDDDDD")
             pong = await websocket.recv()
+            print("EEEEEEEEEEEEEEEE")
+            print(pong)
             assert pong == "pong"
         except (ConnectionClosed, ConnectionClosedError):
             asyncio.get_event_loop().stop()
@@ -53,14 +56,18 @@ def pingpong_server():
     return Thread(target=job)
 
 
-@pytest.fixture
 def queue_server():
     """
     Return a server that will wait for the metadata, send a a ping and wait for a pong
     """
     async def queue(websocket, path):
+        print(path)
+        print(
+            WebsocketConnection.parameters_to_url("/",
+                                                  Context.get().metadata))
         assert path == WebsocketConnection.parameters_to_url(
-            "/", context.metadata)
+            "/",
+            Context.get().metadata)
 
         for message in MESSAGES:
             try:
@@ -81,12 +88,11 @@ def queue_server():
     return Thread(target=job)
 
 
-@pytest.fixture
 def client():
     """
     Return a server that will wait for the metadata, send a a ping and wait for a pong
     """
-    return WebsocketConnection()
+    return Context.get().ws_connection
 
 
 def test_websocket_pingpong(pingpong_server, client):
