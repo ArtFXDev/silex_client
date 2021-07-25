@@ -35,5 +35,11 @@ jobs:
         run: pipenv run lint
 
       - name: Run formatter
-        run: pipenv run format > $null
+        run: pipenv run format 1>/dev/null
+
+      - name: Commit conform
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Apply conform chages
+          branch: ${{ github.head_ref }}
 
