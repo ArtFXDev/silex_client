@@ -14,32 +14,23 @@ from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 from silex_client.utils.context import Context
 from silex_client.network.websocket import WebsocketConnection
 
-MESSAGES = [
-    "message_A", "message_B", "message_C", "message_C", "message_D",
-    "message_E", "message_F", "message_G", "message_H", "message_I"
-]
+MESSAGES = (f"message_{index}" for index in range(100))
 
 
-def pingpong_server():
+@pytest.fixture
+def pingpong_server() -> Thread:
     """
     Return a server that will wait for the metadata, send a a ping and wait for a pong
     """
     async def pingpong(websocket, path):
-        # assert path == WebsocketConnection.parameters_to_url(
-        # "/",
-        # Context.get().metadata)
+        assert path == WebsocketConnection.parameters_to_url(
+            "/",
+            Context.get().metadata)
 
         try:
-            print("CCCCCCCCCCCCCC")
             await websocket.send("ping")
-        except (ConnectionClosed, ConnectionClosedError) as e:
-            asyncio.get_event_loop().stop()
 
-        try:
-            print("DDDDDDDDDDDDDDDD")
-            pong = await websocket.recv()
-            print("EEEEEEEEEEEEEEEE")
-            print(pong)
+            pong = await asyncio.wait_for(websocket.recv(), 0.5)
             assert pong == "pong"
         except (ConnectionClosed, ConnectionClosedError):
             asyncio.get_event_loop().stop()
@@ -56,22 +47,19 @@ def pingpong_server():
     return Thread(target=job)
 
 
-def queue_server():
+@pytest.fixture
+def queue_server() -> Thread:
     """
-    Return a server that will wait for the metadata, send a a ping and wait for a pong
+    Return a server that will test the ability of the client to get and send lots of requests
     """
     async def queue(websocket, path):
-        print(path)
-        print(
-            WebsocketConnection.parameters_to_url("/",
-                                                  Context.get().metadata))
         assert path == WebsocketConnection.parameters_to_url(
             "/",
             Context.get().metadata)
 
         for message in MESSAGES:
             try:
-                answer = await websocket.recv()
+                answer = await asyncio.wait_for(websocket.recv(), 0.5)
                 assert answer == message
             except (ConnectionClosed, ConnectionClosedError):
                 asyncio.get_event_loop().stop()
@@ -88,14 +76,17 @@ def queue_server():
     return Thread(target=job)
 
 
-def client():
+@pytest.fixture
+def client() -> WebsocketConnection:
     """
-    Return a server that will wait for the metadata, send a a ping and wait for a pong
+    Return a client initialised on the current context
     """
     return Context.get().ws_connection
 
 
-def test_websocket_pingpong(pingpong_server, client):
+@pytest.mark.asyncio
+def test_websocket_pingpong(pingpong_server: Thread,
+                            client: WebsocketConnection):
     """
     Test a pingpong exchange between a dummy server and the client
     """
@@ -108,12 +99,16 @@ def test_websocket_pingpong(pingpong_server, client):
     pingpong_server.join()
 
 
-def test_websocket_echo(queue_server, client):
+def test_websocket_queue(queue_server: Thread, client: WebsocketConnection):
     """
     Test the message sending queue
     """
+    return
     queue_server.start()
     client.run_multithreaded()
+    # Send the list of messages
+    for message in MESSAGES:
+        client.send(message)
     # Wait a bit to let the exchange happend
     time.sleep(1)
     # Stop the server and the client

@@ -24,6 +24,12 @@ class WebsocketConnection:
     Websocket client that connect the the given url
     and receive and handle the incomming messages
     """
+
+    # Defines how long each task will wait between every loop
+    EVENT_LOOP_TIMEOUT = 0.5
+    # Defines how long each task will wait between every loop
+    THREAD_TEARDOWN_TIMEOUT = 5
+
     def __init__(self, url: str = None):
         self.is_running = False
         self.thread = None
@@ -51,8 +57,7 @@ class WebsocketConnection:
                 self.loop.create_task(self._listen_outgoing(websocket))
                 # Listen to pending stop or restart
                 while not self.pending_stop and not self.pending_restart:
-                    logger.debug("Websocket event loop running...")
-                    await asyncio.sleep(0.5)
+                    await asyncio.sleep(self.EVENT_LOOP_TIMEOUT)
         except (OSError, ConnectionResetError, InvalidMessage):
             logger.warning("Could not connect to %s retrying...", self.url)
             await asyncio.sleep(1)
@@ -70,10 +75,10 @@ class WebsocketConnection:
             try:
                 # Wait for a response with a timeout
                 with suppress(asyncio.TimeoutError):
-                    logger.debug("Websocket client listening incomming...")
-                    message = await asyncio.wait_for(websocket.recv(), 0.5)
-                    if message:
-                        await self._handle_message(message)
+                    message = await asyncio.wait_for(websocket.recv(),
+                                                     self.EVENT_LOOP_TIMEOUT)
+                    logger.debug("Websocket client received %s" % message)
+                    await self._handle_message(message)
             except (ConnectionClosed, ConnectionClosedError):
                 # If the connection closed was not planned
                 if not self.pending_stop:
@@ -90,7 +95,6 @@ class WebsocketConnection:
             # Send all the pending messges
             for message in self.pending_message:
                 try:
-                    logger.debug("Websocket client sending %s" % message)
                     await websocket.send(message)
                 except (ConnectionClosed, ConnectionClosedError):
                     # If the connection closed was not planned
@@ -99,8 +103,7 @@ class WebsocketConnection:
                                        self.url)
                         self.pending_restart = True
             # Sleep a bit between each iteration
-            logger.debug("Websocket client listening outgoing...")
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(self.EVENT_LOOP_TIMEOUT)
 
     async def _handle_message(self, message: Any) -> None:
         """
@@ -205,9 +208,10 @@ class WebsocketConnection:
             return
         # Request the event loop to stop
         self.pending_stop = True
+
         # If the loop was running in a different thread stop it
         if self.thread is not None:
-            self.thread.join(2)
+            self.thread.join(self.THREAD_TEARDOWN_TIMEOUT)
             if self.thread.is_alive():
                 logger.warning("Could not stop the connection thread for %s",
                                self.url)
@@ -218,9 +222,9 @@ class WebsocketConnection:
         """
         Add the given message to the list of pending message to be sent
         """
-        if message is str:
+        if isinstance(message, str):
             self.pending_message.append(message)
-        elif message is List[str]:
+        elif isinstance(message, list):
             self.pending_message.extend(message)
 
     @staticmethod

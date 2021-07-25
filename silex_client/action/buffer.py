@@ -1,4 +1,5 @@
 import uuid
+import copy
 from collections import OrderedDict
 from collections.abc import Iterator
 
@@ -102,7 +103,7 @@ class ActionBuffer(Iterator):
         if not isinstance(commands, dict):
             logger.error("Invalid commands for action %s", self.name)
 
-        filtered_commands = commands
+        filtered_commands = copy.deepcopy(commands)
 
         # Check if the steps are valid
         for name, step in commands.items():
@@ -121,12 +122,12 @@ class ActionBuffer(Iterator):
             # Check if the commands are valid
             for command in step["commands"]:
                 for key, value in self.COMMAND_TEMPLATE.items():
-                    if not isinstance(step["commands"][command], dict):
-                        del filtered_commands[name]["commands"][command]
+                    if not isinstance(command, dict):
+                        filtered_commands[name]["commands"].remove(command)
                         break
-                    if key not in step["commands"][command] or not isinstance(
-                            step["commands"][command], value):
-                        del filtered_commands[name]["commands"][command]
+                    if key not in command or not isinstance(
+                            command[key], value):
+                        filtered_commands[name]["commands"].remove(command)
                         break
 
         # Override the existing commands with the new ones

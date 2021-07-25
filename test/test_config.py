@@ -5,7 +5,6 @@ Unit testing functions for the module utils.config
 """
 
 import os
-import pprint
 
 import pytest
 
@@ -22,30 +21,19 @@ def dummy_config():
     return ActionConfig(config_root)
 
 
-@pytest.fixture
-def maya_config():
-    """
-    Return a config initialized with the real configuration folder to work with the
-    real dcc configuration files
-    """
-    return ActionConfig()
-
-
 def test_resolve_action(dummy_config: ActionConfig):
     """
     Test the resolving of a configuration for the action 'foo' and the task 'task_a'
     with a dummy config file
     """
     resolved_action = dummy_config.resolve_action("publish")
-    # Pretty print the resolved config
-    pprint.pprint(resolved_action)
 
     # Make sure the inheritance has been resolved corectly
     assert isinstance(resolved_action, dict) == True
     assert "publish" in resolved_action.keys()
     assert set(resolved_action["publish"].keys()) == set(
         ["pre_action", "action", "post_action", "parent", "key"])
-    assert len(resolved_action["publish"]["pre_action"]) == 2
+    assert len(resolved_action["publish"]["pre_action"]) == 3
 
 
 def test_resolve_non_existing_action(dummy_config):
@@ -54,8 +42,6 @@ def test_resolve_non_existing_action(dummy_config):
     a task 'task_a' with a dummy config file
     """
     resolved_action = dummy_config.resolve_action("fix_maya")
-    # Pretty print the resolved config
-    pprint.pprint(resolved_action)
 
     # Make sure the the config is empty
     assert resolved_action == None

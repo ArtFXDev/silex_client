@@ -1,12 +1,24 @@
 publish:
   pre_action:
-    - name: "initalize_action"
-      command: "print"
-      args:
-        - "Starting action session"
+    index: 10
+    label: "Pre action"
+    commands:
+      - name: "initalize_action"
+        label: "Initialize Action"
+        command: "silex_client.commands.log"
+        args:
+          - "Starting action query"
+
+  action:
+    label: "Action"
+    index: 20
 
   post_action:
-    - name: "close_action"
-      command: "print"
-      args:
-        - "Closing session"
+    index: 30
+    label: "Post action"
+    commands:
+      - name: "close_action"
+        label: "Close Action"
+        command: "silex_client.commands.log"
+        args:
+          - "Closing action query"

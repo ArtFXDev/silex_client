@@ -13,12 +13,11 @@ isort = "*"
 yapf = "*"
 pylint = "*"
 pytest = "*"
-pyreadline = "*"
 
 [requires]
 python_version = "3.7"
 
 [scripts]
 lint = "python -m pylint --fail-under=8 ./silex_client"
-unit = "python -m pytest"
+unit = "python -m pytest -s"
 format = "yapf silex_client --recursive --verbose"
