@@ -1,4 +1,4 @@
-name: Unit testing base
+name: Conform
 
 on:
   push:
@@ -9,8 +9,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  ci-windows:
-    runs-on: windows-latest
+  conform:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -31,11 +31,9 @@ jobs:
       - name: Install dependencies
         run: pipenv install --deploy --dev
 
-      - name: Run unit test
-        run: pipenv run unit
-
       - name: Run linter
         run: pipenv run lint
 
       - name: Run formatter
         run: pipenv run format > $null
+

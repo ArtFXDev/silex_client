@@ -4,9 +4,8 @@
 Unit testing functions for the module utils.context
 """
 
-import pytest
 import os
-import pprint
+import pytest
 
 from silex_client.utils.context import Context
 from silex_client.action.loader import Loader

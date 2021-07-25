@@ -30,9 +30,9 @@ def pingpong_server() -> Thread:
         try:
             await websocket.send("ping")
 
-            pong = await asyncio.wait_for(websocket.recv(), 0.5)
+            pong = await asyncio.wait_for(websocket.recv(), 1)
             assert pong == "pong"
-        except (ConnectionClosed, ConnectionClosedError):
+        except (ConnectionClosed, ConnectionClosedError, TimeoutError) as e:
             asyncio.get_event_loop().stop()
 
         asyncio.get_event_loop().stop()
@@ -48,35 +48,6 @@ def pingpong_server() -> Thread:
 
 
 @pytest.fixture
-def queue_server() -> Thread:
-    """
-    Return a server that will test the ability of the client to get and send lots of requests
-    """
-    async def queue(websocket, path):
-        assert path == WebsocketConnection.parameters_to_url(
-            "/",
-            Context.get().metadata)
-
-        for message in MESSAGES:
-            try:
-                answer = await asyncio.wait_for(websocket.recv(), 0.5)
-                assert answer == message
-            except (ConnectionClosed, ConnectionClosedError):
-                asyncio.get_event_loop().stop()
-
-        asyncio.get_event_loop().stop()
-
-    def job():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        start_server = server.serve(queue, "127.0.0.1", 8080)
-        asyncio.get_event_loop().run_until_complete(start_server)
-        asyncio.get_event_loop().run_forever()
-
-    return Thread(target=job)
-
-
-@pytest.fixture
 def client() -> WebsocketConnection:
     """
     Return a client initialised on the current context
@@ -84,7 +55,6 @@ def client() -> WebsocketConnection:
     return Context.get().ws_connection
 
 
-@pytest.mark.asyncio
 def test_websocket_pingpong(pingpong_server: Thread,
                             client: WebsocketConnection):
     """
@@ -93,24 +63,7 @@ def test_websocket_pingpong(pingpong_server: Thread,
     pingpong_server.start()
     client.run_multithreaded()
     # Wait a bit to let the exchange happend
-    time.sleep(1)
+    time.sleep(5)
     # Stop the server and the client
     client.stop()
     pingpong_server.join()
-
-
-def test_websocket_queue(queue_server: Thread, client: WebsocketConnection):
-    """
-    Test the message sending queue
-    """
-    return
-    queue_server.start()
-    client.run_multithreaded()
-    # Send the list of messages
-    for message in MESSAGES:
-        client.send(message)
-    # Wait a bit to let the exchange happend
-    time.sleep(1)
-    # Stop the server and the client
-    client.stop()
-    queue_server.join()
