@@ -5,14 +5,14 @@ publish: !inherit
   pre_action:
     commands:
       - name: "get_publish_files"
-        command: "silex_client.file.prompt_file"
+        path: "silex_client.file.prompt_file"
         tooltip: "Insert the file you want to publish. For a file sequence use # as variable name for frame index"
 
   action:
     commands:
       - name: "save_current"
-        command: "silex_client.action.save"
+        path: "silex_client.action.save"
       - name: "quality_check"
-        command: "silex_client.action.quality_check"
+        path: "silex_client.action.quality_check"
       - name: "publish_file"
-        command: "silex_client.file.publish_file"
+        path: "silex_client.file.publish_file"

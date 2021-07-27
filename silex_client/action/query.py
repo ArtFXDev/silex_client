@@ -1,7 +1,7 @@
 import importlib
 from typing import Union
 
-from silex_client.action.config import ActionConfig
+from silex_client.utils.config import ActionConfig
 from silex_client.action.buffer import ActionBuffer
 from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.log import logger
@@ -25,6 +25,9 @@ class ActionQuery():
         Execute the action's commands in order,
         send and receive the buffer to the UI when nessesary
         """
+        for command in self.buffer:
+            command(**self.buffer.variables)
+
         return self.buffer
 
     def _initialize_buffer(self) -> None:
@@ -32,7 +35,7 @@ class ActionQuery():
         Initialize the buffer from the config
         """
         resolved_action = self.config.resolve_action(self.action_name,
-                                                     **(self.environment))
+                                                     **self.environment)
 
         if self.action_name not in resolved_action:
             logger.error("Invalid resolved action")

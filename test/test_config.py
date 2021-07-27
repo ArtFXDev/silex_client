@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from silex_client.action.config import ActionConfig
+from silex_client.utils.config import ActionConfig
 
 
 @pytest.fixture

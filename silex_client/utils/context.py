@@ -10,7 +10,7 @@ import sys
 from typing import Dict, Any
 
 from silex_client.action.query import ActionQuery
-from silex_client.action.config import ActionConfig
+from silex_client.utils.config import ActionConfig
 from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.log import logger
 

@@ -2,27 +2,36 @@ import uuid
 import copy
 from collections import OrderedDict
 from collections.abc import Iterator
+from dataclasses import dataclass, field
 
 from silex_client.network.websocket import WebsocketConnection
+from silex_client.command.buffer import CommandBuffer
 from silex_client.utils.merge import merge_data
 from silex_client.utils.log import logger
 
 
+@dataclass()
 class ActionBuffer(Iterator):
     """
-    Store the state of an action, it is used as a comunication entry with the UI
+    Store the state of an action, it is used as a comunication payload with the UI
     """
 
     # Define the mandatory keys and types for each attribibutes of a buffer
     STEP_TEMPLATE = {"index": int, "commands": list}
-    COMMAND_TEMPLATE = {"command": str}
+    COMMAND_TEMPLATE = {"path": str}
+
+    name: str = field()
+    uid: uuid.UUID = field()
+    return_code: int = field(default=0)
+    ws_connection: WebsocketConnection = field(repr=False, compare=False)
+    _variables: dict = field(repr=False, compare=False)
+    _commands: OrderedDict = field(repr=False, compare=False)
 
     def __init__(self, name: str, ws_connection: WebsocketConnection):
         self.name = name
-        self.ws_connection = ws_connection
         self.uid = uuid.uuid1()
+        self.ws_connection = ws_connection
 
-        self._parameters = {}
         self._variables = {}
         self._commands = OrderedDict()
 
@@ -133,6 +142,17 @@ class ActionBuffer(Iterator):
         # Override the existing commands with the new ones
         commands = merge_data(filtered_commands, dict(self.commands))
 
+        # Convert the command dicts to CommandBuffers
+        for step_name, step_value in commands.items():
+            for index, command in enumerate(step_value["commands"]):
+                # Create the command buffer and check if it is valid
+                command_buffer = CommandBuffer(**command)
+                if not command_buffer.valid:
+                    del commands[step_name]["commands"][index]
+                    continue
+                # Override the dict to a CommandBuffer object
+                commands[step_name]["commands"][index] = command_buffer
+
         # Sort the steps using the index key
-        sort = sorted(commands.items(), key=lambda item: item[1]["index"])
-        self._commands = OrderedDict(sort)
+        sort_cmds = sorted(commands.items(), key=lambda item: item[1]["index"])
+        self._commands = OrderedDict(sort_cmds)
