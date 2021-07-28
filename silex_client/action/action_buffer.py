@@ -1,11 +1,12 @@
 import uuid
+import importlib
 import copy
 from collections import OrderedDict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 from silex_client.network.websocket import WebsocketConnection
-from silex_client.command.buffer import CommandBuffer
+from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.merge import merge_data
 from silex_client.utils.log import logger
 
@@ -84,15 +85,6 @@ class ActionBuffer(Iterator):
         Wait for the UI to send back a buffer and deserialize it
         """
         pass
-
-    @property
-    def parameters(self) -> dict:
-        return self._parameters
-
-    @parameters.setter
-    def parameters(self, parameters: dict):
-        # TODO: Check if the given parameters are correct
-        self._parameters.update(parameters)
 
     @property
     def variables(self) -> dict:

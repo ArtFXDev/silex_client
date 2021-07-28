@@ -2,7 +2,7 @@ import importlib
 from typing import Union
 
 from silex_client.utils.config import ActionConfig
-from silex_client.action.buffer import ActionBuffer
+from silex_client.action.action_buffer import ActionBuffer
 from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.log import logger
 
@@ -73,10 +73,6 @@ class ActionQuery():
         else:
             logger.error("Invalid arugment for command %s", command)
             return
-
-    @property
-    def parameters(self) -> dict:
-        return self.buffer.parameters
 
     @property
     def variables(self) -> dict:

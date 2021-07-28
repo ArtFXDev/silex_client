@@ -18,6 +18,7 @@ class CommandBuffer():
     valid: bool = field(repr=False, default=True)
     overridable: bool = field(repr=False, default=True)
     extra_attributes: dict = field(repr=False, default_factory=dict)
+    return_code: int = field(default=0)
 
     def __init__(self,
                  path: str,
