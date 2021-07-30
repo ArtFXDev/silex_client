@@ -5,6 +5,7 @@ Context variables that is meant to be shared across all the modules
 Do not instanciate the Context class, use the already instanciated variable context instead
 """
 
+from __future__ import annotations
 import os
 import sys
 from typing import Dict, Any
@@ -32,7 +33,7 @@ class Context:
         self.ws_connection = WebsocketConnection(url)
 
     @staticmethod
-    def get() -> "Context":
+    def get() -> Context:
         """
         Return a globaly instanciated context. This static method is just for conveniance
         """

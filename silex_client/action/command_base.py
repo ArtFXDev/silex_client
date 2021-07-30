@@ -1,9 +1,14 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Union, Callable
 import functools
+import typing
 
-from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.log import logger
+
+# Forward references
+if typing.TYPE_CHECKING:
+    from silex_client.action.command_buffer import CommandBuffer
 
 
 class CommandBase(ABC):

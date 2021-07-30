@@ -1,14 +1,18 @@
+from __future__ import annotations
 import uuid
-import importlib
 import copy
+import typing
 from collections import OrderedDict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-from silex_client.network.websocket import WebsocketConnection
 from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.merge import merge_data
 from silex_client.utils.log import logger
+
+# Forward references
+if typing.TYPE_CHECKING:
+    from silex_client.network.websocket import WebsocketConnection
 
 
 @dataclass()
@@ -22,18 +26,12 @@ class ActionBuffer(Iterator):
     COMMAND_TEMPLATE = {"path": str}
 
     name: str = field()
-    uid: uuid.UUID = field()
     return_code: int = field(default=0)
-    ws_connection: WebsocketConnection = field(repr=False, compare=False)
-    _variables: dict = field(repr=False, compare=False)
-    _commands: OrderedDict = field(repr=False, compare=False)
+    uid: uuid.UUID = field(default=uuid.uuid1())
 
     def __init__(self, name: str, ws_connection: WebsocketConnection):
         self.name = name
-        self.uid = uuid.uuid1()
         self.ws_connection = ws_connection
-
-        self._variables = {}
         self._commands = OrderedDict()
 
     def __iter__(self):
@@ -88,12 +86,11 @@ class ActionBuffer(Iterator):
 
     @property
     def variables(self) -> dict:
-        return self._variables
-
-    @variables.setter
-    def variables(self, variables: dict):
-        # TODO: Check if the given variables are correct
-        self._variables.update(variables)
+        variables = {}
+        # Each command save its variable and they override the variables of the previous ones
+        for command in self:
+            variables.update(command.variables)
+        return variables
 
     @property
     def commands(self) -> dict:

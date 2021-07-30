@@ -1,10 +1,15 @@
+from __future__ import annotations
 import importlib
+import typing
 from typing import Union
 
-from silex_client.utils.config import ActionConfig
 from silex_client.action.action_buffer import ActionBuffer
-from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.log import logger
+
+# Forward references
+if typing.TYPE_CHECKING:
+    from silex_client.network.websocket import WebsocketConnection
+    from silex_client.utils.config import ActionConfig
 
 
 class ActionQuery():
