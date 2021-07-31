@@ -1,12 +1,8 @@
 name: Conform
 
 on:
-  push:
-    branches: [ dev, beta, prod ]
   pull_request:
     branches: [ dev, beta, prod ]
-
-  workflow_dispatch:
 
 jobs:
   conform:
@@ -37,9 +33,14 @@ jobs:
       - name: Run formatter
         run: pipenv run format 1>/dev/null
 
-      - name: Commit conform
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: Apply conform chages
-          branch: ${{ github.head_ref }}
+      - name: Commit files
+        run: |
+          git config --local user.email "silex@noreply.com"
+          git config --local user.name "silex"
+          git commit -m "[Github Action] Apply auto conform" -a
 
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}

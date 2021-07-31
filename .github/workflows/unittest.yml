@@ -6,8 +6,6 @@ on:
   pull_request:
     branches: [ dev, beta, prod ]
 
-  workflow_dispatch:
-
 jobs:
   unittest-windows:
     runs-on: windows-latest
