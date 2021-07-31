@@ -1,6 +1,5 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from typing import Union, Callable
+from typing import Callable
 import functools
 import typing
 
@@ -11,19 +10,18 @@ if typing.TYPE_CHECKING:
     from silex_client.action.command_buffer import CommandBuffer
 
 
-class CommandBase(ABC):
+class CommandBase():
     """
     Base class that every command should inherit from
     """
 
-    # List if dictionaries that represent the command's parameters
-    parameters = []
+    # Dictionary that represent the command's parameters
+    parameters = {}
 
     def __init__(self, command_buffer: CommandBuffer):
         self.command_buffer = command_buffer
 
-    @abstractmethod
-    def __call__(self, **kwargs):
+    def __call__(self, parameters: dict, variables: dict):
         pass
 
     @property
@@ -31,27 +29,17 @@ class CommandBase(ABC):
         # Shortcut to get the type name of the command
         return self.__class__.__name__
 
-    def check_kwargs(self, kwargs: dict) -> Union[dict, None]:
+    def check_parameters(self, parameters: dict) -> bool:
         """
         Check the if the input kwargs are valid accoring to the parameters list
         and conform it if nessesary
         """
-        for parameter in self.parameters:
-            if parameter["name"] not in kwargs.keys():
-                # Find default value or return error
-                if "default" in parameter and parameter["default"] is not None:
-                    kwargs[parameter["name"]] = parameter["default"]
-                else:
-                    logger.error("Missing parameter for command %s" %
-                                 type(self))
-                    return None
-
-        # Return the conformised kwargs
-        return kwargs
-
-    def update_buffer(self, return_code: int = 0):
-        self.command_buffer.return_code = return_code
-        # TODO: Send feedback to the UI
+        for parameter_name, parameter_value in parameters.items():
+            if parameter_value is None:
+                logger.error("Missing parameter %s for command %s",
+                             parameter_name, self.command_buffer.name)
+                return False
+        return True
 
     @staticmethod
     def conform_command(func: Callable) -> Callable:
@@ -59,14 +47,11 @@ class CommandBase(ABC):
         Helper decorator that conform the input and the output
         """
         @functools.wraps(func)
-        def wrapper_conform_command(*args, **kwargs) -> None:
-            # Make sure the given arguments are valid parameters
-            kwargs = args[0].check_kwargs(kwargs)
-            if kwargs is None:
+        def wrapper_conform_command(command, *args, **kwargs) -> None:
+            # Make sure the given parameters are valid
+            if not command.check_parameters(kwargs.get("parameters", args[0])):
                 return
             # Call the initial function
-            func(*args, **kwargs)
-            # Update buffer for feedback
-            args[0].update_buffer()
+            func(command, *args, **kwargs)
 
         return wrapper_conform_command

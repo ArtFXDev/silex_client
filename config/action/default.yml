@@ -5,9 +5,10 @@ publish:
     commands:
       - name: "initalize_action"
         label: "Initialize Action"
-        path: "silex_client.commands.log"
-        args:
-          - "Starting action query"
+        path: "silex_client.commands.utils.Log"
+        parameters:
+          message: "Starting action query"
+        hide: true
 
   action:
     label: "Action"
@@ -19,6 +20,7 @@ publish:
     commands:
       - name: "close_action"
         label: "Close Action"
-        path: "silex_client.commands.log"
-        args:
-          - "Closing action query"
+        path: "silex_client.commands.utils.Log"
+        parameters:
+          message: "Closing action query"
+        hide: true

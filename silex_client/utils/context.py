@@ -10,7 +10,7 @@ import os
 import sys
 from typing import Dict, Any
 
-from silex_client.action.query import ActionQuery
+from silex_client.action.action_query import ActionQuery
 from silex_client.utils.config import ActionConfig
 from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.log import logger
@@ -135,7 +135,7 @@ class Context:
         """
 
         return ActionQuery(action_name, self.ws_connection, self.config,
-                           **self.metadata)
+                           self.metadata)
 
 
 context = Context()

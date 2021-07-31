@@ -9,10 +9,7 @@ from dataclasses import dataclass, field
 from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.merge import merge_data
 from silex_client.utils.log import logger
-
-# Forward references
-if typing.TYPE_CHECKING:
-    from silex_client.network.websocket import WebsocketConnection
+from silex_client.network.websocket import WebsocketConnection
 
 
 @dataclass()
@@ -26,16 +23,14 @@ class ActionBuffer(Iterator):
     COMMAND_TEMPLATE = {"path": str}
 
     name: str = field()
-    return_code: int = field(default=0)
-    uid: uuid.UUID = field(default=uuid.uuid1())
-
-    def __init__(self, name: str, ws_connection: WebsocketConnection):
-        self.name = name
-        self.ws_connection = ws_connection
-        self._commands = OrderedDict()
+    ws_connection: WebsocketConnection = field(compare=False, repr=False)
+    uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
+    commands: dict = field(default_factory=OrderedDict, init=False)
+    variables: dict = field(compare=False, default_factory=dict, init=False)
+    status: int = field(default=0, compare=False, init=False)
 
     def __iter__(self):
-        if not self._commands:
+        if not self.commands:
             return iter([])
 
         # Initialize the step iterator
@@ -57,7 +52,6 @@ class ActionBuffer(Iterator):
             # Since it will just end the loop has we would want
             self._current_step = next(self._step_iter)
             self._command_iter = iter(self._current_step[1]["commands"])
-            # TODO: Return a silex_client.commands.iter_step command instead
             return self.__next__()
 
     def _serialize(self):
@@ -84,20 +78,7 @@ class ActionBuffer(Iterator):
         """
         pass
 
-    @property
-    def variables(self) -> dict:
-        variables = {}
-        # Each command save its variable and they override the variables of the previous ones
-        for command in self:
-            variables.update(command.variables)
-        return variables
-
-    @property
-    def commands(self) -> dict:
-        return self._commands
-
-    @commands.setter
-    def commands(self, commands: dict):
+    def update_commands(self, commands: dict):
         if not isinstance(commands, dict):
             logger.error("Invalid commands for action %s", self.name)
 
@@ -144,4 +125,4 @@ class ActionBuffer(Iterator):
 
         # Sort the steps using the index key
         sort_cmds = sorted(commands.items(), key=lambda item: item[1]["index"])
-        self._commands = OrderedDict(sort_cmds)
+        self.commands = OrderedDict(sort_cmds)

@@ -29,10 +29,11 @@ def test_get_action(dummy_context: Context):
     given by the dummy_context
     """
     resolved_action = dummy_context.get_action("publish")
-    config_root = os.path.join(os.path.dirname(__file__), "config", "action")
-    action_file = os.path.join(config_root, "publish.yml")
 
     # Load the file manualy and check if it correspond to the resolved file
+    config_root = os.path.join(os.path.dirname(__file__), "config", "action")
+    action_file = os.path.join(config_root, "publish.yml")
+    # Compare the two config
     with open(action_file, "r") as config_data:
         loader = Loader(config_data, tuple(config_root))
         data = loader.get_single_data()["publish"]

@@ -2,6 +2,7 @@ from __future__ import annotations
 import importlib
 import typing
 from typing import Union
+from dataclasses import dataclass, field
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.utils.log import logger
@@ -12,28 +13,28 @@ if typing.TYPE_CHECKING:
     from silex_client.utils.config import ActionConfig
 
 
+@dataclass
 class ActionQuery():
     """
     Initialize and execute a given action
     """
-    def __init__(self, name: str, ws_connection: WebsocketConnection,
-                 config: ActionConfig, **kwargs: dict):
-        self.action_name = name
-        self.config = config
-        self.buffer = ActionBuffer(name, ws_connection)
-        self.environment = kwargs
 
+    action_name: str = field()
+    ws_connection: WebsocketConnection = field(compare=False, repr=False)
+    config: ActionConfig = field(compare=False, repr=False)
+    environment: dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        self.buffer = ActionBuffer(self.action_name, self.ws_connection)
         self._initialize_buffer()
 
-    def execute(self) -> ActionBuffer:
+    def execute(self):
         """
         Execute the action's commands in order,
         send and receive the buffer to the UI when nessesary
         """
         for command in self.buffer:
-            command(**self.buffer.variables)
-
-        return self.buffer
+            command(self.buffer.variables)
 
     def _initialize_buffer(self) -> None:
         """
@@ -47,7 +48,7 @@ class ActionQuery():
             return
 
         action_commands = resolved_action[self.action_name]
-        self.buffer.commands = action_commands
+        self.buffer.update_commands(action_commands)
 
     def _run_command(self, command: str, args: Union[list, dict,
                                                      tuple]) -> None:

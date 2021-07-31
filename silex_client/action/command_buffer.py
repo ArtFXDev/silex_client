@@ -1,15 +1,13 @@
 from __future__ import annotations
+import copy
 import importlib
 import re
 import uuid
-import typing
+from typing import Union
 from dataclasses import dataclass, field
 
 from silex_client.utils.log import logger
-
-# Forward references
-if typing.TYPE_CHECKING:
-    from silex_client.action.command_base import CommandBase
+from silex_client.action.command_base import CommandBase
 
 
 @dataclass()
@@ -17,46 +15,68 @@ class CommandBuffer():
     """
     Store the data of a command
     """
-    uid: uuid.UUID = field(default_factory=uuid.uuid1)
-    name: str = field(default="untitled")
-    label: str = field(compare=False, repr=False, default="Untitled")
-    executor: CommandBase = field(compare=False, init=False, repr=False)
-    parameters: list = field(compare=False, repr=False, default_factory=list)
-    variables: dict = field(repr=False, compare=False, default_factory=dict)
-    valid: bool = field(repr=False, default=True)
-    return_code: int = field(default=0)
+    path: str = field()
+    name: Union[str, None] = field(default=None)
+    label: Union[str, None] = field(compare=False, repr=False, default=None)
+    hide: bool = field(compare=False, repr=False, default=False)
+    tooltip: str = field(compare=False, repr=False, default="")
+    parameters: dict = field(compare=False, repr=False, default_factory=dict)
 
-    def __init__(self,
-                 path: str,
-                 name: str = None,
-                 label: str = None,
-                 **kwargs):
-        # Get the command object
+    uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
+    valid: bool = field(repr=False, default=True, init=False)
+    status: int = field(compare=False, default=0, init=False)
+
+    def __post_init__(self):
+        slugify_pattern = re.compile("[^A-Za-z0-9]")
+        # Set the command name
+        if self.name is None:
+            self.name = slugify_pattern.sub("_", self.path)
+        # Set the command label
+        if self.label is None:
+            self.label = slugify_pattern.sub(" ", self.name)
+            self.label = self.label.title()
+
+        # Get the executor
+        self.executor = self._get_executor(self.path)
+
+        # Get the executor's parameter attributes and override them with the given ones
+        command_parameters = copy.deepcopy(self.executor.parameters)
+        for name, value in command_parameters.items():
+            if name in self.parameters:
+                value["value"] = self.parameters[name]
+            # If the value is a callable, call it (for mutable default values)
+            if callable(value["value"]):
+                value["value"] = value["value"]()
+        self.parameters = command_parameters
+
+    def __call__(self, variables):
+        # Only run the command if it is valid
+        if not self.valid:
+            logger.error("Skipping command %s because the buffer is invalid",
+                         self.name)
+            return
+        # Create a shortened version of the parameters and pass them to the executor
+        parameters = {
+            key: value.get("value", None)
+            for key, value in self.parameters.items()
+        }
+        # Run the executor
+        self.executor(parameters, variables)
+
+    def _get_executor(self, path: str) -> CommandBase:
+        """
+        Try to import the module and get the Command object
+        """
         try:
             split_path = path.split(".")
             module = importlib.import_module(".".join(split_path[:-1]))
             executor = getattr(module, split_path[-1])
-            if module is CommandBase:
-                self.executor = executor
+            if issubclass(executor, CommandBase):
+                return executor(self)
             else:
                 raise ImportError
         except (ImportError, AttributeError):
             logger.error("Invalid command path, skipping %s", path)
             self.valid = False
 
-        slugify_pattern = re.compile("[^A-Za-z0-9]")
-        # Set the command name
-        if name is None:
-            name = slugify_pattern.sub("_", path)
-        self.name = name
-        # Set the command label
-        if label is None:
-            label = slugify_pattern.sub(" ", name)
-            label = label.title()
-        self.label = label
-        # Set the extra attributes
-        self.extra_attributes = kwargs
-
-    def __call__(self, **extra_variables):
-        executor = self.executor(self)
-        executor(**extra_variables)
+        return CommandBase(self)

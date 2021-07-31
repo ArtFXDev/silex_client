@@ -1,21 +1,5 @@
 from silex_client.action.command_base import CommandBase
-
-
-class PromptFile(CommandBase):
-    """
-    Ask for a file to the user and store it in the action buffer
-    """
-
-    parameters = [{
-        "name": "file_path",
-        "label": "File path",
-        "type": str,
-        "default": None
-    }]
-
-    @CommandBase.conform_command
-    def __call__(self, **kwargs):
-        pass
+from silex_client.utils.log import logger
 
 
 class PublishFile(CommandBase):
@@ -23,28 +7,33 @@ class PublishFile(CommandBase):
     Put the given file on database and to locked file system
     """
 
-    parameters = [{
-        "name": "file_path",
-        "label": "File path",
-        "type": str,
-        "default": None
-    }, {
-        "name": "description",
-        "label": "Description",
-        "type": str,
-        "default": "No description"
-    }, {
-        "name": "name",
-        "label": "Name",
-        "type": str,
-        "default": "untitled"
-    }, {
-        "name": "task",
-        "label": "Task",
-        "type": int,
-        "default": None
-    }]
+    parameters = {
+        "file_path": {
+            "name": "file_path",
+            "label": "File path",
+            "type": str,
+            "value": None
+        },
+        "description": {
+            "name": "description",
+            "label": "Description",
+            "type": str,
+            "value": "No description"
+        },
+        "name": {
+            "name": "name",
+            "label": "Name",
+            "type": str,
+            "value": "untitled"
+        },
+        "task": {
+            "name": "task",
+            "label": "Task",
+            "type": int,
+            "value": None
+        }
+    }
 
     @CommandBase.conform_command
-    def __call__(self, **kwargs):
-        pass
+    def __call__(self, parameters: dict, variables: dict):
+        logger.info("Publishing file(s) %s", parameters["file_path"])
