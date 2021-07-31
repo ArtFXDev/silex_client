@@ -28,13 +28,15 @@ class ActionQuery():
         self.buffer = ActionBuffer(self.action_name, self.ws_connection)
         self._initialize_buffer()
 
-    def execute(self):
+    def execute(self) -> ActionBuffer:
         """
         Execute the action's commands in order,
         send and receive the buffer to the UI when nessesary
         """
         for command in self.buffer:
             command(self.buffer.variables)
+
+        return self.buffer
 
     def _initialize_buffer(self) -> None:
         """

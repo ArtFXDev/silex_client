@@ -7,6 +7,7 @@ from typing import Union
 from dataclasses import dataclass, field
 
 from silex_client.utils.log import logger
+from silex_client.utils.enums import Status
 from silex_client.action.command_base import CommandBase
 
 
@@ -23,8 +24,7 @@ class CommandBuffer():
     parameters: dict = field(compare=False, repr=False, default_factory=dict)
 
     uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
-    valid: bool = field(repr=False, default=True, init=False)
-    status: int = field(compare=False, default=0, init=False)
+    status: Status = field(default=Status.INITIALIZED, init=False)
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")
@@ -51,7 +51,7 @@ class CommandBuffer():
 
     def __call__(self, variables):
         # Only run the command if it is valid
-        if not self.valid:
+        if self.status is Status.INVALID:
             logger.error("Skipping command %s because the buffer is invalid",
                          self.name)
             return
@@ -77,6 +77,6 @@ class CommandBuffer():
                 raise ImportError
         except (ImportError, AttributeError):
             logger.error("Invalid command path, skipping %s", path)
-            self.valid = False
+            self.status = Status.INVALID
 
         return CommandBase(self)

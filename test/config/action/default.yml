@@ -6,7 +6,7 @@ publish:
       - name: "initalize_action"
         label: "Initialize Action"
         path: "silex_client.commands.utils.Log"
-        args:
+        parameters:
           message: "Starting action query"
         hide: true
 
@@ -21,6 +21,6 @@ publish:
       - name: "close_action"
         label: "Close Action"
         path: "silex_client.commands.utils.Log"
-        args:
+        parameters:
           message: "Closing action query"
         hide: true

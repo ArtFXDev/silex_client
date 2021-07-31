@@ -4,6 +4,7 @@ import functools
 import typing
 
 from silex_client.utils.log import logger
+from silex_client.utils.enums import Status
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -50,8 +51,16 @@ class CommandBase():
         def wrapper_conform_command(command, *args, **kwargs) -> None:
             # Make sure the given parameters are valid
             if not command.check_parameters(kwargs.get("parameters", args[0])):
+                command.command_buffer.status = Status.ERROR
                 return
-            # Call the initial function
-            func(command, *args, **kwargs)
+            # Call the initial function while catching all the errors because we want to update the status
+            try:
+                command.command_buffer.status = Status.PROCESSING
+                func(command, *args, **kwargs)
+                command.command_buffer.status = Status.COMPLETED
+            except Exception as exception:
+                command.command_buffer.status = Status.ERROR
+                # TODO: Set the exception message in the buffer too
+                raise exception
 
         return wrapper_conform_command

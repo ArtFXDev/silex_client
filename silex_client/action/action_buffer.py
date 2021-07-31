@@ -1,7 +1,7 @@
 from __future__ import annotations
 import uuid
 import copy
-import typing
+from typing import Any
 from collections import OrderedDict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.merge import merge_data
 from silex_client.utils.log import logger
+from silex_client.utils.enums import Status
+from silex_client.utils.enums import Status
 from silex_client.network.websocket import WebsocketConnection
 
 
@@ -27,7 +29,6 @@ class ActionBuffer(Iterator):
     uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
     commands: dict = field(default_factory=OrderedDict, init=False)
     variables: dict = field(compare=False, default_factory=dict, init=False)
-    status: int = field(default=0, compare=False, init=False)
 
     def __iter__(self):
         if not self.commands:
@@ -78,6 +79,14 @@ class ActionBuffer(Iterator):
         """
         pass
 
+    @property
+    def status(self):
+        status = Status.COMPLETED
+        for command in self:
+            status = command.status if command.status > status else status
+
+        return status
+
     def update_commands(self, commands: dict):
         if not isinstance(commands, dict):
             logger.error("Invalid commands for action %s", self.name)
@@ -117,7 +126,7 @@ class ActionBuffer(Iterator):
             for index, command in enumerate(step_value["commands"]):
                 # Create the command buffer and check if it is valid
                 command_buffer = CommandBuffer(**command)
-                if not command_buffer.valid:
+                if command_buffer.status is Status.INVALID:
                     del commands[step_name]["commands"][index]
                     continue
                 # Override the dict to a CommandBuffer object
@@ -126,3 +135,37 @@ class ActionBuffer(Iterator):
         # Sort the steps using the index key
         sort_cmds = sorted(commands.items(), key=lambda item: item[1]["index"])
         self.commands = OrderedDict(sort_cmds)
+
+    def get_commands(self, step: str = None):
+        """
+        Helper to get a command that belong to this action
+        The data is quite nested, this is just for conveniance
+        """
+        # Return the commands of the queried step
+        if step is not None and step in self.commands:
+            return self.commands[step]["commands"]
+
+        # If no steps given return all the commands flattened
+        return [
+            command for step in self.commands.values()
+            for command in step["commands"]
+        ]
+
+    def get_parameter(self, step: str, index: int, name: str):
+        """
+        Helper to get a parameter of a command that belong to this action
+        The data is quite nested, this is just for conveniance
+        """
+        command = self.get_commands(step)[index]
+        return command.parameters.get(name, None)
+
+    def set_parameter(self, step: str, index: int, name: str, value: Any):
+        """
+        Helper to set a parameter of a command that belong to this action
+        The data is quite nested, this is just for conveniance
+        """
+        parameter = self.get_parameter(step, index, name)
+        # Check if the given value is the right type
+        if parameter is not None and isinstance(value,
+                                                parameter.get("type", object)):
+            parameter["value"] = value
