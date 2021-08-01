@@ -79,7 +79,7 @@ class WebsocketConnection:
                 with suppress(asyncio.TimeoutError):
                     message = await asyncio.wait_for(websocket.recv(),
                                                      self.EVENT_LOOP_TIMEOUT)
-                    logger.debug("Websocket client received %s" % message)
+                    logger.debug("Websocket client received %s", message)
                     await self._handle_message(message)
             except (ConnectionClosed, ConnectionClosedError):
                 # If the connection closed was not planned
@@ -97,7 +97,7 @@ class WebsocketConnection:
             # Send all the pending messges
             for message in self.pending_message:
                 try:
-                    logger.debug("Websocket client sending %s" % message)
+                    logger.debug("Websocket client sending %s", message)
                     await asyncio.wait_for(websocket.send(message),
                                            self.EVENT_LOOP_TIMEOUT)
                 except (ConnectionClosed, ConnectionClosedError):

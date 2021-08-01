@@ -40,7 +40,8 @@ jobs:
         run: |
           git config --local user.email "silex@noreply.com"
           git config --local user.name "silex"
-          git commit -m "[Github Action] Apply auto conform" -a
+          git add --all
+          git commit -m "[Github Action] Apply auto conform"
 
       - name: Push changes
         uses: ad-m/github-push-action@master

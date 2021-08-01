@@ -10,7 +10,6 @@ from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.merge import merge_data
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
-from silex_client.utils.enums import Status
 from silex_client.network.websocket import WebsocketConnection
 
 
@@ -62,25 +61,25 @@ class ActionBuffer(Iterator):
         """
         Convert the action's data into json so it can be sent to the UI
         """
-        pass
+        raise NotImplementedError("This feature is WIP")
 
     def _deserialize(self, serealised_data):
         """
         Convert back the action's data from json into this object
         """
-        pass
+        raise NotImplementedError("This feature is WIP")
 
     def send(self):
         """
         Serialize and send this buffer to the UI though websockets
         """
-        pass
+        raise NotImplementedError("This feature is WIP")
 
     def receive(self, timeout: int):
         """
         Wait for the UI to send back a buffer and deserialize it
         """
-        pass
+        raise NotImplementedError("This feature is WIP")
 
     @property
     def status(self):
@@ -96,7 +95,7 @@ class ActionBuffer(Iterator):
     def update_commands(self, commands: dict):
         """
         Check and conform a dict that represent the commands, generally comming
-        from a config file. Filters out all the invalid data by checkinh if it matches the 
+        from a config file. Filters out all the invalid data by checkinh if it matches the
         templates arguments
         """
         if not isinstance(commands, dict):
@@ -131,21 +130,30 @@ class ActionBuffer(Iterator):
 
         # Override the existing commands with the new ones
         commands = merge_data(filtered_commands, dict(self.commands))
-
-        # Convert the command dicts to CommandBuffers
-        for step_name, step_value in commands.items():
-            for index, command in enumerate(step_value["commands"]):
-                # Create the command buffer and check if it is valid
-                command_buffer = CommandBuffer(**command)
-                if command_buffer.status is Status.INVALID:
-                    del commands[step_name]["commands"][index]
-                    continue
-                # Override the dict to a CommandBuffer object
-                commands[step_name]["commands"][index] = command_buffer
+        # Convert the dict
+        commands = self._dict_to_command_buffer(commands)
 
         # Sort the steps using the index key
         sort_cmds = sorted(commands.items(), key=lambda item: item[1]["index"])
         self.commands = OrderedDict(sort_cmds)
+
+    @staticmethod
+    def _dict_to_command_buffer(command_dict: dict) -> dict:
+        """
+        Convert a dict of command to a dict of CommandBuffer object
+        Filters out all the invalid commands
+        """
+        for step_name, step_value in command_dict.items():
+            for index, command in enumerate(step_value["commands"]):
+                # Create the command buffer and check if it is valid
+                command_buffer = CommandBuffer(**command)
+                if command_buffer.status is Status.INVALID:
+                    del command_dict[step_name]["commands"][index]
+                    continue
+                # Override the dict to a CommandBuffer object
+                command_dict[step_name]["commands"][index] = command_buffer
+
+        return command_dict
 
     def get_commands(self, step: str = None):
         """

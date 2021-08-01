@@ -108,8 +108,8 @@ class Loader(yaml.SafeLoader):
                 return yaml.load(import_data, Loader)
             elif extension == 'json':
                 return json.load(import_data)
-            else:
-                return ''.join(import_data.readlines())
+
+            return ''.join(import_data.readlines())
 
     def include(self, node: yaml.Node) -> Any:
         """

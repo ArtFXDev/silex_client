@@ -80,8 +80,8 @@ class CommandBuffer():
             executor = getattr(module, split_path[-1])
             if issubclass(executor, CommandBase):
                 return executor(self)
-            else:
-                raise ImportError
+
+            raise ImportError
         except (ImportError, AttributeError):
             logger.error("Invalid command path, skipping %s", path)
             self.status = Status.INVALID
