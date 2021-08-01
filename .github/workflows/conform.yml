@@ -37,9 +37,13 @@ jobs:
       - name: Rebuild documentation
         run: pipenv run make -C ./docs html
 
+      - name: Debug
+        run: ls ./docs
+
       - name: Commit changes
         run: |
           git config --local user.email "silex@noreply.com"
           git config --local user.name "silex"
           git commit -a -m "[Github Action] Apply auto conform" --allow-empty
+          git status
           git push
