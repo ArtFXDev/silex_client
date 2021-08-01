@@ -33,8 +33,11 @@ jobs:
       - name: Run formatter
         run: pipenv run format 1>/dev/null
 
-      - name: Regenerate documentation
-        run: sphinx-apidoc --separate --force -o ./docs/source/pages ./silex_client && cd ./docs && make html
+      - name: Regenerate documentation source
+        run: pipenv run sphinx-apidoc --separate --force -o ./docs/source/pages ./silex_client
+
+      - name: Rebuild documentation
+        run: cd ./docs && make html
 
       - name: Commit files
         run: |
