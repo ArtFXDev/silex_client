@@ -1,9 +1,6 @@
 # Virtual environment
 .venv/
 
-#Build
-build/
-
 # Vim
 .vim/
 
