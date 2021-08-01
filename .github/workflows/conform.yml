@@ -45,3 +45,4 @@ jobs:
           git commit -a -m "[Github Action] Apply auto conform" --allow-empty
           git status
           git push
+          git subtree push --prefix docs/build/html origin gh-pages
