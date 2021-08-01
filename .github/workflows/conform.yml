@@ -37,7 +37,7 @@ jobs:
         run: pipenv run sphinx-apidoc --separate --force -o ./docs/source/pages ./silex_client
 
       - name: Rebuild documentation
-        run: cd ./docs && make html
+        run: pipenv run make -C ./docs html
 
       - name: Commit files
         run: |
