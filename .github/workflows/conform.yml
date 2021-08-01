@@ -1,9 +1,6 @@
 name: Conform
 
 on:
-  pull_request:
-    branches: [ dev, beta, prod ]
-
   workflow_dispatch:
 
 jobs:
