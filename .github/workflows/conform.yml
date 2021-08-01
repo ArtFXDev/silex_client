@@ -34,14 +34,13 @@ jobs:
         run: pipenv run format 1>/dev/null
 
       - name: Regenerate documentation
-        run: pipenv run doc_unix
+        run: sphinx-apidoc --separate --force -o ./docs/source/pages ./silex_client && cd ./docs && make html
 
       - name: Commit files
         run: |
           git config --local user.email "silex@noreply.com"
           git config --local user.name "silex"
-          git add --all
-          git commit -m "[Github Action] Apply auto conform"
+          git commit -a -m "[Github Action] Apply auto conform" --allow-empty
 
       - name: Push changes
         uses: ad-m/github-push-action@master
