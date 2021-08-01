@@ -14,17 +14,15 @@ if typing.TYPE_CHECKING:
 class CommandBase():
     """
     Base class that every command should inherit from
-
-    :ivar parameter: Template of all the parameters needed for this command
     """
 
-    # Dictionary that represent the command's parameters
-    parameters = {}
+    #: Dictionary that represent the command's parameters
+    parameters: dict = {}
 
     def __init__(self, command_buffer: CommandBuffer):
         self.command_buffer = command_buffer
 
-    def __call__(self, parameters: dict, variables: dict):
+    def __call__(self, parameters: dict, variables: dict, environment: dict):
         pass
 
     @property

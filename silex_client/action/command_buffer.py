@@ -56,7 +56,7 @@ class CommandBuffer():
                 value["value"] = value["value"]()
         self.parameters = command_parameters
 
-    def __call__(self, variables):
+    def __call__(self, variables, environment):
         # Only run the command if it is valid
         if self.status is Status.INVALID:
             logger.error("Skipping command %s because the buffer is invalid",
@@ -68,7 +68,7 @@ class CommandBuffer():
             for key, value in self.parameters.items()
         }
         # Run the executor
-        self.executor(parameters, variables)
+        self.executor(parameters, variables, environment)
 
     def _get_executor(self, path: str) -> CommandBase:
         """

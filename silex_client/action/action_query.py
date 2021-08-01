@@ -5,8 +5,9 @@ from dataclasses import dataclass, field
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.utils.log import logger
-from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.config import Config
+from silex_client.utils.datatypes import ReadOnlyDict
+from silex_client.network.websocket import WebsocketConnection
 
 
 @dataclass
@@ -33,7 +34,7 @@ class ActionQuery():
         send and receive the buffer to the UI when nessesary
         """
         for command in self.buffer:
-            command(self.buffer.variables)
+            command(self.buffer.variables, ReadOnlyDict(self.environment))
 
         return self.buffer
 
