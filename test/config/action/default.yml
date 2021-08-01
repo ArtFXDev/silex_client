@@ -1,0 +1,26 @@
+publish:
+  pre_action:
+    index: 10
+    label: "Pre action"
+    commands:
+      - name: "initalize_action"
+        label: "Initialize Action"
+        path: "silex_client.commands.utils.Log"
+        parameters:
+          message: "Starting action query"
+        hide: true
+
+  action:
+    label: "Action"
+    index: 20
+
+  post_action:
+    index: 30
+    label: "Post action"
+    commands:
+      - name: "close_action"
+        label: "Close Action"
+        path: "silex_client.commands.utils.Log"
+        parameters:
+          message: "Closing action query"
+        hide: true

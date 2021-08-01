@@ -1,0 +1,45 @@
+name: Conform
+
+on:
+  workflow_dispatch:
+
+jobs:
+  conform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v2.2.2
+        with:
+          python-version: 3.7
+          architecture: x64
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install pipenv
+        run: python -m pip install --upgrade pipenv wheel
+
+      - name: Install dependencies
+        run: pipenv install --deploy --dev
+
+      - name: Run formatter
+        run: pipenv run format 1>/dev/null
+
+      - name: Regenerate documentation source
+        run: pipenv run sphinx-apidoc --separate --force -o ./docs/source/pages ./silex_client
+
+      - name: Rebuild documentation
+        run: pipenv run make -C ./docs html
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "silex@noreply.com"
+          git config --local user.name "silex"
+          git commit -a -m "[Github Action] Apply auto conform" --allow-empty
+          git push

@@ -13,11 +13,13 @@ isort = "*"
 yapf = "*"
 pylint = "*"
 pytest = "*"
-pyreadline = "*"
+sphinx-rtd-theme = "*"
+sphinx = "*"
 
 [requires]
 python_version = "3.7"
 
 [scripts]
 lint = "python -m pylint --fail-under=8 ./silex_client"
-unit = "python -m pytest silex_client"
+unit = "python -m pytest"
+format = "yapf silex_client --recursive --verbose"

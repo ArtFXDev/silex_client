@@ -17,7 +17,7 @@ vcs = "git"
 
 tests = {
     "unit": {
-        "command": "python -m pytest {root}/silex_client",
+        "command": "python -m pytest {root}/test",
         "requires": ["pytest"],
         "run_on": ["default", "pre_release"]
     },
@@ -31,6 +31,7 @@ tests = {
 
 build_command = "python {root}/script/build.py {install}"
 tools = ["run_test.sh"]
+
 
 def commands():
     """

@@ -1,102 +1,71 @@
-"""
-@author: TD gang
-
-Utility class that lazy load and resolve the configurations on demand
-"""
-
 import os
-
-import yaml
+import copy
+import importlib
+from typing import Union, Any
 
 from silex_client.utils.log import logger
+from silex_client.action.loader import Loader
+
 
 class Config():
     """
     Utility class that lazy load and resolve the configurations on demand
+
+    :ivar config_search_path: List of path to look for config files. The order matters.
     """
-    def __init__(self, config_root_path=None, default_config=None):
-        # Initialize the root of all the config files
-        if not config_root_path:
-            config_root_path = os.getenv("SILEX_CLIENT_CONFIG", "not_found")
-            # If no environment variable has been found
-            if config_root_path == "not_found":
-                logger.critical("Config root path not found")
-        self.config_root = config_root_path.replace("/", os.sep).replace(
-            "\\", os.sep)
-        # Initialize the name of the default config file
-        if not default_config:
-            default_config = "default"
-        self.default_config = default_config
+    def __init__(self, config_search_path: Union[list, str] = None):
+        # List of the path to look for any included file
+        self.config_search_path = ["/"]
 
-    def resolve_config(self,
-                       dcc,
-                       action,
-                       task,
-                       project=None,
-                       user=None,
-                       **kwargs):
-        """
-        Create a config by inheritance in the order : action, task
-        By reading the files in the order : default, dcc, project, user
-        """
-
-        files = [(self.default_config, ""), (dcc, "dcc"), (project, "project"),
-                 (user, "user")]
-        layers = [action, task]
-        config = {"post": [], "action": [], "pre": []}
-
-        # Loop over all the files
-        for file in files:
-            # Skip if no name for the file was given
-            if not file[0]:
-                continue
-            config_path = os.path.join(self.config_root, "action", file[1],
-                                       f"{file[0]}.yml")
-
-            with open(config_path, "r") as config_file:
-                config_yaml = yaml.load(config_file, Loader=yaml.FullLoader)
-
-                # Loop over all the layers
-                for layer in layers:
-                    # Stop if the current layer name wasn't provided
-                    # or the given layer does not exist
-                    if not layer or layer not in config_yaml or not config_yaml[
-                            layer]:
-                        break
-
-                    config_yaml = config_yaml[layer]
-
-                    # Loop over pre, action, post
-                    for key in config:
-                        # Skip if the layer does not provide any commands for this key
-                        if key not in config_yaml or not config_yaml[key]:
-                            continue
-
-                        # Merge the command set of the layer in to the config's command set
-                        self._combine_commands(config[key], config_yaml[key])
-
-        return config
-
-    @staticmethod
-    def _combine_commands(commands_a, commands_b):
-        """
-        Merge the set of commands_b into the set of commands_a by replacing
-        the one that has the same name and appending the new ones
-        """
-        for command in commands_b:
-            # If the command has no name append it without conditions
-            if "name" not in command:
-                commands_a.append(command.copy())
-                continue
-
-            # Find the commands that have the same name
-            match = [
-                index for index, cmd in enumerate(commands_a)
-                if "name" in cmd and cmd["name"] == command["name"]
-            ]
-            # If a command with the same name already exist
-            if len(match) > 0:
-                commands_a[match[0]] = command.copy()
+        # Add the custom config search path
+        if config_search_path is not None:
+            if isinstance(config_search_path, str):
+                self.config_search_path.append(config_search_path)
             else:
-                # Add the command to the config
-                commands_a.append(command.copy())
+                self.config_search_path += config_search_path
+
+        # Look for config search path in the environment variables
+        env_config_path = os.getenv("SILEX_CLIENT_CONFIG", None)
+        if env_config_path is not None:
+            self.config_search_path += env_config_path.split(os.pathsep)
+
+        # Add the config folder of this repo to the config search path
+        repo_root = importlib.import_module("silex_client")
+        repo_dir = os.path.dirname(repo_root.__file__)
+        repo_config = os.path.abspath(
+            os.path.join(repo_dir, "..", "config", "action"))
+        self.config_search_path.append(repo_config)
+
+    def resolve_action(self, action_name: str, **kwargs: dict) -> Any:
+        """
+        Resolve a config file from its name by looking in the stored root path
+        """
+        # TODO: Add some search path according to the given kwargs
+        search_path = copy.deepcopy(self.config_search_path)
+        # Find the file in the list of search path
+        config_path = None
+        for path in search_path:
+            try:
+                config_file = next(
+                    file for file in os.listdir(path)
+                    if os.path.splitext(file)[0] == action_name
+                    and os.path.splitext(file)[1] in [".yaml", ".yml"])
+
+                config_path = os.path.abspath(os.path.join(path, config_file))
+                logger.debug("Found action config at %s", config_path)
+                break
+            except StopIteration:
+                continue
+
+        if config_path is None:
+            logger.error("Could not resolve config for the action %s",
+                         action_name)
+            return None
+
+        # Load the config
+        with open(config_path, "r") as config_data:
+            loader = Loader(config_data, tuple(search_path))
+            try:
+                return loader.get_single_data()
+            finally:
+                loader.dispose()

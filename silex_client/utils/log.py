@@ -25,5 +25,5 @@ handler.setFormatter(logzero.LogFormatter(fmt=__LOG_FORMAT))
 logger.handlers = []
 logger.addHandler(handler)
 
-log_level = getattr(logging, os.getenv("SILEX_LOG_LEVEL", "WARNING"))
+log_level = getattr(logging, os.getenv("SILEX_LOG_LEVEL", "DEBUG"))
 logger.setLevel(log_level)  # set default level
