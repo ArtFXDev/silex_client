@@ -4,6 +4,8 @@ on:
   pull_request:
     branches: [ dev, beta, prod ]
 
+  workflow_dispatch:
+
 jobs:
   conform:
     runs-on: ubuntu-latest
@@ -27,9 +29,6 @@ jobs:
       - name: Install dependencies
         run: pipenv install --deploy --dev
 
-      - name: Run linter
-        run: pipenv run lint
-
       - name: Run formatter
         run: pipenv run format 1>/dev/null
 
@@ -39,13 +38,9 @@ jobs:
       - name: Rebuild documentation
         run: pipenv run make -C ./docs html
 
-      - name: Commit files
+      - name: Commit changes
         run: |
           git config --local user.email "silex@noreply.com"
           git config --local user.name "silex"
           git commit -a -m "[Github Action] Apply auto conform" --allow-empty
-
-      - name: Push changes
-        uses: mikeal/publish-to-github-action@master
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git push
