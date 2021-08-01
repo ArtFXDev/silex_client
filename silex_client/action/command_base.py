@@ -14,6 +14,8 @@ if typing.TYPE_CHECKING:
 class CommandBase():
     """
     Base class that every command should inherit from
+
+    :ivar parameter: Template of all the parameters needed for this command
     """
 
     # Dictionary that represent the command's parameters
@@ -27,7 +29,9 @@ class CommandBase():
 
     @property
     def type_name(self):
-        # Shortcut to get the type name of the command
+        """
+        Shortcut to get the type name of the command
+        """
         return self.__class__.__name__
 
     def check_parameters(self, parameters: dict) -> bool:
@@ -46,6 +50,7 @@ class CommandBase():
     def conform_command(func: Callable) -> Callable:
         """
         Helper decorator that conform the input and the output
+        Meant to be used with the __call__ method
         """
         @functools.wraps(func)
         def wrapper_conform_command(command, *args, **kwargs) -> None:
@@ -53,7 +58,8 @@ class CommandBase():
             if not command.check_parameters(kwargs.get("parameters", args[0])):
                 command.command_buffer.status = Status.ERROR
                 return
-            # Call the initial function while catching all the errors because we want to update the status
+            # Call the initial function while catching all the errors
+            # because we want to update the status
             try:
                 command.command_buffer.status = Status.PROCESSING
                 func(command, *args, **kwargs)

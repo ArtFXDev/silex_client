@@ -1,9 +1,3 @@
-"""
-@author: TD gang
-
-Utility class that lazy load and resolve the configurations on demand
-"""
-
 import os
 import copy
 import importlib
@@ -13,9 +7,11 @@ from silex_client.utils.log import logger
 from silex_client.action.loader import Loader
 
 
-class ActionConfig():
+class Config():
     """
     Utility class that lazy load and resolve the configurations on demand
+
+    :ivar config_search_path: List of path to look for config files. The order matters.
     """
     def __init__(self, config_search_path: Union[list, str] = None):
         # List of the path to look for any included file

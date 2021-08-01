@@ -33,6 +33,9 @@ jobs:
       - name: Run formatter
         run: pipenv run format 1>/dev/null
 
+      - name: Regenerate documentation
+        run: pipenv run doc_unix
+
       - name: Commit files
         run: |
           git config --local user.email "silex@noreply.com"

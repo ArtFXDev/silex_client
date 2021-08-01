@@ -1,16 +1,12 @@
 from __future__ import annotations
 import importlib
-import typing
 from typing import Union
 from dataclasses import dataclass, field
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.utils.log import logger
-
-# Forward references
-if typing.TYPE_CHECKING:
-    from silex_client.network.websocket import WebsocketConnection
-    from silex_client.utils.config import ActionConfig
+from silex_client.network.websocket import WebsocketConnection
+from silex_client.utils.config import Config
 
 
 @dataclass
@@ -19,9 +15,12 @@ class ActionQuery():
     Initialize and execute a given action
     """
 
+    #: The name of the action, it must be the same as the config file name
     action_name: str = field()
     ws_connection: WebsocketConnection = field(compare=False, repr=False)
-    config: ActionConfig = field(compare=False, repr=False)
+    #: Config object that will resove the config
+    config: Config = field(compare=False, repr=False)
+    #: Dict of variable that store the metadata of the context
     environment: dict = field(default_factory=dict)
 
     def __post_init__(self):
@@ -84,8 +83,14 @@ class ActionQuery():
 
     @property
     def variables(self) -> dict:
+        """
+        Shortcut to get the variable of the buffer
+        """
         return self.buffer.variables
 
     @property
     def commands(self) -> dict:
+        """
+        Shortcut to get the commands of the buffer
+        """
         return self.buffer.commands

@@ -7,7 +7,6 @@ receive and handle the incomming messages
 
 import asyncio
 import gc
-import time
 from contextlib import suppress
 from threading import Thread
 from typing import List, Union, Dict, Any
@@ -23,12 +22,15 @@ class WebsocketConnection:
     """
     Websocket client that connect the the given url
     and receive and handle the incomming messages
+
+    :ivar EVENT_LOOP_TIMEOUT: How long in second to wait between each update loop
+    :ivar THREAD_TEARDOWN_TIMEOUT: How to wait for the thread to join before concidering it an error
     """
 
     # Defines how long each task will wait between every loop
-    EVENT_LOOP_TIMEOUT = 0.5
+    EVENT_LOOP_TIMEOUT = 0.2
     # Defines how long to wait for the thread to join
-    THREAD_TEARDOWN_TIMEOUT = 8
+    THREAD_TEARDOWN_TIMEOUT = 5
 
     def __init__(self, url: str = None):
         self.is_running = False

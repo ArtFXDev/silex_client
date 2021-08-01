@@ -1,17 +1,9 @@
-"""
-@author: TD gang
-
-Context variables that is meant to be shared across all the modules
-Do not instanciate the Context class, use the already instanciated variable context instead
-"""
-
 from __future__ import annotations
 import os
 import sys
-from typing import Dict, Any
 
 from silex_client.action.action_query import ActionQuery
-from silex_client.utils.config import ActionConfig
+from silex_client.utils.config import Config
 from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.log import logger
 
@@ -20,12 +12,16 @@ class Context:
     """
     Data class that keeps track of the current context
     This class should not be instanciated use the already instanciated object from this module
+    or use the get() static method
+
+    :ivar config: Used to resolve configuration files, using the context's variables
+    :ivar is_outdated: When this is true, the properties will recompute themselves when queried
     """
 
     _metadata = {}
 
     def __init__(self, ws_url: str = "ws://localhost:8080"):
-        self.config = ActionConfig()
+        self.config = Config()
         self._metadata = {}
         self.is_outdated = True
 
@@ -41,7 +37,7 @@ class Context:
         return getattr(sys.modules[__name__], "context")
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict:
         """
         Lazy loaded property that updates when the is_outdated attribute is set to True
         """
@@ -57,14 +53,14 @@ class Context:
         return self._metadata
 
     @metadata.setter
-    def metadata(self, data: Dict[str, Any]) -> None:
+    def metadata(self, data: dict) -> None:
         """
         Set the _metadata private attribute.
         This should not be used unless for test purposes, let the metadata update utself instead
         """
         self._metadata = data
 
-    def update_metadata(self, data: Dict[str, Any]) -> None:
+    def update_metadata(self, data: dict) -> None:
         """
         Merge the provided dict with the current metadata
         This should not be used unless for test purposes, let the metadata update utself instead
@@ -129,7 +125,7 @@ class Context:
         self._metadata["sequence"] = 50
         self._metadata["shot"] = 120
 
-    def get_action(self, action_name: str) -> Any:
+    def get_action(self, action_name: str) -> ActionQuery:
         """
         Return an ActionQuery object initialized with this context
         """

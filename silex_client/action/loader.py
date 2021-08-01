@@ -1,9 +1,3 @@
-"""
-@author: TD gang
-
-Custom YAML loader to load action config files
-"""
-
 import os
 from typing import Any, IO, Union
 
@@ -16,7 +10,8 @@ from silex_client.utils.merge import merge_data
 
 class Loader(yaml.SafeLoader):
     """
-    Override of the default loader to be able to create custom constructors
+    Override of the default loader to be able to create custom tags in YAML files,
+    like !include or !inherit
     """
     def __init__(self, stream: IO, path: Union[tuple, list] = ("/", )) -> None:
         # Get the list of the path to look for any included file from context

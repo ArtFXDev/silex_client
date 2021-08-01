@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from silex_client.utils.config import ActionConfig
+from silex_client.utils.config import Config
 
 
 @pytest.fixture
@@ -18,10 +18,10 @@ def dummy_config():
     files that has been created only for test purpose
     """
     config_root = os.path.join(os.path.dirname(__file__), "config", "action")
-    return ActionConfig(config_root)
+    return Config(config_root)
 
 
-def test_resolve_action(dummy_config: ActionConfig):
+def test_resolve_action(dummy_config: Config):
     """
     Test the resolving of a configuration for the action 'foo' and the task 'task_a'
     with a dummy config file

@@ -14,13 +14,20 @@ from silex_client.action.command_base import CommandBase
 @dataclass()
 class CommandBuffer():
     """
-    Store the data of a command
+    Store the data of a command, it is used as a comunication payload with the UI
     """
+
+    #: The path to the command's module
     path: str = field()
+    #: Name of the command, must have no space or special characters
     name: Union[str, None] = field(default=None)
+    #: The name of the command, meant to be displayed
     label: Union[str, None] = field(compare=False, repr=False, default=None)
+    #: Specify if the command must be displayed by the UI or not
     hide: bool = field(compare=False, repr=False, default=False)
+    #: Small explanation for the UI
     tooltip: str = field(compare=False, repr=False, default="")
+    #: Dict that represent the parameters of the command, their type, value, name...
     parameters: dict = field(compare=False, repr=False, default_factory=dict)
 
     uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
@@ -79,4 +86,5 @@ class CommandBuffer():
             logger.error("Invalid command path, skipping %s", path)
             self.status = Status.INVALID
 
-        return CommandBase(self)
+            self.status = Status.INVALID
+            return CommandBase(self)

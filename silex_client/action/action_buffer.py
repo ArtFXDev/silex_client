@@ -24,10 +24,13 @@ class ActionBuffer(Iterator):
     STEP_TEMPLATE = {"index": int, "commands": list}
     COMMAND_TEMPLATE = {"path": str}
 
+    #: The name of the action (usualy the same as the config file)
     name: str = field()
     ws_connection: WebsocketConnection = field(compare=False, repr=False)
     uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
+    #: A dict of list of commands ordered by step names
     commands: dict = field(default_factory=OrderedDict, init=False)
+    #: Dict of variables that are global to all the commands of this action
     variables: dict = field(compare=False, default_factory=dict, init=False)
 
     def __iter__(self):
@@ -81,6 +84,9 @@ class ActionBuffer(Iterator):
 
     @property
     def status(self):
+        """
+        The status of the action depends of the status of its commands
+        """
         status = Status.COMPLETED
         for command in self:
             status = command.status if command.status > status else status
@@ -88,6 +94,11 @@ class ActionBuffer(Iterator):
         return status
 
     def update_commands(self, commands: dict):
+        """
+        Check and conform a dict that represent the commands, generally comming
+        from a config file. Filters out all the invalid data by checkinh if it matches the 
+        templates arguments
+        """
         if not isinstance(commands, dict):
             logger.error("Invalid commands for action %s", self.name)
 
