@@ -1,9 +1,13 @@
+from silex_client.cli import handlers
+
 import argparse
 
 def main():
     """
     Parse the given arguments and call the appropriate handlers
     """
+    HANDLERS_MAPPING = {"action": handlers.action_handler, "command": handlers.command_handler}
+
     parser = argparse.ArgumentParser(prog="silex", description="CLI for the silex pipeline ecosystem")
     parser.add_argument('--context', type=str, help="Resolve and open an environment in the given context", dest="context")
     parser.add_argument("--list", "-l", default=False, help="List the available options for the subcommand in the context", action="store_true")
@@ -16,9 +20,17 @@ def main():
 
     command_parser.add_argument("command_name", help="The python path of the command to perform under the context")
 
-    args = parser.parse_args()
+    args = vars(parser.parse_args())
 
-    print(args)
+    context = args.pop("context", None)
+    if context is not None:
+        # Resolve the context
+        pass
+
+    subcommand = args.pop("subcommand", None)
+    if subcommand is not None:
+        # Execute the appropriate handler according to the subparser
+        HANDLERS_MAPPING[subcommand](**args)
 
 if __name__ == "__main__":
     main()
