@@ -155,7 +155,7 @@ class ActionBuffer(Iterator):
 
         return command_dict
 
-    def get_commands(self, step: str = None):
+    def get_commands(self, step: str = None) -> list:
         """
         Helper to get a command that belong to this action
         The data is quite nested, this is just for conveniance
@@ -169,6 +169,19 @@ class ActionBuffer(Iterator):
             command for step in self.commands.values()
             for command in step["commands"]
         ]
+
+    @property
+    def parameters(self) -> list:
+        """
+        Helper to get a list of all the parameters of the action, 
+        usually used for printing infos about the action
+        """
+        parameters = []
+        for step_name, step in self.commands.items():
+            for command in step["commands"]:
+                parameters.append({"step": step_name, "command": command.path, "parameters": command.parameters})
+
+        return parameters
 
     def get_parameter(self, step: str, index: int, name: str):
         """

@@ -16,9 +16,10 @@ def main():
     action_parser = subparsers.add_parser("action", help="Execute the given action in the context")
     command_parser = subparsers.add_parser("command", help="Execute the given command in the context")
 
-    action_parser.add_argument("action_name", help="The name of the action to perform under the context")
+    action_parser.add_argument("action_name", help="The name of the action to perform under the context", default=None, nargs="?")
+    action_parser.add_argument("--list-parameters", help="Print the parameters of the selected action", default=False, action="store_true", dest="list_parameters")
 
-    command_parser.add_argument("command_name", help="The python path of the command to perform under the context")
+    command_parser.add_argument("command_name", help="The python path of the command to perform under the context", default=None, nargs="?")
 
     args = vars(parser.parse_args())
 

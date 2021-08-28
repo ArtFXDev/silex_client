@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 from dataclasses import dataclass, field
 
 from silex_client.action.action_buffer import ActionBuffer
@@ -62,3 +63,16 @@ class ActionQuery():
         Shortcut to get the commands of the buffer
         """
         return self.buffer.commands
+
+    @property
+    def parameters(self) -> list:
+        """
+        Shortcut to get the parameters of the buffer
+        """
+        return self.buffer.parameters
+
+    def set_parameter(self, parameter_name: str, value: Any) -> None:
+        """
+        Shortcut to set variables on the buffer easly
+        """
+        parameter_path = parameter_name.split(":")
