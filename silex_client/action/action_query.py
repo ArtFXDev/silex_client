@@ -40,8 +40,7 @@ class ActionQuery():
         """
         Initialize the buffer from the config
         """
-        resolved_action = self.config.resolve_action(self.action_name,
-                                                     **self.environment)
+        resolved_action = self.config.resolve_action(self.action_name)
 
         if self.action_name not in resolved_action:
             logger.error("Invalid resolved action")

@@ -20,7 +20,7 @@ def dummy_context() -> Context:
     """
     context = Context.get()
     config_root = os.path.join(os.path.dirname(__file__), "config", "action")
-    context.config.config_search_path.append(config_root)
+    context.config.action_search_path.append(config_root)
     return context
 
 
