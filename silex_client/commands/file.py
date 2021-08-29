@@ -36,4 +36,4 @@ class PublishFile(CommandBase):
 
     @CommandBase.conform_command
     def __call__(self, parameters: dict, variables: dict, environment: dict):
-        logger.info("Publishing file(s) %s", parameters["file_path"])
+        logger.info("Publishing file(s) %s on task %s", parameters["file_path"], str(parameters["task"]))
