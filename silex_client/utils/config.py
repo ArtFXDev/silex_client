@@ -11,59 +11,66 @@ class Config():
     """
     Utility class that lazy load and resolve the configurations on demand
 
-    :ivar config_search_path: List of path to look for config files. The order matters.
+    :ivar action_search_path: List of path to look for config files. The order matters.
     """
-    def __init__(self, config_search_path: Union[list, str] = None):
+    def __init__(self, action_search_path: Union[list, str] = None):
         # List of the path to look for any included file
-        self.config_search_path = ["/"]
+        self.action_search_path = ["/"]
 
         # Add the custom config search path
-        if config_search_path is not None:
-            if isinstance(config_search_path, str):
-                self.config_search_path.append(config_search_path)
+        if action_search_path is not None:
+            if isinstance(action_search_path, str):
+                self.action_search_path.append(action_search_path)
             else:
-                self.config_search_path += config_search_path
+                self.action_search_path += action_search_path
 
         # Look for config search path in the environment variables
-        env_config_path = os.getenv("SILEX_CLIENT_CONFIG", None)
+        env_config_path = os.getenv("SILEX_ACTION_CONFIG", None)
         if env_config_path is not None:
-            self.config_search_path += env_config_path.split(os.pathsep)
+            self.action_search_path += env_config_path.split(os.pathsep)
 
         # Add the config folder of this repo to the config search path
         repo_root = importlib.import_module("silex_client")
         repo_dir = os.path.dirname(repo_root.__file__)
         repo_config = os.path.abspath(
             os.path.join(repo_dir, "..", "config", "action"))
-        self.config_search_path.append(repo_config)
+        self.action_search_path.append(repo_config)
 
-    def resolve_action(self, action_name: str, **kwargs: dict) -> Any:
+    @property
+    def actions(self) -> list:
+        """
+        List of all the available actions config found
+        """
+        # TODO: Add some search path according to the given kwargs
+        search_path = copy.deepcopy(self.action_search_path)
+        found_actions = []
+
+        for path in search_path:
+            for file_path in os.listdir(path):
+                split_path = os.path.splitext(file_path)
+                if os.path.splitext(file_path)[1] in [".yaml", ".yml"]:
+                    action_path = os.path.abspath(os.path.join(path, file_path))
+                    found_actions.append({"name": split_path[0], "path": action_path})
+
+        return found_actions
+
+    def resolve_action(self, action_name: str) -> Any:
         """
         Resolve a config file from its name by looking in the stored root path
         """
-        # TODO: Add some search path according to the given kwargs
-        search_path = copy.deepcopy(self.config_search_path)
-        # Find the file in the list of search path
-        config_path = None
-        for path in search_path:
-            try:
-                config_file = next(
-                    file for file in os.listdir(path)
-                    if os.path.splitext(file)[0] == action_name
-                    and os.path.splitext(file)[1] in [".yaml", ".yml"])
-
-                config_path = os.path.abspath(os.path.join(path, config_file))
-                logger.debug("Found action config at %s", config_path)
-                break
-            except StopIteration:
-                continue
-
-        if config_path is None:
-            logger.error("Could not resolve config for the action %s",
-                         action_name)
+        # Find the action config
+        if action_name not in [action["name"] for action in self.actions]:
+            logger.error("Could not resolve config for the action %s", action_name)
             return None
 
+        config_path = next(action["path"] for action in self.actions if action["name"] == action_name)
+        logger.debug("Found action config at %s", config_path)
+        return self._load_config(config_path)
+
+    def _load_config(self, config_path: str) -> Any:
         # Load the config
         with open(config_path, "r") as config_data:
+            search_path = copy.deepcopy(self.action_search_path)
             loader = Loader(config_data, tuple(search_path))
             try:
                 return loader.get_single_data()

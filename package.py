@@ -42,11 +42,3 @@ def commands():
     env.PYTHONPATH.append("{root}")
     env.SILEX_LOG_LEVEL = "DEBUG"
 
-
-def uuid():
-    """
-    Automatically generate a uuid for the package
-    """
-    import uuid
-
-    return uuid.uuid4().hex

@@ -155,7 +155,7 @@ class ActionBuffer(Iterator):
 
         return command_dict
 
-    def get_commands(self, step: str = None):
+    def get_commands(self, step: str = None) -> list:
         """
         Helper to get a command that belong to this action
         The data is quite nested, this is just for conveniance
@@ -178,13 +178,19 @@ class ActionBuffer(Iterator):
         command = self.get_commands(step)[index]
         return command.parameters.get(name, None)
 
-    def set_parameter(self, step: str, index: int, name: str, value: Any):
+    def set_parameter(self, step: str, index: int, name: str, value: Any) -> None:
         """
         Helper to set a parameter of a command that belong to this action
         The data is quite nested, this is just for conveniance
         """
         parameter = self.get_parameter(step, index, name)
         # Check if the given value is the right type
-        if parameter is not None and isinstance(value,
+        if parameter is None or not isinstance(value,
                                                 parameter.get("type", object)):
-            parameter["value"] = value
+            try:
+                value = parameter["type"](value)
+            except:
+                logger.error("Could not set parameter %s: Invalid value" % name)
+                return
+
+        parameter["value"] = value
