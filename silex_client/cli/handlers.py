@@ -1,4 +1,5 @@
 from silex_client.utils.context import Context
+from silex_client.utils.log import logger
 
 import pprint
 
@@ -24,7 +25,16 @@ def action_handler(action_name: str, **kwargs) -> None:
         pprint.pprint(parameters)
         return
 
-    context.get_action(action_name).execute()
+    action = context.get_action(action_name)
+
+    for set_parameter in kwargs.get("set_parameters", []):
+        set_parameter = set_parameter.replace(" ", "")
+        if "=" not in set_parameter:
+            logger.error("Invalid set parameter string, it must follow the schema: <path> = <value>")
+        parameter_path = set_parameter.split("=")[0]
+        parameter_value = set_parameter.split("=")[1]
+        action.set_parameter(parameter_path, parameter_value)
+    action.execute()
 
 def command_handler(command_name: str, **kwargs) -> None:
     """

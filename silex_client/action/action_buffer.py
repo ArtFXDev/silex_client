@@ -170,19 +170,6 @@ class ActionBuffer(Iterator):
             for command in step["commands"]
         ]
 
-    @property
-    def parameters(self) -> list:
-        """
-        Helper to get a list of all the parameters of the action, 
-        usually used for printing infos about the action
-        """
-        parameters = []
-        for step_name, step in self.commands.items():
-            for command in step["commands"]:
-                parameters.append({"step": step_name, "command": command.path, "parameters": command.parameters})
-
-        return parameters
-
     def get_parameter(self, step: str, index: int, name: str):
         """
         Helper to get a parameter of a command that belong to this action
@@ -191,13 +178,19 @@ class ActionBuffer(Iterator):
         command = self.get_commands(step)[index]
         return command.parameters.get(name, None)
 
-    def set_parameter(self, step: str, index: int, name: str, value: Any):
+    def set_parameter(self, step: str, index: int, name: str, value: Any) -> None:
         """
         Helper to set a parameter of a command that belong to this action
         The data is quite nested, this is just for conveniance
         """
         parameter = self.get_parameter(step, index, name)
         # Check if the given value is the right type
-        if parameter is not None and isinstance(value,
+        if parameter is None or not isinstance(value,
                                                 parameter.get("type", object)):
-            parameter["value"] = value
+            try:
+                value = parameter["type"](value)
+            except:
+                logger.error("Could not set parameter %s: Invalid value" % name)
+                return
+
+        parameter["value"] = value
