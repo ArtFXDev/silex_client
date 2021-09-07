@@ -7,6 +7,7 @@ name = "pypi"
 pyyaml = "*"
 logzero = "*"
 websockets = "*"
+rez = "*"
 
 [dev-packages]
 isort = "*"

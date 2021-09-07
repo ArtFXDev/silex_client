@@ -2,6 +2,8 @@ from __future__ import annotations
 import os
 import sys
 
+from rez import resolved_context
+
 from silex_client.action.action_query import ActionQuery
 from silex_client.utils.config import Config
 from silex_client.network.websocket import WebsocketConnection
@@ -24,6 +26,7 @@ class Context:
         self.config = Config()
         self._metadata = {}
         self.is_outdated = True
+        self.rez_context = resolved_context.ResolvedContext.get_current()
 
         url = WebsocketConnection.parameters_to_url(ws_url, self.metadata)
         self.ws_connection = WebsocketConnection(url)
@@ -93,7 +96,7 @@ class Context:
         """
         Update the metadata's task key using the filesystem
         """
-        # TODO: Get the current task from filesystem
+        # TODO: Check if the task exists on the database
         self._metadata["task"] = "modeling"
 
     def update_project(self) -> None:
@@ -124,6 +127,18 @@ class Context:
         self._metadata["entity"] = "shot"
         self._metadata["sequence"] = 50
         self._metadata["shot"] = 120
+
+    def get_ephemeral_version(self, name: str) -> str:
+        """
+        Get the version number of a rez ephemeral package by its name
+        Ephemerals are used mostly to represent entities like task, shot, project...
+        """
+        try:
+            ephemeral = next(x for x in self.rez_context.resolved_ephemerals if x.name == name)
+            versions = ephemeral.range.to_versions()[0]
+            return versions[0] if versions else ""
+        except StopIteration:
+            return ""
 
     def get_action(self, action_name: str) -> ActionQuery:
         """
