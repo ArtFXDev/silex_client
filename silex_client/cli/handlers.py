@@ -1,13 +1,51 @@
+from rez import resolved_context
+
 from silex_client.utils.context import Context
 from silex_client.utils.log import logger
 
 import pprint
 
+def resolve_rez_context(**kwargs) -> resolved_context.ResolvedContext:
+    """
+    Resolve a rez context and apply it to the current python session
+    """
+    PACKAGES = ["dcc"]
+    EPHEMERALS = ["project", "asset", "sequence", "shot", "task"]
+
+    packages = []
+    for package in PACKAGES:
+        version = kwargs.get(package)
+        if not version:
+            continue
+        packages.append(f"{packages}-=={version}")
+
+    for ephemeral in EPHEMERALS:
+        version = kwargs.get(ephemeral)
+        if not version:
+            continue
+        # TODO: Check if the entity exists in the database
+        packages.append(f".{ephemeral}-=={version}")
+        
+    context = resolved_context.ResolvedContext(packages)
+    context.apply()
+    return context
+    
+def shell_handler(**kwargs) -> None:
+    """
+    Execute a shell in the resolved context
+    """
+    rez_context = resolve_rez_context(**kwargs)
+    context = Context.get()
+    context.rez_context = rez_context
+    rez_context.execute_shell()
+
 def action_handler(action_name: str, **kwargs) -> None:
     """
-    Execute the given action in the current context
+    Execute the given action in the resolved context
     """
+    rez_context = resolve_rez_context(**kwargs)
     context = Context.get()
+    context.rez_context = rez_context
     if kwargs.get("list", False):
         # Just print the available actions
         action_names = [action["name"] for action in context.config.actions]
@@ -16,6 +54,7 @@ def action_handler(action_name: str, **kwargs) -> None:
         return
 
     if not action_name:
+        logger.error("No action name provided")
         return
     
     if kwargs.get("list_parameters", False):

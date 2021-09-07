@@ -26,7 +26,7 @@ class Context:
         self.config = Config()
         self._metadata = {}
         self.is_outdated = True
-        self.rez_context = resolved_context.ResolvedContext.get_current()
+        self._rez_context = resolved_context.ResolvedContext.get_current()
 
         url = WebsocketConnection.parameters_to_url(ws_url, self.metadata)
         self.ws_connection = WebsocketConnection(url)
@@ -38,6 +38,18 @@ class Context:
         """
         # Get the instance of Context created in this same module
         return getattr(sys.modules[__name__], "context")
+
+    @property
+    def rez_context(self):
+        if self._rez_context is None:
+            self._rez_context = resolved_context.ResolvedContext.get_current()
+
+        return self._rez_context
+    
+    @rez_context.setter
+    def rez_context(self, rez_context: resolved_context.ResolvedContext):
+        self._rez_context = rez_context
+
 
     @property
     def metadata(self) -> dict:
