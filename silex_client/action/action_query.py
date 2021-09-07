@@ -43,8 +43,10 @@ class ActionQuery():
         """
         resolved_action = self.config.resolve_action(self.action_name)
 
+        if resolved_action is None:
+            return
         if self.action_name not in resolved_action:
-            logger.error("Invalid resolved action")
+            logger.error("Invalid resolved action %s", self.action_name)
             return
 
         action_commands = resolved_action[self.action_name]

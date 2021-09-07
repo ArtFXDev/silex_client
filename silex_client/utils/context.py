@@ -43,12 +43,14 @@ class Context:
     def rez_context(self):
         if self._rez_context is None:
             self._rez_context = resolved_context.ResolvedContext.get_current()
+            self.is_outdated = True
 
         return self._rez_context
     
     @rez_context.setter
     def rez_context(self, rez_context: resolved_context.ResolvedContext):
         self._rez_context = rez_context
+        self.is_outdated = True
 
 
     @property
@@ -115,8 +117,8 @@ class Context:
         """
         Update the metadata's project key using the filesystem
         """
-        # TODO: Get the current project from the filesystem
-        self._metadata["project"] = "TEST_PIPE"
+        # TODO: Check the project exists on the database
+        self._metadata["project"] = str(self.get_ephemeral_version("project")) or None
 
     def update_user(self) -> None:
         """
@@ -145,6 +147,10 @@ class Context:
         Get the version number of a rez ephemeral package by its name
         Ephemerals are used mostly to represent entities like task, shot, project...
         """
+        if self.rez_context is None:
+            return ""
+
+        name = f".{name}"
         try:
             ephemeral = next(x for x in self.rez_context.resolved_ephemerals if x.name == name)
             versions = ephemeral.range.to_versions()[0]
