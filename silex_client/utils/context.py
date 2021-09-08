@@ -62,10 +62,8 @@ class Context:
         if self.is_outdated:
             self.is_outdated = False
             self.update_dcc()
-            self.update_task()
-            self.update_project()
             self.update_user()
-            self.update_entity()
+            self.update_entities()
 
         return self._metadata
 
@@ -106,19 +104,30 @@ class Context:
             logger.warning("No supported dcc detected")
             self.is_outdated = True
 
-    def update_task(self) -> None:
+    def update_entities(self) -> None:
         """
-        Update the metadata's task key using the filesystem
+        Update the metadata's key like project, shot, task...
         """
-        # TODO: Check if the task exists on the database
-        self._metadata["task"] = "modeling"
-
-    def update_project(self) -> None:
-        """
-        Update the metadata's project key using the filesystem
-        """
-        # TODO: Check the project exists on the database
+        # TODO: Check the each entity  exists on the database
         self._metadata["project"] = str(self.get_ephemeral_version("project")) or None
+        self._metadata["asset"] = str(self.get_ephemeral_version("asset")) or None
+        sequence = self.get_ephemeral_version("sequence")
+        if sequence and str(sequence).isdigit():
+            self._metadata["sequence"] = int(sequence)
+        elif sequence:
+            logger.error("Skipping context's sequence: invalid index")
+            self._metadata["sequence"] = None
+        else:
+            self._metadata["sequence"] = None
+        shot = self.get_ephemeral_version("shot")
+        if shot and str(shot).isdigit():
+            self._metadata["shot"] = int(shot)
+        elif shot:
+            logger.error("Skipping context's shot: invalid index")
+            self._metadata["shot"] = None
+        else:
+            self._metadata["shot"] = None
+        self._metadata["task"] = str(self.get_ephemeral_version("task")) or None
 
     def update_user(self) -> None:
         """
@@ -126,21 +135,6 @@ class Context:
         """
         # TODO: Get the current user from the database using authentification
         self._metadata["user"] = "slambin"
-
-    def update_entity(self) -> None:
-        """
-        Update the metadata's entity related keys using the filesystem
-        """
-        # Clear the current entity
-        # TODO: Get the list of possible entities from a database of config
-        for entity in ["sequence", "shot", "asset"]:
-            if entity in self._metadata:
-                self._metadata.pop(entity)
-        # Get the current entity
-        # TODO: Get the current entity from the filesystem
-        self._metadata["entity"] = "shot"
-        self._metadata["sequence"] = 50
-        self._metadata["shot"] = 120
 
     def get_ephemeral_version(self, name: str) -> str:
         """
