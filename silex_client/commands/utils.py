@@ -20,7 +20,7 @@ class Log(CommandBase):
         }
     }
 
-    @CommandBase.conform_command
+    @CommandBase.conform_command()
     def __call__(self, parameters: dict, variables: dict, environment: dict):
         try:
             getattr(logger, parameters["level"])(parameters["message"])

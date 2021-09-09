@@ -136,6 +136,37 @@ class Context:
         # TODO: Get the current user from the database using authentification
         self._metadata["user"] = "slambin"
 
+    @property
+    def project(self):
+        return self.metadata["project"]
+
+    @property
+    def asset(self):
+        return self.metadata["asset"]
+
+    @property
+    def sequence(self):
+        return self.metadata["sequence"]
+
+    @property
+    def shot(self):
+        return self.metadata["shot"]
+
+    @property
+    def task(self):
+        return self.metadata["task"]
+
+    @property
+    def entity(self):
+        if self.asset is not None:
+            return "asset"
+        elif self.shot is not None:
+            return "shot"
+        elif self.sequence is not None:
+            return "sequence"
+        else:
+            return None
+
     def get_ephemeral_version(self, name: str) -> str:
         """
         Get the version number of a rez ephemeral package by its name

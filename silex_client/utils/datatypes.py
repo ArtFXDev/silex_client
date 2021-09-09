@@ -34,7 +34,10 @@ class ReadOnlyDict(dict):
     update = __readonly__
 
     def get(self, key: str, default: Any = None):
-        self._target.get(key, default)
+        try:
+            return self[key]
+        except KeyError:
+            return default
 
     def items(self):
         return self._target.items()
