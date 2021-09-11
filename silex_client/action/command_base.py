@@ -59,7 +59,7 @@ class CommandBase():
                     return
                 # Make sure all the required metatada is here
                 for metadata in required_metadata:
-                    if kwargs.get("environment", args[2]).get(metadata) is None:
+                    if kwargs.get("context_metadata", args[2]).get(metadata) is None:
                         logger.error("Could not execute command %s: The context is missing required metadata %s", command.command_buffer.name, metadata)
                         command.command_buffer.status = Status.ERROR
                         return

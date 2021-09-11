@@ -21,7 +21,7 @@ class Log(CommandBase):
     }
 
     @CommandBase.conform_command()
-    def __call__(self, parameters: dict, variables: dict, environment: dict):
+    def __call__(self, parameters: dict, variables: dict, context_metadata: dict):
         try:
             getattr(logger, parameters["level"])(parameters["message"])
         except ValueError:

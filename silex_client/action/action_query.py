@@ -15,16 +15,9 @@ class ActionQuery():
     Initialize and execute a given action
     """
 
-    #: The name of the action, it must be the same as the config file name
-    action_name: str = field()
-    ws_connection: WebsocketConnection = field(compare=False, repr=False)
-    #: Config object that will resove the config
-    config: Config = field(compare=False, repr=False)
-    #: Dict of variable that store the metadata of the context
-    environment: dict = field(default_factory=dict)
-
-    def __post_init__(self):
-        self.buffer = ActionBuffer(self.action_name, self.ws_connection)
+    def __init__(self, name: str, ws_connection: WebsocketConnection, config: Config, context_metadata: dict):
+        self.config = config
+        self.buffer = ActionBuffer(name, ws_connection, context_metadata)
         self._initialize_buffer()
 
     def execute(self) -> ActionBuffer:
@@ -33,7 +26,7 @@ class ActionQuery():
         send and receive the buffer to the UI when nessesary
         """
         for command in self.buffer:
-            command(self.buffer.variables, ReadOnlyDict(self.environment))
+            command(self.variables, self.context_metadata)
 
         return self.buffer
 
@@ -41,16 +34,23 @@ class ActionQuery():
         """
         Initialize the buffer from the config
         """
-        resolved_action = self.config.resolve_action(self.action_name)
+        resolved_action = self.config.resolve_action(self.name)
 
         if resolved_action is None:
             return
-        if self.action_name not in resolved_action:
+        if self.name not in resolved_action:
             logger.error("Invalid resolved action %s", self.action_name)
             return
 
-        action_commands = resolved_action[self.action_name]
+        action_commands = resolved_action[self.name]
         self.buffer.update_commands(action_commands)
+
+    @property
+    def name(self) -> str:
+        """
+        Shortcut to get the name  of the action stored in the buffer
+        """
+        return self.buffer.name
 
     @property
     def variables(self) -> dict:
@@ -65,6 +65,13 @@ class ActionQuery():
         Shortcut to get the commands of the buffer
         """
         return self.buffer.commands
+
+    @property
+    def context_metadata(self) -> dict:
+        """
+        Shortcut to get the context's metadata  of the buffer
+        """
+        return self.buffer.context_metadata
 
     @property
     def parameters(self) -> dict:

@@ -31,7 +31,7 @@ class PublishFile(CommandBase):
     }
 
     @CommandBase.conform_command(["project"])
-    def __call__(self, parameters: dict, variables: dict, environment: dict) -> None:
-        publish_path = os.path.join(environment["project"], parameters["name"])
+    def __call__(self, parameters: dict, variables: dict, context_metadata: dict) -> None:
+        publish_path = os.path.join(context_metadata["project"], parameters["name"])
 
         logger.info("Publishing file(s) %s to %s", parameters["file_path"], publish_path)

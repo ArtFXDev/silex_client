@@ -10,6 +10,7 @@ from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.merge import merge_data
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
+from silex_client.utils.datatypes import ReadOnlyDict
 from silex_client.network.websocket import WebsocketConnection
 
 
@@ -31,6 +32,11 @@ class ActionBuffer(Iterator):
     commands: dict = field(default_factory=OrderedDict, init=False)
     #: Dict of variables that are global to all the commands of this action
     variables: dict = field(compare=False, default_factory=dict, init=False)
+    #: Snapshot of the context's metadata when this buffer is created
+    context_metadata: dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        self.context_metadata = ReadOnlyDict(copy.deepcopy(self.context_metadata))
 
     def __iter__(self):
         if not self.commands:
