@@ -41,4 +41,5 @@ def commands():
     env.PATH.append("{root}/tools")
     env.PYTHONPATH.append("{root}")
     env.SILEX_LOG_LEVEL = "DEBUG"
+    env.SILEX_ACTION_CONFIG = "{root}/config/action"
 

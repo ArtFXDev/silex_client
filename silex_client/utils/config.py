@@ -25,16 +25,9 @@ class Config():
                 self.action_search_path += action_search_path
 
         # Look for config search path in the environment variables
-        env_config_path = os.getenv("SILEX_ACTION_CONFIG", None)
+        env_config_path = os.getenv("SILEX_ACTION_CONFIG")
         if env_config_path is not None:
             self.action_search_path += env_config_path.split(os.pathsep)
-
-        # Add the config folder of this repo to the config search path
-        repo_root = importlib.import_module("silex_client")
-        repo_dir = os.path.dirname(repo_root.__file__)
-        repo_config = os.path.abspath(
-            os.path.join(repo_dir, "..", "config", "action"))
-        self.action_search_path.append(repo_config)
 
     @property
     def actions(self) -> list:

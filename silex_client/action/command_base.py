@@ -39,8 +39,15 @@ class CommandBase():
         """
         for parameter_name, parameter_value in parameters.items():
             if parameter_value is None:
-                logger.error("Missing parameter %s for command %s",
-                             parameter_name, self.command_buffer.name)
+                logger.error("Could not execute %s: The parameter %s is missing",
+                             self.command_buffer.name, parameter_name)
+                return False
+        return True
+
+    def check_context_metadata(self, context_metadata, required_metadata):
+        for metadata in required_metadata:
+            if context_metadata.get(metadata) is None:
+                logger.error("Could not execute command %s: The context is missing required metadata %s", self.command_buffer.name, metadata)
                 return False
         return True
 
@@ -58,11 +65,8 @@ class CommandBase():
                     command.command_buffer.status = Status.ERROR
                     return
                 # Make sure all the required metatada is here
-                for metadata in required_metadata:
-                    if kwargs.get("context_metadata", args[2]).get(metadata) is None:
-                        logger.error("Could not execute command %s: The context is missing required metadata %s", command.command_buffer.name, metadata)
-                        command.command_buffer.status = Status.ERROR
-                        return
+                if not command.check_context_metadata(kwargs.get("context_metadata", args[2]), required_metadata):
+                    command.command_buffer.status = Status.ERROR
                 # Call the initial function while catching all the errors
                 # because we want to update the status
                 try:

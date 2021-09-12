@@ -101,7 +101,7 @@ class Context:
                 break
         # Handle the case where no DCC has been found
         if self._metadata["dcc"] is None:
-            logger.warning("No supported dcc detected")
+            logger.debug("No supported dcc detected")
             self.is_outdated = True
 
     def update_entities(self) -> None:
