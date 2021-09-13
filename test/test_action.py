@@ -21,6 +21,8 @@ def dummy_context() -> Context:
     context = Context.get()
     config_root = os.path.join(os.path.dirname(__file__), "config", "action")
     context.config.action_search_path.append(config_root)
+    context.update_metadata({"project": "TEST_PIPE"})
+    context.is_outdated = False
     return context
 
 
@@ -54,7 +56,6 @@ def test_execute_action(dummy_context: Context):
     action = dummy_context.get_action("publish")
     # Add some fake value to mimic the UI editing the parameters
     action.buffer.set_parameter("action", 0, "file_path", "/path/to/file")
-    action.buffer.set_parameter("action", 0, "task", 47471)
 
     buffer = action.execute()
     assert buffer.status is Status.COMPLETED

@@ -71,15 +71,21 @@ class Context:
     def metadata(self, data: dict) -> None:
         """
         Set the _metadata private attribute.
-        This should not be used unless for test purposes, let the metadata update utself instead
+        This should not be used unless for test purposes, let the metadata update itself instead
         """
+        if "PYTEST_CURRENT_TEST" not in os.environ:
+            logger.error("Could not set context metadata: Context::metadata.setter is for testing purpose only")
+            return
         self._metadata = data
 
     def update_metadata(self, data: dict) -> None:
         """
         Merge the provided dict with the current metadata
-        This should not be used unless for test purposes, let the metadata update utself instead
+        This should not be used unless for test purposes, let the metadata update itself instead
         """
+        if "PYTEST_CURRENT_TEST" not in os.environ:
+            logger.error("Could not update context metadata: Context::update_metadata is for testing purpose only")
+            return
         self._metadata.update(data)
 
     def update_dcc(self) -> None:
