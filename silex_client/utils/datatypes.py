@@ -1,6 +1,3 @@
-from typing import Any
-
-
 class ReadOnlyError(Exception):
     """
     Simple exception for the readonly datatypes

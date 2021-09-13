@@ -23,6 +23,7 @@ class CheckDbFileSystemSync(CommandBase):
     }
 
     @CommandBase.conform_command()
-    def __call__(self, parameters: dict, variables: dict, context_metadata: dict):
+    def __call__(self, parameters: dict, variables: dict,
+                 context_metadata: dict):
         logger.info("Checking if file %s and entity %s both exists",
                     parameters["file_path"], parameters["db_entity"])

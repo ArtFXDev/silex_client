@@ -36,7 +36,8 @@ class ActionBuffer(Iterator):
     context_metadata: dict = field(default_factory=dict)
 
     def __post_init__(self):
-        self.context_metadata = ReadOnlyDict(copy.deepcopy(self.context_metadata))
+        self.context_metadata = ReadOnlyDict(
+            copy.deepcopy(self.context_metadata))
 
     def __iter__(self):
         if not self.commands:
@@ -184,7 +185,8 @@ class ActionBuffer(Iterator):
         command = self.get_commands(step)[index]
         return command.parameters.get(name, None)
 
-    def set_parameter(self, step: str, index: int, name: str, value: Any) -> None:
+    def set_parameter(self, step: str, index: int, name: str,
+                      value: Any) -> None:
         """
         Helper to set a parameter of a command that belong to this action
         The data is quite nested, this is just for conveniance
@@ -192,11 +194,11 @@ class ActionBuffer(Iterator):
         parameter = self.get_parameter(step, index, name)
         # Check if the given value is the right type
         if parameter is None or not isinstance(value,
-                                                parameter.get("type", object)):
+                                               parameter.get("type", object)):
             try:
                 value = parameter["type"](value)
             except:
-                logger.error("Could not set parameter %s: Invalid value" % name)
+                logger.error("Could not set parameter %s: Invalid value", name)
                 return
 
         parameter["value"] = value

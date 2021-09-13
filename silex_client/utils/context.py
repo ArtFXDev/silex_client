@@ -41,17 +41,19 @@ class Context:
 
     @property
     def rez_context(self):
+        """
+        Return the associated rez context, gets it if None is associated
+        """
         if self._rez_context is None:
             self._rez_context = resolved_context.ResolvedContext.get_current()
             self.is_outdated = True
 
         return self._rez_context
-    
+
     @rez_context.setter
     def rez_context(self, rez_context: resolved_context.ResolvedContext):
         self._rez_context = rez_context
         self.is_outdated = True
-
 
     @property
     def metadata(self) -> dict:
@@ -74,7 +76,9 @@ class Context:
         This should not be used unless for test purposes, let the metadata update itself instead
         """
         if "PYTEST_CURRENT_TEST" not in os.environ:
-            logger.error("Could not set context metadata: Context::metadata.setter is for testing purpose only")
+            logger.error(
+                "Could not set context metadata: Context::metadata.setter is for testing purpose only"
+            )
             return
         self._metadata = data
 
@@ -84,7 +88,9 @@ class Context:
         This should not be used unless for test purposes, let the metadata update itself instead
         """
         if "PYTEST_CURRENT_TEST" not in os.environ:
-            logger.error("Could not update context metadata: Context::update_metadata is for testing purpose only")
+            logger.error(
+                "Could not update context metadata: Context::update_metadata is for testing purpose only"
+            )
             return
         self._metadata.update(data)
 
@@ -115,8 +121,10 @@ class Context:
         Update the metadata's key like project, shot, task...
         """
         # TODO: Check the each entity  exists on the database
-        self._metadata["project"] = str(self.get_ephemeral_version("project")) or None
-        self._metadata["asset"] = str(self.get_ephemeral_version("asset")) or None
+        self._metadata["project"] = str(
+            self.get_ephemeral_version("project")) or None
+        self._metadata["asset"] = str(
+            self.get_ephemeral_version("asset")) or None
         sequence = self.get_ephemeral_version("sequence")
         if sequence and str(sequence).isdigit():
             self._metadata["sequence"] = int(sequence)
@@ -133,7 +141,8 @@ class Context:
             self._metadata["shot"] = None
         else:
             self._metadata["shot"] = None
-        self._metadata["task"] = str(self.get_ephemeral_version("task")) or None
+        self._metadata["task"] = str(
+            self.get_ephemeral_version("task")) or None
 
     def update_user(self) -> None:
         """
@@ -143,35 +152,51 @@ class Context:
         self._metadata["user"] = "slambin"
 
     @property
+    def dcc(self):
+        """Read only value of the current dcc"""
+        return self.metadata["dcc"]
+
+    @property
     def project(self):
+        """Read only value of the current project"""
         return self.metadata["project"]
 
     @property
     def asset(self):
+        """Read only value of the current asset"""
         return self.metadata["asset"]
 
     @property
     def sequence(self):
+        """Read only value of the current sequence"""
         return self.metadata["sequence"]
 
     @property
     def shot(self):
+        """Read only value of the current shot"""
         return self.metadata["shot"]
 
     @property
     def task(self):
+        """Read only value of the current task"""
         return self.metadata["task"]
 
     @property
     def entity(self):
+        """Compute the type of the lowest set entity"""
         if self.asset is not None:
             return "asset"
-        elif self.shot is not None:
+        if self.shot is not None:
             return "shot"
-        elif self.sequence is not None:
+        if self.sequence is not None:
             return "sequence"
-        else:
-            return None
+
+        return None
+
+    @property
+    def user(self):
+        """Read only value of the current user"""
+        return self.metadata["user"]
 
     def get_ephemeral_version(self, name: str) -> str:
         """
@@ -183,7 +208,8 @@ class Context:
 
         name = f".{name}"
         try:
-            ephemeral = next(x for x in self.rez_context.resolved_ephemerals if x.name == name)
+            ephemeral = next(x for x in self.rez_context.resolved_ephemerals
+                             if x.name == name)
             versions = ephemeral.range.to_versions()[0]
             return versions[0] if versions else ""
         except StopIteration:

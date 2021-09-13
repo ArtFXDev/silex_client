@@ -1,21 +1,18 @@
 from __future__ import annotations
 from typing import Any
-from dataclasses import dataclass, field
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.utils.log import logger
 from silex_client.utils.config import Config
-from silex_client.utils.datatypes import ReadOnlyDict
 from silex_client.network.websocket import WebsocketConnection
 
 
-@dataclass
 class ActionQuery():
     """
     Initialize and execute a given action
     """
-
-    def __init__(self, name: str, ws_connection: WebsocketConnection, config: Config, context_metadata: dict):
+    def __init__(self, name: str, ws_connection: WebsocketConnection,
+                 config: Config, context_metadata: dict):
         self.config = config
         self.buffer = ActionBuffer(name, ws_connection, context_metadata)
         self._initialize_buffer()
@@ -39,7 +36,7 @@ class ActionQuery():
         if resolved_action is None:
             return
         if self.name not in resolved_action:
-            logger.error("Invalid resolved action %s", self.action_name)
+            logger.error("Invalid resolved action %s", self.name)
             return
 
         action_commands = resolved_action[self.name]
@@ -76,13 +73,14 @@ class ActionQuery():
     @property
     def parameters(self) -> dict:
         """
-        Helper to get a list of all the parameters of the action, 
+        Helper to get a list of all the parameters of the action,
         usually used for printing infos about the action
         """
         parameters = {}
         for step_name, step in self.commands.items():
             for command_index, command in enumerate(step["commands"]):
-                parameters[f"{step_name}:{command_index}"] = list(command.parameters.keys())
+                parameters[f"{step_name}:{command_index}"] = list(
+                    command.parameters.keys())
 
         return parameters
 
@@ -100,7 +98,8 @@ class ActionQuery():
             try:
                 index = int(parameter_split[1])
             except TypeError:
-                logger.error("Could not set parameter %s: Invalid parameter" % parameter_name)
+                logger.error("Could not set parameter %s: Invalid parameter",
+                             parameter_name)
                 return
         elif len(parameter_split) == 2:
             try:
@@ -117,22 +116,20 @@ class ActionQuery():
                 step = command_step
                 index = command_index
                 valid = True
-                break
             elif step is None and index == command_index and name in parameters:
                 step = command_step
                 valid = True
-                break
             elif index is None and step == command_step and name in parameters:
                 index = command_index
                 valid = True
-                break
             elif step is not None and index is not None:
                 if step == command_step and index == command_index and name in parameters:
                     valid = True
-                    break
 
         if step is None or index is None or not valid:
-            logger.error("Could not set parameter %s: The parameter does not exists" % parameter_name)
+            logger.error(
+                "Could not set parameter %s: The parameter does not exists",
+                parameter_name)
             return
 
         self.buffer.set_parameter(step, index, name, value)
