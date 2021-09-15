@@ -11,10 +11,9 @@ class ActionQuery():
     """
     Initialize and execute a given action
     """
-    def __init__(self, name: str, ws_connection: WebsocketConnection,
-                 config: Config, context_metadata: dict):
+    def __init__(self, name: str, config: Config, context_metadata: dict):
         self.config = config
-        self.buffer = ActionBuffer(name, ws_connection, context_metadata)
+        self.buffer = ActionBuffer(name, context_metadata)
         self._initialize_buffer()
 
     def execute(self) -> ActionBuffer:

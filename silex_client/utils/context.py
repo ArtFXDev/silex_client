@@ -251,8 +251,7 @@ class Context:
         Return an ActionQuery object initialized with this context
         """
 
-        return ActionQuery(action_name, self.ws_connection, self.config,
-                           self.metadata)
+        return ActionQuery(action_name, self.config, self.metadata)
 
 
 context = Context()

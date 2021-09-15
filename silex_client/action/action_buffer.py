@@ -26,7 +26,6 @@ class ActionBuffer(Iterator):
 
     #: The name of the action (usualy the same as the config file)
     name: str = field()
-    ws_connection: WebsocketConnection = field(compare=False, repr=False)
     uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
     #: A dict of list of commands ordered by step names
     commands: dict = field(default_factory=OrderedDict, init=False)
