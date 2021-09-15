@@ -1,5 +1,12 @@
+from __future__ import annotations
+import typing
+
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
+
+# Forward references
+if typing.TYPE_CHECKING:
+    from silex_client.action.action_buffer import ActionBuffer
 
 
 class Log(CommandBase):
@@ -21,8 +28,7 @@ class Log(CommandBase):
     }
 
     @CommandBase.conform_command()
-    def __call__(self, parameters: dict, variables: dict,
-                 context_metadata: dict):
+    def __call__(self, parameters: dict, variables: dict, action_buffer: "ActionBuffer"):
         try:
             getattr(logger, parameters["level"])(parameters["message"])
         except ValueError:

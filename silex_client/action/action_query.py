@@ -3,6 +3,7 @@ from typing import Any
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.utils.log import logger
+from silex_client.utils.enums import Status
 from silex_client.utils.config import Config
 from silex_client.network.websocket import WebsocketConnection
 
@@ -22,7 +23,18 @@ class ActionQuery():
         send and receive the buffer to the UI when nessesary
         """
         for command in self.buffer:
-            command(self.variables, self.context_metadata)
+            # Only run the command if it is valid
+            if self.buffer.status is Status.INVALID:
+                logger.error("Stopping action %s because the buffer is invalid",
+                             self.name)
+                return self.buffer
+            # Create a shortened version of the parameters and pass them to the executor
+            parameters = {
+                key: value.get("value", None)
+                for key, value in command.parameters.items()
+            }
+            # Run the executor
+            command.executor(parameters, self.variables, self.buffer)
 
         return self.buffer
 

@@ -1,7 +1,13 @@
+from __future__ import annotations
 import os
+import typing
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
+
+# Forward references
+if typing.TYPE_CHECKING:
+    from silex_client.action.action_buffer import ActionBuffer
 
 
 class PublishFile(CommandBase):
@@ -32,8 +38,8 @@ class PublishFile(CommandBase):
 
     @CommandBase.conform_command(["project"])
     def __call__(self, parameters: dict, variables: dict,
-                 context_metadata: dict) -> None:
-        publish_path = os.path.join(context_metadata["project"],
+                 action_buffer: ActionBuffer) -> None:
+        publish_path = os.path.join(action_buffer.context_metadata["project"],
                                     parameters["name"])
 
         logger.info("Publishing file(s) %s to %s", parameters["file_path"],

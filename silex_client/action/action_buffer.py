@@ -11,7 +11,6 @@ from silex_client.utils.merge import merge_data
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
 from silex_client.utils.datatypes import ReadOnlyDict
-from silex_client.network.websocket import WebsocketConnection
 
 
 @dataclass()
@@ -39,18 +38,21 @@ class ActionBuffer(Iterator):
             copy.deepcopy(self.context_metadata))
 
     def __iter__(self):
+        # TODO: Create an iterator that only has the commands
         if not self.commands:
             return iter([])
-
+        
         # Initialize the step iterator
         self._step_iter = iter(self.commands.items())
         self._current_step = next(self._step_iter)
+        # Convert back the context_metadata from ReadOnlyDict to make is deepcopyable
+        self.context_metadata = dict(self.context_metadata)
 
         # Initialize the command iterator
         self._command_iter = iter(self._current_step[1]["commands"])
-        return self
+        return copy.deepcopy(self)
 
-    def __next__(self) -> dict:
+    def __next__(self) -> CommandBuffer:
         # Get the next command in the current step if available
         try:
             command = next(self._command_iter)
