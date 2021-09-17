@@ -1,20 +1,17 @@
 """
 @author: TD gang
-
 Class definition that connect the the given url throught websockets,
 receive and handle the incomming messages
 """
 
 import asyncio
+import copy
 import gc
 from contextlib import suppress
 from threading import Thread
-from typing import List, Union, Dict, Any
+from typing import Union
 
-from websockets import client
-from websockets.exceptions import (ConnectionClosed, ConnectionClosedError,
-                                   InvalidMessage)
-
+import socketio
 from silex_client.utils.log import logger
 
 
@@ -23,155 +20,107 @@ class WebsocketConnection:
     Websocket client that connect the the given url
     and receive and handle the incomming messages
 
-    :ivar EVENT_LOOP_TIMEOUT: How long in second to wait between each update loop
-    :ivar THREAD_TEARDOWN_TIMEOUT: How to wait for the thread to join before concidering it an error
+    :ivar TASK_SLEEP_TIME: How long in second to wait between each update loop
     """
 
     # Defines how long each task will wait between every loop
-    EVENT_LOOP_TIMEOUT = 0.2
-    # Defines how long to wait for the thread to join
-    THREAD_TEARDOWN_TIMEOUT = 5
+    TASK_SLEEP_TIME = 0.5
 
     def __init__(self, url: str = None):
         self.is_running = False
-        self.thread = None
         self.pending_stop = False
-        self.pending_restart = False
+        self.pending_transmissions = []
+
+        self.socketio = socketio.AsyncClient()
         self.loop = asyncio.new_event_loop()
-        self.pending_message = []
+        self.thread = None
 
         # Set the url accordingly
         if url is None:
-            url = "ws://localhost:8080"
+            url = "http://localhost:8080"
         self.url = url
 
-    async def _connect(self) -> None:
-        """
-        Connect to the server, wait for the incomming messages and handle disconnection
-        Called by self.run() or self.run_multithreaded()
-        """
-        self.pending_restart = False
-        logger.info("Connecting to %s", self.url)
-        try:
-            websocket = await client.connect(self.url)
-            # Create two async tasks
-            self.loop.create_task(self._listen_incomming(websocket))
-            self.loop.create_task(self._listen_outgoing(websocket))
-            # Listen to pending stop or restart
-            while not self.pending_stop and not self.pending_restart:
-                await asyncio.sleep(self.EVENT_LOOP_TIMEOUT)
-        except (OSError, ConnectionResetError, InvalidMessage):
-            logger.warning("Could not connect to %s retrying...", self.url)
-            await asyncio.sleep(self.EVENT_LOOP_TIMEOUT)
-            self.pending_restart = True
+        # Define the event handlers
+        @self.socketio.on("connect")
+        async def on_connect():
+            logger.info("Connected to %s established", self.url)
 
-        logger.info("Leaving event loop...")
+        @self.socketio.on("connect_error")
+        async def on_connect_error(data):
+            logger.error("Connection to %s failed", self.url)
 
-    async def _listen_incomming(
-            self, websocket: client.WebSocketClientProtocol) -> None:
-        """
-        Async infinite loop waiting for messages to receive
-        """
-        while not self.pending_stop and not self.pending_restart:
-            # The queue of incomming message is already handled by the library
-            try:
-                # Wait for a response with a timeout
-                with suppress(asyncio.TimeoutError):
-                    message = await asyncio.wait_for(websocket.recv(),
-                                                     self.EVENT_LOOP_TIMEOUT)
-                    logger.debug("Websocket client received %s", message)
-                    await self._handle_message(message)
-            except (ConnectionClosed, ConnectionClosedError):
-                # If the connection closed was not planned
-                if not self.pending_stop:
-                    logger.warning("Connection on %s lost retrying...",
-                                   self.url)
-                    self.pending_restart = True
+        @self.socketio.on("disconnect")
+        async def on_disconnect():
+            logger.info("Disconected from %s", self.url)
+        
+        @self.socketio.on("message")
+        async def on_message(data):
+            logger.debug("Received message %s from %s", data, self.url)
 
-    async def _listen_outgoing(
-            self, websocket: client.WebSocketClientProtocol) -> None:
-        """
-        Async infinite loop waiting for messages to be sent
-        """
-        while not self.pending_stop and not self.pending_restart:
-            # Send all the pending messges
-            for message in self.pending_message:
-                try:
-                    logger.debug("Websocket client sending %s", message)
-                    await asyncio.wait_for(websocket.send(message),
-                                           self.EVENT_LOOP_TIMEOUT)
-                except (ConnectionClosed, ConnectionClosedError):
-                    # If the connection closed was not planned
-                    if not self.pending_stop:
-                        logger.warning("Connection on %s lost retrying...",
-                                       self.url)
-                        self.pending_restart = True
+    def __del__(self):
+        if self.is_running:
+            self.stop()
 
-            # Clear the pending_list
-            self.pending_message.clear()
+    async def _listen_socketio(self) -> None:
+        await self.socketio.connect(self.url)
+        while True:
             # Sleep a bit between each iteration
-            await asyncio.sleep(self.EVENT_LOOP_TIMEOUT)
+            await asyncio.sleep(self.TASK_SLEEP_TIME)
+            # Exit the loop if a stop has been asked
+            if self.pending_stop:
+                await self.socketio.disconnect()
+                break
 
-    async def _handle_message(self, message: Any) -> None:
-        """
-        Parse the incomming messages and run appropriate function
-        """
-        # TODO: Define a json protocol and handle the messages accordingly
-        if message == "ping":
-            self.send("pong")
-        else:
-            logger.warning("No websocket message handler for : %s", message)
+    async def _emmit_socketio(self) -> None:
+        while True:
+            # Sleep a bit between each iteration
+            await asyncio.sleep(self.TASK_SLEEP_TIME)
+            # Exit the loop if a stop has been asked
+            if self.pending_stop:
+                break
+            if not self.socketio.connected:
+                continue
 
-    def _start_loop(self) -> None:
-        """
-        Set the event loop for the current thread and run it
-        This method is called by self.run() or self.run_multithreaded()
-        """
+            # Sleep a bit between each iteration
+            await asyncio.sleep(1)
+            # Move the pending_transmissions to a queue so we keep receiving
+            # event while executing them
+            transmission_queue = copy.deepcopy(self.pending_transmissions)
+            self.pending_transmissions.clear()
+            for message in transmission_queue:
+                logger.debug("Websocket client sending %s", message)
+                await self.socketio.emit('message', message)
+
+    def _start_event_loop(self) -> None:
         if self.loop.is_running():
             logger.info("Event loop already running")
             return
 
-        while True:
-            self.pending_stop = False
-            self.pending_restart = False
-            asyncio.set_event_loop(self.loop)
-            connect_task = self.loop.create_task(self._connect())
+        self.pending_stop = False
+        asyncio.set_event_loop(self.loop)
+        socketio_connection = self.loop.create_task(self._listen_socketio())
+        self.loop.create_task(self._emmit_socketio())
+        try:
+            self.loop.run_until_complete(socketio_connection)
+        except KeyboardInterrupt:
+            self.stop()
 
-            try:
-                logger.debug("Starting websocket event loop")
-                self.loop.run_until_complete(connect_task)
-            except KeyboardInterrupt:
-                # Catch keyboard interrupt to allow stopping the event loop with ctrl+c
-                self.stop()
+        # Stop the event loop and clear it once completed
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        self._clear_event_loop()
 
-            # Clean the event loop once completed
-            self._clear_loop()
-
-            # If no restart is required leave the loop
-            if not self.pending_restart or self.pending_stop:
-                break
-
-        self.is_running = False
-
-    def _clear_loop(self) -> None:
-        """
-        Clear the event loop from its pending task and delete it
-        This method is called by self._start_loop()
-        """
+    def _clear_event_loop(self) -> None:
         if self.loop.is_running():
             logger.info("The event loop must be stopped before being cleared")
             return
 
-        # TODO: Find a way to clear the loop that works without warnings everytime
-        # (the warning is ignored in the pytest.ini)
         logger.info("Clearing event loop...")
         # Clear the loop
         for task in asyncio.all_tasks(self.loop):
             # The cancel method will raise CancelledError on the running task to stop it
             task.cancel()
             # Wait for the task's cancellation in a suppress context to mute the CancelledError
-            with suppress(asyncio.CancelledError, ConnectionClosedError,
-                          ConnectionClosed):
+            with suppress(asyncio.CancelledError):
                 self.loop.run_until_complete(task)
 
         # Create a new loop and let the old one get garbage collected
@@ -181,27 +130,27 @@ class WebsocketConnection:
 
         logger.info("Event loop cleared")
 
-    def run(self) -> None:
+    def start(self) -> None:
         """
-        Initialize the event loop's task and run it in main thread
-        """
-        if self.is_running:
-            logger.warning("Websocket server already running")
-            return
-
-        self.is_running = True
-        self._start_loop()
-
-    def run_multithreaded(self):
-        """
-        Initialize the event loop's task and run it in a different thread
+        initialize the event loop's task and run it in main thread
         """
         if self.is_running:
             logger.warning("Websocket server already running")
             return
 
         self.is_running = True
-        self.thread = Thread(target=self._start_loop)
+        self._start_event_loop()
+
+    def start_multithreaded(self) -> None:
+        """
+        initialize the event loop's task and run it in a different thread
+        """
+        if self.is_running or self.thread is not None:
+            logger.warning("Websocket server already running")
+            return
+
+        self.is_running = True
+        self.thread = Thread(target=self._start_event_loop)
         self.thread.start()
 
     def stop(self) -> None:
@@ -217,24 +166,22 @@ class WebsocketConnection:
 
         # If the loop was running in a different thread stop it
         if self.thread is not None:
-            self.thread.join(self.THREAD_TEARDOWN_TIMEOUT)
+            self.thread.join(1)
             if self.thread.is_alive():
-                logger.warning("Could not stop the connection thread for %s",
+                logger.warning("Could not stop the websocket connection thread for %s",
                                self.url)
             else:
                 self.thread = None
+        self.is_running = False
 
-    def send(self, message: Union[str, List[str]]) -> None:
+    def send(self, message: Union[str, list, dict, tuple]) -> None:
         """
         Add the given message to the list of pending message to be sent
         """
-        if isinstance(message, str):
-            self.pending_message.append(message)
-        elif isinstance(message, list):
-            self.pending_message.extend(message)
+        self.pending_transmissions.append(message)
 
     @staticmethod
-    def url_to_parameters(url: str) -> Dict[str, str]:
+    def url_to_parameters(url: str) -> dict:
         """
         Convert an url into a dict of key/value for all the parameters of the url
         """
@@ -254,7 +201,7 @@ class WebsocketConnection:
         return output
 
     @staticmethod
-    def parameters_to_url(base_url: str, parameters: Dict[str, str]) -> str:
+    def parameters_to_url(base_url: str, parameters: dict) -> str:
         """
         Convert a dictionary of parameters to an url
         """
