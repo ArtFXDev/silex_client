@@ -114,7 +114,6 @@ class Context:
         # Handle the case where no DCC has been found
         if self._metadata["dcc"] is None:
             logger.debug("No supported dcc detected")
-            self.is_outdated = True
 
     def update_entities(self) -> None:
         """
@@ -123,8 +122,10 @@ class Context:
         # TODO: Check the each entity  exists on the database
         self._metadata["project"] = str(
             self.get_ephemeral_version("project")) or None
+
         self._metadata["asset"] = str(
             self.get_ephemeral_version("asset")) or None
+
         sequence = self.get_ephemeral_version("sequence")
         if sequence and str(sequence).isdigit():
             self._metadata["sequence"] = int(sequence)
@@ -133,6 +134,7 @@ class Context:
             self._metadata["sequence"] = None
         else:
             self._metadata["sequence"] = None
+
         shot = self.get_ephemeral_version("shot")
         if shot and str(shot).isdigit():
             self._metadata["shot"] = int(shot)
@@ -141,6 +143,7 @@ class Context:
             self._metadata["shot"] = None
         else:
             self._metadata["shot"] = None
+
         self._metadata["task"] = str(
             self.get_ephemeral_version("task")) or None
 
@@ -192,6 +195,34 @@ class Context:
             return "sequence"
 
         return None
+
+    @property
+    def is_valid(self) -> bool:
+        """
+        Check if the silex context is synchronised with the rez context
+        """
+        for ephemeral in self.rez_context.resolved_ephemerals:
+            entity_name = ephemeral.name.lstrip(".")
+            if entity_name not in ["task", "asset", "shot", "sequence"]:
+                continue
+
+            # The silex context is checking if the queried entity really exists on the database
+            # If if doesn't, the entity is set to None
+            if getattr(self, entity_name) is None:
+                logger.warning(
+                    "Invalid silex context: The entity %s is not set",
+                    entity_name)
+                return False
+
+            # If the rez context has changed, the silex context might be desynchronised
+            if getattr(self,
+                       entity_name) != self.get_ephemeral_version(entity_name):
+                logger.warning(
+                    "Invalid silex context: The entity %s is not on the right version",
+                    entity_name)
+                return False
+
+        return True
 
     @property
     def user(self):
