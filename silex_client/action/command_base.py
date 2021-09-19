@@ -78,6 +78,7 @@ class CommandBase():
                         kwargs.get("context_metadata", args[2]),
                         required_metadata):
                     command.command_buffer.status = Status.ERROR
+                    return
                 # Call the initial function while catching all the errors
                 # because we want to update the status
                 try:
