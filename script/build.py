@@ -10,6 +10,7 @@ def build(source_path, build_path, install_path, targets):
     """
     src = os.path.join(source_path, "silex_client")
     config = os.path.join(source_path, "config")
+    test = os.path.join(source_path, "test")
     package = os.path.join(source_path, "package.py")
 
     # TODO: Handle these files in the pre_test_command function
@@ -21,6 +22,7 @@ def build(source_path, build_path, install_path, targets):
         with contextlib.suppress(FileNotFoundError):
             shutil.rmtree(os.path.join(build_path, "silex_client"))
             shutil.rmtree(os.path.join(build_path, "config"))
+            shutil.rmtree(os.path.join(build_path, "test"))
             os.remove(os.path.join(build_path, "package.py"))
             os.remove(os.path.join(build_path, ".pylintrc"))
             os.remove(os.path.join(build_path, "pytest.ini"))
@@ -28,6 +30,7 @@ def build(source_path, build_path, install_path, targets):
     # Copy the source to the build location
     shutil.copytree(src, os.path.join(build_path, "silex_client"))
     shutil.copytree(config, os.path.join(build_path, "config"))
+    shutil.copytree(test, os.path.join(build_path, "test"))
     shutil.copy(package, build_path)
     shutil.copy(lint, build_path)
     shutil.copy(unit, build_path)
@@ -41,6 +44,7 @@ def build(source_path, build_path, install_path, targets):
         # Copy the source to the install location
         shutil.copytree(src, os.path.join(install_path, "silex_client"))
         shutil.copytree(config, os.path.join(install_path, "config"))
+        shutil.copytree(test, os.path.join(install_path, "test"))
         shutil.copy(package, install_path)
         shutil.copy(lint, install_path)
         shutil.copy(unit, install_path)

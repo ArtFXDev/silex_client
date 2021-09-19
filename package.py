@@ -2,6 +2,7 @@
 name = "silex_client"
 timestamp = 0
 version = "0.2.0"
+print("ttt")
 
 authors = ["ArtFx TD gang"]
 
@@ -27,11 +28,6 @@ tests = {
         "requires": ["pylint"],
         "run_on": ["default", "pre_release"]
     },
-    "format": {
-        "command": "yapf silex_client --recursive --verbose",
-        "requires": ["yapf"],
-        "run_on": ["default", "pre_release"]
-    }
 }
 
 build_command = "python {root}/script/build.py {install}"
