@@ -22,20 +22,23 @@ jobs:
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
 
-      - name: Install pipenv
-        run: python -m pip install --upgrade pipenv wheel
+      - name: Install yapf
+        run: python -m pip install yapf
 
-      - name: Install dependencies
-        run: pipenv install --deploy --dev
+      - name: Install sphinx
+        run: python -m pip install sphinx
+
+      - name: Install sphinx theme
+        run: python -m pip install sphinx-rtd-theme
 
       - name: Run formatter
-        run: pipenv run format 1>/dev/null
+        run: yapf silex_client --recursive --verbosel
 
       - name: Regenerate documentation source
-        run: pipenv run sphinx-apidoc --separate --force -o ./docs/source/pages ./silex_client
+        run: sphinx-apidoc --separate --force -o ./docs/source/pages ./silex_client
 
       - name: Rebuild documentation
-        run: pipenv run make -C ./docs html
+        run: ./docs/make -C ./docs html
 
       - name: Commit changes
         run: |

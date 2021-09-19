@@ -78,7 +78,8 @@ function Install-Rez {
 
 function Install-RezPackages {
     # TODO: Find a way to parse package.py and loop over the requires variable
-    foreach($package in @("yapf", "pylint", "pytest", "PyYAML", "logzero", "websockets")) {
+    Write-Output "Installing required rez packages..."
+    foreach($package in @("isort", "yapf", "pylint", "pytest", "PyYAML", "logzero", "websockets")) {
         Invoke-Expression("rez pip --install $package --python-version 3.7")
     }
 }
