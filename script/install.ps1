@@ -42,22 +42,21 @@ function Download-GithubRelease {
 }
 
 function Install-Rez {
-    Write-Output "Installing Rez..."
-    # Get install dir if not provided
-    if ($rez_dir -eq "" -and $null -ne $install_root) {
-        $rez_dir = "$install_root/rez"
+    if($null -ne $(Get-Command "rez" -errorAction SilentlyContinue)) {
+        return
     }
-
-    # Prompt for install dir if not provided
-    elseif ($rez_dir -eq "") {
-        $rez_dir = Read-Host "rez install root directory : "
+    Write-Output "Downloading Rez..."
+    # Set a default rez dir if not provided
+    if ($rez_dir -eq "") {
+        $rez_dir = "$home\rez"
     }
     $rez_source = Download-GithubRelease -repo "nerdvegas/rez"
 
     # Install rez
-    Invoke-Expression "python $(Resolve-Path $rez_source)\install.py $rez_dir"
+    Write-Output "Installing Rez..."
+    Invoke-Expression "python $(Resolve-Path $rez_source)\install.py `"$rez_dir`""
     $env:PATH=$env:PATH + ";$rez_dir\scripts\rez"
-    [environment]::SetEnvironmentVariable('path', $env:PATH, 'user')
+    [environment]::SetEnvironmentVariable('PATH', $env:PATH, 'user')
     Remove-Item $rez_source -recurse -force
     $env:REZ=$rez_dir
     [environment]::SetEnvironmentVariable('REZ', $env:REZ, 'user')
@@ -65,12 +64,15 @@ function Install-Rez {
     [environment]::SetEnvironmentVariable('PYTHONPATH', $env:PYTHONPATH, 'user')
 
     # Install config
+    Write-Output "Setting Rez config..."
     $rez_config = Join-Path -path $((Get-Item $PSCommandPath).Directory.Parent.FullName) -childPath "config/rez/rezconfig.py"
-    $rez_config = Copy-Item -path $rez_config -destination $(Join-Path -path $rez_dir -childPath "rezconfig.py")
+    Copy-Item -path $rez_config -destination $(Join-Path -path $rez_dir -childPath "rezconfig.py")
+    $rez_config = Join-Path -path $rez_dir -childPath "rezconfig.py"
     $env:REZ_CONFIG_FILE=$rez_config
     [environment]::SetEnvironmentVariable('REZ_CONFIG_FILE', $env:REZ_CONFIG_FILE, 'user')
 
     # Create some default packages
+    Write-Output "Binding default rez packages..."
     rez-bind --quickstart
 }
 
@@ -82,7 +84,5 @@ function Install-RezPackages {
 }
 
 # Start the installation
-if (-not (Get-Command "rez")) {
-    Install-Rez
-}
+Install-Rez
 Install-RezPackages
