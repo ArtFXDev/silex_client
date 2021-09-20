@@ -74,8 +74,8 @@ function Install-Rez {
     # Create some default packages
     Write-Output "Binding default rez packages..."
     rez-bind --quickstart
-    rez-env python -- "Copy-Item -path copy-item $(get-command python).source -destination '$env:REZ_PYTHON_ROOT\bin\python.exe'"
-    rez-env python "Remove-Item '$env:REZ_PYTHON_ROOT\bin\python'"
+    rez-env python -- powershell 'Copy-Item -path $((get-command python).source) -destination $env:REZ_PYTHON_ROOT\bin\python.exe'
+    rez-env python -- powershell 'Remove-Item "$env:REZ_PYTHON_ROOT\bin\python"'
 }
 
 function Install-RezPackages {
