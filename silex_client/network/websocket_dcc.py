@@ -3,7 +3,7 @@ import socketio
 from silex_client.utils.log import logger
 
 
-class WebsocketActionNamespace(socketio.AsyncClientNamespace):
+class WebsocketDCCNamespace(socketio.AsyncClientNamespace):
     def __init__(self, namespace: str, context_metadata: dict, url:str):
         super().__init__(namespace)
         self.context_metadata = context_metadata

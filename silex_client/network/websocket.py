@@ -14,7 +14,7 @@ from typing import Union
 import socketio
 
 from silex_client.utils.log import logger
-from silex_client.network.websocket_action import WebsocketActionNamespace
+from silex_client.network.websocket_dcc import WebsocketDCCNamespace
 
 
 class WebsocketConnection:
@@ -45,7 +45,7 @@ class WebsocketConnection:
             url = "http://localhost:8080"
         self.url = url
 
-        self.socketio.register_namespace(WebsocketActionNamespace("/dcc", context_metadata, url))
+        self.socketio.register_namespace(WebsocketDCCNamespace("/dcc", context_metadata, url))
 
     def __del__(self):
         if self.is_running:
