@@ -1,6 +1,7 @@
 from __future__ import annotations
 import os
 import sys
+import copy
 
 from rez import resolved_context
 
@@ -8,6 +9,7 @@ from silex_client.action.action_query import ActionQuery
 from silex_client.utils.config import Config
 from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.log import logger
+from silex_client.utils.datatypes import ReadOnlyDict
 
 
 class Context:
@@ -29,7 +31,7 @@ class Context:
         self._rez_context = resolved_context.ResolvedContext.get_current()
 
         url = WebsocketConnection.parameters_to_url(ws_url, self.metadata)
-        self.ws_connection = WebsocketConnection(url)
+        self.ws_connection = WebsocketConnection(self.metadata, url)
 
     @staticmethod
     def get() -> Context:
@@ -66,6 +68,7 @@ class Context:
             self.update_dcc()
             self.update_user()
             self.update_entities()
+            self._metadata["pid"] = os.getpid()
 
         return self._metadata
 
@@ -251,7 +254,9 @@ class Context:
         Return an ActionQuery object initialized with this context
         """
 
-        return ActionQuery(action_name, self.config, self.metadata)
+        metadata_snapshot = ReadOnlyDict(copy.deepcopy(self.metadata))
+        return ActionQuery(action_name, self.config, metadata_snapshot)
+
 
 
 context = Context()

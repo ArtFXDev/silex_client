@@ -12,7 +12,9 @@ from threading import Thread
 from typing import Union
 
 import socketio
+
 from silex_client.utils.log import logger
+from silex_client.network.websocket_action import WebsocketActionNamespace
 
 
 class WebsocketConnection:
@@ -26,7 +28,7 @@ class WebsocketConnection:
     # Defines how long each task will wait between every loop
     TASK_SLEEP_TIME = 0.5
 
-    def __init__(self, url: str = None):
+    def __init__(self, context_metadata: dict=None, url: str=None):
         self.is_running = False
         self.pending_stop = False
         self.pending_transmissions = []
@@ -35,27 +37,15 @@ class WebsocketConnection:
         self.loop = asyncio.new_event_loop()
         self.thread = None
 
-        # Set the url accordingly
+        # Set the context and the url accordingly
+        if context_metadata is None:
+            context_metadata = {}
+        self.context_metadata = context_metadata
         if url is None:
             url = "http://localhost:8080"
         self.url = url
 
-        # Define the event handlers
-        @self.socketio.on("connect")
-        async def on_connect():
-            logger.info("Connected to %s established", self.url)
-
-        @self.socketio.on("connect_error")
-        async def on_connect_error(data):
-            logger.error("Connection to %s failed", self.url)
-
-        @self.socketio.on("disconnect")
-        async def on_disconnect():
-            logger.info("Disconected from %s", self.url)
-        
-        @self.socketio.on("message")
-        async def on_message(data):
-            logger.debug("Received message %s from %s", data, self.url)
+        self.socketio.register_namespace(WebsocketActionNamespace("/dcc", context_metadata, url))
 
     def __del__(self):
         if self.is_running:

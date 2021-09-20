@@ -5,7 +5,6 @@ from silex_client.action.action_buffer import ActionBuffer
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
 from silex_client.utils.config import Config
-from silex_client.network.websocket import WebsocketConnection
 
 
 class ActionQuery():
