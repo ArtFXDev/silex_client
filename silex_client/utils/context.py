@@ -2,6 +2,8 @@ from __future__ import annotations
 import os
 import sys
 
+from rez import resolved_context
+
 from silex_client.action.action_query import ActionQuery
 from silex_client.utils.config import Config
 from silex_client.network.websocket import WebsocketConnection
@@ -24,6 +26,7 @@ class Context:
         self.config = Config()
         self._metadata = {}
         self.is_outdated = True
+        self._rez_context = resolved_context.ResolvedContext.get_current()
 
         url = WebsocketConnection.parameters_to_url(ws_url, self.metadata)
         self.ws_connection = WebsocketConnection(url)
@@ -37,6 +40,22 @@ class Context:
         return getattr(sys.modules[__name__], "context")
 
     @property
+    def rez_context(self):
+        """
+        Return the associated rez context, gets it if None is associated
+        """
+        if self._rez_context is None:
+            self._rez_context = resolved_context.ResolvedContext.get_current()
+            self.is_outdated = True
+
+        return self._rez_context
+
+    @rez_context.setter
+    def rez_context(self, rez_context: resolved_context.ResolvedContext):
+        self._rez_context = rez_context
+        self.is_outdated = True
+
+    @property
     def metadata(self) -> dict:
         """
         Lazy loaded property that updates when the is_outdated attribute is set to True
@@ -45,10 +64,8 @@ class Context:
         if self.is_outdated:
             self.is_outdated = False
             self.update_dcc()
-            self.update_task()
-            self.update_project()
             self.update_user()
-            self.update_entity()
+            self.update_entities()
 
         return self._metadata
 
@@ -56,15 +73,25 @@ class Context:
     def metadata(self, data: dict) -> None:
         """
         Set the _metadata private attribute.
-        This should not be used unless for test purposes, let the metadata update utself instead
+        This should not be used unless for test purposes, let the metadata update itself instead
         """
+        if "PYTEST_CURRENT_TEST" not in os.environ:
+            logger.error(
+                "Could not set context metadata: Context::metadata.setter is for testing purpose only"
+            )
+            return
         self._metadata = data
 
     def update_metadata(self, data: dict) -> None:
         """
         Merge the provided dict with the current metadata
-        This should not be used unless for test purposes, let the metadata update utself instead
+        This should not be used unless for test purposes, let the metadata update itself instead
         """
+        if "PYTEST_CURRENT_TEST" not in os.environ:
+            logger.error(
+                "Could not update context metadata: Context::update_metadata is for testing purpose only"
+            )
+            return
         self._metadata.update(data)
 
     def update_dcc(self) -> None:
@@ -86,22 +113,39 @@ class Context:
                 break
         # Handle the case where no DCC has been found
         if self._metadata["dcc"] is None:
-            logger.warning("No supported dcc detected")
-            self.is_outdated = True
+            logger.debug("No supported dcc detected")
 
-    def update_task(self) -> None:
+    def update_entities(self) -> None:
         """
-        Update the metadata's task key using the filesystem
+        Update the metadata's key like project, shot, task...
         """
-        # TODO: Get the current task from filesystem
-        self._metadata["task"] = "modeling"
+        # TODO: Check the each entity  exists on the database
+        self._metadata["project"] = str(
+            self.get_ephemeral_version("project")) or None
 
-    def update_project(self) -> None:
-        """
-        Update the metadata's project key using the filesystem
-        """
-        # TODO: Get the current project from the filesystem
-        self._metadata["project"] = "TEST_PIPE"
+        self._metadata["asset"] = str(
+            self.get_ephemeral_version("asset")) or None
+
+        sequence = self.get_ephemeral_version("sequence")
+        if sequence and str(sequence).isdigit():
+            self._metadata["sequence"] = int(sequence)
+        elif sequence:
+            logger.error("Skipping context's sequence: invalid index")
+            self._metadata["sequence"] = None
+        else:
+            self._metadata["sequence"] = None
+
+        shot = self.get_ephemeral_version("shot")
+        if shot and str(shot).isdigit():
+            self._metadata["shot"] = int(shot)
+        elif shot:
+            logger.error("Skipping context's shot: invalid index")
+            self._metadata["shot"] = None
+        else:
+            self._metadata["shot"] = None
+
+        self._metadata["task"] = str(
+            self.get_ephemeral_version("task")) or None
 
     def update_user(self) -> None:
         """
@@ -110,20 +154,97 @@ class Context:
         # TODO: Get the current user from the database using authentification
         self._metadata["user"] = "slambin"
 
-    def update_entity(self) -> None:
+    @property
+    def dcc(self):
+        """Read only value of the current dcc"""
+        return self.metadata["dcc"]
+
+    @property
+    def project(self):
+        """Read only value of the current project"""
+        return self.metadata["project"]
+
+    @property
+    def asset(self):
+        """Read only value of the current asset"""
+        return self.metadata["asset"]
+
+    @property
+    def sequence(self):
+        """Read only value of the current sequence"""
+        return self.metadata["sequence"]
+
+    @property
+    def shot(self):
+        """Read only value of the current shot"""
+        return self.metadata["shot"]
+
+    @property
+    def task(self):
+        """Read only value of the current task"""
+        return self.metadata["task"]
+
+    @property
+    def entity(self):
+        """Compute the type of the lowest set entity"""
+        if self.asset is not None:
+            return "asset"
+        if self.shot is not None:
+            return "shot"
+        if self.sequence is not None:
+            return "sequence"
+
+        return None
+
+    @property
+    def is_valid(self) -> bool:
         """
-        Update the metadata's entity related keys using the filesystem
+        Check if the silex context is synchronised with the rez context
         """
-        # Clear the current entity
-        # TODO: Get the list of possible entities from a database of config
-        for entity in ["sequence", "shot", "asset"]:
-            if entity in self._metadata:
-                self._metadata.pop(entity)
-        # Get the current entity
-        # TODO: Get the current entity from the filesystem
-        self._metadata["entity"] = "shot"
-        self._metadata["sequence"] = 50
-        self._metadata["shot"] = 120
+        for ephemeral in self.rez_context.resolved_ephemerals:
+            entity_name = ephemeral.name.lstrip(".")
+            if entity_name not in ["task", "asset", "shot", "sequence"]:
+                continue
+
+            # The silex context is checking if the queried entity really exists on the database
+            # If if doesn't, the entity is set to None
+            if getattr(self, entity_name) is None:
+                logger.warning(
+                    "Invalid silex context: The entity %s is not set",
+                    entity_name)
+                return False
+
+            # If the rez context has changed, the silex context might be desynchronised
+            if getattr(self,
+                       entity_name) != self.get_ephemeral_version(entity_name):
+                logger.warning(
+                    "Invalid silex context: The entity %s is not on the right version",
+                    entity_name)
+                return False
+
+        return True
+
+    @property
+    def user(self):
+        """Read only value of the current user"""
+        return self.metadata["user"]
+
+    def get_ephemeral_version(self, name: str) -> str:
+        """
+        Get the version number of a rez ephemeral package by its name
+        Ephemerals are used mostly to represent entities like task, shot, project...
+        """
+        if self.rez_context is None:
+            return ""
+
+        name = f".{name}"
+        try:
+            ephemeral = next(x for x in self.rez_context.resolved_ephemerals
+                             if x.name == name)
+            versions = ephemeral.range.to_versions()[0]
+            return versions[0] if versions else ""
+        except StopIteration:
+            return ""
 
     def get_action(self, action_name: str) -> ActionQuery:
         """

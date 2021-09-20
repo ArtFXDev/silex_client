@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, Iterable
 import functools
 import typing
 
@@ -39,32 +39,56 @@ class CommandBase():
         """
         for parameter_name, parameter_value in parameters.items():
             if parameter_value is None:
-                logger.error("Missing parameter %s for command %s",
-                             parameter_name, self.command_buffer.name)
+                logger.error(
+                    "Could not execute %s: The parameter %s is missing",
+                    self.command_buffer.name, parameter_name)
+                return False
+        return True
+
+    def check_context_metadata(self, context_metadata, required_metadata):
+        """
+        Check if the context snapshot stored in the buffer contains all the required
+        data for the command
+        """
+        for metadata in required_metadata:
+            if context_metadata.get(metadata) is None:
+                logger.error(
+                    "Could not execute command %s: The context is missing required metadata %s",
+                    self.command_buffer.name, metadata)
                 return False
         return True
 
     @staticmethod
-    def conform_command(func: Callable) -> Callable:
+    def conform_command(required_metadata: Iterable = tuple()):
         """
         Helper decorator that conform the input and the output
-        Meant to be used with the __call__ method
+        Meant to be used with the __call__ method of CommandBase objects
         """
-        @functools.wraps(func)
-        def wrapper_conform_command(command, *args, **kwargs) -> None:
-            # Make sure the given parameters are valid
-            if not command.check_parameters(kwargs.get("parameters", args[0])):
-                command.command_buffer.status = Status.ERROR
-                return
-            # Call the initial function while catching all the errors
-            # because we want to update the status
-            try:
-                command.command_buffer.status = Status.PROCESSING
-                func(command, *args, **kwargs)
-                command.command_buffer.status = Status.COMPLETED
-            except Exception as exception:
-                command.command_buffer.status = Status.ERROR
-                # TODO: Set the exception message in the buffer too
-                raise exception
+        def decorator_conform_command(func: Callable) -> Callable:
+            @functools.wraps(func)
+            def wrapper_conform_command(command: CommandBase, *args,
+                                        **kwargs) -> None:
+                # Make sure the given parameters are valid
+                if not command.check_parameters(
+                        kwargs.get("parameters", args[0])):
+                    command.command_buffer.status = Status.ERROR
+                    return
+                # Make sure all the required metatada is here
+                if not command.check_context_metadata(
+                        kwargs.get("context_metadata", args[2]),
+                        required_metadata):
+                    command.command_buffer.status = Status.ERROR
+                    return
+                # Call the initial function while catching all the errors
+                # because we want to update the status
+                try:
+                    command.command_buffer.status = Status.PROCESSING
+                    func(command, *args, **kwargs)
+                    command.command_buffer.status = Status.COMPLETED
+                except Exception as exception:
+                    command.command_buffer.status = Status.ERROR
+                    raise exception
 
-        return wrapper_conform_command
+            return wrapper_conform_command
+
+        return decorator_conform_command

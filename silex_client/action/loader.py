@@ -103,10 +103,10 @@ class Loader(yaml.SafeLoader):
         # Get the file type to load it correctly
         extension = os.path.splitext(filename)[1].lstrip('.')
         # Load and return the included file
-        with open(filename, 'r') as import_data:
+        with open(filename, 'r', encoding="utf-8") as import_data:
             if extension in ('yaml', 'yml'):
                 return yaml.load(import_data, Loader)
-            elif extension == 'json':
+            if extension == 'json':
                 return json.load(import_data)
 
             return ''.join(import_data.readlines())

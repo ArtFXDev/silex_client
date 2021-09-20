@@ -1,3 +1,5 @@
+import os
+
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
 
@@ -25,15 +27,14 @@ class PublishFile(CommandBase):
             "label": "Name",
             "type": str,
             "value": "untitled"
-        },
-        "task": {
-            "name": "task",
-            "label": "Task",
-            "type": int,
-            "value": None
         }
     }
 
-    @CommandBase.conform_command
-    def __call__(self, parameters: dict, variables: dict, environment: dict):
-        logger.info("Publishing file(s) %s on task %s", parameters["file_path"], str(parameters["task"]))
+    @CommandBase.conform_command(["project"])
+    def __call__(self, parameters: dict, variables: dict,
+                 context_metadata: dict) -> None:
+        publish_path = os.path.join(context_metadata["project"],
+                                    parameters["name"])
+
+        logger.info("Publishing file(s) %s to %s", parameters["file_path"],
+                    publish_path)

@@ -10,6 +10,7 @@ from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.merge import merge_data
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
+from silex_client.utils.datatypes import ReadOnlyDict
 from silex_client.network.websocket import WebsocketConnection
 
 
@@ -31,6 +32,12 @@ class ActionBuffer(Iterator):
     commands: dict = field(default_factory=OrderedDict, init=False)
     #: Dict of variables that are global to all the commands of this action
     variables: dict = field(compare=False, default_factory=dict, init=False)
+    #: Snapshot of the context's metadata when this buffer is created
+    context_metadata: dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        self.context_metadata = ReadOnlyDict(
+            copy.deepcopy(self.context_metadata))
 
     def __iter__(self):
         if not self.commands:
@@ -178,7 +185,8 @@ class ActionBuffer(Iterator):
         command = self.get_commands(step)[index]
         return command.parameters.get(name, None)
 
-    def set_parameter(self, step: str, index: int, name: str, value: Any) -> None:
+    def set_parameter(self, step: str, index: int, name: str,
+                      value: Any) -> None:
         """
         Helper to set a parameter of a command that belong to this action
         The data is quite nested, this is just for conveniance
@@ -186,11 +194,11 @@ class ActionBuffer(Iterator):
         parameter = self.get_parameter(step, index, name)
         # Check if the given value is the right type
         if parameter is None or not isinstance(value,
-                                                parameter.get("type", object)):
+                                               parameter.get("type", object)):
             try:
                 value = parameter["type"](value)
             except:
-                logger.error("Could not set parameter %s: Invalid value" % name)
+                logger.error("Could not set parameter %s: Invalid value", name)
                 return
 
         parameter["value"] = value

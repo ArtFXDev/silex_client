@@ -1,6 +1,5 @@
 import os
 import copy
-import importlib
 from typing import Union, Any
 
 from silex_client.utils.log import logger
@@ -25,16 +24,9 @@ class Config():
                 self.action_search_path += action_search_path
 
         # Look for config search path in the environment variables
-        env_config_path = os.getenv("SILEX_ACTION_CONFIG", None)
+        env_config_path = os.getenv("SILEX_ACTION_CONFIG")
         if env_config_path is not None:
             self.action_search_path += env_config_path.split(os.pathsep)
-
-        # Add the config folder of this repo to the config search path
-        repo_root = importlib.import_module("silex_client")
-        repo_dir = os.path.dirname(repo_root.__file__)
-        repo_config = os.path.abspath(
-            os.path.join(repo_dir, "..", "config", "action"))
-        self.action_search_path.append(repo_config)
 
     @property
     def actions(self) -> list:
@@ -49,8 +41,12 @@ class Config():
             for file_path in os.listdir(path):
                 split_path = os.path.splitext(file_path)
                 if os.path.splitext(file_path)[1] in [".yaml", ".yml"]:
-                    action_path = os.path.abspath(os.path.join(path, file_path))
-                    found_actions.append({"name": split_path[0], "path": action_path})
+                    action_path = os.path.abspath(os.path.join(
+                        path, file_path))
+                    found_actions.append({
+                        "name": split_path[0],
+                        "path": action_path
+                    })
 
         return found_actions
 
@@ -60,16 +56,18 @@ class Config():
         """
         # Find the action config
         if action_name not in [action["name"] for action in self.actions]:
-            logger.error("Could not resolve config for the action %s", action_name)
+            logger.error("Could not resolve config for the action %s",
+                         action_name)
             return None
 
-        config_path = next(action["path"] for action in self.actions if action["name"] == action_name)
+        config_path = next(action["path"] for action in self.actions
+                           if action["name"] == action_name)
         logger.debug("Found action config at %s", config_path)
         return self._load_config(config_path)
 
     def _load_config(self, config_path: str) -> Any:
         # Load the config
-        with open(config_path, "r") as config_data:
+        with open(config_path, "r", encoding="utf-8") as config_data:
             search_path = copy.deepcopy(self.action_search_path)
             loader = Loader(config_data, tuple(search_path))
             try:

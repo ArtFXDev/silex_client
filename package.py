@@ -1,7 +1,8 @@
 # pylint: skip-file
 name = "silex_client"
 timestamp = 0
-version = "0.0.0"
+version = "0.2.0"
+print("ttt")
 
 authors = ["ArtFx TD gang"]
 
@@ -11,7 +12,7 @@ description = \
     Part of the Silex ecosystem
     """
 
-requires = ["python-3.7", "PyYAML", "logzero", "websockets"]
+requires = ["python-3.7", "PyYAML", "logzero", "websockets", "rez"]
 
 vcs = "git"
 
@@ -24,21 +25,25 @@ tests = {
     "lint": {
         "command":
         "pylint --rcfile={root}/.pylintrc --fail-under=8 {root}/silex_client",
-        "requires": ["pylint", "pytest"],
+        "requires": ["pylint"],
         "run_on": ["default", "pre_release"]
-    }
+    },
 }
 
 build_command = "python {root}/script/build.py {install}"
-tools = ["run_test.sh"]
 
 
 def commands():
     """
     Set the environment variables for silex_client
     """
+    import os
+
     env.PATH.append("{root}/silex_client")
     env.PATH.append("{root}/tools")
     env.PYTHONPATH.append("{root}")
     env.SILEX_LOG_LEVEL = "DEBUG"
+    env.SILEX_ACTION_CONFIG = "{root}/config/action"
 
+    parser_module = ".".join(["silex_client", "cli", "parser"])
+    alias("silex", "python -m {parser_module}")
