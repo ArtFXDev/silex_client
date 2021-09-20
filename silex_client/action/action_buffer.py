@@ -14,7 +14,7 @@ from silex_client.utils.datatypes import ReadOnlyDict
 
 
 @dataclass()
-class ActionBuffer(Iterator):
+class ActionBuffer():
     """
     Store the state of an action, it is used as a comunication payload with the UI
     """
@@ -37,33 +37,8 @@ class ActionBuffer(Iterator):
         self.context_metadata = ReadOnlyDict(
             copy.deepcopy(self.context_metadata))
 
-    def __iter__(self):
-        # TODO: Create an iterator that only has the commands
-        if not self.commands:
-            return iter([])
-        
-        # Initialize the step iterator
-        self._step_iter = iter(self.commands.items())
-        self._current_step = next(self._step_iter)
-        # Convert back the context_metadata from ReadOnlyDict to make is deepcopyable
-        self.context_metadata = dict(self.context_metadata)
-
-        # Initialize the command iterator
-        self._command_iter = iter(self._current_step[1]["commands"])
-        return copy.deepcopy(self)
-
-    def __next__(self) -> CommandBuffer:
-        # Get the next command in the current step if available
-        try:
-            command = next(self._command_iter)
-            return command
-        # Get the next step available and rerun the loop
-        except StopIteration:
-            # No need to catch the StopIteration exception
-            # Since it will just end the loop has we would want
-            self._current_step = next(self._step_iter)
-            self._command_iter = iter(self._current_step[1]["commands"])
-            return self.__next__()
+    def __iter__(self) -> ActionCommandIterator:
+        return ActionCommandIterator(self)
 
     def _serialize(self):
         """
@@ -203,3 +178,29 @@ class ActionBuffer(Iterator):
                 return
 
         parameter["value"] = value
+
+class ActionCommandIterator(Iterator):
+    def __init__(self, buffer: ActionBuffer):
+        self.buffer = buffer
+
+        # Initialize the step iterator
+        self._step_iter = iter(self.buffer.commands.items())
+        self._current_step = next(self._step_iter)
+
+        # Initialize the command iterator
+        self._command_iter = iter(self._current_step[1]["commands"])
+
+
+    def __next__(self) -> CommandBuffer:
+        # Get the next command in the current step if available
+        try:
+            command = next(self._command_iter)
+            return command
+        # Get the next step available and rerun the loop
+        except StopIteration:
+            # No need to catch the StopIteration exception
+            # Since it will just end the loop has we would want
+            self._current_step = next(self._step_iter)
+            self._command_iter = iter(self._current_step[1]["commands"])
+            return self.__next__()
+

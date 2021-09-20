@@ -2,7 +2,6 @@
 name = "silex_client"
 timestamp = 0
 version = "0.2.0"
-print("ttt")
 
 authors = ["ArtFx TD gang"]
 
@@ -12,7 +11,7 @@ description = \
     Part of the Silex ecosystem
     """
 
-requires = ["python-3.7", "PyYAML", "logzero", "websockets", "rez"]
+requires = ["python-3.7", "PyYAML", "logzero", "python_socketio", "rez", "aiohttp"]
 
 vcs = "git"
 

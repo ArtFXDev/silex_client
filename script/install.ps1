@@ -74,12 +74,13 @@ function Install-Rez {
     # Create some default packages
     Write-Output "Binding default rez packages..."
     rez-bind --quickstart
+    # TODO: Copy the python executable in the rez package
 }
 
 function Install-RezPackages {
     # TODO: Find a way to parse package.py and loop over the requires variable
     Write-Output "Installing required rez packages..."
-    foreach($package in @("isort", "yapf", "pylint", "pytest", "PyYAML", "logzero", "websockets")) {
+    foreach($package in @("isort", "yapf", "pylint", "pytest", "PyYAML", "logzero", "python-socketio[asyncio_client]")) {
         Invoke-Expression("rez pip --install $package --python-version 3.7")
     }
 }
