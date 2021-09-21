@@ -15,6 +15,7 @@ import socketio
 
 from silex_client.utils.log import logger
 from silex_client.network.websocket_dcc import WebsocketDCCNamespace
+from silex_client.network.websocket_action import WebsocketActionNamespace
 
 
 class WebsocketConnection:
@@ -45,7 +46,9 @@ class WebsocketConnection:
             url = "http://localhost:8080"
         self.url = url
 
-        self.socketio.register_namespace(WebsocketDCCNamespace("/dcc", context_metadata, url))
+        # Register the different namespaces
+        self.dcc_namespace = self.socketio.register_namespace(WebsocketDCCNamespace("/dcc", context_metadata, url))
+        self.action_namespace = self.socketio.register_namespace(WebsocketActionNamespace("/action", context_metadata, url))
 
     def __del__(self):
         if self.is_running:

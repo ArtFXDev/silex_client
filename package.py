@@ -36,8 +36,6 @@ def commands():
     """
     Set the environment variables for silex_client
     """
-    import os
-
     env.PATH.append("{root}/silex_client")
     env.PATH.append("{root}/tools")
     env.PYTHONPATH.append("{root}")
