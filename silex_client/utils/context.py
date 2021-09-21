@@ -25,8 +25,8 @@ class Context:
     _metadata = {}
 
     def __init__(self, ws_url: str = "ws://localhost:8080"):
-        self.config = Config()
-        self._metadata = {}
+        self.config: Config = Config()
+        self._metadata: dict = {"name": "untitled"}
         self.is_outdated = True
         self._rez_context = resolved_context.ResolvedContext.get_current()
 
@@ -156,6 +156,16 @@ class Context:
         """
         # TODO: Get the current user from the database using authentification
         self._metadata["user"] = "slambin"
+
+    @property
+    def name(self):
+        """Get the name stored in the context's metadata"""
+        return self.metadata["dcc"]
+
+    @name.setter
+    def name(self, value: str):
+        """Set the name stored in the context's metadata"""
+        self._metadata["name"] = value
 
     @property
     def dcc(self):
