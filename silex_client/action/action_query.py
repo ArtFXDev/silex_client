@@ -81,10 +81,8 @@ class ActionQuery():
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
-        current_buffer = json.loads(self.buffer.serialize)
-        diff_buffer = json.loads(self._buffer_diff.serialize())
-
-        self.ws_connection.send("/action", "query", json.dumps(jsondiff.diff(current_buffer, diff_buffer)))
+        diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
+        self.ws_connection.send("/action", "update", json.dumps(diff))
 
     def receive_websocket(self, buffer_diff: str) -> None:
         """
