@@ -1,10 +1,11 @@
 from __future__ import annotations
 import uuid
 import copy
+import json
 from typing import Any
 from collections import OrderedDict
 from collections.abc import Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 
 from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.merge import merge_data
@@ -35,27 +36,18 @@ class ActionBuffer():
     def __iter__(self) -> ActionCommandIterator:
         return ActionCommandIterator(self)
 
-    def _serialize(self):
+    def serialize(self) -> str:
         """
         Convert the action's data into json so it can be sent to the UI
         """
-        raise NotImplementedError("This feature is WIP")
+        dictionary_representation = asdict(self)
+        # Convert the uuid into a json serialisable format
+        dictionary_representation["uid"] = dictionary_representation["uid"].hex
+        return json.dumps(dictionary_representation)
 
-    def _deserialize(self, serealised_data):
+    def deserialize(self, serealised_data: dict):
         """
         Convert back the action's data from json into this object
-        """
-        raise NotImplementedError("This feature is WIP")
-
-    def send(self):
-        """
-        Serialize and send this buffer to the UI though websockets
-        """
-        raise NotImplementedError("This feature is WIP")
-
-    def receive(self, timeout: int):
-        """
-        Wait for the UI to send back a buffer and deserialize it
         """
         raise NotImplementedError("This feature is WIP")
 

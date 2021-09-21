@@ -1,10 +1,11 @@
 from __future__ import annotations
 import copy
+import json
 import importlib
 import re
 import uuid
 from typing import Union
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
@@ -81,6 +82,7 @@ class CommandBuffer():
             if issubclass(executor, CommandBase):
                 return executor(self)
 
+            # If the module is not a subclass or CommandBase, return an error
             raise ImportError
         except (ImportError, AttributeError):
             logger.error("Invalid command path, skipping %s", path)
@@ -88,3 +90,18 @@ class CommandBuffer():
 
             self.status = Status.INVALID
             return CommandBase(self)
+
+    def serialize(self) -> str:
+        """
+        Convert the action's data into json so it can be sent to the UI
+        """
+        dictionary_representation = asdict(self)
+        # Convert the uuid into a json serialisable format
+        dictionary_representation["uid"] = dictionary_representation["uid"].hex
+        return json.dumps(dictionary_representation)
+
+    def deserialize(self, serealised_data: dict):
+        """
+        Convert back the action's data from json into this object
+        """
+        raise NotImplementedError("This feature is WIP")
