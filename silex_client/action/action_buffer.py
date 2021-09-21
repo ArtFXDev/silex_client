@@ -43,6 +43,9 @@ class ActionBuffer():
         dictionary_representation = asdict(self)
         # Convert the uuid into a json serialisable format
         dictionary_representation["uid"] = dictionary_representation["uid"].hex
+        for step in dictionary_representation["commands"]:
+            for command in step:
+                command["uid"] = command["uid"].hex
         return json.dumps(dictionary_representation)
 
     def deserialize(self, serealised_data: dict):
