@@ -9,6 +9,7 @@ from silex_client.utils.enums import Status
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.command_buffer import CommandBuffer
+    from silex_client.action.action_buffer import ActionBuffer
 
 
 class CommandBase():
@@ -22,7 +23,7 @@ class CommandBase():
     def __init__(self, command_buffer: CommandBuffer):
         self.command_buffer = command_buffer
 
-    def __call__(self, parameters: dict, variables: dict, environment: dict):
+    def __call__(self, parameters: dict, variables: dict, action_buffer: ActionBuffer):
         pass
 
     @property
@@ -75,7 +76,7 @@ class CommandBase():
                     return
                 # Make sure all the required metatada is here
                 if not command.check_context_metadata(
-                        kwargs.get("context_metadata", args[2]),
+                        kwargs.get("action_buffer", args[2]).context_metadata,
                         required_metadata):
                     command.command_buffer.status = Status.ERROR
                     return

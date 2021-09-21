@@ -10,12 +10,10 @@ from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.merge import merge_data
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
-from silex_client.utils.datatypes import ReadOnlyDict
-from silex_client.network.websocket import WebsocketConnection
 
 
 @dataclass()
-class ActionBuffer(Iterator):
+class ActionBuffer():
     """
     Store the state of an action, it is used as a comunication payload with the UI
     """
@@ -26,7 +24,6 @@ class ActionBuffer(Iterator):
 
     #: The name of the action (usualy the same as the config file)
     name: str = field()
-    ws_connection: WebsocketConnection = field(compare=False, repr=False)
     uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
     #: A dict of list of commands ordered by step names
     commands: dict = field(default_factory=OrderedDict, init=False)
@@ -35,34 +32,8 @@ class ActionBuffer(Iterator):
     #: Snapshot of the context's metadata when this buffer is created
     context_metadata: dict = field(default_factory=dict)
 
-    def __post_init__(self):
-        self.context_metadata = ReadOnlyDict(
-            copy.deepcopy(self.context_metadata))
-
-    def __iter__(self):
-        if not self.commands:
-            return iter([])
-
-        # Initialize the step iterator
-        self._step_iter = iter(self.commands.items())
-        self._current_step = next(self._step_iter)
-
-        # Initialize the command iterator
-        self._command_iter = iter(self._current_step[1]["commands"])
-        return self
-
-    def __next__(self) -> dict:
-        # Get the next command in the current step if available
-        try:
-            command = next(self._command_iter)
-            return command
-        # Get the next step available and rerun the loop
-        except StopIteration:
-            # No need to catch the StopIteration exception
-            # Since it will just end the loop has we would want
-            self._current_step = next(self._step_iter)
-            self._command_iter = iter(self._current_step[1]["commands"])
-            return self.__next__()
+    def __iter__(self) -> ActionCommandIterator:
+        return ActionCommandIterator(self)
 
     def _serialize(self):
         """
@@ -202,3 +173,29 @@ class ActionBuffer(Iterator):
                 return
 
         parameter["value"] = value
+
+class ActionCommandIterator(Iterator):
+    def __init__(self, buffer: ActionBuffer):
+        self.buffer = buffer
+
+        # Initialize the step iterator
+        self._step_iter = iter(self.buffer.commands.items())
+        self._current_step = next(self._step_iter)
+
+        # Initialize the command iterator
+        self._command_iter = iter(self._current_step[1]["commands"])
+
+
+    def __next__(self) -> CommandBuffer:
+        # Get the next command in the current step if available
+        try:
+            command = next(self._command_iter)
+            return command
+        # Get the next step available and rerun the loop
+        except StopIteration:
+            # No need to catch the StopIteration exception
+            # Since it will just end the loop has we would want
+            self._current_step = next(self._step_iter)
+            self._command_iter = iter(self._current_step[1]["commands"])
+            return self.__next__()
+

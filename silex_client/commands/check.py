@@ -1,5 +1,12 @@
+from __future__ import annotations
+import typing
+
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
+
+# Forward references
+if typing.TYPE_CHECKING:
+    from silex_client.action.action_buffer import ActionBuffer
 
 
 class CheckDbFileSystemSync(CommandBase):
@@ -24,6 +31,6 @@ class CheckDbFileSystemSync(CommandBase):
 
     @CommandBase.conform_command()
     def __call__(self, parameters: dict, variables: dict,
-                 context_metadata: dict):
+                 action_buffer: ActionBuffer):
         logger.info("Checking if file %s and entity %s both exists",
                     parameters["file_path"], parameters["db_entity"])

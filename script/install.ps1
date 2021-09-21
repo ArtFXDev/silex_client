@@ -74,12 +74,14 @@ function Install-Rez {
     # Create some default packages
     Write-Output "Binding default rez packages..."
     rez-bind --quickstart
+    rez-env python -- powershell 'Copy-Item -path $((get-command python).source) -destination $env:REZ_PYTHON_ROOT\bin\python.exe'
+    rez-env python -- powershell 'Remove-Item $env:REZ_PYTHON_ROOT\bin\python'
 }
 
 function Install-RezPackages {
     # TODO: Find a way to parse package.py and loop over the requires variable
     Write-Output "Installing required rez packages..."
-    foreach($package in @("isort", "yapf", "pylint", "pytest", "PyYAML", "logzero", "websockets")) {
+    foreach($package in @("isort", "yapf", "pylint", "pytest", "PyYAML", "logzero", "python-socketio[asyncio_client]")) {
         Invoke-Expression("rez pip --install $package --python-version 3.7")
     }
 }
