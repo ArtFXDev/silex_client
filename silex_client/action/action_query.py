@@ -71,6 +71,9 @@ class ActionQuery():
         Send a serialised version of the buffer to the websocket server, and store a copy of it
         """
         self._buffer_diff = copy.deepcopy(self.buffer)
+        # Start the websocket server if not started already
+        if not self.ws_connection.is_running:
+            self.ws_connection.start_multithreaded()
         self.ws_connection.send("/action", "query", self._buffer_diff.serialize())
 
     def send_websocket(self) -> None:
