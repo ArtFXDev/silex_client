@@ -80,9 +80,9 @@ class WebsocketConnection:
             # event while executing them
             transmission_queue = copy.deepcopy(self.pending_transmissions)
             self.pending_transmissions.clear()
-            for message in transmission_queue:
-                logger.debug("Websocket client sending %s", message)
-                await self.socketio.emit('message', message)
+            for transmission in transmission_queue:
+                logger.debug("Websocket client sending %s at %s", transmission["data"], transmission["namespace"])
+                await self.socketio.emit(transmission["event"], transmission["data"], transmission["namespace"])
 
     def _start_event_loop(self) -> None:
         if self.loop.is_running():
@@ -167,11 +167,11 @@ class WebsocketConnection:
                 self.thread = None
         self.is_running = False
 
-    def send(self, message: Union[str, list, dict, tuple]) -> None:
+    def send(self, namespace: str, event: str, data: Union[str, list, dict, tuple]) -> None:
         """
         Add the given message to the list of pending message to be sent
         """
-        self.pending_transmissions.append(message)
+        self.pending_transmissions.append({"event": event, "data": data, "namespace": namespace})
 
     @staticmethod
     def url_to_parameters(url: str) -> dict:

@@ -265,7 +265,7 @@ class Context:
         """
 
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(self.metadata))
-        return ActionQuery(action_name, self.config, metadata_snapshot)
+        return ActionQuery(action_name, self.config, self.ws_connection, metadata_snapshot)
 
 
 

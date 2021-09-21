@@ -1,18 +1,24 @@
 from __future__ import annotations
 from typing import Any
+import typing
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
 from silex_client.utils.config import Config
 
+# Forward references
+if typing.TYPE_CHECKING:
+    from silex_client.network.websocket import WebsocketConnection
+
 
 class ActionQuery():
     """
     Initialize and execute a given action
     """
-    def __init__(self, name: str, config: Config, context_metadata: dict):
+    def __init__(self, name: str, config: Config, ws_connection: WebsocketConnection, context_metadata: dict):
         self.config = config
+        self.ws_connection = ws_connection
         self.buffer = ActionBuffer(name, context_metadata)
         self._initialize_buffer()
 
