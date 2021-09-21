@@ -1,6 +1,9 @@
 from __future__ import annotations
 from typing import Any
 import typing
+import json
+import jsondiff
+import copy
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.utils.log import logger
@@ -21,12 +24,17 @@ class ActionQuery():
         self.ws_connection = ws_connection
         self.buffer = ActionBuffer(name, context_metadata)
         self._initialize_buffer()
+        self._buffer_diff = copy.deepcopy(self.buffer)
 
     def execute(self) -> ActionBuffer:
         """
         Execute the action's commands in order,
         send and receive the buffer to the UI when nessesary
         """
+        # Initialize the communication with the websocket server
+        self.initialize_websocket()
+
+        # Execut all the commands one by one
         for command in self.buffer:
             # Only run the command if it is valid
             if self.buffer.status is Status.INVALID:
@@ -57,6 +65,28 @@ class ActionQuery():
 
         action_commands = resolved_action[self.name]
         self.buffer.update_commands(action_commands)
+
+    def initialize_websocket(self) -> None:
+        """
+        Send a serialised version of the buffer to the websocket server, and store a copy of it
+        """
+        self._buffer_diff = copy.deepcopy(self.buffer)
+        self.ws_connection.send("/action", "query", self._buffer_diff.serialize())
+
+    def send_websocket(self) -> None:
+        """
+        Send a diff between the current state of the buffer and the last saved state of the buffer
+        """
+        current_buffer = json.loads(self.buffer.serialize())
+        diff_buffer = json.loads(self._buffer_diff.serialize())
+
+        self.ws_connection.send("/action", "query", json.dumps(jsondiff.diff(current_buffer, diff_buffer)))
+
+    def receive_websocket(self, buffer_diff: str) -> None:
+        """
+        Update the buffer according to the one received from the websocket server
+        """
+        pass
 
     @property
     def name(self) -> str:

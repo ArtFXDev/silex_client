@@ -48,7 +48,8 @@ class ActionBuffer():
                 command["uid"] = command["uid"].hex
         return json.dumps(dictionary_representation)
 
-    def deserialize(self, serealised_data: dict):
+    @classmethod
+    def deserialize(cls, serealised_data: dict):
         """
         Convert back the action's data from json into this object
         """
