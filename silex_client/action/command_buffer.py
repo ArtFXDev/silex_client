@@ -91,14 +91,11 @@ class CommandBuffer():
             self.status = Status.INVALID
             return CommandBase(self)
 
-    def serialize(self) -> str:
+    def serialize(self) -> dict:
         """
         Convert the action's data into json so it can be sent to the UI
         """
-        dictionary_representation = asdict(self)
-        # Convert the uuid into a json serialisable format
-        dictionary_representation["uid"] = dictionary_representation["uid"].hex
-        return json.dumps(dictionary_representation)
+        return asdict(self)
 
     @classmethod
     def deserialize(cls, serealised_data: dict):

@@ -36,17 +36,11 @@ class ActionBuffer():
     def __iter__(self) -> ActionCommandIterator:
         return ActionCommandIterator(self)
 
-    def serialize(self) -> str:
+    def serialize(self) -> dict:
         """
         Convert the action's data into json so it can be sent to the UI
         """
-        dictionary_representation = asdict(self)
-        # Convert the uuid into a json serialisable format
-        dictionary_representation["uid"] = dictionary_representation["uid"].hex
-        for step in dictionary_representation["commands"]:
-            for command in step:
-                command["uid"] = command["uid"].hex
-        return json.dumps(dictionary_representation)
+        return asdict(self)
 
     @classmethod
     def deserialize(cls, serealised_data: dict):

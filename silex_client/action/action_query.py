@@ -6,6 +6,7 @@ import jsondiff
 import copy
 
 from silex_client.action.action_buffer import ActionBuffer
+from silex_client.utils.serialiser import action_encoder
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
 from silex_client.utils.config import Config
@@ -74,13 +75,13 @@ class ActionQuery():
         # Start the websocket server if not started already
         if not self.ws_connection.is_running:
             self.ws_connection.start_multithreaded()
-        self.ws_connection.send("/action", "query", self._buffer_diff.serialize())
+        self.ws_connection.send("/action", "query", json.dumps(self._buffer_diff, default=action_encoder))
 
     def send_websocket(self) -> None:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
-        current_buffer = json.loads(self.buffer.serialize())
+        current_buffer = json.loads(self.buffer.serialize)
         diff_buffer = json.loads(self._buffer_diff.serialize())
 
         self.ws_connection.send("/action", "query", json.dumps(jsondiff.diff(current_buffer, diff_buffer)))
