@@ -110,6 +110,10 @@ class ActionQuery():
         # If the websocket server is not running, don't wait for anything
         if not self.ws_connection.is_running:
             return
+        patch = jsondiff.patch(self.buffer.serialize(), buffer_diff)
+        self.buffer.deserialize(patch)
+        # Always make sure the _buffer_diff correspond to the UI's data
+        self._buffer_diff = copy.deepcopy(self.buffer)
 
     @property
     def name(self) -> str:
