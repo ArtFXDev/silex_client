@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 import sys
 import copy
+import uuid
 
 from rez import resolved_context
 
@@ -25,8 +26,9 @@ class Context:
     _metadata = {}
 
     def __init__(self, ws_url: str = "ws://localhost:8080"):
+        self._metadata = {}
         self.config: Config = Config()
-        self._metadata: dict = {"name": "untitled"}
+        self._metadata: dict = {"name": None, "uid": uuid.uuid1()}
         self.is_outdated = True
         self._rez_context = resolved_context.ResolvedContext.get_current()
 
