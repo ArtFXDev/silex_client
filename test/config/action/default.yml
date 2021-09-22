@@ -3,7 +3,7 @@ publish:
     index: 10
     label: "Pre action"
     commands:
-      - name: "initalize_action"
+      initalize_action:
         label: "Initialize Action"
         path: "silex_client.commands.utils.Log"
         parameters:
@@ -19,7 +19,7 @@ publish:
     index: 30
     label: "Post action"
     commands:
-      - name: "close_action"
+      close_action:
         label: "Close Action"
         path: "silex_client.commands.utils.Log"
         parameters:

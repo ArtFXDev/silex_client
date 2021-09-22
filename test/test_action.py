@@ -58,6 +58,4 @@ def test_execute_action(dummy_context: Context):
     action.buffer.set_parameter("action", 0, "file_path", "/path/to/file")
 
     buffer = action.execute()
-    for command in buffer:
-        print(command.status)
     assert buffer.status is Status.COMPLETED

@@ -29,8 +29,9 @@ class CommandBuffer():
     tooltip: str = field(compare=False, repr=False, default="")
     #: Dict that represent the parameters of the command, their type, value, name...
     parameters: dict = field(compare=False, repr=False, default_factory=dict)
-
+    #: A Unique ID to help differentiate multiple actions
     uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
+    #: The status of the command, to keep track of the progression, specify the errors
     status: Status = field(default=Status.INITIALIZED, init=False)
 
     def __post_init__(self):

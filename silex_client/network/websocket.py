@@ -48,7 +48,7 @@ class WebsocketConnection:
 
         # Register the different namespaces
         self.dcc_namespace = self.socketio.register_namespace(WebsocketDCCNamespace("/dcc", context_metadata, url))
-        self.action_namespace = self.socketio.register_namespace(WebsocketActionNamespace("/action", context_metadata, url))
+        self.action_namespace = self.socketio.register_namespace(WebsocketActionNamespace("/dcc/action", context_metadata, url))
 
     def __del__(self):
         if self.is_running:

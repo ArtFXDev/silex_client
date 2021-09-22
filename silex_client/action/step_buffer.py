@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field, asdict
-from typing import Union
+from typing import Union, Dict
+import uuid
 import re
+
+from silex_client.action.command_buffer import CommandBuffer
 
 @dataclass()
 class StepBuffer():
@@ -19,7 +22,9 @@ class StepBuffer():
     #: Small explanation for the UI
     tooltip: str = field(compare=False, repr=False, default="")
     #: Dict that represent the parameters of the command, their type, value, name...
-    commands: dict = field(compare=False, repr=False, default_factory=dict)
+    commands: Dict[str, CommandBuffer] = field(compare=False, repr=False, default_factory=dict)
+    #: A Unique ID to help differentiate multiple actions
+    uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")

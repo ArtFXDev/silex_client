@@ -1,12 +1,12 @@
 from __future__ import annotations
 import uuid
 import copy
-from typing import Any
+from typing import Any, Dict
 from collections import OrderedDict
 from collections.abc import Iterator
 from dataclasses import dataclass, field, asdict
 
-from silex_client.action.command_buffer import CommandBuffer
+from silex_client.action.step_buffer import StepBuffer
 from silex_client.resolve.merge import merge_data
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
@@ -24,9 +24,10 @@ class ActionBuffer():
 
     #: The name of the action (usualy the same as the config file)
     name: str = field()
+    #: A Unique ID to help differentiate multiple actions
     uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
-    #: A dict of list of commands ordered by step names
-    commands: dict = field(default_factory=OrderedDict, init=False)
+    #: A dict of steps that will contain the commands
+    steps: Dict[str, StepBuffer] = field(default_factory=dict, init=False)
     #: Dict of variables that are global to all the commands of this action
     variables: dict = field(compare=False, default_factory=dict, init=False)
     #: Snapshot of the context's metadata when this buffer is created
@@ -122,19 +123,20 @@ class ActionBuffer():
 
         return command_dict
 
-    def get_commands(self, step: str = None) -> list:
+    @property
+    def commands(self, step: str = None) -> list:
         """
         Helper to get a command that belong to this action
         The data is quite nested, this is just for conveniance
         """
         # Return the commands of the queried step
-        if step is not None and step in self.commands:
-            return self.commands[step]["commands"]
+        if step is not None and step in self.step.values():
+            return self.step[step].commands
 
         # If no steps given return all the commands flattened
         return [
-            command for step in self.commands.values()
-            for command in step["commands"]
+            command for step in self.step.values()
+            for command in step.commands
         ]
 
     def get_parameter(self, step: str, index: int, name: str):
@@ -142,7 +144,7 @@ class ActionBuffer():
         Helper to get a parameter of a command that belong to this action
         The data is quite nested, this is just for conveniance
         """
-        command = self.get_commands(step)[index]
+        command = self.commands(step)[index]
         return command.parameters.get(name, None)
 
     def set_parameter(self, step: str, index: int, name: str,
