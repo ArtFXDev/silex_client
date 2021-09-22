@@ -4,6 +4,7 @@ import importlib
 import re
 import uuid
 from typing import Union
+import dacite
 from dataclasses import dataclass, field, asdict
 
 from silex_client.utils.log import logger
@@ -16,7 +17,6 @@ class CommandBuffer():
     """
     Store the data of a command, it is used as a comunication payload with the UI
     """
-
     #: The path to the command's module
     path: str = field()
     #: Name of the command, must have no space or special characters
@@ -97,9 +97,10 @@ class CommandBuffer():
         """
         return asdict(self)
 
-    @classmethod
-    def deserialize(cls, serealised_data: dict):
+    def deserialize(self, serialized_data: dict) -> None:
         """
-        Convert back the command's data from json into this object
+        Convert back the action's data from json into this object
         """
-        raise NotImplementedError("This feature is WIP")
+        new_data = dacite.from_dict(CommandBuffer, serialized_data)
+        self.__dict__ = new_data.__dict__
+

@@ -2,6 +2,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Union, Dict
 import uuid
 import re
+import dacite
 
 from silex_client.action.command_buffer import CommandBuffer
 
@@ -10,7 +11,6 @@ class StepBuffer():
     """
     Store the data of a step, it is used as a comunication payload with the UI
     """
-
     #: Name of the step, must have no space or special characters
     name: str
     #: The index of the step, to set the order in which they should be executed
@@ -39,9 +39,9 @@ class StepBuffer():
         """
         return asdict(self)
 
-    @classmethod
-    def deserialize(cls, serealised_data: dict):
+    def deserialize(self, serialized_data: dict) -> None:
         """
         Convert back the action's data from json into this object
         """
-        raise NotImplementedError("This feature is WIP")
+        new_data = dacite.from_dict(StepBuffer, serialized_data)
+        self.__dict__ = new_data.__dict__
