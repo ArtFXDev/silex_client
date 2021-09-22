@@ -1,7 +1,6 @@
 from __future__ import annotations
 import uuid
 import copy
-import json
 from typing import Any
 from collections import OrderedDict
 from collections.abc import Iterator

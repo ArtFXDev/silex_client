@@ -1,6 +1,5 @@
 from __future__ import annotations
 import copy
-import json
 import importlib
 import re
 import uuid
@@ -93,13 +92,13 @@ class CommandBuffer():
 
     def serialize(self) -> dict:
         """
-        Convert the action's data into json so it can be sent to the UI
+        Convert the command's data into json so it can be sent to the UI
         """
         return asdict(self)
 
     @classmethod
     def deserialize(cls, serealised_data: dict):
         """
-        Convert back the action's data from json into this object
+        Convert back the command's data from json into this object
         """
         raise NotImplementedError("This feature is WIP")
