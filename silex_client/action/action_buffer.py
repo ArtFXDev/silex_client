@@ -25,9 +25,9 @@ class ActionBuffer():
     #: A dict of steps that will contain the commands
     steps: Dict[str, StepBuffer] = field(default_factory=dict)
     #: Dict of variables that are global to all the commands of this action
-    variables: dict = field(compare=False, default_factory=dict)
+    variables: Dict[str, Any] = field(compare=False, default_factory=dict)
     #: Snapshot of the context's metadata when this buffer is created
-    context_metadata: dict = field(default_factory=dict)
+    context_metadata: Dict[str, Any] = field(default_factory=dict)
 
     def serialize(self) -> dict:
         """
@@ -40,7 +40,7 @@ class ActionBuffer():
         Convert back the action's data from json into this object
         """
         new_data = dacite.from_dict(ActionBuffer, serialized_data)
-        self.__dict__ = new_data.__dict__
+        self.__dict__.update(new_data.__dict__)
         self.reorder_steps()
 
     def reorder_steps(self):

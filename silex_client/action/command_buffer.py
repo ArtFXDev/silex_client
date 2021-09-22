@@ -57,20 +57,6 @@ class CommandBuffer():
                 value["value"] = value["value"]()
         self.parameters = command_parameters
 
-    def __call__(self, variables, environment):
-        # Only run the command if it is valid
-        if self.status is Status.INVALID:
-            logger.error("Skipping command %s because the buffer is invalid",
-                         self.name)
-            return
-        # Create a shortened version of the parameters and pass them to the executor
-        parameters = {
-            key: value.get("value", None)
-            for key, value in self.parameters.items()
-        }
-        # Run the executor
-        self.executor(parameters, variables, environment)
-
     def _get_executor(self, path: str) -> CommandBase:
         """
         Try to import the module and get the Command object

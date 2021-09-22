@@ -25,7 +25,7 @@ class ActionQuery():
         self.config = config
         self.ws_connection = ws_connection
         self.buffer = ActionBuffer(name, context_metadata=context_metadata)
-        self._initialize_buffer()
+        self._initialize_buffer({"context_metadata": context_metadata})
         self._buffer_diff = copy.deepcopy(self.buffer)
 
     def execute(self) -> ActionBuffer:
@@ -49,20 +49,30 @@ class ActionQuery():
                 for key, value in command.parameters.items()
             }
             # Run the executor
-            command.executor(parameters, self.variables, self.buffer)
+            command.executor(parameters, self)
 
         return self.buffer
 
-    def _initialize_buffer(self) -> None:
+    def _initialize_buffer(self, custom_data: dict=None) -> None:
         """
         Initialize the buffer from the config
         """
+        # Resolve the action config and conform it so it can be converted to objects
         resolved_action = self.config.resolve_action(self.name)
         self._conform_resolved_action(resolved_action)
+
+        # Make sure the required action is in the config
         if self.name not in resolved_action.keys():
             logger.error("Could not initialise the action: The resolved config is invalid")
             return
-        self.buffer.deserialize(resolved_action[self.name])
+        resolved_action = resolved_action[self.name]
+
+        # Apply any potential custom data
+        if custom_data is not None:
+            resolved_action.update(custom_data)
+
+        # Update the buffer with the new data
+        self.buffer.deserialize(resolved_action)
 
     def _conform_resolved_action(self, data: Any):
         if not isinstance(data, dict):
