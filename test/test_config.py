@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from silex_client.utils.config import Config
+from silex_client.resolve.config import Config
 
 
 @pytest.fixture

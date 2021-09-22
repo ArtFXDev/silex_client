@@ -9,7 +9,7 @@ import pytest
 
 from silex_client.utils.context import Context
 from silex_client.utils.enums import Status
-from silex_client.action.loader import Loader
+from silex_client.resolve.loader import Loader
 
 
 @pytest.fixture

@@ -9,11 +9,11 @@ from silex_client.action.action_buffer import ActionBuffer
 from silex_client.utils.serialiser import action_encoder
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
-from silex_client.utils.config import Config
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.network.websocket import WebsocketConnection
+    from silex_client.resolve.config import Config
 
 
 class ActionQuery():
@@ -72,15 +72,18 @@ class ActionQuery():
         Send a serialised version of the buffer to the websocket server, and store a copy of it
         """
         self._buffer_diff = copy.deepcopy(self.buffer)
-        # Start the websocket server if not started already
+        # If the websocket server is not running, don't send anything
         if not self.ws_connection.is_running:
-            self.ws_connection.start_multithreaded()
+            return
         self.ws_connection.send("/action", "query", json.dumps(self._buffer_diff, default=action_encoder))
 
     def send_websocket(self) -> None:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
+        # If the websocket server is not running, don't send anything
+        if not self.ws_connection.is_running:
+            return
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
         self.ws_connection.send("/action", "update", json.dumps(diff))
 
@@ -88,7 +91,9 @@ class ActionQuery():
         """
         Update the buffer according to the one received from the websocket server
         """
-        pass
+        # If the websocket server is not running, don't wait for anything
+        if not self.ws_connection.is_running:
+            return
 
     @property
     def name(self) -> str:

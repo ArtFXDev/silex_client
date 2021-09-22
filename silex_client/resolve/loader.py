@@ -5,7 +5,7 @@ import json
 import yaml
 
 from silex_client.utils.log import logger
-from silex_client.utils.merge import merge_data
+from silex_client.resolve.merge import merge_data
 
 
 class Loader(yaml.SafeLoader):
@@ -114,6 +114,7 @@ class Loader(yaml.SafeLoader):
     def include(self, node: yaml.Node) -> Any:
         """
         Contructor function to handle the !include statement
+        The result will be the included data only, the node's data is replaced
         """
         # Handle any type of node
         include_kwargs = self._construct_kwargs(node, ("file", "key"))
@@ -144,6 +145,7 @@ class Loader(yaml.SafeLoader):
     def inherit(self, node: yaml.Node) -> Any:
         """
         Contructor function to handle the !inherit statement
+        The result will be the merged data between the inherited data and the node's data
         """
         # Handle any type of node
         inherit_kwargs = self._construct_kwargs(node, ("parent", "key"))

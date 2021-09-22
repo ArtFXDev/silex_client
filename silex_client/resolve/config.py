@@ -3,7 +3,7 @@ import copy
 from typing import Union, Any
 
 from silex_client.utils.log import logger
-from silex_client.action.loader import Loader
+from silex_client.resolve.loader import Loader
 
 
 class Config():

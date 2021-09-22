@@ -6,7 +6,7 @@ import copy
 from rez import resolved_context
 
 from silex_client.action.action_query import ActionQuery
-from silex_client.utils.config import Config
+from silex_client.resolve.config import Config
 from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.log import logger
 from silex_client.utils.datatypes import ReadOnlyDict

@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field, asdict
 
 from silex_client.action.command_buffer import CommandBuffer
-from silex_client.utils.merge import merge_data
+from silex_client.resolve.merge import merge_data
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
 
