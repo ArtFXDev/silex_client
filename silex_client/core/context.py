@@ -15,7 +15,7 @@ from silex_client.utils.datatypes import ReadOnlyDict
 
 class Context:
     """
-    Data class that keeps track of the current context
+    Singleton-like class that keeps track of the current context
     This class should not be instanciated use the already instanciated object from this module
     or use the get() static method
 

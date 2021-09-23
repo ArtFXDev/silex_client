@@ -7,7 +7,7 @@ Unit testing functions for the module utils.context
 import os
 import pytest
 
-from silex_client.utils.context import Context
+from silex_client.core.context import Context
 from silex_client.utils.enums import Status
 from silex_client.resolve.loader import Loader
 
