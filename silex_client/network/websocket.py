@@ -82,7 +82,7 @@ class WebsocketConnection:
             self.pending_transmissions.clear()
             for transmission in transmission_queue:
                 logger.debug("Websocket client sending %s at %s", transmission["data"], transmission["namespace"])
-                await self.socketio.emit(transmission["event"], transmission["data"], transmission["namespace"])
+                await self.socketio.emit(transmission["event"], transmission["data"], transmission["namespace"], lambda x : print(x))
 
     def _start_event_loop(self) -> None:
         if self.loop.is_running():

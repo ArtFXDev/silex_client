@@ -11,7 +11,7 @@ class WebsocketDCCNamespace(socketio.AsyncClientNamespace):
 
     async def on_connect(self):
         logger.info("Connected to %s", self.url)
-        await self.emit("initialization", self.context_metadata)
+        await self.emit("initialization", self.context_metadata, callback=lambda x : print(x))
 
     async def on_disconnect(self):
         logger.info("Disconected from %s", self.url)
