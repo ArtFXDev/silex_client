@@ -174,7 +174,7 @@ class WebsocketConnection:
         Add the given message to the list of pending message to be sent
         """
         try:
-            data = json.dumps(data, default=silex_encoder)
+            data = json.loads(json.dumps(data, default=silex_encoder))
         except TypeError:
             logger.error("Could not send %s: The data is not json serialisable", data)
             return
