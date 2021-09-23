@@ -45,7 +45,7 @@ class WebsocketConnection:
             context_metadata = {}
         self.context_metadata = context_metadata
         if url is None:
-            url = "http://localhost:8080"
+            url = "http://127.0.0.1:5118"
         self.url = url
 
         # Register the different namespaces
