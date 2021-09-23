@@ -1,13 +1,10 @@
 from __future__ import annotations
 from typing import Any
 import typing
-import json
 import jsondiff
 import copy
-import dacite
 
 from silex_client.action.action_buffer import ActionBuffer
-from silex_client.utils.serialiser import action_encoder
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
 
@@ -91,7 +88,7 @@ class ActionQuery():
         # If the websocket server is not running, don't send anything
         if not self.ws_connection.is_running:
             return
-        self.ws_connection.send("/action", "query", json.dumps(self._buffer_diff, default=action_encoder))
+        self.ws_connection.send("/action", "query", self._buffer_diff)
 
     def send_websocket(self) -> None:
         """
@@ -101,7 +98,7 @@ class ActionQuery():
         if not self.ws_connection.is_running:
             return
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
-        self.ws_connection.send("/action", "update", json.dumps(diff))
+        self.ws_connection.send("/action", "update", diff)
 
     def receive_websocket(self, buffer_diff: str) -> None:
         """

@@ -1,10 +1,9 @@
-import json
 import uuid
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.action.command_buffer import CommandBuffer
 
-def action_encoder(obj):
+def silex_encoder(obj):
     """
     Helper to encode the action buffer to json
     """
