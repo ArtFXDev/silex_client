@@ -2,11 +2,12 @@ from __future__ import annotations
 import os
 import sys
 import copy
+import uuid
 
 from rez import resolved_context
 
 from silex_client.action.action_query import ActionQuery
-from silex_client.utils.config import Config
+from silex_client.resolve.config import Config
 from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.log import logger
 from silex_client.utils.datatypes import ReadOnlyDict
@@ -24,9 +25,10 @@ class Context:
 
     _metadata = {}
 
-    def __init__(self, ws_url: str = "ws://localhost:8080"):
-        self.config = Config()
+    def __init__(self, ws_url: str = "ws://localhost:3000"):
         self._metadata = {}
+        self.config: Config = Config()
+        self._metadata: dict = {"name": None, "uid": uuid.uuid1()}
         self.is_outdated = True
         self._rez_context = resolved_context.ResolvedContext.get_current()
 
@@ -158,6 +160,16 @@ class Context:
         self._metadata["user"] = "slambin"
 
     @property
+    def name(self):
+        """Get the name stored in the context's metadata"""
+        return self.metadata["dcc"]
+
+    @name.setter
+    def name(self, value: str):
+        """Set the name stored in the context's metadata"""
+        self._metadata["name"] = value
+
+    @property
     def dcc(self):
         """Read only value of the current dcc"""
         return self.metadata["dcc"]
@@ -255,7 +267,7 @@ class Context:
         """
 
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(self.metadata))
-        return ActionQuery(action_name, self.config, metadata_snapshot)
+        return ActionQuery(action_name, self.config, self.ws_connection, metadata_snapshot)
 
 
 

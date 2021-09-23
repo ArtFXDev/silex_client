@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Iterable
+from typing import Callable
 import functools
 import typing
 
@@ -9,7 +9,7 @@ from silex_client.utils.enums import Status
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.command_buffer import CommandBuffer
-    from silex_client.action.action_buffer import ActionBuffer
+    from silex_client.action.action_query import ActionQuery
 
 
 class CommandBase():
@@ -20,10 +20,13 @@ class CommandBase():
     #: Dictionary that represent the command's parameters
     parameters: dict = {}
 
+    #: List that represent the required context metadata
+    required_metada: list = []
+
     def __init__(self, command_buffer: CommandBuffer):
         self.command_buffer = command_buffer
 
-    def __call__(self, parameters: dict, variables: dict, action_buffer: ActionBuffer):
+    def __call__(self, parameters: dict, action_query: ActionQuery):
         pass
 
     @property
@@ -46,12 +49,12 @@ class CommandBase():
                 return False
         return True
 
-    def check_context_metadata(self, context_metadata, required_metadata):
+    def check_context_metadata(self, context_metadata):
         """
         Check if the context snapshot stored in the buffer contains all the required
         data for the command
         """
-        for metadata in required_metadata:
+        for metadata in self.required_metada:
             if context_metadata.get(metadata) is None:
                 logger.error(
                     "Could not execute command %s: The context is missing required metadata %s",
@@ -60,7 +63,7 @@ class CommandBase():
         return True
 
     @staticmethod
-    def conform_command(required_metadata: Iterable = tuple()):
+    def conform_command():
         """
         Helper decorator that conform the input and the output
         Meant to be used with the __call__ method of CommandBase objects
@@ -76,8 +79,7 @@ class CommandBase():
                     return
                 # Make sure all the required metatada is here
                 if not command.check_context_metadata(
-                        kwargs.get("action_buffer", args[2]).context_metadata,
-                        required_metadata):
+                        kwargs.get("action_query", args[1]).context_metadata):
                     command.command_buffer.status = Status.ERROR
                     return
                 # Call the initial function while catching all the errors

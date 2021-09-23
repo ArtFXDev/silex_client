@@ -4,7 +4,8 @@ import importlib
 import re
 import uuid
 from typing import Union
-from dataclasses import dataclass, field
+import dacite
+from dataclasses import dataclass, field, asdict
 
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
@@ -16,7 +17,6 @@ class CommandBuffer():
     """
     Store the data of a command, it is used as a comunication payload with the UI
     """
-
     #: The path to the command's module
     path: str = field()
     #: Name of the command, must have no space or special characters
@@ -29,8 +29,9 @@ class CommandBuffer():
     tooltip: str = field(compare=False, repr=False, default="")
     #: Dict that represent the parameters of the command, their type, value, name...
     parameters: dict = field(compare=False, repr=False, default_factory=dict)
-
+    #: A Unique ID to help differentiate multiple actions
     uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
+    #: The status of the command, to keep track of the progression, specify the errors
     status: Status = field(default=Status.INITIALIZED, init=False)
 
     def __post_init__(self):
@@ -56,20 +57,6 @@ class CommandBuffer():
                 value["value"] = value["value"]()
         self.parameters = command_parameters
 
-    def __call__(self, variables, environment):
-        # Only run the command if it is valid
-        if self.status is Status.INVALID:
-            logger.error("Skipping command %s because the buffer is invalid",
-                         self.name)
-            return
-        # Create a shortened version of the parameters and pass them to the executor
-        parameters = {
-            key: value.get("value", None)
-            for key, value in self.parameters.items()
-        }
-        # Run the executor
-        self.executor(parameters, variables, environment)
-
     def _get_executor(self, path: str) -> CommandBase:
         """
         Try to import the module and get the Command object
@@ -81,6 +68,7 @@ class CommandBuffer():
             if issubclass(executor, CommandBase):
                 return executor(self)
 
+            # If the module is not a subclass or CommandBase, return an error
             raise ImportError
         except (ImportError, AttributeError):
             logger.error("Invalid command path, skipping %s", path)
@@ -88,3 +76,17 @@ class CommandBuffer():
 
             self.status = Status.INVALID
             return CommandBase(self)
+
+    def serialize(self) -> dict:
+        """
+        Convert the command's data into json so it can be sent to the UI
+        """
+        return asdict(self)
+
+    def deserialize(self, serialized_data: dict) -> None:
+        """
+        Convert back the action's data from json into this object
+        """
+        new_data = dacite.from_dict(CommandBuffer, serialized_data)
+        self.__dict__ = new_data.__dict__
+

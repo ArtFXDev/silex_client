@@ -7,7 +7,7 @@ from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
-    from silex_client.action.action_buffer import ActionBuffer
+    from silex_client.action.action_query import ActionQuery
 
 
 class PublishFile(CommandBase):
@@ -36,10 +36,11 @@ class PublishFile(CommandBase):
         }
     }
 
-    @CommandBase.conform_command(["project"])
-    def __call__(self, parameters: dict, variables: dict,
-                 action_buffer: ActionBuffer) -> None:
-        publish_path = os.path.join(action_buffer.context_metadata["project"],
+    required_metada = ["project"]
+
+    @CommandBase.conform_command()
+    def __call__(self, parameters: dict, action_query: ActionQuery) -> None:
+        publish_path = os.path.join(action_query.context_metadata["project"],
                                     parameters["name"])
 
         logger.info("Publishing file(s) %s to %s", parameters["file_path"],

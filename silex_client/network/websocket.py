@@ -9,12 +9,15 @@ import copy
 import gc
 from contextlib import suppress
 from threading import Thread
-from typing import Union
+from typing import Any
+import json
 
 import socketio
 
 from silex_client.utils.log import logger
 from silex_client.network.websocket_dcc import WebsocketDCCNamespace
+from silex_client.network.websocket_action import WebsocketActionNamespace
+from silex_client.utils.serialiser import silex_encoder
 
 
 class WebsocketConnection:
@@ -45,7 +48,9 @@ class WebsocketConnection:
             url = "http://localhost:8080"
         self.url = url
 
-        self.socketio.register_namespace(WebsocketDCCNamespace("/dcc", context_metadata, url))
+        # Register the different namespaces
+        self.dcc_namespace = self.socketio.register_namespace(WebsocketDCCNamespace("/dcc", context_metadata, self))
+        self.action_namespace = self.socketio.register_namespace(WebsocketActionNamespace("/dcc/action", context_metadata, self))
 
     def __del__(self):
         if self.is_running:
@@ -77,9 +82,9 @@ class WebsocketConnection:
             # event while executing them
             transmission_queue = copy.deepcopy(self.pending_transmissions)
             self.pending_transmissions.clear()
-            for message in transmission_queue:
-                logger.debug("Websocket client sending %s", message)
-                await self.socketio.emit('message', message)
+            for transmission in transmission_queue:
+                logger.debug("Websocket client sending %s at %s", transmission["data"], transmission["namespace"])
+                await self.socketio.emit(transmission["event"], transmission["data"], transmission["namespace"], lambda x : print(x))
 
     def _start_event_loop(self) -> None:
         if self.loop.is_running():
@@ -164,11 +169,16 @@ class WebsocketConnection:
                 self.thread = None
         self.is_running = False
 
-    def send(self, message: Union[str, list, dict, tuple]) -> None:
+    def send(self, namespace: str, event: str, data: Any) -> None:
         """
         Add the given message to the list of pending message to be sent
         """
-        self.pending_transmissions.append(message)
+        try:
+            data = json.loads(json.dumps(data, default=silex_encoder))
+        except TypeError:
+            logger.error("Could not send %s: The data is not json serialisable", data)
+            return
+        self.pending_transmissions.append({"event": event, "data": data, "namespace": namespace})
 
     @staticmethod
     def url_to_parameters(url: str) -> dict:

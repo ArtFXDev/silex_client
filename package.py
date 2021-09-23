@@ -11,7 +11,7 @@ description = \
     Part of the Silex ecosystem
     """
 
-requires = ["python-3.7", "PyYAML", "logzero", "python_socketio", "rez", "aiohttp"]
+requires = ["python-3.7", "PyYAML", "logzero", "python_socketio", "rez", "aiohttp", "jsondiff", "dacite"]
 
 vcs = "git"
 
@@ -36,8 +36,6 @@ def commands():
     """
     Set the environment variables for silex_client
     """
-    import os
-
     env.PATH.append("{root}/silex_client")
     env.PATH.append("{root}/tools")
     env.PYTHONPATH.append("{root}")

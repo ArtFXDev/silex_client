@@ -1,27 +1,40 @@
 from __future__ import annotations
 from typing import Any
+import typing
+import jsondiff
+import copy
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
-from silex_client.utils.config import Config
+
+# Forward references
+if typing.TYPE_CHECKING:
+    from silex_client.network.websocket import WebsocketConnection
+    from silex_client.resolve.config import Config
 
 
 class ActionQuery():
     """
     Initialize and execute a given action
     """
-    def __init__(self, name: str, config: Config, context_metadata: dict):
+    def __init__(self, name: str, config: Config, ws_connection: WebsocketConnection, context_metadata: dict):
         self.config = config
-        self.buffer = ActionBuffer(name, context_metadata)
-        self._initialize_buffer()
+        self.ws_connection = ws_connection
+        self.buffer = ActionBuffer(name, context_metadata=context_metadata)
+        self._initialize_buffer({"context_metadata": context_metadata})
+        self._buffer_diff = copy.deepcopy(self.buffer)
 
     def execute(self) -> ActionBuffer:
         """
         Execute the action's commands in order,
         send and receive the buffer to the UI when nessesary
         """
-        for command in self.buffer:
+        # Initialize the communication with the websocket server
+        self.initialize_websocket()
+
+        # Execut all the commands one by one
+        for command in self.commands:
             # Only run the command if it is valid
             if self.buffer.status is Status.INVALID:
                 logger.error("Stopping action %s because the buffer is invalid",
@@ -33,24 +46,71 @@ class ActionQuery():
                 for key, value in command.parameters.items()
             }
             # Run the executor
-            command.executor(parameters, self.variables, self.buffer)
+            command.executor(parameters, self)
 
         return self.buffer
 
-    def _initialize_buffer(self) -> None:
+    def _initialize_buffer(self, custom_data: dict=None) -> None:
         """
         Initialize the buffer from the config
         """
+        # Resolve the action config and conform it so it can be converted to objects
         resolved_action = self.config.resolve_action(self.name)
+        self._conform_resolved_action(resolved_action)
 
-        if resolved_action is None:
+        # Make sure the required action is in the config
+        if self.name not in resolved_action.keys():
+            logger.error("Could not initialise the action: The resolved config is invalid")
             return
-        if self.name not in resolved_action:
-            logger.error("Invalid resolved action %s", self.name)
+        resolved_action = resolved_action[self.name]
+
+        # Apply any potential custom data
+        if custom_data is not None:
+            resolved_action.update(custom_data)
+
+        # Update the buffer with the new data
+        self.buffer.deserialize(resolved_action)
+
+    def _conform_resolved_action(self, data: Any):
+        if not isinstance(data, dict):
             return
 
-        action_commands = resolved_action[self.name]
-        self.buffer.update_commands(action_commands)
+        for key, value in data.items():
+            if isinstance(value, dict) and key not in ["steps", "commands"]:
+                value["name"] = key
+            self._conform_resolved_action(value)
+
+    def initialize_websocket(self) -> None:
+        """
+        Send a serialised version of the buffer to the websocket server, and store a copy of it
+        """
+        self._buffer_diff = copy.deepcopy(self.buffer)
+        # If the websocket server is not running, don't send anything
+        if not self.ws_connection.is_running:
+            return
+        self.ws_connection.send("/action", "query", self._buffer_diff)
+
+    def send_websocket(self) -> None:
+        """
+        Send a diff between the current state of the buffer and the last saved state of the buffer
+        """
+        # If the websocket server is not running, don't send anything
+        if not self.ws_connection.is_running:
+            return
+        diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
+        self.ws_connection.send("/action", "update", diff)
+
+    def receive_websocket(self, buffer_diff: str) -> None:
+        """
+        Update the buffer according to the one received from the websocket server
+        """
+        # If the websocket server is not running, don't wait for anything
+        if not self.ws_connection.is_running:
+            return
+        patch = jsondiff.patch(self.buffer.serialize(), buffer_diff)
+        self.buffer.deserialize(patch)
+        # Always make sure the _buffer_diff correspond to the UI's data
+        self._buffer_diff = copy.deepcopy(self.buffer)
 
     @property
     def name(self) -> str:
@@ -67,7 +127,14 @@ class ActionQuery():
         return self.buffer.variables
 
     @property
-    def commands(self) -> dict:
+    def steps(self) -> list:
+        """
+        Shortcut to get the steps of the buffer
+        """
+        return list(self.buffer.steps.values())
+
+    @property
+    def commands(self) -> list:
         """
         Shortcut to get the commands of the buffer
         """
@@ -85,56 +152,56 @@ class ActionQuery():
         """
         Helper to get a list of all the parameters of the action,
         usually used for printing infos about the action
+
+        The format of the output is {<step>:<command> : parameters}
         """
         parameters = {}
-        for step_name, step in self.commands.items():
-            for command_index, command in enumerate(step["commands"]):
-                parameters[f"{step_name}:{command_index}"] = list(
-                    command.parameters.keys())
+        for step in self.steps:
+            for command in step.commands.values():
+                parameters[f"{step.name}:{command.name}"] = command.parameters
 
         return parameters
 
     def set_parameter(self, parameter_name: str, value: Any) -> None:
         """
         Shortcut to set variables on the buffer easly
+
+        The parameter name is parsed, according to the scheme : <step>:<command>:<parameter>
+        The missing values can be guessed if there is no ambiguity, only <parameter> is required
         """
         step = None
-        index = None
+        command = None
 
+        # Get the infos that are provided
         parameter_split = parameter_name.split(":")
         name = parameter_split[-1]
         if len(parameter_split) == 3:
             step = parameter_split[0]
-            try:
-                index = int(parameter_split[1])
-            except TypeError:
-                logger.error("Could not set parameter %s: Invalid parameter",
-                             parameter_name)
-                return
+            command = parameter_split[1]
         elif len(parameter_split) == 2:
-            try:
-                index = int(parameter_split[1])
-            except TypeError:
-                step = parameter_split[0]
+            command = parameter_split[1]
 
         # Guess the info that were not provided by taking the first match
         valid = False
-        for command_path, parameters in self.parameters.items():
-            command_step = command_path.split(":")[0]
-            command_index = int(command_path.split(":")[1])
-            if step is None and index is None and name in parameters:
-                step = command_step
-                index = command_index
+        for parameter_path, parameters in self.parameters.items():
+            parameter_step = parameter_path.split(":")[0]
+            parameter_command = parameter_path.split(":")[1]
+            # If only the parameter is provided
+            if step is None and command is None and name in parameters:
+                step = parameter_step
+                index = parameter_command
                 valid = True
-            elif step is None and index == command_index and name in parameters:
-                step = command_step
+                break
+            # If the command name and the parameter are provided
+            elif step is None and command == parameter_command and name in parameters:
+                step = parameter_step
                 valid = True
-            elif index is None and step == command_step and name in parameters:
-                index = command_index
-                valid = True
-            elif step is not None and index is not None:
-                if step == command_step and index == command_index and name in parameters:
+                break
+            # If everything is provided
+            elif step is not None and command is not None:
+                if step == parameter_step and command == parameter_command and name in parameters:
                     valid = True
+                    break
 
         if step is None or index is None or not valid:
             logger.error(

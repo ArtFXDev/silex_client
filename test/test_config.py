@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from silex_client.utils.config import Config
+from silex_client.resolve.config import Config
 
 
 @pytest.fixture
@@ -31,9 +31,9 @@ def test_resolve_action(dummy_config: Config):
     # Make sure the inheritance has been resolved corectly
     assert isinstance(resolved_action, dict) == True
     assert "publish" in resolved_action.keys()
-    assert set(resolved_action["publish"].keys()) == set(
-        ["pre_action", "action", "post_action", "parent", "key"])
-    assert len(resolved_action["publish"]["pre_action"]) == 3
+    assert set(resolved_action["publish"]["steps"].keys()) == set(
+        ["pre_action", "action", "post_action"])
+    assert len(resolved_action["publish"]["steps"]["pre_action"]) == 3
 
 
 def test_resolve_non_existing_action(dummy_config):

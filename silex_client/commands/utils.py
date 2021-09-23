@@ -6,7 +6,7 @@ from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
-    from silex_client.action.action_buffer import ActionBuffer
+    from silex_client.action.action_query import ActionQuery
 
 
 class Log(CommandBase):
@@ -28,7 +28,7 @@ class Log(CommandBase):
     }
 
     @CommandBase.conform_command()
-    def __call__(self, parameters: dict, variables: dict, action_buffer: "ActionBuffer"):
+    def __call__(self, parameters: dict, action_query: ActionQuery):
         try:
             getattr(logger, parameters["level"])(parameters["message"])
         except ValueError:
