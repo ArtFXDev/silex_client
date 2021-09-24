@@ -76,6 +76,10 @@ class ActionQuery():
         resolved_action = self.config.resolve_action(self.name)
         self._conform_resolved_action(resolved_action)
 
+        # If no config could be found, the result is none
+        if resolved_action is None:
+            return
+
         # Make sure the required action is in the config
         if self.name not in resolved_action.keys():
             logger.error("Could not initialise the action: The resolved config is invalid")
@@ -103,21 +107,21 @@ class ActionQuery():
         Send a serialised version of the buffer to the websocket server, and store a copy of it
         """
         self._buffer_diff = copy.deepcopy(self.buffer)
-        self.ws_connection.send("/action", "query", self._buffer_diff)
+        self.ws_connection.send("/dcc/action", "query", self._buffer_diff)
 
     def update_websocket(self) -> futures.Future:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
-        return self.ws_connection.send("/action", "update", diff)
+        return self.ws_connection.send("/dcc/action", "update", diff)
 
     async def async_update_websocket(self) -> asyncio.Future:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
-        return await self.ws_connection.async_send("/action", "update", diff)
+        return await self.ws_connection.async_send("/dcc/action", "update", diff)
 
     @property
     def name(self) -> str:

@@ -5,6 +5,7 @@ import typing
 from silex_client.action.command_base import CommandBase
 from typing import Any
 from silex_client.utils.log import logger
+from silex_client.utils.enums import Status
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -72,14 +73,14 @@ class SendActionBuffer(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(self, upstream: Any, parameters: dict, action_query: ActionQuery):
-        response = action_query.async_update_websocket()
+        response = await action_query.async_update_websocket()
         # If wait_response is on, await the response of the UI
         if parameters["wait_response"]:
             if parameters["timeout"] > 0:
                 try:
-                    print(parameters["timeout"])
                     return await asyncio.wait_for(response, parameters["timeout"])
                 except asyncio.TimeoutError:
-                    logger.warning("Continuning action execution: timeout reached")
+                    logger.warning("Error during action execution: timeout reached")
+                    self.command_buffer.status = Status.COMPLETED
             else:
                 return await response

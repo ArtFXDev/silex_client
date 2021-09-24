@@ -82,16 +82,10 @@ class CommandBase():
                         kwargs.get("action_query", args[2]).context_metadata):
                     command.command_buffer.status = Status.INVALID
                     return
-                # Call the initial function while catching all the errors
-                # because we want to update the status
-                try:
-                    command.command_buffer.status = Status.PROCESSING
-                    await func(command, *args, **kwargs)
-                    command.command_buffer.status = Status.COMPLETED
-                except Exception as exception:
-                    print(exception)
-                    command.command_buffer.status = Status.ERROR
-                    raise exception
+                # TODO: Find a way to catch all the errors and set the status to ERROR
+                command.command_buffer.status = Status.PROCESSING
+                await func(command, *args, **kwargs)
+                command.command_buffer.status = Status.COMPLETED
 
             return wrapper_conform_command
 
