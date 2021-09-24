@@ -38,7 +38,9 @@ class SendMessage(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(self, parameters: dict, action_query: ActionQuery):
-        action_query.ws_connection.send(parameters["namespace"], parameters["event"], parameters["message"])
+        response = await action_query.ws_connection.async_send(parameters["namespace"], parameters["event"], parameters["message"])
+        if parameters["wait_response"]:
+            return await response
 
 
 class SendActionBuffer(CommandBase):
@@ -57,13 +59,3 @@ class SendActionBuffer(CommandBase):
     @CommandBase.conform_command()
     async def __call__(self, parameters: dict, action_query: ActionQuery):
         action_query.send_websocket()
-
-class ReceiveActionBuffer(CommandBase):
-    """
-    Wait for the UI to update the buffer
-    """
-
-    @CommandBase.conform_command()
-    async def __call__(self, parameters: dict, action_query: ActionQuery):
-        pass
-

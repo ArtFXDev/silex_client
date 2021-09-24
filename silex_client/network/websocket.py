@@ -5,9 +5,12 @@ receive and handle the incomming messages
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Union
 import json
 import typing
+import threading
+import asyncio
+from concurrent import futures
 
 import socketio
 
@@ -50,10 +53,6 @@ class WebsocketConnection:
         await self.socketio.disconnect()
         self.is_running = False
 
-    async def _emmit_socketio(self, namespace, event, data) -> None:
-        logger.debug("Websocket client sending %s at %s on %s", data, namespace, event)
-        await self.socketio.emit(event, data, namespace, lambda x : print(x))
-
     def start(self) -> None:
         """
         initialize the event loop's task and run it in main thread
@@ -74,16 +73,29 @@ class WebsocketConnection:
 
         self.event_loop.register_task(self._disconnect_socketio())
 
-    def send(self, namespace: str, event: str, data: Any) -> None:
+    def send(self, namespace: str, event: str, data: Any) -> futures.Future:
         """
-        Add the given message to the list of pending message to be sent
+        Send a message using websocket from a different thread than the event loop
         """
         try:
             data = json.loads(json.dumps(data, default=silex_encoder))
         except TypeError:
             logger.error("Could not send %s: The data is not json serialisable", data)
-            return
-        self.event_loop.register_task(self._emmit_socketio(namespace, event, data))
+            future = futures.Future()
+            future.set_result(None)
+            return future
+
+        return self.event_loop.register_task(self.async_send(namespace, event, data))
+
+    async def async_send(self, namespace, event, data) -> asyncio.Future:
+        logger.debug("Websocket client sending %s at %s on %s", data, namespace, event)
+        
+        future = self.event_loop.loop.create_future()
+        def callback(response):
+            future.set_result(response)
+
+        await self.socketio.emit(event, data, namespace, callback)
+        return future
 
     @staticmethod
     def url_to_parameters(url: str) -> dict:

@@ -1,9 +1,11 @@
 from __future__ import annotations
 from typing import Any
 import typing
+from typing import Union
 import jsondiff
 import copy
-from concurrent.futures import Future
+from concurrent import futures
+import asyncio
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.utils.log import logger
@@ -28,7 +30,7 @@ class ActionQuery():
         self._initialize_buffer({"context_metadata": context_metadata})
         self._buffer_diff = copy.deepcopy(self.buffer)
 
-    def execute(self) -> Future:
+    def execute(self) -> Union[futures.Future, asyncio.Future]:
         """
         Register a task that will execute the action's commands in order
 
@@ -39,7 +41,7 @@ class ActionQuery():
         if not self.ws_connection.is_running:
             # If the websocket server is not running, don't send anything
             logger.debug("Could not execute the action %s: The websocket connection is not running", self.name)
-            future = Future()
+            future = futures.Future()
             future.set_result(None)
             return future
         self.initialize_websocket()
@@ -100,21 +102,19 @@ class ActionQuery():
         self._buffer_diff = copy.deepcopy(self.buffer)
         self.ws_connection.send("/action", "query", self._buffer_diff)
 
-    def send_websocket(self) -> None:
+    def send_websocket(self) -> futures.Future:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
-        self.ws_connection.send("/action", "update", diff)
+        return self.ws_connection.send("/action", "update", diff)
 
-    def receive_websocket(self, buffer_diff: str) -> None:
+    async def async_send_websocket(self) -> asyncio.Future:
         """
-        Update the buffer according to the one received from the websocket server
+        Send a diff between the current state of the buffer and the last saved state of the buffer
         """
-        patch = jsondiff.patch(self.buffer.serialize(), buffer_diff)
-        self.buffer.deserialize(patch)
-        # Always make sure the _buffer_diff correspond to the UI's data
-        self._buffer_diff = copy.deepcopy(self.buffer)
+        diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
+        return await self.ws_connection.async_send("/action", "update", diff)
 
     @property
     def name(self) -> str:

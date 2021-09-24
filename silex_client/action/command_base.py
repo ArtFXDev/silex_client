@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, Any
 import functools
 import typing
 
@@ -26,7 +26,7 @@ class CommandBase():
     def __init__(self, command_buffer: CommandBuffer):
         self.command_buffer = command_buffer
 
-    async def __call__(self, parameters: dict, action_query: ActionQuery):
+    async def __call__(self, parameters: dict, action_query: ActionQuery) -> Any:
         pass
 
     @property

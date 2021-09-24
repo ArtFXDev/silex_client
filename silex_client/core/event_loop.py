@@ -1,6 +1,6 @@
 from threading import Thread
 from typing import Coroutine
-from concurrent.futures import Future
+from concurrent import futures
 import gc
 import atexit
 import asyncio
@@ -21,7 +21,7 @@ class EventLoop:
     def __init__(self):
         self.loop = asyncio.new_event_loop()
         self.tasks = []
-        self.thread = None
+        self.thread = Thread()
         atexit.register(self.stop)
 
     @property
@@ -58,16 +58,6 @@ class EventLoop:
 
     def start(self) -> None:
         """
-        initialize the event loop's task and run it in main thread
-        """
-        if self.is_running:
-            logger.warning("Could not start event loop: The loop is already running")
-            return
-
-        self._start_event_loop()
-
-    def start_multithreaded(self) -> None:
-        """
         initialize the event loop's task and run it in a different thread
         """
         if self.is_running:
@@ -85,24 +75,19 @@ class EventLoop:
         if not self.loop.is_running():
             return
 
-        if self.thread is not None and self.thread.isAlive():
-            self.loop.call_soon_threadsafe(self.loop.stop)
-            self.thread.join(self.JOIN_THREAD_TIMEOUT)
-            if self.thread.isAlive:
-                logger.error("Could not stop the event loop thread: timout exeded")
-        else:
-            self.loop.stop()
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        self.thread.join(self.JOIN_THREAD_TIMEOUT)
+        if self.thread.isAlive:
+            logger.error("Could not stop the event loop thread: timout exeded")
 
-    def register_task(self, coroutine: Coroutine) -> Future:
+    def register_task(self, coroutine: Coroutine) -> futures.Future:
         """
         Helper to add tasks to the event loop from a different thread
-
-        The result value can be awaited with result = future.result(timeout)
-        and the task can be canceled with future.cancel()
         """
+        # Test if the function is called from the event loop or from outside
         if not self.is_running:
             logger.warning("Could not register task %s: The event loop is not running", coroutine)
-            future = Future()
+            future = futures.Future()
             future.set_result(None)
             return future
 
