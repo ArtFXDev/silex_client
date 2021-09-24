@@ -26,7 +26,7 @@ class CommandBase():
     def __init__(self, command_buffer: CommandBuffer):
         self.command_buffer = command_buffer
 
-    def __call__(self, parameters: dict, action_query: ActionQuery):
+    async def __call__(self, parameters: dict, action_query: ActionQuery):
         pass
 
     @property
@@ -70,23 +70,23 @@ class CommandBase():
         """
         def decorator_conform_command(func: Callable) -> Callable:
             @functools.wraps(func)
-            def wrapper_conform_command(command: CommandBase, *args,
+            async def wrapper_conform_command(command: CommandBase, *args,
                                         **kwargs) -> None:
                 # Make sure the given parameters are valid
                 if not command.check_parameters(
                         kwargs.get("parameters", args[0])):
-                    command.command_buffer.status = Status.ERROR
+                    command.command_buffer.status = Status.INVALID
                     return
                 # Make sure all the required metatada is here
                 if not command.check_context_metadata(
                         kwargs.get("action_query", args[1]).context_metadata):
-                    command.command_buffer.status = Status.ERROR
+                    command.command_buffer.status = Status.INVALID
                     return
                 # Call the initial function while catching all the errors
                 # because we want to update the status
                 try:
                     command.command_buffer.status = Status.PROCESSING
-                    func(command, *args, **kwargs)
+                    await func(command, *args, **kwargs)
                     command.command_buffer.status = Status.COMPLETED
                 except Exception as exception:
                     command.command_buffer.status = Status.ERROR

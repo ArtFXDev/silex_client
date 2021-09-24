@@ -25,11 +25,9 @@ class WebsocketConnection:
     """
     Websocket client that connect the the given url
     and receive and handle the incomming messages
-
-    :ivar TASK_SLEEP_TIME: How long in second to wait between each update loop
     """
 
-    def __init__(self, event_loop: EventLoop, context_metadata: dict=None, url: str="http://localhost:3000"):
+    def __init__(self, event_loop: EventLoop, context_metadata: dict=None, url: str="ws://127.0.0.1:5118"):
         self.is_running = False
         self.url = url
 
@@ -39,7 +37,6 @@ class WebsocketConnection:
         # Set the default context
         if context_metadata is None:
             context_metadata = {}
-        self.context_metadata = context_metadata
 
         # Register the different namespaces
         self.dcc_namespace = self.socketio.register_namespace(WebsocketDCCNamespace("/dcc", context_metadata, self))
@@ -62,7 +59,7 @@ class WebsocketConnection:
         initialize the event loop's task and run it in main thread
         """
         if self.is_running:
-            logger.info("Could not start websocket connection: The connection is already running")
+            logger.warning("Could not start websocket connection: The connection is already running")
             return
 
         self.event_loop.register_task(self._connect_socketio())
@@ -73,7 +70,6 @@ class WebsocketConnection:
         if there is one running
         """
         if not self.is_running:
-            logger.info("Could not stp websocket connection: The connection is not running")
             return
 
         self.event_loop.register_task(self._disconnect_socketio())

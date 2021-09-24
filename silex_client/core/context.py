@@ -9,6 +9,7 @@ from rez import resolved_context
 from silex_client.action.action_query import ActionQuery
 from silex_client.resolve.config import Config
 from silex_client.network.websocket import WebsocketConnection
+from silex_client.core.event_loop import EventLoop
 from silex_client.utils.log import logger
 from silex_client.utils.datatypes import ReadOnlyDict
 
@@ -25,15 +26,15 @@ class Context:
 
     _metadata = {}
 
-    def __init__(self, ws_url: str = "ws://localhost:3000"):
+    def __init__(self):
         self._metadata = {}
         self.config: Config = Config()
         self._metadata: dict = {"name": None, "uid": uuid.uuid1()}
         self.is_outdated = True
         self._rez_context = resolved_context.ResolvedContext.get_current()
 
-        url = WebsocketConnection.parameters_to_url(ws_url, self.metadata)
-        self.ws_connection = WebsocketConnection(self.metadata, url)
+        self.event_loop = EventLoop()
+        self.ws_connection = WebsocketConnection(self.event_loop, self.metadata)
 
     @staticmethod
     def get() -> Context:
@@ -157,7 +158,7 @@ class Context:
         Update the metadata's user key using authentification
         """
         # TODO: Get the current user from the database using authentification
-        self._metadata["user"] = "slambin"
+        self._metadata["user"] = None
 
     @property
     def name(self):
@@ -212,6 +213,11 @@ class Context:
         return None
 
     @property
+    def user(self):
+        """Read only value of the current user"""
+        return self.metadata["user"]
+
+    @property
     def is_valid(self) -> bool:
         """
         Check if the silex context is synchronised with the rez context
@@ -239,11 +245,6 @@ class Context:
 
         return True
 
-    @property
-    def user(self):
-        """Read only value of the current user"""
-        return self.metadata["user"]
-
     def get_ephemeral_version(self, name: str) -> str:
         """
         Get the version number of a rez ephemeral package by its name
@@ -267,7 +268,7 @@ class Context:
         """
 
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(self.metadata))
-        return ActionQuery(action_name, self.config, self.ws_connection, metadata_snapshot)
+        return ActionQuery(action_name, self.config, self.event_loop, self.ws_connection, metadata_snapshot)
 
 
 

@@ -28,7 +28,7 @@ class Log(CommandBase):
     }
 
     @CommandBase.conform_command()
-    def __call__(self, parameters: dict, action_query: ActionQuery):
+    async def __call__(self, parameters: dict, action_query: ActionQuery):
         try:
             getattr(logger, parameters["level"])(parameters["message"])
         except ValueError:

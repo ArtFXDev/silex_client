@@ -39,7 +39,7 @@ class PublishFile(CommandBase):
     required_metada = ["project"]
 
     @CommandBase.conform_command()
-    def __call__(self, parameters: dict, action_query: ActionQuery) -> None:
+    async def __call__(self, parameters: dict, action_query: ActionQuery) -> None:
         publish_path = os.path.join(action_query.context_metadata["project"],
                                     parameters["name"])
 

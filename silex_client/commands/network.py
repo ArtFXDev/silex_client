@@ -18,17 +18,17 @@ class SendMessage(CommandBase):
             "label": "Message",
             "type": str,
             "value": None
-        }
+        },
         "namespace": {
             "label": "Namespace",
             "type": str,
             "value": None
-        }
+        },
         "event": {
             "label": "Event",
             "type": str,
             "value": None
-        }
+        },
         "wait_response": {
             "label": "Wait for a response",
             "type": bool,
@@ -37,7 +37,7 @@ class SendMessage(CommandBase):
     }
 
     @CommandBase.conform_command()
-    def __call__(self, parameters: dict, action_query: ActionQuery):
+    async def __call__(self, parameters: dict, action_query: ActionQuery):
         action_query.ws_connection.send(parameters["namespace"], parameters["event"], parameters["message"])
 
 
@@ -55,7 +55,7 @@ class SendActionBuffer(CommandBase):
     }
 
     @CommandBase.conform_command()
-    def __call__(self, parameters: dict, action_query: ActionQuery):
+    async def __call__(self, parameters: dict, action_query: ActionQuery):
         action_query.send_websocket()
 
 class ReceiveActionBuffer(CommandBase):
@@ -64,6 +64,6 @@ class ReceiveActionBuffer(CommandBase):
     """
 
     @CommandBase.conform_command()
-    def __call__(self, parameters: dict, action_query: ActionQuery):
+    async def __call__(self, parameters: dict, action_query: ActionQuery):
         pass
 

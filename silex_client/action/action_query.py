@@ -3,6 +3,7 @@ from typing import Any
 import typing
 import jsondiff
 import copy
+from concurrent.futures import Future
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.utils.log import logger
@@ -11,6 +12,7 @@ from silex_client.utils.enums import Status
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.network.websocket import WebsocketConnection
+    from silex_client.core.event_loop import EventLoop
     from silex_client.resolve.config import Config
 
 
@@ -18,37 +20,48 @@ class ActionQuery():
     """
     Initialize and execute a given action
     """
-    def __init__(self, name: str, config: Config, ws_connection: WebsocketConnection, context_metadata: dict):
+    def __init__(self, name: str, config: Config, event_loop: EventLoop, ws_connection: WebsocketConnection, context_metadata: dict):
         self.config = config
+        self.event_loop = event_loop
         self.ws_connection = ws_connection
         self.buffer = ActionBuffer(name, context_metadata=context_metadata)
         self._initialize_buffer({"context_metadata": context_metadata})
         self._buffer_diff = copy.deepcopy(self.buffer)
 
-    def execute(self) -> ActionBuffer:
+    def execute(self) -> Future:
         """
-        Execute the action's commands in order,
-        send and receive the buffer to the UI when nessesary
+        Register a task that will execute the action's commands in order
+
+        The result value can be awaited with result = future.result(timeout)
+        and the task can be canceled with future.cancel()
         """
         # Initialize the communication with the websocket server
+        if not self.ws_connection.is_running:
+            # If the websocket server is not running, don't send anything
+            logger.debug("Could not execute the action %s: The websocket connection is not running", self.name)
+            future = Future()
+            future.set_result(None)
+            return future
         self.initialize_websocket()
 
-        # Execut all the commands one by one
-        for command in self.commands:
-            # Only run the command if it is valid
-            if self.buffer.status is Status.INVALID:
-                logger.error("Stopping action %s because the buffer is invalid",
-                             self.name)
-                return self.buffer
-            # Create a shortened version of the parameters and pass them to the executor
-            parameters = {
-                key: value.get("value", None)
-                for key, value in command.parameters.items()
-            }
-            # Run the executor
-            command.executor(parameters, self)
+        async def execute_in_loop():
+            # Execut all the commands one by one
+            for command in self.commands:
+                # Only run the command if it is valid
+                if self.buffer.status in [Status.INVALID, Status.ERROR]:
+                    logger.error("Stopping action %s because the buffer is invalid", self.name)
+                    return self.buffer
+                # Create a dictionary that only contains the name and the value of the parameters
+                # without infos like the type, label...
+                parameters = {
+                    key: value.get("value", None)
+                    for key, value in command.parameters.items()
+                }
+                # Run the executor and copy the parameters
+                # to prevent them from being modified during execution
+                await command.executor(copy.deepcopy(parameters), self)
 
-        return self.buffer
+        return self.event_loop.register_task(execute_in_loop())
 
     def _initialize_buffer(self, custom_data: dict=None) -> None:
         """
@@ -85,18 +98,12 @@ class ActionQuery():
         Send a serialised version of the buffer to the websocket server, and store a copy of it
         """
         self._buffer_diff = copy.deepcopy(self.buffer)
-        # If the websocket server is not running, don't send anything
-        if not self.ws_connection.is_running:
-            return
         self.ws_connection.send("/action", "query", self._buffer_diff)
 
     def send_websocket(self) -> None:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
-        # If the websocket server is not running, don't send anything
-        if not self.ws_connection.is_running:
-            return
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
         self.ws_connection.send("/action", "update", diff)
 
@@ -104,9 +111,6 @@ class ActionQuery():
         """
         Update the buffer according to the one received from the websocket server
         """
-        # If the websocket server is not running, don't wait for anything
-        if not self.ws_connection.is_running:
-            return
         patch = jsondiff.patch(self.buffer.serialize(), buffer_diff)
         self.buffer.deserialize(patch)
         # Always make sure the _buffer_diff correspond to the UI's data
