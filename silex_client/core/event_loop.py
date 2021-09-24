@@ -76,7 +76,7 @@ class EventLoop:
             return
 
         self.loop.call_soon_threadsafe(self.loop.stop)
-        self.thread.join(self.JOIN_THREAD_TIMEOUT)
+        self.thread.join(2.0)
         if self.thread.isAlive:
             logger.error("Could not stop the event loop thread: timout exeded")
 

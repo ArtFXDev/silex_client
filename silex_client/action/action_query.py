@@ -47,6 +47,8 @@ class ActionQuery():
         self.initialize_websocket()
 
         async def execute_in_loop():
+            # Pass the result of every command to pass it to the next one
+            upstream_result = None
             # Execut all the commands one by one
             for command in self.commands:
                 # Only run the command if it is valid
@@ -61,7 +63,8 @@ class ActionQuery():
                 }
                 # Run the executor and copy the parameters
                 # to prevent them from being modified during execution
-                await command.executor(copy.deepcopy(parameters), self)
+                upstream_result = await command.executor(upstream_result, copy.deepcopy(parameters), self)
+                await self.async_update_websocket()
 
         return self.event_loop.register_task(execute_in_loop())
 
@@ -102,14 +105,14 @@ class ActionQuery():
         self._buffer_diff = copy.deepcopy(self.buffer)
         self.ws_connection.send("/action", "query", self._buffer_diff)
 
-    def send_websocket(self) -> futures.Future:
+    def update_websocket(self) -> futures.Future:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
         return self.ws_connection.send("/action", "update", diff)
 
-    async def async_send_websocket(self) -> asyncio.Future:
+    async def async_update_websocket(self) -> asyncio.Future:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
@@ -118,37 +121,32 @@ class ActionQuery():
 
     @property
     def name(self) -> str:
-        """
-        Shortcut to get the name  of the action stored in the buffer
-        """
+        """Shortcut to get the name  of the action stored in the buffer"""
         return self.buffer.name
 
     @property
+    def status(self) -> Status:
+        """Shortcut to get the status of the action stored in the buffer"""
+        return self.buffer.status
+
+    @property
     def variables(self) -> dict:
-        """
-        Shortcut to get the variable of the buffer
-        """
+        """Shortcut to get the variable of the buffer"""
         return self.buffer.variables
 
     @property
     def steps(self) -> list:
-        """
-        Shortcut to get the steps of the buffer
-        """
+        """Shortcut to get the steps of the buffer"""
         return list(self.buffer.steps.values())
 
     @property
     def commands(self) -> list:
-        """
-        Shortcut to get the commands of the buffer
-        """
+        """Shortcut to get the commands of the buffer"""
         return self.buffer.commands
 
     @property
     def context_metadata(self) -> dict:
-        """
-        Shortcut to get the context's metadata  of the buffer
-        """
+        """Shortcut to get the context's metadata  of the buffer"""
         return self.buffer.context_metadata
 
     @property

@@ -29,7 +29,7 @@ class Context:
     def __init__(self):
         self._metadata = {}
         self.config: Config = Config()
-        self._metadata: dict = {"name": None, "uid": uuid.uuid1()}
+        self._metadata: dict = {"name": None, "uuid": uuid.uuid1()}
         self.is_outdated = True
         self._rez_context = resolved_context.ResolvedContext.get_current()
 

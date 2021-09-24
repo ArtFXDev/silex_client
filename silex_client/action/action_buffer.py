@@ -1,5 +1,5 @@
 from __future__ import annotations
-import uuid
+import uuid as unique_id
 from typing import Any, Dict
 from dataclasses import dataclass, field, asdict
 import dacite
@@ -21,7 +21,7 @@ class ActionBuffer():
     #: The name of the action (usualy the same as the config file)
     name: str = field()
     #: A Unique ID to help differentiate multiple actions
-    uid: uuid.UUID = field(default_factory=uuid.uuid1)
+    uuid: unique_id.UUID = field(default_factory=unique_id.uuid1)
     #: A dict of steps that will contain the commands
     steps: Dict[str, StepBuffer] = field(default_factory=dict)
     #: Dict of variables that are global to all the commands of this action

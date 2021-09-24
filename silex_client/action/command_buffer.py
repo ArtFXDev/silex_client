@@ -2,7 +2,7 @@ from __future__ import annotations
 import copy
 import importlib
 import re
-import uuid
+import uuid as unique_id
 from typing import Union
 import dacite
 from dataclasses import dataclass, field, asdict
@@ -30,7 +30,7 @@ class CommandBuffer():
     #: Dict that represent the parameters of the command, their type, value, name...
     parameters: dict = field(compare=False, repr=False, default_factory=dict)
     #: A Unique ID to help differentiate multiple actions
-    uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
+    uuid: unique_id.UUID = field(default_factory=unique_id.uuid1, init=False)
     #: The status of the command, to keep track of the progression, specify the errors
     status: Status = field(default=Status.INITIALIZED, init=False)
 

@@ -21,12 +21,12 @@ class CommandBase():
     parameters: dict = {}
 
     #: List that represent the required context metadata
-    required_metada: list = []
+    required_metadata: list = []
 
     def __init__(self, command_buffer: CommandBuffer):
         self.command_buffer = command_buffer
 
-    async def __call__(self, parameters: dict, action_query: ActionQuery) -> Any:
+    async def __call__(self, upstream: Any, parameters: dict, action_query: ActionQuery) -> Any:
         pass
 
     @property
@@ -54,7 +54,7 @@ class CommandBase():
         Check if the context snapshot stored in the buffer contains all the required
         data for the command
         """
-        for metadata in self.required_metada:
+        for metadata in self.required_metadata:
             if context_metadata.get(metadata) is None:
                 logger.error(
                     "Could not execute command %s: The context is missing required metadata %s",
@@ -74,12 +74,12 @@ class CommandBase():
                                         **kwargs) -> None:
                 # Make sure the given parameters are valid
                 if not command.check_parameters(
-                        kwargs.get("parameters", args[0])):
+                        kwargs.get("parameters", args[1])):
                     command.command_buffer.status = Status.INVALID
                     return
                 # Make sure all the required metatada is here
                 if not command.check_context_metadata(
-                        kwargs.get("action_query", args[1]).context_metadata):
+                        kwargs.get("action_query", args[2]).context_metadata):
                     command.command_buffer.status = Status.INVALID
                     return
                 # Call the initial function while catching all the errors
@@ -89,6 +89,7 @@ class CommandBase():
                     await func(command, *args, **kwargs)
                     command.command_buffer.status = Status.COMPLETED
                 except Exception as exception:
+                    print(exception)
                     command.command_buffer.status = Status.ERROR
                     raise exception
 
