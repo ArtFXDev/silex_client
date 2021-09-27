@@ -6,6 +6,7 @@ Unit testing functions for the module utils.context
 
 import os
 import pytest
+from concurrent import futures
 
 from silex_client.core.context import Context
 from silex_client.utils.enums import Status
@@ -57,5 +58,9 @@ def test_execute_action(dummy_context: Context):
     # Add some fake value to mimic the UI editing the parameters
     action.buffer.set_parameter("action", "publish_file", "file_path", "/path/to/file")
 
-    buffer = action.execute()
-    assert buffer.status is Status.COMPLETED
+    dummy_context.event_loop.start()
+    future = action.execute()
+    # Let the execution of the action happen in the event loop thread
+    futures.wait([future])
+    dummy_context.event_loop.stop()
+    assert action.status is Status.COMPLETED

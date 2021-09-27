@@ -41,6 +41,10 @@ class SendMessage(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(self, upstream: Any, parameters: dict, action_query: ActionQuery):
+        # If there is not websocket connection, don't do anything
+        if not action_query.ws_connection.is_running:
+            return
+
         response = await action_query.ws_connection.async_send(parameters["namespace"], parameters["event"], parameters["message"])
         # If wait_response is on, await the response of the UI
         if parameters["wait_response"]:
@@ -74,6 +78,10 @@ class SendActionBuffer(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(self, upstream: Any, parameters: dict, action_query: ActionQuery):
+        # If there is not websocket connection, don't do anything
+        if not action_query.ws_connection.is_running:
+            return
+
         response = await action_query.async_update_websocket()
         # If wait_response is on, await the response of the UI
         if parameters["wait_response"]:

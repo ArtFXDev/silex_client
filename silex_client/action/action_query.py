@@ -31,7 +31,7 @@ class ActionQuery():
         self._initialize_buffer({"context_metadata": context_metadata})
         self._buffer_diff = copy.deepcopy(self.buffer)
 
-    def execute(self) -> Union[futures.Future, asyncio.Future]:
+    def execute(self) -> futures.Future:
         """
         Register a task that will execute the action's commands in order
 
@@ -39,17 +39,10 @@ class ActionQuery():
         and the task can be canceled with future.cancel()
         """
         # Initialize the communication with the websocket server
-        if not self.ws_connection.is_running:
-            # If the websocket server is not running, don't send anything
-            logger.debug("Could not execute the action %s: The websocket connection is not running", self.name)
-            future = futures.Future()
-            future.set_result(None)
-            return future
+        if self.ws_connection.is_running:
+            self.initialize_websocket()
 
-        # Inform the UI that an action is starting
-        self.initialize_websocket()
-
-        async def execute_in_loop():
+        async def execute_commands():
             # Pass the result of every command to pass it to the next one
             upstream_result = None
             # Execut all the commands one by one
@@ -69,9 +62,12 @@ class ActionQuery():
                 logger.debug("Executing command %s for action %s", command.name, self.name)
                 upstream_result = await command.executor(upstream_result, copy.deepcopy(parameters), self)
 
-        future = self.event_loop.register_task(execute_in_loop())
+        # Execute the commands in the event loop
+        future = self.event_loop.register_task(execute_commands())
+
         # Inform the UI of the state of the action (either completed or sucess)
-        self.update_websocket()
+        if self.ws_connection.is_running:
+            self.update_websocket()
         return future
 
     def _initialize_buffer(self, custom_data: dict=None) -> None:
@@ -103,7 +99,9 @@ class ActionQuery():
         if not isinstance(data, dict):
             return
 
+        # To convert the yaml into real objects, there is some missing attributes that 
         for key, value in data.items():
+            # TODO: Find a better way to do this, we can't name a step "steps" or "parameters" with this method
             if isinstance(value, dict) and key not in ["steps", "commands", "parameters"]:
                 value["name"] = key
             self._conform_resolved_action(value)

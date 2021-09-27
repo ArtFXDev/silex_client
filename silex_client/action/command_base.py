@@ -85,7 +85,8 @@ class CommandBase():
                 # TODO: Find a way to catch all the errors and set the status to ERROR
                 command.command_buffer.status = Status.PROCESSING
                 await func(command, *args, **kwargs)
-                await kwargs.get("action_query", args[2]).async_update_websocket()
+                if kwargs.get("action_query", args[2]).ws_connection.is_running:
+                    await kwargs.get("action_query", args[2]).async_update_websocket()
                 command.command_buffer.status = Status.COMPLETED
 
             return wrapper_conform_command
