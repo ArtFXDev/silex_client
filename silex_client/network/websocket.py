@@ -3,14 +3,14 @@
 Class definition that connect the the given url throught websockets,
 receive and handle the incomming messages
 """
+from __future__ import annotations
 
-import asyncio
-import copy
-import gc
-from contextlib import suppress
-from threading import Thread
-from typing import Any
+from typing import Any, Union
 import json
+import typing
+import threading
+import asyncio
+from concurrent import futures
 
 import socketio
 
@@ -19,134 +19,49 @@ from silex_client.network.websocket_dcc import WebsocketDCCNamespace
 from silex_client.network.websocket_action import WebsocketActionNamespace
 from silex_client.utils.serialiser import silex_encoder
 
+# Forward references
+if typing.TYPE_CHECKING:
+    from silex_client.core.event_loop import EventLoop
+
 
 class WebsocketConnection:
     """
     Websocket client that connect the the given url
     and receive and handle the incomming messages
-
-    :ivar TASK_SLEEP_TIME: How long in second to wait between each update loop
     """
 
-    # Defines how long each task will wait between every loop
-    TASK_SLEEP_TIME = 0.5
-
-    def __init__(self, context_metadata: dict=None, url: str=None):
+    def __init__(self, event_loop: EventLoop, context_metadata: dict=None, url: str="ws://127.0.0.1:5118"):
         self.is_running = False
-        self.pending_stop = False
-        self.pending_transmissions = []
+        self.url = url
 
         self.socketio = socketio.AsyncClient()
-        self.loop = asyncio.new_event_loop()
-        self.thread = None
+        self.event_loop = event_loop
 
-        # Set the context and the url accordingly
+        # Set the default context
         if context_metadata is None:
             context_metadata = {}
-        self.context_metadata = context_metadata
-        if url is None:
-            url = "http://127.0.0.1:5118"
-        self.url = url
 
         # Register the different namespaces
         self.dcc_namespace = self.socketio.register_namespace(WebsocketDCCNamespace("/dcc", context_metadata, self))
         self.action_namespace = self.socketio.register_namespace(WebsocketActionNamespace("/dcc/action", context_metadata, self))
 
-    def __del__(self):
-        if self.is_running:
-            self.stop()
-
-    async def _listen_socketio(self) -> None:
+    async def _connect_socketio(self) -> None:
+        self.is_running = True
         await self.socketio.connect(self.url)
-        while True:
-            # Sleep a bit between each iteration
-            await asyncio.sleep(self.TASK_SLEEP_TIME)
-            # Exit the loop if a stop has been asked
-            if self.pending_stop:
-                await self.socketio.disconnect()
-                break
 
-    async def _emmit_socketio(self) -> None:
-        while True:
-            # Sleep a bit between each iteration
-            await asyncio.sleep(self.TASK_SLEEP_TIME)
-            # Exit the loop if a stop has been asked
-            if self.pending_stop:
-                break
-            if not self.socketio.connected:
-                continue
-
-            # Sleep a bit between each iteration
-            await asyncio.sleep(1)
-            # Move the pending_transmissions to a queue so we keep receiving
-            # event while executing them
-            transmission_queue = copy.deepcopy(self.pending_transmissions)
-            self.pending_transmissions.clear()
-            for transmission in transmission_queue:
-                logger.debug("Websocket client sending %s at %s", transmission["data"], transmission["namespace"])
-                await self.socketio.emit(transmission["event"], transmission["data"], transmission["namespace"], lambda x : print(x))
-
-    def _start_event_loop(self) -> None:
-        if self.loop.is_running():
-            logger.info("Event loop already running")
-            return
-
-        self.pending_stop = False
-        asyncio.set_event_loop(self.loop)
-        socketio_connection = self.loop.create_task(self._listen_socketio())
-        self.loop.create_task(self._emmit_socketio())
-        try:
-            self.loop.run_until_complete(socketio_connection)
-        except KeyboardInterrupt:
-            self.stop()
-
-        # Stop the event loop and clear it once completed
-        self.loop.call_soon_threadsafe(self.loop.stop)
-        self._clear_event_loop()
-
-    def _clear_event_loop(self) -> None:
-        if self.loop.is_running():
-            logger.info("The event loop must be stopped before being cleared")
-            return
-
-        logger.info("Clearing event loop...")
-        # Clear the loop
-        for task in asyncio.all_tasks(self.loop):
-            # The cancel method will raise CancelledError on the running task to stop it
-            task.cancel()
-            # Wait for the task's cancellation in a suppress context to mute the CancelledError
-            with suppress(asyncio.CancelledError):
-                self.loop.run_until_complete(task)
-
-        # Create a new loop and let the old one get garbage collected
-        self.loop = asyncio.new_event_loop()
-        # Trigger the garbage collection
-        gc.collect()
-
-        logger.info("Event loop cleared")
+    async def _disconnect_socketio(self) -> None:
+        await self.socketio.disconnect()
+        self.is_running = False
 
     def start(self) -> None:
         """
         initialize the event loop's task and run it in main thread
         """
         if self.is_running:
-            logger.warning("Websocket server already running")
+            logger.warning("Could not start websocket connection: The connection is already running")
             return
 
-        self.is_running = True
-        self._start_event_loop()
-
-    def start_multithreaded(self) -> None:
-        """
-        initialize the event loop's task and run it in a different thread
-        """
-        if self.is_running or self.thread is not None:
-            logger.warning("Websocket server already running")
-            return
-
-        self.is_running = True
-        self.thread = Thread(target=self._start_event_loop)
-        self.thread.start()
+        self.event_loop.register_task(self._connect_socketio())
 
     def stop(self) -> None:
         """
@@ -154,31 +69,34 @@ class WebsocketConnection:
         if there is one running
         """
         if not self.is_running:
-            logger.info("Websocket server was not running")
             return
-        # Request the event loop to stop
-        self.pending_stop = True
 
-        # If the loop was running in a different thread stop it
-        if self.thread is not None:
-            self.thread.join(1)
-            if self.thread.is_alive():
-                logger.warning("Could not stop the websocket connection thread for %s",
-                               self.url)
-            else:
-                self.thread = None
-        self.is_running = False
+        self.event_loop.register_task(self._disconnect_socketio())
 
-    def send(self, namespace: str, event: str, data: Any) -> None:
+    def send(self, namespace: str, event: str, data: Any) -> futures.Future:
         """
-        Add the given message to the list of pending message to be sent
+        Send a message using websocket from a different thread than the event loop
         """
         try:
             data = json.loads(json.dumps(data, default=silex_encoder))
         except TypeError:
             logger.error("Could not send %s: The data is not json serialisable", data)
-            return
-        self.pending_transmissions.append({"event": event, "data": data, "namespace": namespace})
+            future = futures.Future()
+            future.set_result(None)
+            return future
+
+        return self.event_loop.register_task(self.async_send(namespace, event, data))
+
+    async def async_send(self, namespace, event, data) -> asyncio.Future:
+        logger.debug("Websocket client sending %s at %s on %s", data, namespace, event)
+        
+        future = self.event_loop.loop.create_future()
+        def callback(response):
+            if not future.cancelled():
+                future.set_result(response)
+
+        await self.socketio.emit(event, data, namespace, callback)
+        return future
 
     @staticmethod
     def url_to_parameters(url: str) -> dict:

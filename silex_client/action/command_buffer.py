@@ -2,9 +2,10 @@ from __future__ import annotations
 import copy
 import importlib
 import re
-import uuid
+import uuid as unique_id
 from typing import Union
 import dacite
+import jsondiff
 from dataclasses import dataclass, field, asdict
 
 from silex_client.utils.log import logger
@@ -28,9 +29,9 @@ class CommandBuffer():
     #: Small explanation for the UI
     tooltip: str = field(compare=False, repr=False, default="")
     #: Dict that represent the parameters of the command, their type, value, name...
-    parameters: dict = field(compare=False, repr=False, default_factory=dict)
+    parameters: dict = field(default_factory=dict)
     #: A Unique ID to help differentiate multiple actions
-    uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
+    uuid: unique_id.UUID = field(default_factory=unique_id.uuid1, init=False)
     #: The status of the command, to keep track of the progression, specify the errors
     status: Status = field(default=Status.INITIALIZED, init=False)
 
@@ -49,13 +50,18 @@ class CommandBuffer():
 
         # Get the executor's parameter attributes and override them with the given ones
         command_parameters = copy.deepcopy(self.executor.parameters)
-        for name, value in command_parameters.items():
-            if name in self.parameters:
-                value["value"] = self.parameters[name]
+        for value in command_parameters.values():
             # If the value is a callable, call it (for mutable default values)
             if callable(value["value"]):
                 value["value"] = value["value"]()
-        self.parameters = command_parameters
+
+        # The formatting of the parameters can be different, it can be:
+        # {<parameter_name>: <parameter_value>} or {<parameter_name>: {"value": <parameter_value>}}
+        # We need to make sure it follows the format {<parameter_name>: {"value": <parameter_value>}}
+        if all(not isinstance(value, dict) or "value" not in value.keys() for value in self.parameters.values()):
+            self.parameters = {key: {"value": value} for key, value in self.parameters.items()}
+        # Apply the parameters to the default parameters
+        self.parameters = jsondiff.patch(command_parameters, self.parameters)
 
     def _get_executor(self, path: str) -> CommandBase:
         """

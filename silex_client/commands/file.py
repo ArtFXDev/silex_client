@@ -1,6 +1,7 @@
 from __future__ import annotations
 import os
 import typing
+from typing import Any
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
@@ -36,10 +37,10 @@ class PublishFile(CommandBase):
         }
     }
 
-    required_metada = ["project"]
+    required_metadata = ["project"]
 
     @CommandBase.conform_command()
-    def __call__(self, parameters: dict, action_query: ActionQuery) -> None:
+    async def __call__(self, upstream: Any, parameters: dict, action_query: ActionQuery):
         publish_path = os.path.join(action_query.context_metadata["project"],
                                     parameters["name"])
 

@@ -1,8 +1,11 @@
 from __future__ import annotations
 from typing import Any
 import typing
+from typing import Union, Iterator
 import jsondiff
 import copy
+from concurrent import futures
+import asyncio
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.utils.log import logger
@@ -10,7 +13,9 @@ from silex_client.utils.enums import Status
 
 # Forward references
 if typing.TYPE_CHECKING:
+    from silex_client.action.command_buffer import CommandBuffer
     from silex_client.network.websocket import WebsocketConnection
+    from silex_client.core.event_loop import EventLoop
     from silex_client.resolve.config import Config
 
 
@@ -18,37 +23,52 @@ class ActionQuery():
     """
     Initialize and execute a given action
     """
-    def __init__(self, name: str, config: Config, ws_connection: WebsocketConnection, context_metadata: dict):
+    def __init__(self, name: str, config: Config, event_loop: EventLoop, ws_connection: WebsocketConnection, context_metadata: dict):
         self.config = config
+        self.event_loop = event_loop
         self.ws_connection = ws_connection
         self.buffer = ActionBuffer(name, context_metadata=context_metadata)
         self._initialize_buffer({"context_metadata": context_metadata})
         self._buffer_diff = copy.deepcopy(self.buffer)
 
-    def execute(self) -> ActionBuffer:
+    def execute(self) -> futures.Future:
         """
-        Execute the action's commands in order,
-        send and receive the buffer to the UI when nessesary
+        Register a task that will execute the action's commands in order
+
+        The result value can be awaited with result = future.result(timeout)
+        and the task can be canceled with future.cancel()
         """
         # Initialize the communication with the websocket server
-        self.initialize_websocket()
+        if self.ws_connection.is_running:
+            self.initialize_websocket()
 
-        # Execut all the commands one by one
-        for command in self.commands:
-            # Only run the command if it is valid
-            if self.buffer.status is Status.INVALID:
-                logger.error("Stopping action %s because the buffer is invalid",
-                             self.name)
-                return self.buffer
-            # Create a shortened version of the parameters and pass them to the executor
-            parameters = {
-                key: value.get("value", None)
-                for key, value in command.parameters.items()
-            }
-            # Run the executor
-            command.executor(parameters, self)
+        async def execute_commands():
+            # Pass the result of every command to pass it to the next one
+            upstream_result = None
+            # Execut all the commands one by one
+            for command in self.iter_commands():
+                # Only run the command if it is valid
+                if self.buffer.status in [Status.INVALID, Status.ERROR]:
+                    logger.error("Stopping action %s because the buffer is invalid", self.name)
+                    return self.buffer
+                # Create a dictionary that only contains the name and the value of the parameters
+                # without infos like the type, label...
+                parameters = {
+                    key: value.get("value", None)
+                    for key, value in command.parameters.items()
+                }
+                # Run the executor and copy the parameters
+                # to prevent them from being modified during execution
+                logger.debug("Executing command %s for action %s", command.name, self.name)
+                upstream_result = await command.executor(upstream_result, copy.deepcopy(parameters), self)
 
-        return self.buffer
+        # Execute the commands in the event loop
+        future = self.event_loop.register_task(execute_commands())
+
+        # Inform the UI of the state of the action (either completed or sucess)
+        if self.ws_connection.is_running:
+            self.update_websocket()
+        return future
 
     def _initialize_buffer(self, custom_data: dict=None) -> None:
         """
@@ -57,6 +77,10 @@ class ActionQuery():
         # Resolve the action config and conform it so it can be converted to objects
         resolved_action = self.config.resolve_action(self.name)
         self._conform_resolved_action(resolved_action)
+
+        # If no config could be found, the result is none
+        if resolved_action is None:
+            return
 
         # Make sure the required action is in the config
         if self.name not in resolved_action.keys():
@@ -75,8 +99,10 @@ class ActionQuery():
         if not isinstance(data, dict):
             return
 
+        # To convert the yaml into real objects, there is some missing attributes that 
         for key, value in data.items():
-            if isinstance(value, dict) and key not in ["steps", "commands"]:
+            # TODO: Find a better way to do this, we can't name a step "steps" or "parameters" with this method
+            if isinstance(value, dict) and key not in ["steps", "commands", "parameters"]:
                 value["name"] = key
             self._conform_resolved_action(value)
 
@@ -85,66 +111,65 @@ class ActionQuery():
         Send a serialised version of the buffer to the websocket server, and store a copy of it
         """
         self._buffer_diff = copy.deepcopy(self.buffer)
-        # If the websocket server is not running, don't send anything
-        if not self.ws_connection.is_running:
-            return
-        self.ws_connection.send("/action", "query", self._buffer_diff)
+        self.ws_connection.send("/dcc/action", "query", self._buffer_diff)
 
-    def send_websocket(self) -> None:
+    def update_websocket(self) -> futures.Future:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
-        # If the websocket server is not running, don't send anything
-        if not self.ws_connection.is_running:
-            return
-        diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
-        self.ws_connection.send("/action", "update", diff)
+        return self.event_loop.register_task(self.async_update_websocket())
 
-    def receive_websocket(self, buffer_diff: str) -> None:
+    async def async_update_websocket(self) -> asyncio.Future:
         """
-        Update the buffer according to the one received from the websocket server
+        Send a diff between the current state of the buffer and the last saved state of the buffer
         """
-        # If the websocket server is not running, don't wait for anything
-        if not self.ws_connection.is_running:
-            return
-        patch = jsondiff.patch(self.buffer.serialize(), buffer_diff)
-        self.buffer.deserialize(patch)
-        # Always make sure the _buffer_diff correspond to the UI's data
-        self._buffer_diff = copy.deepcopy(self.buffer)
+        diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
+
+        future = self.event_loop.loop.create_future()
+        def callback(response):
+            if response.cancelled():
+                return
+            if not response.result():
+                return
+
+            patch = jsondiff.patch(self.buffer.serialize(), response.result())
+            self.buffer.deserialize(patch)
+            self._buffer_diff = copy.deepcopy(self.buffer)
+            future.set_result(response.result())
+
+        response = await self.ws_connection.async_send("/dcc/action", "update", diff)
+        response.add_done_callback(callback)
+
+        return future
 
     @property
     def name(self) -> str:
-        """
-        Shortcut to get the name  of the action stored in the buffer
-        """
+        """Shortcut to get the name  of the action stored in the buffer"""
         return self.buffer.name
 
     @property
+    def status(self) -> Status:
+        """Shortcut to get the status of the action stored in the buffer"""
+        return self.buffer.status
+
+    @property
     def variables(self) -> dict:
-        """
-        Shortcut to get the variable of the buffer
-        """
+        """Shortcut to get the variable of the buffer"""
         return self.buffer.variables
 
     @property
     def steps(self) -> list:
-        """
-        Shortcut to get the steps of the buffer
-        """
+        """Shortcut to get the steps of the buffer"""
         return list(self.buffer.steps.values())
 
     @property
     def commands(self) -> list:
-        """
-        Shortcut to get the commands of the buffer
-        """
+        """Shortcut to get the commands of the buffer"""
         return self.buffer.commands
 
     @property
     def context_metadata(self) -> dict:
-        """
-        Shortcut to get the context's metadata  of the buffer
-        """
+        """Shortcut to get the context's metadata  of the buffer"""
         return self.buffer.context_metadata
 
     @property
@@ -161,6 +186,9 @@ class ActionQuery():
                 parameters[f"{step.name}:{command.name}"] = command.parameters
 
         return parameters
+
+    def iter_commands(self) -> CommandIterator:
+        return CommandIterator(self.buffer)
 
     def set_parameter(self, parameter_name: str, value: Any) -> None:
         """
@@ -210,3 +238,21 @@ class ActionQuery():
             return
 
         self.buffer.set_parameter(step, index, name, value)
+
+class CommandIterator(Iterator):
+    def __init__(self, action_buffer: ActionBuffer):
+        self.action_buffer = action_buffer
+        self.command_index = 0
+
+    def __iter__(self) -> CommandIterator:
+        self.action_index = 0
+        return self
+
+    def __next__(self) -> CommandBuffer:
+        commands = self.action_buffer.commands
+        if self.action_index < len(commands):
+            command = commands[self.action_index]
+            self.action_index += 1
+            return command
+        else:
+            raise StopIteration

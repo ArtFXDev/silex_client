@@ -1,5 +1,6 @@
 from __future__ import annotations
 import typing
+from typing import Any
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
@@ -28,7 +29,7 @@ class Log(CommandBase):
     }
 
     @CommandBase.conform_command()
-    def __call__(self, parameters: dict, action_query: ActionQuery):
+    async def __call__(self, upstream: Any, parameters: dict, action_query: ActionQuery):
         try:
             getattr(logger, parameters["level"])(parameters["message"])
         except ValueError:
