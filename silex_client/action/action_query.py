@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Any
 import typing
-from typing import Union
+from typing import Union, Iterator
 import jsondiff
 import copy
 from concurrent import futures
@@ -13,6 +13,7 @@ from silex_client.utils.enums import Status
 
 # Forward references
 if typing.TYPE_CHECKING:
+    from silex_client.action.command_buffer import CommandBuffer
     from silex_client.network.websocket import WebsocketConnection
     from silex_client.core.event_loop import EventLoop
     from silex_client.resolve.config import Config
@@ -50,7 +51,7 @@ class ActionQuery():
             # Pass the result of every command to pass it to the next one
             upstream_result = None
             # Execut all the commands one by one
-            for command in self.commands:
+            for command in self.iter_commands():
                 # Only run the command if it is valid
                 if self.buffer.status in [Status.INVALID, Status.ERROR]:
                     logger.error("Stopping action %s because the buffer is invalid", self.name)
@@ -63,8 +64,8 @@ class ActionQuery():
                 }
                 # Run the executor and copy the parameters
                 # to prevent them from being modified during execution
+                logger.debug("Executing command %s for action %s", command.name, self.name)
                 upstream_result = await command.executor(upstream_result, copy.deepcopy(parameters), self)
-                await self.async_update_websocket()
 
         return self.event_loop.register_task(execute_in_loop())
 
@@ -113,15 +114,30 @@ class ActionQuery():
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
-        diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
-        return self.ws_connection.send("/dcc/action", "update", diff)
+        return self.event_loop.register_task(self.async_update_websocket())
 
     async def async_update_websocket(self) -> asyncio.Future:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
-        return await self.ws_connection.async_send("/dcc/action", "update", diff)
+
+        future = self.event_loop.loop.create_future()
+        def callback(response):
+            if response.cancelled():
+                return
+            if not response.result():
+                return
+
+            patch = jsondiff.patch(self.buffer.serialize(), response.result())
+            self.buffer.deserialize(patch)
+            self._buffer_diff = copy.deepcopy(self.buffer)
+            future.set_result(response.result())
+
+        response = await self.ws_connection.async_send("/dcc/action", "update", diff)
+        response.add_done_callback(callback)
+
+        return future
 
     @property
     def name(self) -> str:
@@ -167,6 +183,9 @@ class ActionQuery():
                 parameters[f"{step.name}:{command.name}"] = command.parameters
 
         return parameters
+
+    def iter_commands(self) -> CommandIterator:
+        return CommandIterator(self.buffer)
 
     def set_parameter(self, parameter_name: str, value: Any) -> None:
         """
@@ -216,3 +235,21 @@ class ActionQuery():
             return
 
         self.buffer.set_parameter(step, index, name, value)
+
+class CommandIterator(Iterator):
+    def __init__(self, action_buffer: ActionBuffer):
+        self.action_buffer = action_buffer
+        self.command_index = 0
+
+    def __iter__(self) -> CommandIterator:
+        self.action_index = 0
+        return self
+
+    def __next__(self) -> CommandBuffer:
+        commands = self.action_buffer.commands
+        if self.action_index < len(commands):
+            command = commands[self.action_index]
+            self.action_index += 1
+            return command
+        else:
+            raise StopIteration

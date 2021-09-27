@@ -22,7 +22,7 @@ class StepBuffer():
     #: Small explanation for the UI
     tooltip: str = field(compare=False, repr=False, default="")
     #: Dict that represent the parameters of the command, their type, value, name...
-    commands: Dict[str, CommandBuffer] = field(compare=False, repr=False, default_factory=dict)
+    commands: Dict[str, CommandBuffer] = field(default_factory=dict)
     #: A Unique ID to help differentiate multiple actions
     uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
 
