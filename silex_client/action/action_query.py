@@ -45,6 +45,8 @@ class ActionQuery():
             future = futures.Future()
             future.set_result(None)
             return future
+
+        # Inform the UI that an action is starting
         self.initialize_websocket()
 
         async def execute_in_loop():
@@ -67,7 +69,10 @@ class ActionQuery():
                 logger.debug("Executing command %s for action %s", command.name, self.name)
                 upstream_result = await command.executor(upstream_result, copy.deepcopy(parameters), self)
 
-        return self.event_loop.register_task(execute_in_loop())
+        future = self.event_loop.register_task(execute_in_loop())
+        # Inform the UI of the state of the action (either completed or sucess)
+        self.update_websocket()
+        return future
 
     def _initialize_buffer(self, custom_data: dict=None) -> None:
         """
@@ -99,7 +104,7 @@ class ActionQuery():
             return
 
         for key, value in data.items():
-            if isinstance(value, dict) and key not in ["steps", "commands"]:
+            if isinstance(value, dict) and key not in ["steps", "commands", "parameters"]:
                 value["name"] = key
             self._conform_resolved_action(value)
 
