@@ -22,3 +22,35 @@ You can use the provided rez_install.ps1 for Windows and rez_install.sh for Linu
 cd path/to/silex_client/root
 rez build —-install
 ```
+
+## Usage
+
+You need to be in a rez environment with the silex_client package. You can set the context with ephemerals like shot, sequence...
+
+```
+rez env silex_client .project-==MY_PROJECT .sequence-==130 .shot-==50
+```
+
+
+### Python
+
+```
+from silex_client.core.context import Context
+
+# Initialize the event loop and the websocket connection
+context = Context.get()
+context.event_loop.start()
+context.ws_connection.start()
+
+# Resolve and execute the action "publish"
+action = context.get_action("publish")
+# Set some parameters if you want
+action.set_parameter("file_path", "/foo/bar")
+action.execute()
+```
+
+### CLI
+
+```
+silex action publish -p file_path=/foo/bar
+```
