@@ -132,23 +132,17 @@ class Context:
         self._metadata["asset"] = str(
             self.get_ephemeral_version("asset")) or None
 
-        sequence = self.get_ephemeral_version("sequence")
-        if sequence and str(sequence).isdigit():
-            self._metadata["sequence"] = int(sequence)
-        elif sequence:
-            logger.error("Skipping context's sequence: invalid index")
-            self._metadata["sequence"] = None
-        else:
-            self._metadata["sequence"] = None
-
-        shot = self.get_ephemeral_version("shot")
-        if shot and str(shot).isdigit():
-            self._metadata["shot"] = int(shot)
-        elif shot:
-            logger.error("Skipping context's shot: invalid index")
-            self._metadata["shot"] = None
-        else:
-            self._metadata["shot"] = None
+        # The sequence and the shot needs to be converted from string to integer
+        for indexed_entity in ["sequence", "shot"]:
+            version = self.get_ephemeral_version(indexed_entity)
+            if version:
+                try:
+                    self._metadata[indexed_entity] = int(str(version))
+                except TypeError:
+                    logger.error("Skipping context's %s: invalid index", indexed_entity)
+                    self._metadata[indexed_entity] = None
+            else:
+                self._metadata[indexed_entity] = None
 
         self._metadata["task"] = str(
             self.get_ephemeral_version("task")) or None
