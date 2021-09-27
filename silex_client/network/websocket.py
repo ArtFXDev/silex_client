@@ -92,7 +92,8 @@ class WebsocketConnection:
         
         future = self.event_loop.loop.create_future()
         def callback(response):
-            future.set_result(response)
+            if not future.cancelled():
+                future.set_result(response)
 
         await self.socketio.emit(event, data, namespace, callback)
         return future

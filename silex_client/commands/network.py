@@ -48,7 +48,8 @@ class SendMessage(CommandBase):
                 try:
                     return await asyncio.wait_for(response, parameters["timeout"])
                 except asyncio.TimeoutError:
-                    logger.warning("Continuning action execution: timeout reached")
+                    logger.warning("Continuning action execution: no response from UI, timeout reached")
+                    response.cancel()
             else:
                 return await response
 
@@ -80,7 +81,7 @@ class SendActionBuffer(CommandBase):
                 try:
                     return await asyncio.wait_for(response, parameters["timeout"])
                 except asyncio.TimeoutError:
-                    logger.warning("Error during action execution: timeout reached")
-                    self.command_buffer.status = Status.COMPLETED
+                    logger.warning("Continuning action execution: no response from UI, timeout reached")
+                    response.cancel()
             else:
                 return await response
