@@ -76,8 +76,8 @@ class EventLoop:
             return
 
         self.loop.call_soon_threadsafe(self.loop.stop)
-        self.thread.join(2.0)
-        if self.thread.isAlive:
+        self.thread.join(self.JOIN_THREAD_TIMEOUT)
+        if self.thread.is_alive():
             logger.error("Could not stop the event loop thread: timout exeded")
 
     def register_task(self, coroutine: Coroutine) -> futures.Future:
