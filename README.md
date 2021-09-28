@@ -1,11 +1,11 @@
 # silex_client
 Python library to execute actions on DCCs and create a connection with a websocket server.
 
-![unit test](https://github.com/ArtFXDev/silex_client/actions/workflows/unittest.yml/badge.svg)
-![conform code](https://github.com/ArtFXDev/silex_client/actions/workflows/conform.yml/badge.svg)
-![gitHub pipenv locked python version](https://img.shields.io/github/pipenv/locked/python-version/ArtFXDev/silex_client)
+![python](http://ForTheBadge.com/images/badges/made-with-python.svg)
 ![code style](https://img.shields.io/badge/code%20formatter-yapf-blue)
 ![gitHub release (latest by date)](https://img.shields.io/github/v/release/ArtFXDev/silex_client)
+![unit test](https://github.com/ArtFXDev/silex_client/actions/workflows/unittest.yml/badge.svg)
+![conform code](https://github.com/ArtFXDev/silex_client/actions/workflows/conform.yml/badge.svg)
 
 ## Get started
 
