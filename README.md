@@ -1,5 +1,5 @@
 # silex_client
-Python library to execute action on DCCs and create a connection with a websocket server.
+Python library to execute actions on DCCs and create a connection with a websocket server.
 
 ![unit test](https://github.com/ArtFXDev/silex_client/actions/workflows/unittest.yml/badge.svg)
 ![conform code](https://github.com/ArtFXDev/silex_client/actions/workflows/conform.yml/badge.svg)
@@ -27,14 +27,14 @@ rez build —-install
 
 You need to be in a rez environment with the silex_client package. You can set the context with ephemerals like shot, sequence...
 
-```
-rez env silex_client .project-==MY_PROJECT .sequence-==130 .shot-==50
+```bash
+$ rez env silex_client .project-==MY_PROJECT .sequence-==130 .shot-==50
 ```
 
 
 ### Python
 
-```
+```python
 from silex_client.core.context import Context
 
 # Initialize the event loop and the websocket connection
@@ -51,6 +51,6 @@ action.execute()
 
 ### CLI
 
-```
-silex action publish -p file_path=/foo/bar
+```bash
+$ silex action publish -p file_path=/foo/bar
 ```
