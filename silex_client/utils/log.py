@@ -9,9 +9,10 @@ https://logzero.readthedocs.io/
 
 """
 
+import logging
 import os
 import sys
-import logging
+
 import logzero
 from logzero import logger
 

@@ -1,5 +1,5 @@
-from silex_client.utils.log import logger
 from silex_client.network.websocket_namespace import WebsocketNamespace
+from silex_client.utils.log import logger
 
 
 class WebsocketDCCNamespace(WebsocketNamespace):

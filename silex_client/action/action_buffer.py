@@ -1,12 +1,19 @@
 from __future__ import annotations
+
 import uuid as unique_id
-from typing import Any, Dict
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, List, TYPE_CHECKING
+
 import dacite
 
 from silex_client.action.step_buffer import StepBuffer
-from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
+from silex_client.utils.log import logger
+
+# Forward references
+if TYPE_CHECKING:
+    from silex_client.action.command_buffer import CommandBuffer
+    from silex_client.action.command_base import CommandParameters
 
 
 @dataclass()
@@ -30,13 +37,13 @@ class ActionBuffer:
     #: Snapshot of the context's metadata when this buffer is created
     context_metadata: Dict[str, Any] = field(default_factory=dict)
 
-    def serialize(self) -> dict:
+    def serialize(self) -> Dict[str, Any]:
         """
         Convert the action's data into json so it can be sent to the UI
         """
         return asdict(self)
 
-    def deserialize(self, serialized_data: dict) -> None:
+    def deserialize(self, serialized_data: Dict[str, Any]) -> None:
         """
         Convert back the action's data from json into this object
         """
@@ -59,7 +66,7 @@ class ActionBuffer:
         return status
 
     @property
-    def commands(self, step: str = None) -> list:
+    def commands(self, step: str = None) -> List[CommandBuffer]:
         """
         Helper to get a command that belong to this action
         The data is quite nested, this is just for conveniance
@@ -75,7 +82,7 @@ class ActionBuffer:
             for command in step.commands.values()
         ]
 
-    def get_parameter(self, step: str, command: str, name: str) -> dict:
+    def get_parameter(self, step: str, command: str, name: str) -> CommandParameters:
         """
         Helper to get a parameter of a command that belong to this action
         The data is quite nested, this is just for conveniance

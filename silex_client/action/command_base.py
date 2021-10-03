@@ -1,15 +1,18 @@
 from __future__ import annotations
-from typing import Callable, Any
-import functools
-import typing
 
-from silex_client.utils.log import logger
+import functools
+from typing import List, TYPE_CHECKING, Any, Callable, Dict, Union
+
 from silex_client.utils.enums import Status
+from silex_client.utils.log import logger
 
 # Forward references
-if typing.TYPE_CHECKING:
-    from silex_client.action.command_buffer import CommandBuffer
+if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
+    from silex_client.action.command_buffer import CommandBuffer
+
+# Type for parameters
+CommandParameters = Dict[str, Dict[str, Union[Any]]]
 
 
 class CommandBase:
@@ -18,27 +21,27 @@ class CommandBase:
     """
 
     #: Dictionary that represent the command's parameters
-    parameters: dict = {}
+    parameters: CommandParameters = {}
 
     #: List that represent the required context metadata
-    required_metadata: list = []
+    required_metadata: List[str] = []
 
     def __init__(self, command_buffer: CommandBuffer):
         self.command_buffer = command_buffer
 
     async def __call__(
-        self, upstream: Any, parameters: dict, action_query: ActionQuery
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ) -> Any:
         pass
 
     @property
-    def type_name(self):
+    def type_name(self) -> str:
         """
         Shortcut to get the type name of the command
         """
         return self.__class__.__name__
 
-    def check_parameters(self, parameters: dict) -> bool:
+    def check_parameters(self, parameters: CommandParameters) -> bool:
         """
         Check the if the input kwargs are valid accoring to the parameters list
         and conform it if nessesary
@@ -53,7 +56,7 @@ class CommandBase:
                 return False
         return True
 
-    def check_context_metadata(self, context_metadata):
+    def check_context_metadata(self, context_metadata: Dict[str, Any]):
         """
         Check if the context snapshot stored in the buffer contains all the required
         data for the command

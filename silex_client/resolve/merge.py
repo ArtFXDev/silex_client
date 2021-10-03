@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Callable, Dict, Union
 
 
 def merge_dict(data_a: dict, data_b: dict) -> dict:
@@ -52,12 +52,12 @@ def merge_list(data_a: list, data_b: list) -> list:
     return data_b
 
 
-def merge_data(data_a: Any, data_b: Any) -> Any:
+def merge_data(data_a: Any, data_b: Any) -> Union[dict, list]:
     """
     Merge the data A into the data B by chosing the apropriate merge method
     """
     # Mapp the data types to their merge function
-    mapping = {dict: merge_dict, list: merge_list}
+    mapping: Dict[type, Callable] = {dict: merge_dict, list: merge_list}
     for data_type, handler in mapping.items():
         if isinstance(data_a, data_type) and isinstance(data_b, data_type):
             # Execute the apropriate merge function

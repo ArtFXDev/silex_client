@@ -1,11 +1,11 @@
-import os
-from typing import Any, IO, Union
-
 import json
+import os
+from typing import IO, Any, Union
+
 import yaml
 
-from silex_client.utils.log import logger
 from silex_client.resolve.merge import merge_data
+from silex_client.utils.log import logger
 
 
 class Loader(yaml.SafeLoader):

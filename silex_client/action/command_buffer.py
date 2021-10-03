@@ -1,16 +1,22 @@
 from __future__ import annotations
+
 import copy
 import importlib
 import re
 import uuid as unique_id
-from typing import Union
+from dataclasses import asdict, dataclass, field
+from typing import Union, Dict, Any, TYPE_CHECKING
+
 import dacite
 import jsondiff
-from dataclasses import dataclass, field, asdict
 
-from silex_client.utils.log import logger
-from silex_client.utils.enums import Status
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.enums import Status
+from silex_client.utils.log import logger
+
+# Forward references
+if TYPE_CHECKING:
+    from silex_client.action.command_base import CommandParameters
 
 
 @dataclass()
@@ -30,7 +36,7 @@ class CommandBuffer:
     #: Small explanation for the UI
     tooltip: str = field(compare=False, repr=False, default="")
     #: Dict that represent the parameters of the command, their type, value, name...
-    parameters: dict = field(default_factory=dict)
+    parameters: CommandParameters = field(default_factory=dict)
     #: A Unique ID to help differentiate multiple actions
     uuid: unique_id.UUID = field(default_factory=unique_id.uuid1, init=False)
     #: The status of the command, to keep track of the progression, specify the errors
@@ -89,13 +95,13 @@ class CommandBuffer:
             self.status = Status.INVALID
             return CommandBase(self)
 
-    def serialize(self) -> dict:
+    def serialize(self) -> Dict[str, Any]:
         """
         Convert the command's data into json so it can be sent to the UI
         """
         return asdict(self)
 
-    def deserialize(self, serialized_data: dict) -> None:
+    def deserialize(self, serialized_data: Dict[str, Any]) -> None:
         """
         Convert back the action's data from json into this object
         """

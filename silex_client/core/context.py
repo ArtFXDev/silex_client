@@ -1,17 +1,19 @@
 from __future__ import annotations
+
+import copy
 import os
 import sys
-import copy
 import uuid
+from typing import Any, Dict, Union
 
 from rez import resolved_context
 
 from silex_client.action.action_query import ActionQuery
-from silex_client.resolve.config import Config
-from silex_client.network.websocket import WebsocketConnection
 from silex_client.core.event_loop import EventLoop
-from silex_client.utils.log import logger
+from silex_client.network.websocket import WebsocketConnection
+from silex_client.resolve.config import Config
 from silex_client.utils.datatypes import ReadOnlyDict
+from silex_client.utils.log import logger
 
 
 class Context:
@@ -24,17 +26,18 @@ class Context:
     :ivar is_outdated: When this is true, the properties will recompute themselves when queried
     """
 
-    _metadata = {}
-
     def __init__(self):
-        self._metadata = {}
         self.config: Config = Config()
-        self._metadata: dict = {"name": None, "uuid": uuid.uuid1()}
-        self.is_outdated = True
-        self._rez_context = resolved_context.ResolvedContext.get_current()
+        self._metadata: Dict[str, Any] = {"name": None, "uuid": uuid.uuid1()}
+        self.is_outdated: bool = True
+        self._rez_context: resolved_context.ResolvedContext = (
+            resolved_context.ResolvedContext.get_current()
+        )
 
-        self.event_loop = EventLoop()
-        self.ws_connection = WebsocketConnection(self.event_loop, self.metadata)
+        self.event_loop: EventLoop = EventLoop()
+        self.ws_connection: WebsocketConnection = WebsocketConnection(
+            self.event_loop, self.metadata
+        )
 
     @staticmethod
     def get() -> Context:
@@ -45,7 +48,7 @@ class Context:
         return getattr(sys.modules[__name__], "context")
 
     @property
-    def rez_context(self):
+    def rez_context(self) -> resolved_context.ResolvedContext:
         """
         Return the associated rez context, gets it if None is associated
         """
@@ -61,7 +64,7 @@ class Context:
         self.is_outdated = True
 
     @property
-    def metadata(self) -> dict:
+    def metadata(self) -> Dict[str, Any]:
         """
         Lazy loaded property that updates when the is_outdated attribute is set to True
         """
@@ -76,7 +79,7 @@ class Context:
         return self._metadata
 
     @metadata.setter
-    def metadata(self, data: dict) -> None:
+    def metadata(self, data: Dict[str, Any]) -> None:
         """
         Set the _metadata private attribute.
         This should not be used unless for test purposes, let the metadata update itself instead
@@ -88,7 +91,7 @@ class Context:
             return
         self._metadata = data
 
-    def update_metadata(self, data: dict) -> None:
+    def update_metadata(self, data: Dict[str, Any]) -> None:
         """
         Merge the provided dict with the current metadata
         This should not be used unless for test purposes, let the metadata update itself instead
@@ -157,47 +160,47 @@ class Context:
         self._metadata["user"] = None
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Get the name stored in the context's metadata"""
         return self.metadata["dcc"]
 
     @name.setter
-    def name(self, value: str):
+    def name(self, value: str) -> None:
         """Set the name stored in the context's metadata"""
         self._metadata["name"] = value
 
     @property
-    def dcc(self):
+    def dcc(self) -> Union[str, None]:
         """Read only value of the current dcc"""
-        return self.metadata["dcc"]
+        return self.metadata.get("dcc")
 
     @property
-    def project(self):
+    def project(self) -> Union[str, None]:
         """Read only value of the current project"""
-        return self.metadata["project"]
+        return self.metadata.get("project")
 
     @property
-    def asset(self):
+    def asset(self) -> Union[str, None]:
         """Read only value of the current asset"""
-        return self.metadata["asset"]
+        return self.metadata.get("asset")
 
     @property
-    def sequence(self):
+    def sequence(self) -> Union[int, None]:
         """Read only value of the current sequence"""
-        return self.metadata["sequence"]
+        return self.metadata.get("sequence")
 
     @property
-    def shot(self):
+    def shot(self) -> Union[int, None]:
         """Read only value of the current shot"""
-        return self.metadata["shot"]
+        return self.metadata.get("shot")
 
     @property
-    def task(self):
+    def task(self) -> Union[str, None]:
         """Read only value of the current task"""
-        return self.metadata["task"]
+        return self.metadata.get("task")
 
     @property
-    def entity(self):
+    def entity(self) -> Union[str, None]:
         """Compute the type of the lowest set entity"""
         if self.asset is not None:
             return "asset"
@@ -209,9 +212,9 @@ class Context:
         return None
 
     @property
-    def user(self):
+    def user(self) -> Union[str, None]:
         """Read only value of the current user"""
-        return self.metadata["user"]
+        return self.metadata.get("user")
 
     @property
     def is_valid(self) -> bool:

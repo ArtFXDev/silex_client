@@ -1,6 +1,6 @@
-from silex_client.cli import handlers
-
 import argparse
+
+from silex_client.cli import handlers
 
 
 def main():

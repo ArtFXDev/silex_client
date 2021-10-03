@@ -5,18 +5,18 @@ receive and handle the incomming messages
 """
 from __future__ import annotations
 
-from typing import Any, Union
-import json
-import typing
-import threading
 import asyncio
+import json
+import threading
+import typing
 from concurrent import futures
+from typing import Any, Union
 
 import socketio
 
-from silex_client.utils.log import logger
-from silex_client.network.websocket_dcc import WebsocketDCCNamespace
 from silex_client.network.websocket_action import WebsocketActionNamespace
+from silex_client.network.websocket_dcc import WebsocketDCCNamespace
+from silex_client.utils.log import logger
 from silex_client.utils.serialiser import silex_encoder
 
 # Forward references

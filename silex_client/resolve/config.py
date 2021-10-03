@@ -1,9 +1,9 @@
-import os
 import copy
-from typing import Union, Any
+import os
+from typing import Any, Union
 
-from silex_client.utils.log import logger
 from silex_client.resolve.loader import Loader
+from silex_client.utils.log import logger
 
 
 class Config:

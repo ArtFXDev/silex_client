@@ -1,9 +1,9 @@
-import os
 import importlib
+import os
 from types import ModuleType
 
 
-def reload_recursive(parent_module: ModuleType):
+def reload_recursive(parent_module: ModuleType) -> None:
     """
     Reload a given module and all its submodules recursively
     Can be used for development purposes and production

@@ -9,19 +9,25 @@ from rez.utils import sourcecode
 
 def fix_rez_pip():
     package_overrides = {
-        "commands":
-        sourcecode.SourceCode("env.PATH.append('{}')".format(
-            str(os.path.dirname(shutil.which("python")).replace(os.sep, "/"))))
+        "commands": sourcecode.SourceCode(
+            "env.PATH.append('{}')".format(
+                str(os.path.dirname(shutil.which("python")).replace(os.sep, "/"))
+            )
+        )
     }
 
     current_context = resolved_context.ResolvedContext.get_current()
-    python_package = next(package
-                          for package in current_context.resolved_packages
-                          if package.name == "python").parent
+    python_package = next(
+        package
+        for package in current_context.resolved_packages
+        if package.name == "python"
+    ).parent
 
-    with package_maker.make_package(name=python_package.name,
-                                    path=python_package.resource.location,
-                                    skip_existing=False) as new_package:
+    with package_maker.make_package(
+        name=python_package.name,
+        path=python_package.resource.location,
+        skip_existing=False,
+    ) as new_package:
         for key, value in python_package.validated_data().items():
             setattr(new_package, key, value)
 
@@ -31,7 +37,8 @@ def fix_rez_pip():
 
 def get_requirements():
     spec = importlib.util.spec_from_file_location(
-        "package", os.path.join(__file__, "..", "..", "package.py"))
+        "package", os.path.join(__file__, "..", "..", "package.py")
+    )
     package = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(package)
     requirements = package.requires

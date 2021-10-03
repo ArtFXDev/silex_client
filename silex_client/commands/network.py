@@ -1,11 +1,11 @@
 from __future__ import annotations
+
 import asyncio
 import typing
+from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from typing import Any
 from silex_client.utils.log import logger
-from silex_client.utils.enums import Status
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -26,7 +26,7 @@ class SendMessage(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: dict, action_query: ActionQuery
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         # If there is not websocket connection, don't do anything
         if not action_query.ws_connection.is_running:
@@ -61,7 +61,7 @@ class SendActionBuffer(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: dict, action_query: ActionQuery
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         # If there is not websocket connection, don't do anything
         if not action_query.ws_connection.is_running:

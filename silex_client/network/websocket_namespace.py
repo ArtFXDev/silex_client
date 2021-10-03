@@ -1,6 +1,8 @@
 from __future__ import annotations
-import socketio
+
 import typing
+
+import socketio
 
 # Forward references
 if typing.TYPE_CHECKING:

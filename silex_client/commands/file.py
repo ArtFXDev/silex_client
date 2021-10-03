@@ -1,7 +1,8 @@
 from __future__ import annotations
+
 import os
 import typing
-from typing import Any
+from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
@@ -36,7 +37,7 @@ class PublishFile(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: dict, action_query: ActionQuery
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         publish_path = os.path.join(
             action_query.context_metadata["project"], parameters["name"]

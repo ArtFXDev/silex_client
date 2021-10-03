@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 
 
@@ -5,6 +7,8 @@ class ReadOnlyError(Exception):
     """
     Simple exception for the readonly datatypes
     """
+
+    pass
 
 
 class ReadOnlyDict(dict):
@@ -16,11 +20,11 @@ class ReadOnlyDict(dict):
     def __readonly__(*args, **kwargs) -> None:
         raise ReadOnlyError("This dictionary is readonly")
 
-    def __copy__(self):
+    def __copy__(self) -> ReadOnlyDict:
         cls = self.__class__
         return cls(copy.copy(dict(self)))
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo) -> ReadOnlyDict:
         cls = self.__class__
         return cls(copy.deepcopy(dict(self), memo))
 

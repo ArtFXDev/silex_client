@@ -1,21 +1,22 @@
 from __future__ import annotations
-from typing import Any
-import typing
-from typing import Union, Iterator
-import jsondiff
+
+import asyncio
 import copy
 from concurrent import futures
-import asyncio
+from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING
+
+import jsondiff
 
 from silex_client.action.action_buffer import ActionBuffer
-from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
+from silex_client.utils.log import logger
 
 # Forward references
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from silex_client.action.command_buffer import CommandBuffer
-    from silex_client.network.websocket import WebsocketConnection
+    from silex_client.action.step_buffer import StepBuffer
     from silex_client.core.event_loop import EventLoop
+    from silex_client.network.websocket import WebsocketConnection
     from silex_client.resolve.config import Config
 
 
@@ -30,7 +31,7 @@ class ActionQuery:
         config: Config,
         event_loop: EventLoop,
         ws_connection: WebsocketConnection,
-        context_metadata: dict,
+        context_metadata: Dict[str, Any],
     ):
         self.config = config
         self.event_loop = event_loop
@@ -84,7 +85,7 @@ class ActionQuery:
             self.update_websocket()
         return future
 
-    def _initialize_buffer(self, custom_data: dict = None) -> None:
+    def _initialize_buffer(self, custom_data: Union[dict, None] = None) -> None:
         """
         Initialize the buffer from the config
         """
@@ -111,7 +112,7 @@ class ActionQuery:
         # Update the buffer with the new data
         self.buffer.deserialize(resolved_action)
 
-    def _conform_resolved_action(self, data: Any):
+    def _conform_resolved_action(self, data: dict):
         if not isinstance(data, dict):
             return
 
@@ -174,12 +175,12 @@ class ActionQuery:
         return self.buffer.status
 
     @property
-    def variables(self) -> dict:
+    def variables(self) -> Dict[str, Any]:
         """Shortcut to get the variable of the buffer"""
         return self.buffer.variables
 
     @property
-    def steps(self) -> list:
+    def steps(self) -> List[StepBuffer]:
         """Shortcut to get the steps of the buffer"""
         return list(self.buffer.steps.values())
 

@@ -1,7 +1,8 @@
-from dataclasses import dataclass, field, asdict
-from typing import Union, Dict
-import uuid
 import re
+import uuid
+from dataclasses import asdict, dataclass, field
+from typing import Dict, Union, Any
+
 import dacite
 
 from silex_client.action.command_buffer import CommandBuffer
@@ -35,13 +36,13 @@ class StepBuffer:
             self.label = slugify_pattern.sub(" ", self.name)
             self.label = self.label.title()
 
-    def serialize(self) -> dict:
+    def serialize(self) -> Dict[str, Any]:
         """
         Convert the command's data into json so it can be sent to the UI
         """
         return asdict(self)
 
-    def deserialize(self, serialized_data: dict) -> None:
+    def deserialize(self, serialized_data: Dict[str, Any]) -> None:
         """
         Convert back the action's data from json into this object
         """

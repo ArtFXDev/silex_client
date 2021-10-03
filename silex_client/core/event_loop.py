@@ -1,10 +1,9 @@
+import asyncio
+import gc
+from concurrent import futures
+from contextlib import suppress
 from threading import Thread
 from typing import Coroutine
-from concurrent import futures
-import gc
-import atexit
-import asyncio
-from contextlib import suppress
 
 from silex_client.utils.log import logger
 
@@ -14,16 +13,14 @@ class EventLoop:
     Class responsible to manage the async event loop, to deal with websocket
     connection, and action execution
 
-    :ivar TASK_SLEEP_TIME: How long in second to wait for the thread to join before returning an error
+    :ivar JOIN_THREAD_TIMEOUT: How long in second to wait for the thread to join before returning an error
     """
 
     JOIN_THREAD_TIMEOUT = 2
 
     def __init__(self):
-        self.loop = asyncio.new_event_loop()
-        self.tasks = []
-        self.thread = Thread()
-        atexit.register(self.stop)
+        self.loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
+        self.thread: Thread = Thread()
 
     @property
     def is_running(self) -> bool:
