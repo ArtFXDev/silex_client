@@ -1,6 +1,6 @@
 param([parameter(mandatory=$false)] [string]$rez_dir = "")
 
-function download-githubrelease {
+function Receive-GithubRelease {
     param(
         [parameter(mandatory=$true)] [string]$repo,
         [parameter(mandatory=$false)] [string]$file = ""
@@ -8,7 +8,7 @@ function download-githubrelease {
 
     $releases = "https://api.github.com/repos/$repo/releases"
     # determining the latest release
-    $tag = (invoke-webrequest $releases -usebasicparsing | convertfrom-json)[0].tag_name
+    $tag = (Invoke-WebRequest $releases -UseBasicParsing | ConvertFrom-Json)[0].tag_name
 
     if ($file -eq "") {
         $file = "$tag.zip"
@@ -21,64 +21,62 @@ function download-githubrelease {
     }
 
     if ($file.split(".")[-1] -ne "zip") {
-        invoke-webrequest $download -out $file -usebasicparsing
+        Invoke-WebRequest $download -Out $file -UseBasicParsing
         return $file
     }
 
     $zip = "$name-$tag.zip"
     $dir = "$name-$tag"
 
-    invoke-webrequest $download -out $zip -usebasicparsing
-    expand-archive $zip -force
+    Invoke-WebRequest $download -Out $zip -UseBasicParsing
+    Expand-Archive $zip -Force
 
     # moving from temp dir to target dir
-    move-item $dir\$name -destination $name -force
+    Move-Item $dir\$name -Destination $name -Force
 
     # removing temp files
-    remove-item $zip -force
-    remove-item $dir -recurse -force
+    Remove-Item $zip -Force
+    Remove-Item $dir -Recurse -Force
 
     return $name
 }
 
-function install-rez {
-    if($null -ne $(get-command "rez" -erroraction silentlycontinue)) {
+function Install-Rez {
+    if($null -ne $(Get-Command "rez" -ErrorAction SilentlyContinue)) {
         return
     }
-    write-output "downloading rez..."
+    Write-Output "downloading rez..."
     # set a default rez dir if not provided
     if ($rez_dir -eq "") {
         $rez_dir = "$home\rez"
     }
-    $rez_source = download-githubrelease -repo "nerdvegas/rez"
+    $rez_source = Receive-GithubRelease -Repo "nerdvegas/rez"
 
     # install rez
-    write-output "installing rez..."
     invoke-expression "python $(resolve-path $rez_source)\install.py `"$rez_dir`""
-    $env:path=$env:path + ";$rez_dir\scripts\rez"
-    [environment]::setenvironmentvariable('path', $env:path, 'user')
-    if($CI) {add-content $env:GITHUB_PATH "$rez_dir\scripts\rez"}
-    write-output $env:GITHUB_PATH
-    write-output ${get-content $env:GITHUB_PATH}
-    remove-item $rez_source -recurse -force
-    $env:rez=$rez_dir
-    [environment]::setenvironmentvariable('rez', $env:rez, 'user')
-    if($CI) {add-content $env:GITHUB_ENV "REZ=$env:rez"}
-    $env:pythonpath=$env:pythonpath + ";$rez_dir\lib\site-packages"
-    [environment]::setenvironmentvariable('pythonpath', $env:pythonpath, 'user')
-    if($CI) {add-content $env:GITHUB_ENV "PYTHONPATH=$env:pythonpath"}
+    $env:PATH=$env:PATH + ";$rez_dir\scripts\rez"
+    [environment]::SetEnvironmentVariable('PATH', $env:PATH, 'User')
+    if($env:CI) {Add-Content $env:GITHUB_PATH "$rez_dir\scripts\rez"}
+    Remove-Item $rez_source -Recurse -Force
+    $env:REZ=$rez_dir
+    [environment]::SetEnvironmentVariable('REZ', $env:REZ, 'User')
+    if($env:CI) {Add-Content $env:GITHUB_ENV "REZ=$env:REZ"}
+    $env:PYTHONPATH=$env:PYTHONPATH + ";$rez_dir\lib\site-packages"
+    [environment]::SetEnvironmentVariable('PYTHONPATH', $env:PYTHONPATH, 'User')
+    if($env:CI) {Add-Content $env:GITHUB_ENV "PYTHONPATH=$env:PYTHONPATH"}
 }
 
-function setup-rez {
+function Initialize-Rez {
     # create some default packages
-    write-output "binding default rez packages..."
+    Write-Output "binding default rez packages..."
     rez-bind --quickstart
 
     # run the install_dependencies script
+    Write-Output "installing silex's dependencies..."
     $install_dependencies = Join-Path -path $((Get-Item $PSCommandPath).Directory.FullName) -childPath "install_dependencies.py"
     rez-env rez -- "python $install_dependencies"
 }
 
 # start the installation
-install-rez
-setup-rez
+Install-Rez
+Initialize-Rez
