@@ -107,8 +107,13 @@ class Context:
         request = os.getenv("REZ_USED_REQUEST", "")
         # TODO: Get the list of DCCs from a centralised database or config
         handled_dcc = [
-            "maya", "houdini", "nuke", "unreal", "substance", "mari",
-            "clarisse"
+            "maya",
+            "houdini",
+            "nuke",
+            "unreal",
+            "substance",
+            "mari",
+            "clarisse",
         ]
         # Look for dcc in rez request
         self._metadata["dcc"] = None
@@ -126,11 +131,9 @@ class Context:
         Update the metadata's key like project, shot, task...
         """
         # TODO: Check the each entity  exists on the database
-        self._metadata["project"] = str(
-            self.get_ephemeral_version("project")) or None
+        self._metadata["project"] = str(self.get_ephemeral_version("project")) or None
 
-        self._metadata["asset"] = str(
-            self.get_ephemeral_version("asset")) or None
+        self._metadata["asset"] = str(self.get_ephemeral_version("asset")) or None
 
         # The sequence and the shot needs to be converted from string to integer
         for indexed_entity in ["sequence", "shot"]:
@@ -144,8 +147,7 @@ class Context:
             else:
                 self._metadata[indexed_entity] = None
 
-        self._metadata["task"] = str(
-            self.get_ephemeral_version("task")) or None
+        self._metadata["task"] = str(self.get_ephemeral_version("task")) or None
 
     def update_user(self) -> None:
         """
@@ -225,16 +227,16 @@ class Context:
             # If if doesn't, the entity is set to None
             if getattr(self, entity_name) is None:
                 logger.warning(
-                    "Invalid silex context: The entity %s is not set",
-                    entity_name)
+                    "Invalid silex context: The entity %s is not set", entity_name
+                )
                 return False
 
             # If the rez context has changed, the silex context might be desynchronised
-            if getattr(self,
-                       entity_name) != self.get_ephemeral_version(entity_name):
+            if getattr(self, entity_name) != self.get_ephemeral_version(entity_name):
                 logger.warning(
                     "Invalid silex context: The entity %s is not on the right version",
-                    entity_name)
+                    entity_name,
+                )
                 return False
 
         return True
@@ -249,8 +251,9 @@ class Context:
 
         name = f".{name}"
         try:
-            ephemeral = next(x for x in self.rez_context.resolved_ephemerals
-                             if x.name == name)
+            ephemeral = next(
+                x for x in self.rez_context.resolved_ephemerals if x.name == name
+            )
             versions = ephemeral.range.to_versions()[0]
             return versions[0] if versions else ""
         except StopIteration:
@@ -262,8 +265,13 @@ class Context:
         """
 
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(self.metadata))
-        return ActionQuery(action_name, self.config, self.event_loop, self.ws_connection, metadata_snapshot)
-
+        return ActionQuery(
+            action_name,
+            self.config,
+            self.event_loop,
+            self.ws_connection,
+            metadata_snapshot,
+        )
 
 
 context = Context()

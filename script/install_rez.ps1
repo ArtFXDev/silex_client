@@ -57,12 +57,14 @@ function install-rez {
     invoke-expression "python $(resolve-path $rez_source)\install.py `"$rez_dir`""
     $env:path=$env:path + ";$rez_dir\scripts\rez"
     [environment]::setenvironmentvariable('path', $env:path, 'user')
+    if($CI) {add-content $env:GITHUB_PATH $env:path}
     remove-item $rez_source -recurse -force
     $env:rez=$rez_dir
     [environment]::setenvironmentvariable('rez', $env:rez, 'user')
+    if($CI) {add-content $env:GITHUB_ENV "REZ=$env:rez"}
     $env:pythonpath=$env:pythonpath + ";$rez_dir\lib\site-packages"
     [environment]::setenvironmentvariable('pythonpath', $env:pythonpath, 'user')
-
+    if($CI) {add-content $env:GITHUB_ENV "PYTHONPATH=$env:pythonpath"}
 }
 
 function setup-rez {

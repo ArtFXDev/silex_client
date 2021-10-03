@@ -14,10 +14,11 @@ from silex_client.action.command_base import CommandBase
 
 
 @dataclass()
-class CommandBuffer():
+class CommandBuffer:
     """
     Store the data of a command, it is used as a comunication payload with the UI
     """
+
     #: The path to the command's module
     path: str = field()
     #: Name of the command, must have no space or special characters
@@ -58,8 +59,13 @@ class CommandBuffer():
         # The formatting of the parameters can be different, it can be:
         # {<parameter_name>: <parameter_value>} or {<parameter_name>: {"value": <parameter_value>}}
         # We need to make sure it follows the format {<parameter_name>: {"value": <parameter_value>}}
-        if all(not isinstance(value, dict) or "value" not in value.keys() for value in self.parameters.values()):
-            self.parameters = {key: {"value": value} for key, value in self.parameters.items()}
+        if all(
+            not isinstance(value, dict) or "value" not in value.keys()
+            for value in self.parameters.values()
+        ):
+            self.parameters = {
+                key: {"value": value} for key, value in self.parameters.items()
+            }
         # Apply the parameters to the default parameters
         self.parameters = jsondiff.patch(command_parameters, self.parameters)
 
@@ -95,4 +101,3 @@ class CommandBuffer():
         """
         new_data = dacite.from_dict(CommandBuffer, serialized_data)
         self.__dict__ = new_data.__dict__
-

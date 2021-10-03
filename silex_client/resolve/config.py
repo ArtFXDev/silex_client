@@ -6,12 +6,13 @@ from silex_client.utils.log import logger
 from silex_client.resolve.loader import Loader
 
 
-class Config():
+class Config:
     """
     Utility class that lazy load and resolve the configurations on demand
 
     :ivar action_search_path: List of path to look for config files. The order matters.
     """
+
     def __init__(self, action_search_path: Union[list, str] = None):
         # List of the path to look for any included file
         self.action_search_path = ["/"]
@@ -41,12 +42,8 @@ class Config():
             for file_path in os.listdir(path):
                 split_path = os.path.splitext(file_path)
                 if os.path.splitext(file_path)[1] in [".yaml", ".yml"]:
-                    action_path = os.path.abspath(os.path.join(
-                        path, file_path))
-                    found_actions.append({
-                        "name": split_path[0],
-                        "path": action_path
-                    })
+                    action_path = os.path.abspath(os.path.join(path, file_path))
+                    found_actions.append({"name": split_path[0], "path": action_path})
 
         return found_actions
 
@@ -56,12 +53,12 @@ class Config():
         """
         # Find the action config
         if action_name not in [action["name"] for action in self.actions]:
-            logger.error("Could not resolve config for the action %s",
-                         action_name)
+            logger.error("Could not resolve config for the action %s", action_name)
             return None
 
-        config_path = next(action["path"] for action in self.actions
-                           if action["name"] == action_name)
+        config_path = next(
+            action["path"] for action in self.actions if action["name"] == action_name
+        )
         logger.debug("Found action config at %s", config_path)
         return self._load_config(config_path)
 

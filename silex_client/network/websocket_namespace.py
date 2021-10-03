@@ -10,7 +10,9 @@ if typing.TYPE_CHECKING:
 class WebsocketNamespace(socketio.AsyncClientNamespace):
     namespace = ""
 
-    def __init__(self, namespace: str, context_metadata: dict, ws_connection: WebsocketConnection):
+    def __init__(
+        self, namespace: str, context_metadata: dict, ws_connection: WebsocketConnection
+    ):
         super().__init__(namespace)
         self.context_metadata = context_metadata
         self.ws_connection = ws_connection

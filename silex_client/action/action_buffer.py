@@ -10,10 +10,11 @@ from silex_client.utils.enums import Status
 
 
 @dataclass()
-class ActionBuffer():
+class ActionBuffer:
     """
     Store the state of an action, it is used as a comunication payload with the UI
     """
+
     # Define the mandatory keys and types for each attribibutes of a buffer
     STEP_TEMPLATE = {"index": int, "commands": list}
     COMMAND_TEMPLATE = {"path": str}
@@ -69,7 +70,8 @@ class ActionBuffer():
 
         # If no steps given return all the commands flattened
         return [
-            command for step in self.steps.values()
+            command
+            for step in self.steps.values()
             for command in step.commands.values()
         ]
 
@@ -81,15 +83,16 @@ class ActionBuffer():
         command_buffer = self.steps[step].commands[command]
         return command_buffer.parameters.get(name, None)
 
-    def set_parameter(self, step: str, command: str, name: str,
-                      value: Any) -> None:
+    def set_parameter(self, step: str, command: str, name: str, value: Any) -> None:
         """
         Helper to set a parameter of a command that belong to this action
         The data is quite nested, this is just for conveniance
         """
         parameter = self.get_parameter(step, command, name)
         if parameter is None:
-            logger.error("Could not set parameter %s: The parameter does not exists", name)
+            logger.error(
+                "Could not set parameter %s: The parameter does not exists", name
+            )
             return
 
         # Check if the given value is the right type

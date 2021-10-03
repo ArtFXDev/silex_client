@@ -30,7 +30,12 @@ class WebsocketConnection:
     and receive and handle the incomming messages
     """
 
-    def __init__(self, event_loop: EventLoop, context_metadata: dict=None, url: str="ws://127.0.0.1:5118"):
+    def __init__(
+        self,
+        event_loop: EventLoop,
+        context_metadata: dict = None,
+        url: str = "ws://127.0.0.1:5118",
+    ):
         self.is_running = False
         self.url = url
 
@@ -42,8 +47,12 @@ class WebsocketConnection:
             context_metadata = {}
 
         # Register the different namespaces
-        self.dcc_namespace = self.socketio.register_namespace(WebsocketDCCNamespace("/dcc", context_metadata, self))
-        self.action_namespace = self.socketio.register_namespace(WebsocketActionNamespace("/dcc/action", context_metadata, self))
+        self.dcc_namespace = self.socketio.register_namespace(
+            WebsocketDCCNamespace("/dcc", context_metadata, self)
+        )
+        self.action_namespace = self.socketio.register_namespace(
+            WebsocketActionNamespace("/dcc/action", context_metadata, self)
+        )
 
     async def _connect_socketio(self) -> None:
         self.is_running = True
@@ -58,7 +67,9 @@ class WebsocketConnection:
         initialize the event loop's task and run it in main thread
         """
         if self.is_running:
-            logger.warning("Could not start websocket connection: The connection is already running")
+            logger.warning(
+                "Could not start websocket connection: The connection is already running"
+            )
             return
 
         self.event_loop.register_task(self._connect_socketio())
@@ -89,8 +100,9 @@ class WebsocketConnection:
 
     async def async_send(self, namespace, event, data) -> asyncio.Future:
         logger.debug("Websocket client sending %s at %s on %s", data, namespace, event)
-        
+
         future = self.event_loop.loop.create_future()
+
         def callback(response):
             if not future.cancelled():
                 future.set_result(response)

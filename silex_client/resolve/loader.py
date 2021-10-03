@@ -13,7 +13,8 @@ class Loader(yaml.SafeLoader):
     Override of the default loader to be able to create custom tags in YAML files,
     like !include or !inherit
     """
-    def __init__(self, stream: IO, path: Union[tuple, list] = ("/", )) -> None:
+
+    def __init__(self, stream: IO, path: Union[tuple, list] = ("/",)) -> None:
         # Get the list of the path to look for any included file from context
         self.search_path = list(path)
 
@@ -34,7 +35,7 @@ class Loader(yaml.SafeLoader):
         mapping = {
             yaml.ScalarNode: self.construct_scalar,
             yaml.SequenceNode: self.construct_sequence,
-            yaml.MappingNode: self.construct_mapping
+            yaml.MappingNode: self.construct_mapping,
         }
         # Find the corresponding constructor
         for node_type, handler in mapping.items():
@@ -51,8 +52,7 @@ class Loader(yaml.SafeLoader):
         logger.error("Unhandled syntax for given node in yaml config")
         return {}
 
-    def _construct_kwargs(
-        self, node: yaml.Node, keys: Union[tuple, list] = ()) -> dict:
+    def _construct_kwargs(self, node: yaml.Node, keys: Union[tuple, list] = ()) -> dict:
         """
         Construct data from node, allow to handle multiple types of data
         in a custom statement
@@ -67,8 +67,7 @@ class Loader(yaml.SafeLoader):
         if isinstance(node_data, dict):
             # Handle dictionary data
             construct_kwargs = {
-                key: value
-                for key, value in node_data.items() if key in keys
+                key: value for key, value in node_data.items() if key in keys
             }
         elif isinstance(node_data, list):
             # Handle list data
@@ -96,20 +95,19 @@ class Loader(yaml.SafeLoader):
                 break
 
         if not filename:
-            logger.error(
-                "Could not resolve config, the file %s does not exist", file)
+            logger.error("Could not resolve config, the file %s does not exist", file)
             return None
 
         # Get the file type to load it correctly
-        extension = os.path.splitext(filename)[1].lstrip('.')
+        extension = os.path.splitext(filename)[1].lstrip(".")
         # Load and return the included file
-        with open(filename, 'r', encoding="utf-8") as import_data:
-            if extension in ('yaml', 'yml'):
+        with open(filename, "r", encoding="utf-8") as import_data:
+            if extension in ("yaml", "yml"):
                 return yaml.load(import_data, Loader)
-            if extension == 'json':
+            if extension == "json":
                 return json.load(import_data)
 
-            return ''.join(import_data.readlines())
+            return "".join(import_data.readlines())
 
     def include(self, node: yaml.Node) -> Any:
         """
@@ -139,7 +137,8 @@ class Loader(yaml.SafeLoader):
         except (KeyError, TypeError):
             logger.warning(
                 "The given key could not be found in the included file %s",
-                include_kwargs["file"])
+                include_kwargs["file"],
+            )
             return include_data
 
     def inherit(self, node: yaml.Node) -> Any:
@@ -169,7 +168,8 @@ class Loader(yaml.SafeLoader):
             except (KeyError, TypeError):
                 logger.warning(
                     "The given key could not be found in the inherited file %s",
-                    inherit_kwargs["file"])
+                    inherit_kwargs["file"],
+                )
                 return node_data
 
         # Merge the two data
@@ -177,12 +177,13 @@ class Loader(yaml.SafeLoader):
             logger.warning(
                 "The node and the inherited node are not the same time, \
                 skipping inheritance for yaml config %s",
-                inherit_kwargs["parent"])
+                inherit_kwargs["parent"],
+            )
             return node_data
 
         return merge_data(node_data, inherit_data)
 
 
 # Set the include method as a handler for the !include statement
-Loader.add_constructor('!include', Loader.include)
-Loader.add_constructor('!inherit', Loader.inherit)
+Loader.add_constructor("!include", Loader.include)
+Loader.add_constructor("!inherit", Loader.inherit)

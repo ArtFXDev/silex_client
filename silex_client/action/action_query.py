@@ -19,11 +19,19 @@ if typing.TYPE_CHECKING:
     from silex_client.resolve.config import Config
 
 
-class ActionQuery():
+class ActionQuery:
     """
     Initialize and execute a given action
     """
-    def __init__(self, name: str, config: Config, event_loop: EventLoop, ws_connection: WebsocketConnection, context_metadata: dict):
+
+    def __init__(
+        self,
+        name: str,
+        config: Config,
+        event_loop: EventLoop,
+        ws_connection: WebsocketConnection,
+        context_metadata: dict,
+    ):
         self.config = config
         self.event_loop = event_loop
         self.ws_connection = ws_connection
@@ -49,7 +57,9 @@ class ActionQuery():
             for command in self.iter_commands():
                 # Only run the command if it is valid
                 if self.buffer.status in [Status.INVALID, Status.ERROR]:
-                    logger.error("Stopping action %s because the buffer is invalid", self.name)
+                    logger.error(
+                        "Stopping action %s because the buffer is invalid", self.name
+                    )
                     return self.buffer
                 # Create a dictionary that only contains the name and the value of the parameters
                 # without infos like the type, label...
@@ -59,8 +69,12 @@ class ActionQuery():
                 }
                 # Run the executor and copy the parameters
                 # to prevent them from being modified during execution
-                logger.debug("Executing command %s for action %s", command.name, self.name)
-                upstream_result = await command.executor(upstream_result, copy.deepcopy(parameters), self)
+                logger.debug(
+                    "Executing command %s for action %s", command.name, self.name
+                )
+                upstream_result = await command.executor(
+                    upstream_result, copy.deepcopy(parameters), self
+                )
 
         # Execute the commands in the event loop
         future = self.event_loop.register_task(execute_commands())
@@ -70,7 +84,7 @@ class ActionQuery():
             self.update_websocket()
         return future
 
-    def _initialize_buffer(self, custom_data: dict=None) -> None:
+    def _initialize_buffer(self, custom_data: dict = None) -> None:
         """
         Initialize the buffer from the config
         """
@@ -84,7 +98,9 @@ class ActionQuery():
 
         # Make sure the required action is in the config
         if self.name not in resolved_action.keys():
-            logger.error("Could not initialise the action: The resolved config is invalid")
+            logger.error(
+                "Could not initialise the action: The resolved config is invalid"
+            )
             return
         resolved_action = resolved_action[self.name]
 
@@ -99,10 +115,14 @@ class ActionQuery():
         if not isinstance(data, dict):
             return
 
-        # To convert the yaml into real objects, there is some missing attributes that 
+        # To convert the yaml into real objects, there is some missing attributes that
         for key, value in data.items():
             # TODO: Find a better way to do this, we can't name a step "steps" or "parameters" with this method
-            if isinstance(value, dict) and key not in ["steps", "commands", "parameters"]:
+            if isinstance(value, dict) and key not in [
+                "steps",
+                "commands",
+                "parameters",
+            ]:
                 value["name"] = key
             self._conform_resolved_action(value)
 
@@ -126,6 +146,7 @@ class ActionQuery():
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
 
         future = self.event_loop.loop.create_future()
+
         def callback(response):
             if response.cancelled():
                 return
@@ -227,17 +248,23 @@ class ActionQuery():
                 break
             # If everything is provided
             elif step is not None and command is not None:
-                if step == parameter_step and command == parameter_command and name in parameters:
+                if (
+                    step == parameter_step
+                    and command == parameter_command
+                    and name in parameters
+                ):
                     valid = True
                     break
 
         if step is None or index is None or not valid:
             logger.error(
                 "Could not set parameter %s: The parameter does not exists",
-                parameter_name)
+                parameter_name,
+            )
             return
 
         self.buffer.set_parameter(step, index, name, value)
+
 
 class CommandIterator(Iterator):
     def __init__(self, action_buffer: ActionBuffer):

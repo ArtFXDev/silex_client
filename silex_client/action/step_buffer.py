@@ -6,11 +6,13 @@ import dacite
 
 from silex_client.action.command_buffer import CommandBuffer
 
+
 @dataclass()
-class StepBuffer():
+class StepBuffer:
     """
     Store the data of a step, it is used as a comunication payload with the UI
     """
+
     #: Name of the step, must have no space or special characters
     name: str
     #: The index of the step, to set the order in which they should be executed

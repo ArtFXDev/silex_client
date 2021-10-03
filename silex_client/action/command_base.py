@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class CommandBase():
+class CommandBase:
     """
     Base class that every command should inherit from
     """
@@ -26,7 +26,9 @@ class CommandBase():
     def __init__(self, command_buffer: CommandBuffer):
         self.command_buffer = command_buffer
 
-    async def __call__(self, upstream: Any, parameters: dict, action_query: ActionQuery) -> Any:
+    async def __call__(
+        self, upstream: Any, parameters: dict, action_query: ActionQuery
+    ) -> Any:
         pass
 
     @property
@@ -45,7 +47,9 @@ class CommandBase():
             if parameter_value is None:
                 logger.error(
                     "Could not execute %s: The parameter %s is missing",
-                    self.command_buffer.name, parameter_name)
+                    self.command_buffer.name,
+                    parameter_name,
+                )
                 return False
         return True
 
@@ -58,7 +62,9 @@ class CommandBase():
             if context_metadata.get(metadata) is None:
                 logger.error(
                     "Could not execute command %s: The context is missing required metadata %s",
-                    self.command_buffer.name, metadata)
+                    self.command_buffer.name,
+                    metadata,
+                )
                 return False
         return True
 
@@ -68,18 +74,20 @@ class CommandBase():
         Helper decorator that conform the input and the output
         Meant to be used with the __call__ method of CommandBase objects
         """
+
         def decorator_conform_command(func: Callable) -> Callable:
             @functools.wraps(func)
-            async def wrapper_conform_command(command: CommandBase, *args,
-                                        **kwargs) -> None:
+            async def wrapper_conform_command(
+                command: CommandBase, *args, **kwargs
+            ) -> None:
                 # Make sure the given parameters are valid
-                if not command.check_parameters(
-                        kwargs.get("parameters", args[1])):
+                if not command.check_parameters(kwargs.get("parameters", args[1])):
                     command.command_buffer.status = Status.INVALID
                     return
                 # Make sure all the required metatada is here
                 if not command.check_context_metadata(
-                        kwargs.get("action_query", args[2]).context_metadata):
+                    kwargs.get("action_query", args[2]).context_metadata
+                ):
                     command.command_buffer.status = Status.INVALID
                     return
                 # TODO: Find a way to catch all the errors and set the status to ERROR

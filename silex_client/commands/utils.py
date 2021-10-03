@@ -16,20 +16,14 @@ class Log(CommandBase):
     """
 
     parameters = {
-        "message": {
-            "label": "Message",
-            "type": str,
-            "value": None
-        },
-        "level": {
-            "label": "Level",
-            "type": str,
-            "value": "info"
-        }
+        "message": {"label": "Message", "type": str, "value": None},
+        "level": {"label": "Level", "type": str, "value": "info"},
     }
 
     @CommandBase.conform_command()
-    async def __call__(self, upstream: Any, parameters: dict, action_query: ActionQuery):
+    async def __call__(
+        self, upstream: Any, parameters: dict, action_query: ActionQuery
+    ):
         try:
             getattr(logger, parameters["level"])(parameters["message"])
         except ValueError:

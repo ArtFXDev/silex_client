@@ -8,6 +8,7 @@ from contextlib import suppress
 
 from silex_client.utils.log import logger
 
+
 class EventLoop:
     """
     Class responsible to manage the async event loop, to deal with websocket
@@ -37,7 +38,9 @@ class EventLoop:
 
     def _clear_event_loop(self) -> None:
         if self.is_running:
-            logger.info("Could not clear the event loop: The loop must be stopped before being cleared")
+            logger.info(
+                "Could not clear the event loop: The loop must be stopped before being cleared"
+            )
             return
 
         logger.info("Clearing event loop...")
@@ -86,7 +89,9 @@ class EventLoop:
         """
         # Test if the function is called from the event loop or from outside
         if not self.is_running:
-            logger.warning("Could not register task %s: The event loop is not running", coroutine)
+            logger.warning(
+                "Could not register task %s: The event loop is not running", coroutine
+            )
             future = futures.Future()
             future.set_result(None)
             return future

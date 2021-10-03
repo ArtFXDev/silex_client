@@ -11,15 +11,13 @@ def action_handler(action_name: str, **kwargs) -> None:
     silex_context = context.Context.get()
     if not silex_context.is_valid:
         logger.error(
-            "Could not execute the action %s: The silex context is invalid",
-            action_name)
+            "Could not execute the action %s: The silex context is invalid", action_name
+        )
         return
 
     if kwargs.get("list", False):
         # Just print the available actions
-        action_names = [
-            action["name"] for action in silex_context.config.actions
-        ]
+        action_names = [action["name"] for action in silex_context.config.actions]
         print("Available actions :")
         pprint.pprint(action_names)
         return
@@ -57,7 +55,8 @@ def command_handler(command_name: str, **kwargs) -> None:
     if not silex_context.is_valid:
         logger.error(
             "Could not execute the command %s: The silex context is invalid",
-            command_name)
+            command_name,
+        )
         return
 
     if kwargs.get("list", False):

@@ -21,28 +21,27 @@ class PublishFile(CommandBase):
             "name": "file_path",
             "label": "File path",
             "type": str,
-            "value": None
+            "value": None,
         },
         "description": {
             "name": "description",
             "label": "Description",
             "type": str,
-            "value": "No description"
+            "value": "No description",
         },
-        "name": {
-            "name": "name",
-            "label": "Name",
-            "type": str,
-            "value": "untitled"
-        }
+        "name": {"name": "name", "label": "Name", "type": str, "value": "untitled"},
     }
 
     required_metadata = ["project"]
 
     @CommandBase.conform_command()
-    async def __call__(self, upstream: Any, parameters: dict, action_query: ActionQuery):
-        publish_path = os.path.join(action_query.context_metadata["project"],
-                                    parameters["name"])
+    async def __call__(
+        self, upstream: Any, parameters: dict, action_query: ActionQuery
+    ):
+        publish_path = os.path.join(
+            action_query.context_metadata["project"], parameters["name"]
+        )
 
-        logger.info("Publishing file(s) %s to %s", parameters["file_path"],
-                    publish_path)
+        logger.info(
+            "Publishing file(s) %s to %s", parameters["file_path"], publish_path
+        )

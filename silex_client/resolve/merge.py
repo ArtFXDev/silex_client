@@ -36,8 +36,11 @@ def merge_list(data_a: list, data_b: list) -> list:
     for item_a in data_a:
         # Find if some items in data B needs to be replaced
         try:
-            match_index = next(index for index, item_b in enumerate(data_b)
-                               if item_b["name"] == item_a["name"])
+            match_index = next(
+                index
+                for index, item_b in enumerate(data_b)
+                if item_b["name"] == item_a["name"]
+            )
             data_b[match_index] = item_a
             continue
         except (KeyError, TypeError, StopIteration):

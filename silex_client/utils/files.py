@@ -2,6 +2,7 @@ import os
 import importlib
 from types import ModuleType
 
+
 def reload_recursive(parent_module: ModuleType):
     """
     Reload a given module and all its submodules recursively
