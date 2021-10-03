@@ -11,7 +11,10 @@ description = \
     Part of the Silex ecosystem
     """
 
-requires = ["python-3.7", "PyYAML", "logzero", "python_socketio", "rez", "aiohttp", "jsondiff", "dacite"]
+requires = [
+    "python-3.7", "PyYAML", "logzero", "python_socketio", "rez", "aiohttp",
+    "jsondiff", "dacite", "black"
+]
 
 vcs = "git"
 
