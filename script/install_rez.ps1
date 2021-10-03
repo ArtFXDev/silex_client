@@ -58,6 +58,8 @@ function install-rez {
     $env:path=$env:path + ";$rez_dir\scripts\rez"
     [environment]::setenvironmentvariable('path', $env:path, 'user')
     if($CI) {add-content $env:GITHUB_PATH "$rez_dir\scripts\rez"}
+    write-output $env:GITHUB_PATH
+    write-output get-content $env:GITHUB_PATH
     remove-item $rez_source -recurse -force
     $env:rez=$rez_dir
     [environment]::setenvironmentvariable('rez', $env:rez, 'user')

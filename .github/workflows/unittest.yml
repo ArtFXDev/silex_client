@@ -24,7 +24,7 @@ jobs:
         run: powershell ./script/install_rez.ps1
 
       - name: Install silex_client
-        run: rez-build --install
+        run: rez build --install
 
       - name: Test silex_client
-        run: rez-test silex_client
+        run: rez test silex_client

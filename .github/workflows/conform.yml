@@ -40,6 +40,9 @@ jobs:
       - name: Rebuild documentation
         run: make -C ./docs html
 
+      - name: Add nojekyll file
+        run: touch ./docs/build/html/.nojekyll
+
       - name: Commit changes
         run: |
           git config --local user.email "silex@noreply.com"
@@ -48,4 +51,4 @@ jobs:
           git commit -a -m "[Github Action] Apply auto conform" --allow-empty
           git status
           git push
-          git subtree push --prefix docs/build/html origin gh-pages
+          git subtree push --prefix docs/build/html origin documentation
