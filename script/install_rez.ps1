@@ -69,6 +69,8 @@ function setup-rez {
     # create some default packages
     write-output "binding default rez packages..."
     rez-bind --quickstart
+
+    # run the install_dependencies script
     $install_dependencies = Join-Path -path $((Get-Item $PSCommandPath).Directory.FullName) -childPath "install_dependencies.py"
     rez-env rez -- "python $install_dependencies"
 }

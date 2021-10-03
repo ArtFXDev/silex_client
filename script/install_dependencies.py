@@ -43,7 +43,7 @@ def get_requirements():
     return requirements
 
 
-def main():
+def main(fix_on_error=True):
     for requirement in get_requirements():
         try:
             return_value = subprocess.call(["rez", "pip", "-i", requirement])
@@ -51,10 +51,10 @@ def main():
             print("REZ could not be found on you system")
             return
 
-        if return_value == 1:
+        if return_value == 1 and fix_on_error:
             fix_rez_pip()
-            main()
-            break
+            main(False)
+            return
 
 
 if __name__ == "__main__":
