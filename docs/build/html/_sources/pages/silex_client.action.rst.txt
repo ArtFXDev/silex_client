@@ -11,7 +11,7 @@ Submodules
    silex_client.action.action_query
    silex_client.action.command_base
    silex_client.action.command_buffer
-   silex_client.action.loader
+   silex_client.action.step_buffer
 
 Module contents
 ---------------
