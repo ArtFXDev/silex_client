@@ -38,7 +38,7 @@ jobs:
         run: sphinx-apidoc --separate --force -o ./docs/source/pages ./silex_client
 
       - name: Rebuild documentation
-        run: ./docs/make -C ./docs html
+        run: make -C ./docs html
 
       - name: Commit changes
         run: |
