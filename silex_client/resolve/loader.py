@@ -1,3 +1,10 @@
+"""
+@author: TD gang
+
+Override of the default loader to be able to create custom tags in YAML files,
+like !include or !inherit
+"""
+
 import json
 import os
 from typing import Dict, IO, Any, Union, Callable
@@ -43,7 +50,7 @@ class Loader(yaml.SafeLoader):
                 # Call the constructor
                 try:
                     # If the constructor can be used recursively there is a deep argument
-                    return handler(node, deep=True)
+                    return handler(node, deep=True)  # type: ignore
                 except TypeError:
                     # If not there is no deep argument
                     return handler(node)

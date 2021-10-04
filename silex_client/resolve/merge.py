@@ -1,3 +1,10 @@
+"""
+@author: TD gang
+
+Set of helper that are used by the pyyaml resolver to merge the dataclasses
+like dict or list
+"""
+
 from typing import Any, Callable, Dict, Union
 
 

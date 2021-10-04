@@ -1,3 +1,10 @@
+"""
+@author: TD gang
+
+Base class for all the websocket namespaces
+"""
+
+
 from __future__ import annotations
 
 import typing
@@ -10,6 +17,10 @@ if typing.TYPE_CHECKING:
 
 
 class WebsocketNamespace(socketio.AsyncClientNamespace):
+    """
+    Base class for all the websocket namespaces
+    """
+
     namespace = ""
 
     def __init__(
@@ -21,4 +32,7 @@ class WebsocketNamespace(socketio.AsyncClientNamespace):
         self.url = ws_connection.url
 
     def send(self, event: str, data: typing.Any):
+        """
+        Add a message to the queue of message to send
+        """
         self.ws_connection.send(self.namespace, event, data)

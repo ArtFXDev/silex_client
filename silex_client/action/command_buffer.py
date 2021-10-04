@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+
+Dataclass used to store the data related to a command
+"""
+
 from __future__ import annotations
 
 import copy
@@ -32,7 +38,7 @@ class CommandBuffer:
     #: Small explanation for the UI
     tooltip: str = field(compare=False, repr=False, default="")
     #: Dict that represent the parameters of the command, their type, value, name...
-    parameters: Union[CommandParameters, Dict[str, Any]] = field(default_factory=dict)
+    parameters: Union[CommandParameters, dict] = field(default_factory=dict)
     #: A Unique ID to help differentiate multiple actions
     uuid: unique_id.UUID = field(default_factory=unique_id.uuid1, init=False)
     #: The status of the command, to keep track of the progression, specify the errors
@@ -60,7 +66,7 @@ class CommandBuffer:
 
         # The formatting of the parameters can be different, it can be:
         # {<parameter_name>: <parameter_value>} or {<parameter_name>: {"value": <parameter_value>}}
-        # We need to make sure it follows the format {<parameter_name>: {"value": <parameter_value>}}
+        # We must make sure it follows the format {<parameter_name>: {"value": <parameter_value>}}
         if all(
             not isinstance(value, dict) or "value" not in value.keys()
             for value in self.parameters.values()

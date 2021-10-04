@@ -1,3 +1,10 @@
+"""
+@author: TD gang
+
+Helper that reload a given module and all its submodules recursively
+Can be used for development purposes
+"""
+
 import importlib
 import os
 from types import ModuleType
@@ -6,7 +13,7 @@ from types import ModuleType
 def reload_recursive(parent_module: ModuleType) -> None:
     """
     Reload a given module and all its submodules recursively
-    Can be used for development purposes and production
+    Can be used for development purposes
 
     Stolen from:
     https://stackoverflow.com/questions/28101895/reloading-packages-and-their-submodules-recursively-in-python

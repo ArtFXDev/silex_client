@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+
+Entry point for the CLI tools of silex
+"""
+
 import argparse
 
 from silex_client.cli import handlers

@@ -1,3 +1,10 @@
+"""
+@author: TD gang
+
+The event loop is running in a different thread, to add a task, use
+register_task() with a coroutine as a parameter
+"""
+
 import asyncio
 import gc
 from concurrent import futures

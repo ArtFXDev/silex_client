@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+
+Defintion of the handlers for all the CLI commands
+"""
+
 import pprint
 
 from silex_client.core import context

@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+
+Base class that every command should inherit from
+"""
+
 from __future__ import annotations
 
 import functools

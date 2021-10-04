@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+
+Dataclass used to store the data related to an action
+"""
+
 from __future__ import annotations
 
 import uuid as unique_id
@@ -51,6 +57,9 @@ class ActionBuffer:
         self.reorder_steps()
 
     def reorder_steps(self):
+        """
+        Place the steps in the right order accoring to the index value
+        """
         self.steps = dict(sorted(self.steps.items(), key=lambda item: item[1].index))
 
     @property

@@ -1,3 +1,10 @@
+"""
+@author: TD gang
+
+Set of class that override basic class like dict
+to add specific behaviour
+"""
+
 from __future__ import annotations
 
 import copy

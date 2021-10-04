@@ -1,10 +1,18 @@
+"""
+@author: TD gang
+
+Singleton-like class that keeps track of the current context
+This class should not be instanciated use the already instanciated object from this module
+or use the get() static method
+"""
+
 from __future__ import annotations
 
 import copy
 import os
 import sys
 import uuid
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 from rez import resolved_context
 
@@ -170,37 +178,37 @@ class Context:
         self._metadata["name"] = value
 
     @property
-    def dcc(self) -> Union[str, None]:
+    def dcc(self) -> Optional[str]:
         """Read only value of the current dcc"""
         return self.metadata.get("dcc")
 
     @property
-    def project(self) -> Union[str, None]:
+    def project(self) -> Optional[str]:
         """Read only value of the current project"""
         return self.metadata.get("project")
 
     @property
-    def asset(self) -> Union[str, None]:
+    def asset(self) -> Optional[str]:
         """Read only value of the current asset"""
         return self.metadata.get("asset")
 
     @property
-    def sequence(self) -> Union[int, None]:
+    def sequence(self) -> Optional[int]:
         """Read only value of the current sequence"""
         return self.metadata.get("sequence")
 
     @property
-    def shot(self) -> Union[int, None]:
+    def shot(self) -> Optional[int]:
         """Read only value of the current shot"""
         return self.metadata.get("shot")
 
     @property
-    def task(self) -> Union[str, None]:
+    def task(self) -> Optional[str]:
         """Read only value of the current task"""
         return self.metadata.get("task")
 
     @property
-    def entity(self) -> Union[str, None]:
+    def entity(self) -> Optional[str]:
         """Compute the type of the lowest set entity"""
         if self.asset is not None:
             return "asset"
@@ -212,7 +220,7 @@ class Context:
         return None
 
     @property
-    def user(self) -> Union[str, None]:
+    def user(self) -> Optional[str]:
         """Read only value of the current user"""
         return self.metadata.get("user")
 

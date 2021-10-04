@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+
+Helpers to encode or decode the json stream
+"""
+
 import uuid
 
 from silex_client.action.action_buffer import ActionBuffer

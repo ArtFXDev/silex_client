@@ -1,8 +1,10 @@
 """
 @author: TD gang
+
 Class definition that connect the the given url throught websockets,
 receive and handle the incomming messages
 """
+
 from __future__ import annotations
 
 import asyncio

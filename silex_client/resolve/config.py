@@ -1,3 +1,10 @@
+"""
+@author: TD gang
+
+Utility class that will find the configurations according to the environment variables
+SILEX_ACTION_CONFIG: For the actions
+"""
+
 import copy
 import os
 from typing import Any, Union

@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+
+Entry point for every action. This class is here to execute, and edit actions
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -113,12 +119,19 @@ class ActionQuery:
         self.buffer.deserialize(resolved_action)
 
     def _conform_resolved_action(self, data: dict):
+        """
+        When an action comes from a yaml, the data is not organised the same
+        (It follows a different schema to make the yaml less verbose)
+
+        This conform the data for the command buffer dataclass
+        """
         if not isinstance(data, dict):
             return
 
         # To convert the yaml into real objects, there is some missing attributes that
         for key, value in data.items():
-            # TODO: Find a better way to do this, we can't name a step "steps" or "parameters" with this method
+            # TODO: Find a better way to do this,
+            # we can't name a step "steps" or "parameters" with this method
             if isinstance(value, dict) and key not in [
                 "steps",
                 "commands",
@@ -210,6 +223,9 @@ class ActionQuery:
         return parameters
 
     def iter_commands(self) -> CommandIterator:
+        """
+        Iterate over all the commands in order
+        """
         return CommandIterator(self.buffer)
 
     def set_parameter(self, parameter_name: str, value: Any) -> None:
@@ -268,9 +284,14 @@ class ActionQuery:
 
 
 class CommandIterator(Iterator):
+    """
+    Iterator for the commands of an action_buffer
+    """
+
     def __init__(self, action_buffer: ActionBuffer):
         self.action_buffer = action_buffer
         self.command_index = 0
+        self.action_index = 0
 
     def __iter__(self) -> CommandIterator:
         self.action_index = 0
@@ -282,5 +303,5 @@ class CommandIterator(Iterator):
             command = commands[self.action_index]
             self.action_index += 1
             return command
-        else:
-            raise StopIteration
+
+        raise StopIteration

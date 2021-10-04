@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+
+Dataclass used to store the data related to a step
+"""
+
 import re
 import uuid
 from dataclasses import asdict, dataclass, field

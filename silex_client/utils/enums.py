@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+
+Set of enums that are used across the silex repo
+"""
+
 from enum import IntEnum
 
 
