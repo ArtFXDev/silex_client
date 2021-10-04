@@ -5,18 +5,14 @@ import importlib
 import re
 import uuid as unique_id
 from dataclasses import asdict, dataclass, field
-from typing import Union, Dict, Any, TYPE_CHECKING
+from typing import Any, Dict, Union
 
 import dacite
 import jsondiff
 
-from silex_client.action.command_base import CommandBase
+from silex_client.action.command_base import CommandBase, CommandParameters
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
-
-# Forward references
-if TYPE_CHECKING:
-    from silex_client.action.command_base import CommandParameters
 
 
 @dataclass()
@@ -36,7 +32,7 @@ class CommandBuffer:
     #: Small explanation for the UI
     tooltip: str = field(compare=False, repr=False, default="")
     #: Dict that represent the parameters of the command, their type, value, name...
-    parameters: CommandParameters = field(default_factory=dict)
+    parameters: Union[CommandParameters, Dict[str, Any]] = field(default_factory=dict)
     #: A Unique ID to help differentiate multiple actions
     uuid: unique_id.UUID = field(default_factory=unique_id.uuid1, init=False)
     #: The status of the command, to keep track of the progression, specify the errors

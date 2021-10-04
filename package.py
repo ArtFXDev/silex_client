@@ -13,6 +13,7 @@ description = """
 requires = [
     "python-3.7",
     "PyYAML",
+    "types_PyYAML",
     "logzero",
     "python_socketio",
     "rez",
@@ -29,9 +30,14 @@ tests = {
         "requires": ["pytest"],
         "run_on": ["default", "pre_release"],
     },
-    "lint": {
+    "linting": {
         "command": "pylint --rcfile={root}/.pylintrc --fail-under=8 {root}/silex_client",
         "requires": ["pylint"],
+        "run_on": ["default", "pre_release"],
+    },
+    "typing": {
+        "command": "mypy {root}/silex_client --ignore-missing-imports",
+        "requires": ["mypy"],
         "run_on": ["default", "pre_release"],
     },
 }

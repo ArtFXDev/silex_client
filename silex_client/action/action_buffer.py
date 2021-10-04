@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid as unique_id
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, TYPE_CHECKING
+from typing import Any, Dict, List, TYPE_CHECKING, Union
 
 import dacite
 
@@ -13,7 +13,6 @@ from silex_client.utils.log import logger
 # Forward references
 if TYPE_CHECKING:
     from silex_client.action.command_buffer import CommandBuffer
-    from silex_client.action.command_base import CommandParameters
 
 
 @dataclass()
@@ -66,23 +65,20 @@ class ActionBuffer:
         return status
 
     @property
-    def commands(self, step: str = None) -> List[CommandBuffer]:
+    def commands(self) -> List[CommandBuffer]:
         """
         Helper to get a command that belong to this action
         The data is quite nested, this is just for conveniance
         """
-        # Return the commands of the queried step
-        if step is not None and step in self.steps.values():
-            return list(self.steps[step].commands.values())
-
-        # If no steps given return all the commands flattened
         return [
             command
             for step in self.steps.values()
             for command in step.commands.values()
         ]
 
-    def get_parameter(self, step: str, command: str, name: str) -> CommandParameters:
+    def get_parameter(
+        self, step: str, command: str, name: str
+    ) -> Union[Dict[str, Any], None]:
         """
         Helper to get a parameter of a command that belong to this action
         The data is quite nested, this is just for conveniance

@@ -1,6 +1,6 @@
 import pprint
 
-from silex_client.utils import context
+from silex_client.core import context
 from silex_client.utils.log import logger
 
 

@@ -7,10 +7,9 @@ from __future__ import annotations
 
 import asyncio
 import json
-import threading
 import typing
 from concurrent import futures
-from typing import Any, Union
+from typing import Any, Dict, TYPE_CHECKING
 
 import socketio
 
@@ -20,7 +19,7 @@ from silex_client.utils.log import logger
 from silex_client.utils.serialiser import silex_encoder
 
 # Forward references
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from silex_client.core.event_loop import EventLoop
 
 
@@ -92,7 +91,7 @@ class WebsocketConnection:
             data = json.loads(json.dumps(data, default=silex_encoder))
         except TypeError:
             logger.error("Could not send %s: The data is not json serialisable", data)
-            future = futures.Future()
+            future: futures.Future = futures.Future()
             future.set_result(None)
             return future
 
@@ -111,11 +110,11 @@ class WebsocketConnection:
         return future
 
     @staticmethod
-    def url_to_parameters(url: str) -> dict:
+    def url_to_parameters(url: str) -> Dict[str, str]:
         """
         Convert an url into a dict of key/value for all the parameters of the url
         """
-        output = {}
+        output: Dict[str, str] = {}
         # Split the path from the parameters
         splitted_url = url.split("?")
         # If there is no parameters return empty
@@ -131,7 +130,7 @@ class WebsocketConnection:
         return output
 
     @staticmethod
-    def parameters_to_url(base_url: str, parameters: dict) -> str:
+    def parameters_to_url(base_url: str, parameters: Dict[str, str]) -> str:
         """
         Convert a dictionary of parameters to an url
         """

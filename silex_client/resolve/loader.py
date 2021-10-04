@@ -1,6 +1,6 @@
 import json
 import os
-from typing import IO, Any, Union
+from typing import Dict, IO, Any, Union, Callable
 
 import yaml
 
@@ -32,7 +32,7 @@ class Loader(yaml.SafeLoader):
         Construct data from node, call the apropriate constructor for the given node
         """
         # Mapp the node types to their contructors
-        mapping = {
+        mapping: Dict[type, Callable[[Any], Any]] = {
             yaml.ScalarNode: self.construct_scalar,
             yaml.SequenceNode: self.construct_sequence,
             yaml.MappingNode: self.construct_mapping,

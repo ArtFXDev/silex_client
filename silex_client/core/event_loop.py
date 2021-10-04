@@ -89,7 +89,7 @@ class EventLoop:
             logger.warning(
                 "Could not register task %s: The event loop is not running", coroutine
             )
-            future = futures.Future()
+            future: futures.Future = futures.Future()
             future.set_result(None)
             return future
 

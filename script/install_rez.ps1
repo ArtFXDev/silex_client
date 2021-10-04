@@ -74,7 +74,7 @@ function Initialize-Rez {
     # run the install_dependencies script
     Write-Output "installing silex's dependencies..."
     $install_dependencies = Join-Path -path $((Get-Item $PSCommandPath).Directory.FullName) -childPath "install_dependencies.py"
-    rez-env rez -- "python $install_dependencies"
+    rez-env rez python-3.7 -- "python $install_dependencies"
 }
 
 # start the installation

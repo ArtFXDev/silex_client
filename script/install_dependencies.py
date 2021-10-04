@@ -53,7 +53,9 @@ def get_requirements():
 def main(fix_on_error=True):
     for requirement in get_requirements():
         try:
-            return_value = subprocess.call(["rez", "pip", "-i", requirement])
+            return_value = subprocess.call(
+                ["rez", "pip", "-i", requirement, "--python-version", "3.7"]
+            )
         except FileNotFoundError:
             print("REZ could not be found on you system")
             return
