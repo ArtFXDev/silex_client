@@ -1,26 +1,26 @@
 """
 @author: TD gang
+
 Class definition that connect the the given url throught websockets,
 receive and handle the incomming messages
 """
+
 from __future__ import annotations
 
-from typing import Any, Union
-import json
-import typing
-import threading
 import asyncio
+import json
 from concurrent import futures
+from typing import Any, Dict, TYPE_CHECKING
 
 import socketio
 
-from silex_client.utils.log import logger
-from silex_client.network.websocket_dcc import WebsocketDCCNamespace
 from silex_client.network.websocket_action import WebsocketActionNamespace
+from silex_client.network.websocket_dcc import WebsocketDCCNamespace
+from silex_client.utils.log import logger
 from silex_client.utils.serialiser import silex_encoder
 
 # Forward references
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from silex_client.core.event_loop import EventLoop
 
 
@@ -30,7 +30,12 @@ class WebsocketConnection:
     and receive and handle the incomming messages
     """
 
-    def __init__(self, event_loop: EventLoop, context_metadata: dict=None, url: str="ws://127.0.0.1:5118"):
+    def __init__(
+        self,
+        event_loop: EventLoop,
+        context_metadata: dict = None,
+        url: str = "ws://127.0.0.1:5118",
+    ):
         self.is_running = False
         self.url = url
 
@@ -42,8 +47,12 @@ class WebsocketConnection:
             context_metadata = {}
 
         # Register the different namespaces
-        self.dcc_namespace = self.socketio.register_namespace(WebsocketDCCNamespace("/dcc", context_metadata, self))
-        self.action_namespace = self.socketio.register_namespace(WebsocketActionNamespace("/dcc/action", context_metadata, self))
+        self.dcc_namespace = WebsocketDCCNamespace("/dcc", context_metadata, self)
+        self.socketio.register_namespace(self.dcc_namespace)
+        self.action_namespace = WebsocketActionNamespace(
+            "/dcc/action", context_metadata, self
+        )
+        self.socketio.register_namespace(self.action_namespace)
 
     async def _connect_socketio(self) -> None:
         self.is_running = True
@@ -58,7 +67,9 @@ class WebsocketConnection:
         initialize the event loop's task and run it in main thread
         """
         if self.is_running:
-            logger.warning("Could not start websocket connection: The connection is already running")
+            logger.warning(
+                "Could not start websocket connection: The connection is already running"
+            )
             return
 
         self.event_loop.register_task(self._connect_socketio())
@@ -81,16 +92,20 @@ class WebsocketConnection:
             data = json.loads(json.dumps(data, default=silex_encoder))
         except TypeError:
             logger.error("Could not send %s: The data is not json serialisable", data)
-            future = futures.Future()
+            future: futures.Future = futures.Future()
             future.set_result(None)
             return future
 
         return self.event_loop.register_task(self.async_send(namespace, event, data))
 
     async def async_send(self, namespace, event, data) -> asyncio.Future:
+        """
+        Send a message using websocket from within the event loop
+        """
         logger.debug("Websocket client sending %s at %s on %s", data, namespace, event)
-        
+
         future = self.event_loop.loop.create_future()
+
         def callback(response):
             if not future.cancelled():
                 future.set_result(response)
@@ -99,11 +114,11 @@ class WebsocketConnection:
         return future
 
     @staticmethod
-    def url_to_parameters(url: str) -> dict:
+    def url_to_parameters(url: str) -> Dict[str, str]:
         """
         Convert an url into a dict of key/value for all the parameters of the url
         """
-        output = {}
+        output: Dict[str, str] = {}
         # Split the path from the parameters
         splitted_url = url.split("?")
         # If there is no parameters return empty
@@ -119,7 +134,7 @@ class WebsocketConnection:
         return output
 
     @staticmethod
-    def parameters_to_url(base_url: str, parameters: dict) -> str:
+    def parameters_to_url(base_url: str, parameters: Dict[str, str]) -> str:
         """
         Convert a dictionary of parameters to an url
         """

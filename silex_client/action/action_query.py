@@ -1,29 +1,44 @@
+"""
+@author: TD gang
+
+Entry point for every action. This class is here to execute, and edit actions
+"""
+
 from __future__ import annotations
-from typing import Any
-import typing
-from typing import Union, Iterator
-import jsondiff
+
+import asyncio
 import copy
 from concurrent import futures
-import asyncio
+from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING
+
+import jsondiff
 
 from silex_client.action.action_buffer import ActionBuffer
-from silex_client.utils.log import logger
 from silex_client.utils.enums import Status
+from silex_client.utils.log import logger
 
 # Forward references
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from silex_client.action.command_buffer import CommandBuffer
-    from silex_client.network.websocket import WebsocketConnection
+    from silex_client.action.step_buffer import StepBuffer
     from silex_client.core.event_loop import EventLoop
+    from silex_client.network.websocket import WebsocketConnection
     from silex_client.resolve.config import Config
 
 
-class ActionQuery():
+class ActionQuery:
     """
     Initialize and execute a given action
     """
-    def __init__(self, name: str, config: Config, event_loop: EventLoop, ws_connection: WebsocketConnection, context_metadata: dict):
+
+    def __init__(
+        self,
+        name: str,
+        config: Config,
+        event_loop: EventLoop,
+        ws_connection: WebsocketConnection,
+        context_metadata: Dict[str, Any],
+    ):
         self.config = config
         self.event_loop = event_loop
         self.ws_connection = ws_connection
@@ -49,7 +64,9 @@ class ActionQuery():
             for command in self.iter_commands():
                 # Only run the command if it is valid
                 if self.buffer.status in [Status.INVALID, Status.ERROR]:
-                    logger.error("Stopping action %s because the buffer is invalid", self.name)
+                    logger.error(
+                        "Stopping action %s because the buffer is invalid", self.name
+                    )
                     return self.buffer
                 # Create a dictionary that only contains the name and the value of the parameters
                 # without infos like the type, label...
@@ -59,8 +76,12 @@ class ActionQuery():
                 }
                 # Run the executor and copy the parameters
                 # to prevent them from being modified during execution
-                logger.debug("Executing command %s for action %s", command.name, self.name)
-                upstream_result = await command.executor(upstream_result, copy.deepcopy(parameters), self)
+                logger.debug(
+                    "Executing command %s for action %s", command.name, self.name
+                )
+                upstream_result = await command.executor(
+                    upstream_result, copy.deepcopy(parameters), self
+                )
 
         # Execute the commands in the event loop
         future = self.event_loop.register_task(execute_commands())
@@ -70,7 +91,7 @@ class ActionQuery():
             self.update_websocket()
         return future
 
-    def _initialize_buffer(self, custom_data: dict=None) -> None:
+    def _initialize_buffer(self, custom_data: Union[dict, None] = None) -> None:
         """
         Initialize the buffer from the config
         """
@@ -84,7 +105,9 @@ class ActionQuery():
 
         # Make sure the required action is in the config
         if self.name not in resolved_action.keys():
-            logger.error("Could not initialise the action: The resolved config is invalid")
+            logger.error(
+                "Could not initialise the action: The resolved config is invalid"
+            )
             return
         resolved_action = resolved_action[self.name]
 
@@ -95,14 +118,25 @@ class ActionQuery():
         # Update the buffer with the new data
         self.buffer.deserialize(resolved_action)
 
-    def _conform_resolved_action(self, data: Any):
+    def _conform_resolved_action(self, data: dict):
+        """
+        When an action comes from a yaml, the data is not organised the same
+        (It follows a different schema to make the yaml less verbose)
+
+        This conform the data for the command buffer dataclass
+        """
         if not isinstance(data, dict):
             return
 
-        # To convert the yaml into real objects, there is some missing attributes that 
+        # To convert the yaml into real objects, there is some missing attributes that
         for key, value in data.items():
-            # TODO: Find a better way to do this, we can't name a step "steps" or "parameters" with this method
-            if isinstance(value, dict) and key not in ["steps", "commands", "parameters"]:
+            # TODO: Find a better way to do this,
+            # we can't name a step "steps" or "parameters" with this method
+            if isinstance(value, dict) and key not in [
+                "steps",
+                "commands",
+                "parameters",
+            ]:
                 value["name"] = key
             self._conform_resolved_action(value)
 
@@ -126,6 +160,7 @@ class ActionQuery():
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
 
         future = self.event_loop.loop.create_future()
+
         def callback(response):
             if response.cancelled():
                 return
@@ -153,12 +188,12 @@ class ActionQuery():
         return self.buffer.status
 
     @property
-    def variables(self) -> dict:
+    def variables(self) -> Dict[str, Any]:
         """Shortcut to get the variable of the buffer"""
         return self.buffer.variables
 
     @property
-    def steps(self) -> list:
+    def steps(self) -> List[StepBuffer]:
         """Shortcut to get the steps of the buffer"""
         return list(self.buffer.steps.values())
 
@@ -188,6 +223,9 @@ class ActionQuery():
         return parameters
 
     def iter_commands(self) -> CommandIterator:
+        """
+        Iterate over all the commands in order
+        """
         return CommandIterator(self.buffer)
 
     def set_parameter(self, parameter_name: str, value: Any) -> None:
@@ -227,22 +265,33 @@ class ActionQuery():
                 break
             # If everything is provided
             elif step is not None and command is not None:
-                if step == parameter_step and command == parameter_command and name in parameters:
+                if (
+                    step == parameter_step
+                    and command == parameter_command
+                    and name in parameters
+                ):
                     valid = True
                     break
 
         if step is None or index is None or not valid:
             logger.error(
                 "Could not set parameter %s: The parameter does not exists",
-                parameter_name)
+                parameter_name,
+            )
             return
 
         self.buffer.set_parameter(step, index, name, value)
 
+
 class CommandIterator(Iterator):
+    """
+    Iterator for the commands of an action_buffer
+    """
+
     def __init__(self, action_buffer: ActionBuffer):
         self.action_buffer = action_buffer
         self.command_index = 0
+        self.action_index = 0
 
     def __iter__(self) -> CommandIterator:
         self.action_index = 0
@@ -254,5 +303,5 @@ class CommandIterator(Iterator):
             command = commands[self.action_index]
             self.action_index += 1
             return command
-        else:
-            raise StopIteration
+
+        raise StopIteration

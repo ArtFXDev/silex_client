@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+
+Set of enums that are used across the silex repo
+"""
+
 from enum import IntEnum
 
 
@@ -5,6 +11,7 @@ class Status(IntEnum):
     """
     Used by action/command buffers to communicate their state to the UI
     """
+
     COMPLETED = 0
     PROCESSING = 1
     INITIALIZED = 2

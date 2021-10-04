@@ -8,6 +8,9 @@ Submodules
    :maxdepth: 4
 
    silex_client.network.websocket
+   silex_client.network.websocket_action
+   silex_client.network.websocket_dcc
+   silex_client.network.websocket_namespace
 
 Module contents
 ---------------
