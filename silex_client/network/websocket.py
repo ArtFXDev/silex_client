@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import typing
 from concurrent import futures
 from typing import Any, Dict, TYPE_CHECKING
 
@@ -48,12 +47,12 @@ class WebsocketConnection:
             context_metadata = {}
 
         # Register the different namespaces
-        self.dcc_namespace = self.socketio.register_namespace(
-            WebsocketDCCNamespace("/dcc", context_metadata, self)
+        self.dcc_namespace = WebsocketDCCNamespace("/dcc", context_metadata, self)
+        self.socketio.register_namespace(self.dcc_namespace)
+        self.action_namespace = WebsocketActionNamespace(
+            "/dcc/action", context_metadata, self
         )
-        self.action_namespace = self.socketio.register_namespace(
-            WebsocketActionNamespace("/dcc/action", context_metadata, self)
-        )
+        self.socketio.register_namespace(self.action_namespace)
 
     async def _connect_socketio(self) -> None:
         self.is_running = True
@@ -100,6 +99,9 @@ class WebsocketConnection:
         return self.event_loop.register_task(self.async_send(namespace, event, data))
 
     async def async_send(self, namespace, event, data) -> asyncio.Future:
+        """
+        Send a message using websocket from within the event loop
+        """
         logger.debug("Websocket client sending %s at %s on %s", data, namespace, event)
 
         future = self.event_loop.loop.create_future()

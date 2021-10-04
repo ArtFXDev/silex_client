@@ -13,7 +13,6 @@ description = """
 requires = [
     "python-3.7",
     "PyYAML",
-    "types_PyYAML",
     "logzero",
     "python_socketio",
     "rez",
@@ -36,7 +35,7 @@ tests = {
         "run_on": ["default", "pre_release"],
     },
     "typing": {
-        "command": "mypy {root}/silex_client --ignore-missing-imports",
+        "command": "mypy --install-types --non-interactive {root}/silex_client --ignore-missing-imports",
         "requires": ["mypy"],
         "run_on": ["default", "pre_release"],
     },
