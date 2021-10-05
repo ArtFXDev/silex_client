@@ -16,14 +16,15 @@ def main():
     HANDLERS_MAPPING = {
         "action": handlers.action_handler,
         "command": handlers.command_handler,
+        "launch": handlers.launch_handler,
     }
-    
+
     context_parser = argparse.ArgumentParser(add_help=False)
     context_parser.add_argument(
         "--task-id",
         "-t",
         help="Specify the ID of the task you can the set the context in",
-        type=int
+        type=int,
     )
 
     execution_parser = argparse.ArgumentParser(add_help=False)
@@ -56,7 +57,7 @@ def main():
         "launch",
         help="Launch the given program in the context",
         parents=[context_parser],
-        )
+    )
 
     action_parser.add_argument(
         "action_name",
@@ -89,19 +90,14 @@ def main():
     )
 
     launcher_parser.add_argument(
-            "--command",
-            "-c",
-            help="The command to execute in the context",
-            type=str,
-            required=True
-        )
+        "--command",
+        "-c",
+        help="The command to execute in the context",
+        type=str,
+        required=True,
+    )
 
     args = vars(parser.parse_args())
-
-    context = args.pop("context", None)
-    if context is not None:
-        # Resolve the context
-        pass
 
     subcommand = args.pop("subcommand", None)
     if subcommand is not None:

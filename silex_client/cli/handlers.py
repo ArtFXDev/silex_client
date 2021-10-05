@@ -4,17 +4,13 @@
 Defintion of the handlers for all the CLI commands
 """
 
+from concurrent import futures
 import os
 import pprint
 import subprocess
-from typing import Dict, Union
 
 from silex_client.core import context
 from silex_client.utils.log import logger
-
-
-def resolve_contexr(task_id: int) -> Dict[str, Union[str, int]]:
-    return {}
 
 
 def action_handler(action_name: str, **kwargs) -> None:
@@ -46,6 +42,8 @@ def action_handler(action_name: str, **kwargs) -> None:
         pprint.pprint(parameters)
         return
 
+    silex_context.event_loop.start()
+    silex_context.ws_connection.start()
     action = silex_context.get_action(action_name)
 
     for set_parameter in kwargs.get("set_parameters", []):
@@ -57,7 +55,12 @@ def action_handler(action_name: str, **kwargs) -> None:
         parameter_path = set_parameter.split("=")[0]
         parameter_value = set_parameter.split("=")[1]
         action.set_parameter(parameter_path, parameter_value)
-    action.execute()
+
+    action_future = action.execute()
+    futures.wait([action_future], timeout=None)
+
+    futures.wait([silex_context.ws_connection.stop()], timeout=None)
+    silex_context.event_loop.stop()
 
 
 def command_handler(command_name: str, **kwargs) -> None:
@@ -80,11 +83,9 @@ def command_handler(command_name: str, **kwargs) -> None:
     raise NotImplementedError("This feature is still WIP")
 
 
-def launcher_handler(command: str, **kwargs) -> None:
+def launch_handler(command: str, **kwargs) -> None:
     """
     Run the given command in the selected context
     """
-    p = subprocess.Popen(command,
-                     cwd=os.getcwd(),
-                     stdout=subprocess.PIPE,
-                     stderr=subprocess.STDOUT)
+    # TODO: Find a way to get the stdout in the terminal on windows
+    p = subprocess.Popen(command, cwd=os.getcwd())

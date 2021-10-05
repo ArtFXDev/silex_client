@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 from concurrent import futures
-from typing import Any, Dict, TYPE_CHECKING
+from typing import Any, Dict, TYPE_CHECKING, Optional
 
 import socketio
 
@@ -62,7 +62,7 @@ class WebsocketConnection:
         await self.socketio.disconnect()
         self.is_running = False
 
-    def start(self) -> None:
+    def start(self) -> Optional[futures.Future]:
         """
         initialize the event loop's task and run it in main thread
         """
@@ -72,9 +72,9 @@ class WebsocketConnection:
             )
             return
 
-        self.event_loop.register_task(self._connect_socketio())
+        return self.event_loop.register_task(self._connect_socketio())
 
-    def stop(self) -> None:
+    def stop(self) -> Optional[futures.Future]:
         """
         Ask to all the event loop's tasks to stop and join the thread to the main thread
         if there is one running
@@ -82,7 +82,7 @@ class WebsocketConnection:
         if not self.is_running:
             return
 
-        self.event_loop.register_task(self._disconnect_socketio())
+        return self.event_loop.register_task(self._disconnect_socketio())
 
     def send(self, namespace: str, event: str, data: Any) -> futures.Future:
         """
