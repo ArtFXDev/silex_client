@@ -62,7 +62,7 @@ class WebsocketConnection:
         await self.socketio.disconnect()
         self.is_running = False
 
-    def start(self) -> Optional[futures.Future]:
+    def start(self) -> futures.Future:
         """
         initialize the event loop's task and run it in main thread
         """
@@ -70,17 +70,21 @@ class WebsocketConnection:
             logger.warning(
                 "Could not start websocket connection: The connection is already running"
             )
-            return
+            future: futures.Future = futures.Future()
+            future.set_result(None)
+            return future
 
         return self.event_loop.register_task(self._connect_socketio())
 
-    def stop(self) -> Optional[futures.Future]:
+    def stop(self) -> futures.Future:
         """
         Ask to all the event loop's tasks to stop and join the thread to the main thread
         if there is one running
         """
         if not self.is_running:
-            return
+            future: futures.Future = futures.Future()
+            future.set_result(None)
+            return future
 
         return self.event_loop.register_task(self._disconnect_socketio())
 
