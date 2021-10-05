@@ -92,7 +92,8 @@ def main():
             "--command",
             "-c",
             help="The command to execute in the context",
-            type=str
+            type=str,
+            required=True
         )
 
     args = vars(parser.parse_args())

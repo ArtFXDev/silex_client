@@ -4,10 +4,17 @@
 Defintion of the handlers for all the CLI commands
 """
 
+import os
 import pprint
+import subprocess
+from typing import Dict, Union
 
 from silex_client.core import context
 from silex_client.utils.log import logger
+
+
+def resolve_contexr(task_id: int) -> Dict[str, Union[str, int]]:
+    return {}
 
 
 def action_handler(action_name: str, **kwargs) -> None:
@@ -71,3 +78,13 @@ def command_handler(command_name: str, **kwargs) -> None:
         return
 
     raise NotImplementedError("This feature is still WIP")
+
+
+def launcher_handler(command: str, **kwargs) -> None:
+    """
+    Run the given command in the selected context
+    """
+    p = subprocess.Popen(command,
+                     cwd=os.getcwd(),
+                     stdout=subprocess.PIPE,
+                     stderr=subprocess.STDOUT)
