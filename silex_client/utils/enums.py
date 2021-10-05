@@ -17,3 +17,6 @@ class Status(IntEnum):
     INITIALIZED = 2
     INVALID = 3
     ERROR = 4
+
+    def __str__(self):
+        return "yoyo"

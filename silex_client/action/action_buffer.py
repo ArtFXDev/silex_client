@@ -6,6 +6,7 @@ Dataclass used to store the data related to an action
 
 from __future__ import annotations
 
+import copy
 import uuid as unique_id
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, TYPE_CHECKING, Union
@@ -35,6 +36,8 @@ class ActionBuffer:
     name: str = field()
     #: A Unique ID to help differentiate multiple actions
     uuid: unique_id.UUID = field(default_factory=unique_id.uuid1)
+    #: The status of the action, this value is readonly, it is computed from the commands's status
+    status: int = field(init=False)
     #: A dict of steps that will contain the commands
     steps: Dict[str, StepBuffer] = field(default_factory=dict)
     #: Dict of variables that are global to all the commands of this action
@@ -47,11 +50,10 @@ class ActionBuffer:
         Convert the action's data into json so it can be sent to the UI
         """
         serialized_data = asdict(self)
+
         if "variables" in serialized_data:
             del serialized_data["variables"]
-        import pprint
 
-        pprint.pprint(serialized_data)
         return serialized_data
 
     def deserialize(self, serialized_data: Dict[str, Any]) -> None:
@@ -69,7 +71,7 @@ class ActionBuffer:
         self.steps = dict(sorted(self.steps.items(), key=lambda item: item[1].index))
 
     @property
-    def status(self) -> Status:
+    def status(self) -> Status:  # pylint: disable=function-redefined
         """
         The status of the action depends of the status of its commands
         """
@@ -78,6 +80,14 @@ class ActionBuffer:
             status = command.status if command.status > status else status
 
         return status
+
+    @status.setter
+    def status(self, other) -> None:
+        """
+        The status property is readonly, however
+        we need to implement this since it is also a property
+        and the datablass module tries to set it
+        """
 
     @property
     def commands(self) -> List[CommandBuffer]:

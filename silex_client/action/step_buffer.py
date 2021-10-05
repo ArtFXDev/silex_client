@@ -12,6 +12,7 @@ from typing import Dict, Union, Any
 import dacite
 
 from silex_client.action.command_buffer import CommandBuffer
+from silex_client.utils.enums import Status
 
 
 @dataclass()
@@ -24,6 +25,8 @@ class StepBuffer:
     name: str
     #: The index of the step, to set the order in which they should be executed
     index: int
+    #: The status of the step, this value is readonly, it is computed from the commands's status
+    status: Status = field(init=False)
     #: The name of the step, meant to be displayed
     label: Union[str, None] = field(compare=False, repr=False, default=None)
     #: Specify if the step must be displayed by the UI or not
@@ -54,3 +57,22 @@ class StepBuffer:
         """
         new_data = dacite.from_dict(StepBuffer, serialized_data)
         self.__dict__ = new_data.__dict__
+
+    @property
+    def status(self) -> Status:  # pylint: disable=function-redefined
+        """
+        The status of the action depends of the status of its commands
+        """
+        status = Status.COMPLETED
+        for command in self.commands.values():
+            status = command.status if command.status > status else status
+
+        return status
+
+    @status.setter
+    def status(self, other) -> None:
+        """
+        The status property is readonly, however
+        we need to implement this since it is also a property
+        and the datablass module tries to set it
+        """
