@@ -17,9 +17,17 @@ def main():
         "action": handlers.action_handler,
         "command": handlers.command_handler,
     }
+    
+    context_parser = argparse.ArgumentParser(add_help=False)
+    context_parser.add_argument(
+        "--task-id",
+        "-t",
+        help="Specify the ID of the task you can the set the context in",
+        type=int
+    )
 
-    parent_parser = argparse.ArgumentParser(add_help=False)
-    parent_parser.add_argument(
+    execution_parser = argparse.ArgumentParser(add_help=False)
+    execution_parser.add_argument(
         "--list",
         "-l",
         default=False,
@@ -37,13 +45,18 @@ def main():
     action_parser = subparsers.add_parser(
         "action",
         help="Execute the given action in the context",
-        parents=[parent_parser],
+        parents=[execution_parser, context_parser],
     )
     command_parser = subparsers.add_parser(
         "command",
         help="Execute the given command in the context",
-        parents=[parent_parser],
+        parents=[execution_parser, context_parser],
     )
+    launcher_parser = subparsers.add_parser(
+        "launch",
+        help="Launch the given program in the context",
+        parents=[context_parser],
+        )
 
     action_parser.add_argument(
         "action_name",
@@ -74,6 +87,13 @@ def main():
         default=None,
         nargs="?",
     )
+
+    launcher_parser.add_argument(
+            "--command",
+            "-c",
+            help="The command to execute in the context",
+            type=str
+        )
 
     args = vars(parser.parse_args())
 
