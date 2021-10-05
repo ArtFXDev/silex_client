@@ -5,7 +5,7 @@ Dataclass used to store the data related to a step
 """
 
 import re
-import uuid
+import uuid as unique_id
 from dataclasses import asdict, dataclass, field
 from typing import Dict, Union, Any
 
@@ -33,7 +33,7 @@ class StepBuffer:
     #: Dict that represent the parameters of the command, their type, value, name...
     commands: Dict[str, CommandBuffer] = field(default_factory=dict)
     #: A Unique ID to help differentiate multiple actions
-    uid: uuid.UUID = field(default_factory=uuid.uuid1, init=False)
+    uuid: unique_id.UUID = field(default_factory=unique_id.uuid1, init=False)
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")

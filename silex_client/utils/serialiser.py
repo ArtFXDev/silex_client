@@ -8,6 +8,7 @@ import uuid
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.action.command_buffer import CommandBuffer
+from silex_client.utils.enums import Status
 
 
 def silex_encoder(obj):
@@ -25,3 +26,7 @@ def silex_encoder(obj):
     # Convert ActionBuffer into dict
     if isinstance(obj, CommandBuffer):
         return obj.serialize()
+
+    # Convert types into string
+    if isinstance(obj, type):
+        return obj.__name__

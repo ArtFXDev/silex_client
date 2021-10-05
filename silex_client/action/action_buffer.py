@@ -46,7 +46,13 @@ class ActionBuffer:
         """
         Convert the action's data into json so it can be sent to the UI
         """
-        return asdict(self)
+        serialized_data = asdict(self)
+        if "variables" in serialized_data:
+            del serialized_data["variables"]
+        import pprint
+
+        pprint.pprint(serialized_data)
+        return serialized_data
 
     def deserialize(self, serialized_data: Dict[str, Any]) -> None:
         """
