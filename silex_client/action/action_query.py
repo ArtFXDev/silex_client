@@ -86,9 +86,12 @@ class ActionQuery:
         # Execute the commands in the event loop
         future = self.event_loop.register_task(execute_commands())
 
-        # Inform the UI of the state of the action (either completed or sucess)
-        if self.ws_connection.is_running:
-            self.update_websocket()
+        def on_action_completed(task):
+            # Inform the UI of the state of the action (either completed or sucess)
+            if self.ws_connection.is_running:
+                self.update_websocket()
+
+        future.add_done_callback(on_action_completed)
         return future
 
     def _initialize_buffer(self, custom_data: Union[dict, None] = None) -> None:
@@ -159,23 +162,7 @@ class ActionQuery:
         """
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
 
-        future = self.event_loop.loop.create_future()
-
-        def callback(response):
-            if response.cancelled():
-                return
-            if not response.result():
-                return
-
-            patch = jsondiff.patch(self.buffer.serialize(), response.result())
-            self.buffer.deserialize(patch)
-            self._buffer_diff = copy.deepcopy(self.buffer)
-            future.set_result(response.result())
-
-        response = await self.ws_connection.async_send("/dcc/action", "update", diff)
-        response.add_done_callback(callback)
-
-        return future
+        return await self.ws_connection.async_send("/dcc/action", "update", diff)
 
     @property
     def name(self) -> str:
