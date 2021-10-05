@@ -19,7 +19,6 @@ requires = [
     "aiohttp",
     "jsondiff",
     "dacite",
-    "gazu",
 ]
 
 vcs = "git"
