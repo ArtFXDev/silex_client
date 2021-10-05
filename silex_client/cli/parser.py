@@ -16,10 +16,19 @@ def main():
     HANDLERS_MAPPING = {
         "action": handlers.action_handler,
         "command": handlers.command_handler,
+        "launch": handlers.launch_handler,
     }
 
-    parent_parser = argparse.ArgumentParser(add_help=False)
-    parent_parser.add_argument(
+    context_parser = argparse.ArgumentParser(add_help=False)
+    context_parser.add_argument(
+        "--task-id",
+        "-t",
+        help="Specify the ID of the task you can the set the context in",
+        type=int,
+    )
+
+    execution_parser = argparse.ArgumentParser(add_help=False)
+    execution_parser.add_argument(
         "--list",
         "-l",
         default=False,
@@ -37,12 +46,17 @@ def main():
     action_parser = subparsers.add_parser(
         "action",
         help="Execute the given action in the context",
-        parents=[parent_parser],
+        parents=[execution_parser, context_parser],
     )
     command_parser = subparsers.add_parser(
         "command",
         help="Execute the given command in the context",
-        parents=[parent_parser],
+        parents=[execution_parser, context_parser],
+    )
+    launcher_parser = subparsers.add_parser(
+        "launch",
+        help="Launch the given program in the context",
+        parents=[context_parser],
     )
 
     action_parser.add_argument(
@@ -75,12 +89,15 @@ def main():
         nargs="?",
     )
 
-    args = vars(parser.parse_args())
+    launcher_parser.add_argument(
+        "--command",
+        "-c",
+        help="The command to execute in the context",
+        type=str,
+        required=True,
+    )
 
-    context = args.pop("context", None)
-    if context is not None:
-        # Resolve the context
-        pass
+    args = vars(parser.parse_args())
 
     subcommand = args.pop("subcommand", None)
     if subcommand is not None:

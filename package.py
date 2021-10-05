@@ -19,6 +19,7 @@ requires = [
     "aiohttp",
     "jsondiff",
     "dacite",
+    "gazu",
 ]
 
 vcs = "git"
@@ -51,6 +52,7 @@ def commands():
     env.PATH.append("{root}/silex_client")
     env.PATH.append("{root}/tools")
     env.PYTHONPATH.append("{root}")
+    env.SILEX_ZOU_HOST = "http://localhost/api"
     env.SILEX_LOG_LEVEL = "DEBUG"
     env.SILEX_ACTION_CONFIG = "{root}/config/action"
 

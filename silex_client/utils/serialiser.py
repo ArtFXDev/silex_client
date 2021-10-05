@@ -25,3 +25,7 @@ def silex_encoder(obj):
     # Convert ActionBuffer into dict
     if isinstance(obj, CommandBuffer):
         return obj.serialize()
+
+    # Convert types into string
+    if isinstance(obj, type):
+        return obj.__name__
