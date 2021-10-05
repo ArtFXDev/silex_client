@@ -56,11 +56,15 @@ def action_handler(action_name: str, **kwargs) -> None:
         parameter_value = set_parameter.split("=")[1]
         action.set_parameter(parameter_path, parameter_value)
 
-    action_future = action.execute()
-    futures.wait([action_future], timeout=None)
-
-    futures.wait([silex_context.ws_connection.stop()], timeout=None)
-    silex_context.event_loop.stop()
+    try:
+        action_future = action.execute()
+        while not action_future.done():
+            futures.wait([action_future], timeout=0.1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        futures.wait([silex_context.ws_connection.stop()], timeout=None)
+        silex_context.event_loop.stop()
 
 
 def command_handler(command_name: str, **kwargs) -> None:

@@ -37,7 +37,7 @@ class ActionBuffer:
     #: A Unique ID to help differentiate multiple actions
     uuid: unique_id.UUID = field(default_factory=unique_id.uuid1)
     #: The status of the action, this value is readonly, it is computed from the commands's status
-    status: int = field(init=False)
+    status: Status = field(init=False)  # type: ignore
     #: A dict of steps that will contain the commands
     steps: Dict[str, StepBuffer] = field(default_factory=dict)
     #: Dict of variables that are global to all the commands of this action
@@ -70,8 +70,8 @@ class ActionBuffer:
         """
         self.steps = dict(sorted(self.steps.items(), key=lambda item: item[1].index))
 
-    @property
-    def status(self) -> Status:  # pylint: disable=function-redefined
+    @property  # type: ignore
+    def status(self) -> Status:
         """
         The status of the action depends of the status of its commands
         """

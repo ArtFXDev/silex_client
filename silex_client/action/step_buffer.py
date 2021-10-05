@@ -26,7 +26,7 @@ class StepBuffer:
     #: The index of the step, to set the order in which they should be executed
     index: int
     #: The status of the step, this value is readonly, it is computed from the commands's status
-    status: Status = field(init=False)
+    status: Status = field(init=False)  # type: ignore
     #: The name of the step, meant to be displayed
     label: Union[str, None] = field(compare=False, repr=False, default=None)
     #: Specify if the step must be displayed by the UI or not
@@ -58,8 +58,8 @@ class StepBuffer:
         new_data = dacite.from_dict(StepBuffer, serialized_data)
         self.__dict__ = new_data.__dict__
 
-    @property
-    def status(self) -> Status:  # pylint: disable=function-redefined
+    @property  # type: ignore
+    def status(self) -> Status:
         """
         The status of the action depends of the status of its commands
         """
