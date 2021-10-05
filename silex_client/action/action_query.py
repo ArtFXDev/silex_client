@@ -162,7 +162,19 @@ class ActionQuery:
         """
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
 
-        return await self.ws_connection.async_send("/dcc/action", "update", diff)
+        await self.ws_connection.async_send("/dcc/action", "update", diff)
+
+        def apply_update(response: asyncio.Future) -> None:
+            if response.cancelled():
+                return
+
+            patch = jsondiff.patch(self.buffer.serialize(), response.result())
+            self.buffer.deserialize(patch)
+            self._buffer_diff = copy.deepcopy(self.buffer)
+
+        return await self.ws_connection.action_namespace.register_update_callback(
+            apply_update
+        )
 
     @property
     def name(self) -> str:
