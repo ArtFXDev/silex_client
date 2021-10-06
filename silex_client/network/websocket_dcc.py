@@ -21,11 +21,11 @@ class WebsocketDCCNamespace(WebsocketNamespace):
         """
         Register the dcc on the silex service on connection
         """
-        logger.info("Connected to %s", self.url)
+        logger.info("Connected to %s on %s", self.url, self.namespace)
         self.send("initialization", self.context_metadata)
 
     async def on_disconnect(self):
         """
         Simply inform the user that the silex service is disconnected
         """
-        logger.info("Disconected from %s", self.url)
+        logger.info("Disconected from %s on %s", self.url, self.namespace)

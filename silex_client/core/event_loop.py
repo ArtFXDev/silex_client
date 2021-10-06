@@ -100,4 +100,17 @@ class EventLoop:
             future.set_result(None)
             return future
 
-        return asyncio.run_coroutine_threadsafe(coroutine, self.loop)
+        future = asyncio.run_coroutine_threadsafe(coroutine, self.loop)
+
+        def callback(task_result: futures.Future):
+            if task_result.cancelled():
+                return
+
+            exception = task_result.exception()
+            if exception:
+                logger.error(
+                    "Exception raised in the task %s: %s", coroutine, exception
+                )
+
+        future.add_done_callback(callback)
+        return future
