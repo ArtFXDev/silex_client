@@ -1,7 +1,7 @@
 """
 @author: TD gang
 
-Unit testing functions for the module utils.context
+Unit testing functions for the module core.context
 """
 
 import os

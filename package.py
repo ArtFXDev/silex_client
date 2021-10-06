@@ -26,7 +26,7 @@ vcs = "git"
 tests = {
     "unit": {
         "command": "python -m pytest {root}/test",
-        "requires": ["pytest"],
+        "requires": ["pytest", "aiohttp"],
         "run_on": ["default", "pre_release"],
     },
     "linting": {
