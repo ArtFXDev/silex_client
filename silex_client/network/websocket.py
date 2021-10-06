@@ -74,7 +74,9 @@ class WebsocketConnection:
             future.set_result(None)
             return future
 
-        return self.event_loop.register_task(self._connect_socketio())
+        future = self.event_loop.register_task(self._connect_socketio())
+        futures.wait([future])
+        return future
 
     def stop(self) -> futures.Future:
         """
@@ -86,7 +88,9 @@ class WebsocketConnection:
             future.set_result(None)
             return future
 
-        return self.event_loop.register_task(self._disconnect_socketio())
+        future = self.event_loop.register_task(self._disconnect_socketio())
+        futures.wait([future])
+        return future
 
     def send(self, namespace: str, event: str, data: Any) -> futures.Future:
         """

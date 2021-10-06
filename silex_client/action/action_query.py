@@ -83,16 +83,11 @@ class ActionQuery:
                     upstream_result, copy.deepcopy(parameters), self
                 )
 
-        # Execute the commands in the event loop
-        future = self.event_loop.register_task(execute_commands())
-
-        def on_action_completed(task):
             # Inform the UI of the state of the action (either completed or sucess)
-            if self.ws_connection.is_running:
-                self.update_websocket()
+            await self.async_update_websocket()
 
-        future.add_done_callback(on_action_completed)
-        return future
+        # Execute the commands in the event loop
+        return self.event_loop.register_task(execute_commands())
 
     def _initialize_buffer(self, custom_data: Union[dict, None] = None) -> None:
         """
