@@ -35,6 +35,8 @@ class CommandBuffer:
     label: Union[str, None] = field(compare=False, repr=False, default=None)
     #: Specify if the command must be displayed by the UI or not
     hide: bool = field(compare=False, repr=False, default=False)
+    #: Specify if the parameters must be displayed by the UI or not
+    hide_parameters: bool = field(compare=False, repr=False, default=False)
     #: Small explanation for the UI
     tooltip: str = field(compare=False, repr=False, default="")
     #: Dict that represent the parameters of the command, their type, value, name...
@@ -58,7 +60,7 @@ class CommandBuffer:
         self.executor = self._get_executor(self.path)
 
         # Get the executor's parameter attributes and override them with the given ones
-        command_parameters = copy.deepcopy(self.executor.parameters)
+        command_parameters = copy.deepcopy(self.executor.conformed_parameters)
         for value in command_parameters.values():
             # If the value is a callable, call it (for mutable default values)
             if callable(value["value"]):

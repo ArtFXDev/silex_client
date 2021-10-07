@@ -6,8 +6,9 @@ Base class that every command should inherit from
 
 from __future__ import annotations
 
+import copy
 import functools
-from typing import List, TYPE_CHECKING, Any, Callable, Dict, Union
+from typing import List, TYPE_CHECKING, Any, Callable, Dict
 
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     from silex_client.action.command_buffer import CommandBuffer
 
 # Type for parameters
-CommandParameters = Dict[str, Dict[str, Union[Any]]]
+CommandParameters = Dict[str, Dict[str, Any]]
 
 
 class CommandBase:
@@ -46,6 +47,39 @@ class CommandBase:
         Shortcut to get the type name of the command
         """
         return self.__class__.__name__
+
+    @property
+    def conformed_parameters(self) -> CommandParameters:
+        """
+        Make sure all the required keys are there in the parameters set by the command
+        Set some default values for the missing keys or return an error
+        """
+        conformed_parameters = {}
+        for parameter_name, parameter_data in copy.deepcopy(self.parameters).items():
+            # Make sure the "type" entry is given
+            if "type" not in parameter_data or not isinstance(
+                parameter_data["type"], type
+            ):
+                logger.error(
+                    "Invalid parameter %s in the commands %s: The 'type' entry is mendatory",
+                    parameter_name,
+                    self.command_buffer.name,
+                )
+
+            conformed_data = {}
+            # Conform the name entry
+            conformed_data["name"] = parameter_name
+            # Conform the label entry
+            conformed_data["label"] = parameter_data.get(
+                "label", parameter_name.title()
+            )
+            # Conform the value entry
+            conformed_data["value"] = parameter_data.get("value", None)
+            # Conform the hide entry
+            conformed_data["hide"] = parameter_data.get("hide", False)
+            conformed_parameters[parameter_name] = conformed_data
+
+        return conformed_parameters
 
     def check_parameters(self, parameters: CommandParameters) -> bool:
         """
