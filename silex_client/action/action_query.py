@@ -65,9 +65,10 @@ class ActionQuery:
                 # Only run the command if it is valid
                 if self.buffer.status in [Status.INVALID, Status.ERROR]:
                     logger.error(
-                        "Stopping action %s because the buffer is invalid", self.name
+                        "Stopping action %s because the buffer is invalid or errored out",
+                        self.name,
                     )
-                    return
+                    break
                 # Create a dictionary that only contains the name and the value of the parameters
                 # without infos like the type, label...
                 parameters = {
@@ -84,7 +85,7 @@ class ActionQuery:
                 )
 
             # Inform the UI of the state of the action (either completed or sucess)
-            await self.async_update_websocket()
+            response = await self.async_update_websocket()
 
         # Execute the commands in the event loop
         return self.event_loop.register_task(execute_commands())

@@ -30,6 +30,9 @@ class WebsocketConnection:
     and receive and handle the incomming messages
     """
 
+    #: How long to wait for a confirmation fom every messages sent
+    MESSAGE_CALLBACK_TIMEOUT = 1
+
     def __init__(
         self,
         event_loop: EventLoop,
@@ -119,6 +122,8 @@ class WebsocketConnection:
                 future.set_result(response)
 
         await self.socketio.emit(event, data, namespace, callback)
+        # Make sure a confirmation has been received
+        await asyncio.wait_for(future, timeout=self.MESSAGE_CALLBACK_TIMEOUT)
         return future
 
     @staticmethod
