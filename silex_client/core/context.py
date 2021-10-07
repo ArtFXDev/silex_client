@@ -36,9 +36,9 @@ class Context:
 
     def __init__(self):
         self.config: Config = Config()
-        self._metadata: Dict[str, Any] = {"name": None, "uuid": uuid.uuid1()}
+        self._metadata: Dict[str, Any] = {"name": None, "uuid": str(uuid.uuid1())}
         self.is_outdated: bool = True
-        self.running_actions: Dict[uuid.UUID, ActionQuery] = {}
+        self.running_actions: Dict[str, ActionQuery] = {}
         self._rez_context: resolved_context.ResolvedContext = (
             resolved_context.ResolvedContext.get_current()
         )

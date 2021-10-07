@@ -7,7 +7,7 @@ Dataclass used to store the data related to a step
 import re
 import uuid as unique_id
 from dataclasses import asdict, dataclass, field
-from typing import Dict, Union, Any
+from typing import Dict, Any, Optional
 
 import dacite
 
@@ -28,7 +28,7 @@ class StepBuffer:
     #: The status of the step, this value is readonly, it is computed from the commands's status
     status: Status = field(init=False)  # type: ignore
     #: The name of the step, meant to be displayed
-    label: Union[str, None] = field(compare=False, repr=False, default=None)
+    label: Optional[str] = field(compare=False, repr=False, default=None)
     #: Specify if the step must be displayed by the UI or not
     hide: bool = field(compare=False, repr=False, default=False)
     #: Small explanation for the UI
@@ -36,7 +36,7 @@ class StepBuffer:
     #: Dict that represent the parameters of the command, their type, value, name...
     commands: Dict[str, CommandBuffer] = field(default_factory=dict)
     #: A Unique ID to help differentiate multiple actions
-    uuid: unique_id.UUID = field(default_factory=unique_id.uuid1)
+    uuid: str = field(default_factory=lambda: str(unique_id.uuid1()))
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")

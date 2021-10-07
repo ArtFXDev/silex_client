@@ -34,7 +34,7 @@ class ActionBuffer:
     #: The name of the action (usualy the same as the config file)
     name: str = field()
     #: A Unique ID to help differentiate multiple actions
-    uuid: unique_id.UUID = field(default_factory=unique_id.uuid1)
+    uuid: str = field(default_factory=lambda: str(unique_id.uuid1()))
     #: The status of the action, this value is readonly, it is computed from the commands's status
     status: Status = field(init=False)  # type: ignore
     #: A dict of steps that will contain the commands
@@ -59,7 +59,11 @@ class ActionBuffer:
         """
         Convert back the action's data from json into this object
         """
-        new_data = dacite.from_dict(ActionBuffer, serialized_data)
+        new_data = dacite.from_dict(
+            ActionBuffer,
+            serialized_data,
+            dacite.Config(cast=[Status]),
+        )
         self.__dict__.update(new_data.__dict__)
         self.reorder_steps()
 
