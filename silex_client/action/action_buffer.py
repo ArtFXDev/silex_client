@@ -6,7 +6,6 @@ Dataclass used to store the data related to an action
 
 from __future__ import annotations
 
-import copy
 import uuid as unique_id
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, TYPE_CHECKING, Union
@@ -35,7 +34,7 @@ class ActionBuffer:
     #: The name of the action (usualy the same as the config file)
     name: str = field()
     #: A Unique ID to help differentiate multiple actions
-    uuid: unique_id.UUID = field(default_factory=unique_id.uuid1)
+    uuid: Union[unique_id.UUID, str] = field(default_factory=unique_id.uuid1)
     #: The status of the action, this value is readonly, it is computed from the commands's status
     status: Status = field(init=False)  # type: ignore
     #: A dict of steps that will contain the commands

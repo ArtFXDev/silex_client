@@ -44,7 +44,7 @@ class CommandBuffer:
     #: Dict that represent the parameters of the command, their type, value, name...
     parameters: Union[CommandParameters, dict] = field(default_factory=dict)
     #: A Unique ID to help differentiate multiple actions
-    uuid: unique_id.UUID = field(default_factory=unique_id.uuid1, init=False)
+    uuid: Union[unique_id.UUID, str] = field(default_factory=unique_id.uuid1)
     #: The status of the command, to keep track of the progression, specify the errors
     status: Status = field(default=Status.INITIALIZED, init=False)
 
