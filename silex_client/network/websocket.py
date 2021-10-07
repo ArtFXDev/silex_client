@@ -123,7 +123,15 @@ class WebsocketConnection:
 
         await self.socketio.emit(event, data, namespace, callback)
         # Make sure a confirmation has been received
-        await asyncio.wait_for(future, timeout=self.MESSAGE_CALLBACK_TIMEOUT)
+        try:
+            await asyncio.wait_for(future, timeout=self.MESSAGE_CALLBACK_TIMEOUT)
+        except asyncio.TimeoutError:
+            logger.warning(
+                "The message %s has been sent on %s at %s but no confirmation has been received",
+                data,
+                namespace,
+                event,
+            )
         return future
 
     @staticmethod

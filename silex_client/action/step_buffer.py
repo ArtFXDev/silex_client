@@ -67,6 +67,13 @@ class StepBuffer:
         for command in self.commands.values():
             status = command.status if command.status > status else status
 
+        # If some commands are completed and the rest initialized, then the step is processing
+        if all(
+            command.status in [Status.INITIALIZED, Status.COMPLETED, Status.PROCESSING]
+            for command in self.commands.values()
+        ):
+            status = Status.PROCESSING
+
         return status
 
     @status.setter
