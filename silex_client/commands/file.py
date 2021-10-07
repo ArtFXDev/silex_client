@@ -22,11 +22,13 @@ class PublishFile(CommandBase):
             "label": "File path",
             "type": str,
             "value": None,
+            "tooltip": "The path to the file you want to publish",
         },
         "description": {
             "label": "Description",
             "type": str,
             "value": "No description",
+            "tooltip": "Short description of your work",
         },
         "name": {"name": "name", "label": "Name", "type": str, "value": "untitled"},
     }

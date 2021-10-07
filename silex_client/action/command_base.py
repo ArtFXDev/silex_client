@@ -77,6 +77,8 @@ class CommandBase:
             conformed_data["value"] = parameter_data.get("value", None)
             # Conform the hide entry
             conformed_data["hide"] = parameter_data.get("hide", False)
+            # Conform the tooltip entry
+            conformed_data["tooltip"] = parameter_data.get("tooltip", None)
             conformed_parameters[parameter_name] = conformed_data
 
         return conformed_parameters
