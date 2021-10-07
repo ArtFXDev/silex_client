@@ -85,7 +85,7 @@ class ActionQuery:
                 )
 
             # Inform the UI of the state of the action (either completed or sucess)
-            response = await self.async_update_websocket()
+            await self.async_update_websocket()
 
         # Execute the commands in the event loop
         return self.event_loop.register_task(execute_commands())
@@ -98,8 +98,8 @@ class ActionQuery:
         resolved_action = self.config.resolve_action(self.name)
         self._conform_resolved_action(resolved_action)
 
-        # If no config could be found or is invalid, the result is none
-        if resolved_action is None:
+        # If no config could be found or is invalid, the result is {}
+        if not resolved_action:
             return
 
         # Make sure the required action is in the config
@@ -108,14 +108,14 @@ class ActionQuery:
                 "Could not resolve the action %s: The root key should be the same as the config file name",
             )
             return
-        resolved_action = resolved_action[self.name]
+        action_definition = resolved_action[self.name]
 
         # Apply any potential custom data
         if custom_data is not None:
-            resolved_action.update(custom_data)
+            action_definition.update(custom_data)
 
         # Update the buffer with the new data
-        self.buffer.deserialize(resolved_action)
+        self.buffer.deserialize(action_definition)
 
     def _conform_resolved_action(self, data: dict):
         """
@@ -138,6 +138,8 @@ class ActionQuery:
             ]:
                 value["name"] = key
             self._conform_resolved_action(value)
+
+        return data
 
     def initialize_websocket(self) -> None:
         """

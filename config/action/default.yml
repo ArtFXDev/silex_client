@@ -9,7 +9,7 @@ publish:
           path: "silex_client.commands.utils.Log"
           parameters:
             message: "Starting action query"
-            level: "ebug"
+            level: "debug"
           hide: true
 
     action:

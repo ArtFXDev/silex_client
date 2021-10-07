@@ -12,7 +12,7 @@ from typing import Any, Union, Dict, List
 from dacite import types
 
 from silex_client.resolve.loader import Loader
-from silex_client.resolve.config_types import ActionType
+from silex_client.resolve.config_types import ActionYAML
 from silex_client.utils.log import logger
 
 
@@ -57,7 +57,7 @@ class Config:
 
         return found_actions
 
-    def resolve_action(self, action_name: str) -> ActionType:
+    def resolve_action(self, action_name: str) -> dict:
         """
         Resolve a config file from its name by looking in the stored root path
         """
@@ -67,7 +67,7 @@ class Config:
                 "Could not resolve the action %s: The action does not exists",
                 action_name,
             )
-            return None
+            return {}
 
         config_path = next(
             action["path"] for action in self.actions if action["name"] == action_name
@@ -76,12 +76,12 @@ class Config:
         action_config = self._load_config(config_path)
 
         # Dynamic type checking
-        if not types.is_instance(action_config, ActionType):
+        if not types.is_instance(action_config, ActionYAML):
             logger.error(
                 "Could not resolve the action %s: The schema is invalid",
                 action_name,
             )
-            return None
+            return {}
 
         return action_config
 

@@ -73,7 +73,7 @@ def dummy_server() -> threading.Thread:
     return threading.Thread(target=start_server)
 
 
-def test_connection_initialization(
+def wip_test_connection_initialization(
     dummy_context: Context, dummy_server: threading.Thread
 ):
     """
