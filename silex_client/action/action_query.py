@@ -57,7 +57,7 @@ class ActionQuery:
         if self.ws_connection.is_running:
             self.initialize_websocket()
 
-        async def execute_commands():
+        async def execute_commands() -> None:
             # Pass the result of every command to pass it to the next one
             upstream_result = None
             # Execut all the commands one by one
@@ -67,7 +67,7 @@ class ActionQuery:
                     logger.error(
                         "Stopping action %s because the buffer is invalid", self.name
                     )
-                    return self.buffer
+                    return
                 # Create a dictionary that only contains the name and the value of the parameters
                 # without infos like the type, label...
                 parameters = {
@@ -156,6 +156,7 @@ class ActionQuery:
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
+        self._buffer_diff = copy.deepcopy(self.buffer)
 
         await self.ws_connection.async_send("/dcc/action", "update", diff)
 
