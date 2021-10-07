@@ -12,7 +12,7 @@ import copy
 import os
 import sys
 import uuid
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from rez import resolved_context
 
@@ -38,7 +38,7 @@ class Context:
         self.config: Config = Config()
         self._metadata: Dict[str, Any] = {"name": None, "uuid": uuid.uuid1()}
         self.is_outdated: bool = True
-        self.running_actions: Dict[Union[uuid.UUID, str], ActionQuery] = {}
+        self.running_actions: Dict[uuid.UUID, ActionQuery] = {}
         self._rez_context: resolved_context.ResolvedContext = (
             resolved_context.ResolvedContext.get_current()
         )

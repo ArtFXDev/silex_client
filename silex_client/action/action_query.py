@@ -189,7 +189,8 @@ class ActionQuery:
                 return
 
             logger.debug("Applying update: %s", response.result())
-            patch = jsondiff.patch(self.buffer.serialize(), response.result())
+            diff = jsondiff.diff(self.buffer.serialize(), response)
+            patch = jsondiff.patch(self.buffer.serialize(), diff)
             self.buffer.deserialize(patch)
             self._buffer_diff = copy.deepcopy(self.buffer)
 
