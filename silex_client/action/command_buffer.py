@@ -37,6 +37,8 @@ class CommandBuffer:
     hide: bool = field(compare=False, repr=False, default=False)
     #: Specify if the parameters must be displayed by the UI or not
     hide_parameters: bool = field(compare=False, repr=False, default=False)
+    #: Specify if the command should be asking to the UI a feedback
+    ask_user: bool = field(compare=False, repr=False, default=False)
     #: Small explanation for the UI
     tooltip: str = field(compare=False, repr=False, default="")
     #: Dict that represent the parameters of the command, their type, value, name...

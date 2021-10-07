@@ -14,7 +14,7 @@ class Status(IntEnum):
 
     COMPLETED = 0
     INITIALIZED = 1
-    PROCESSING = 2
-    INVALID = 3
-    ERROR = 4
-    WAITING_FOR_RESPONSE = 5
+    WAITING_FOR_RESPONSE = 2
+    PROCESSING = 3
+    INVALID = 4
+    ERROR = 5

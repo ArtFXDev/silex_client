@@ -24,6 +24,8 @@ class WebsocketActionNamespace(WebsocketNamespace):
     This namespace is used to reveive and send updates of the action execution
     """
 
+    namespace = "/dcc/action"
+
     def __init__(
         self, namespace: str, context_metadata: dict, ws_connection: WebsocketConnection
     ):
@@ -32,13 +34,11 @@ class WebsocketActionNamespace(WebsocketNamespace):
         self.update_futures: List[asyncio.Future] = []
         self.query_futures: List[asyncio.Future] = []
 
-    namespace = "/dcc/action"
-
     async def on_query(self, data):
         """
         Create an new action query
         """
-        logger.info("Query request: %s received from %s", data, self.url)
+        logger.info("Query request received: %s from %s", data, self.url)
 
         for future in self.query_futures:
             if not future.cancelled():
@@ -50,7 +50,7 @@ class WebsocketActionNamespace(WebsocketNamespace):
         """
         Update an already executing action
         """
-        logger.debug("Action update: %s received from %s", data, self.url)
+        logger.debug("Action update received: %s from %s", data, self.url)
 
         for future in self.update_futures:
             if not future.cancelled():

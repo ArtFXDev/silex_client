@@ -61,7 +61,7 @@ class ActionQuery:
             # Pass the result of every command to pass it to the next one
             upstream_result = None
             # Execut all the commands one by one
-            for command in self.iter_commands():
+            for index, command in enumerate(self.iter_commands()):
                 # Only run the command if it is valid
                 if self.buffer.status in [Status.INVALID, Status.ERROR]:
                     logger.error(
@@ -69,6 +69,22 @@ class ActionQuery:
                         self.name,
                     )
                     break
+
+                # If the command requires an input from user, wait for the response
+                if command.ask_user:
+                    commands_left = self.commands[index:]
+                    for command_left in commands_left:
+                        if command_left.ask_user:
+                            command_left.status = Status.WAITING_FOR_RESPONSE
+                    logger.info("Waiting for UI response")
+                    await asyncio.wait_for(
+                        await self.async_update_websocket(apply_response=True), None
+                    )
+                    # TODO: Find a way to we don't have to do this
+                    command = self.commands[index]
+                    for command_left in self.commands[index:]:
+                        command_left.status = Status.INITIALIZED
+
                 # Create a dictionary that only contains the name and the value of the parameters
                 # without infos like the type, label...
                 parameters = {
@@ -148,32 +164,38 @@ class ActionQuery:
         self._buffer_diff = copy.deepcopy(self.buffer)
         self.ws_connection.send("/dcc/action", "query", self._buffer_diff)
 
-    def update_websocket(self) -> futures.Future:
+    def update_websocket(self, apply_response=False) -> futures.Future:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
-        return self.event_loop.register_task(self.async_update_websocket())
+        return self.event_loop.register_task(
+            self.async_update_websocket(apply_response)
+        )
 
-    async def async_update_websocket(self) -> asyncio.Future:
+    async def async_update_websocket(self, apply_response=False) -> asyncio.Future:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
         self._buffer_diff = copy.deepcopy(self.buffer)
 
-        await self.ws_connection.async_send("/dcc/action", "update", diff)
+        confirm = await self.ws_connection.async_send("/dcc/action", "update", diff)
 
         def apply_update(response: asyncio.Future) -> None:
             if response.cancelled():
                 return
 
+            logger.debug("Applying update: %s", response.result())
             patch = jsondiff.patch(self.buffer.serialize(), response.result())
             self.buffer.deserialize(patch)
             self._buffer_diff = copy.deepcopy(self.buffer)
 
-        return await self.ws_connection.action_namespace.register_update_callback(
-            apply_update
-        )
+        if apply_response:
+            return await self.ws_connection.action_namespace.register_update_callback(
+                apply_update
+            )
+        else:
+            return confirm
 
     @property
     def name(self) -> str:
@@ -196,7 +218,7 @@ class ActionQuery:
         return list(self.buffer.steps.values())
 
     @property
-    def commands(self) -> list:
+    def commands(self) -> list[CommandBuffer]:
         """Shortcut to get the commands of the buffer"""
         return self.buffer.commands
 
