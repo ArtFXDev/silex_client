@@ -97,14 +97,14 @@ class ActionQuery:
         resolved_action = self.config.resolve_action(self.name)
         self._conform_resolved_action(resolved_action)
 
-        # If no config could be found, the result is none
+        # If no config could be found or is invalid, the result is none
         if resolved_action is None:
             return
 
         # Make sure the required action is in the config
         if self.name not in resolved_action.keys():
             logger.error(
-                "Could not initialise the action: The resolved config is invalid"
+                "Could not resolve the action %s: The root key should be the same as the config file name",
             )
             return
         resolved_action = resolved_action[self.name]
