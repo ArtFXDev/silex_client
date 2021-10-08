@@ -11,6 +11,8 @@ import typing
 
 import socketio
 
+from silex_client.utils.log import logger
+
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.network.websocket import WebsocketConnection
@@ -36,3 +38,15 @@ class WebsocketNamespace(socketio.AsyncClientNamespace):
         Add a message to the queue of message to send
         """
         self.ws_connection.send(self.namespace, event, data)
+
+    async def on_connect(self):
+        """
+        Register the dcc on the silex service on connection
+        """
+        logger.info("Connected to %s on %s", self.url, self.namespace)
+
+    async def on_disconnect(self):
+        """
+        Simply inform the user that the silex service is disconnected
+        """
+        logger.info("Disconected from %s on %s", self.url, self.namespace)

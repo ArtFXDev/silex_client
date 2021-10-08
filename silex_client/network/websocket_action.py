@@ -81,15 +81,3 @@ class WebsocketActionNamespace(WebsocketNamespace):
         future.add_done_callback(coroutine)
         self.update_futures.append(future)
         return future
-
-    async def on_connect(self):
-        """
-        Register the dcc on the silex service on connection
-        """
-        logger.info("Connected to %s on %s", self.url, self.namespace)
-
-    async def on_disconnect(self):
-        """
-        Simply inform the user that the silex service is disconnected
-        """
-        logger.info("Disconected from %s on %s", self.url, self.namespace)

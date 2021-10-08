@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 from concurrent import futures
-from typing import Any, Dict, TYPE_CHECKING, Optional
+from typing import Any, Dict, TYPE_CHECKING
 
 import socketio
 
@@ -39,7 +39,6 @@ class WebsocketConnection:
         context_metadata: dict = None,
         url: str = "ws://127.0.0.1:5118",
     ):
-        self.is_running = False
         self.url = url
 
         self.socketio = socketio.AsyncClient()
@@ -57,13 +56,15 @@ class WebsocketConnection:
         )
         self.socketio.register_namespace(self.action_namespace)
 
+    @property
+    def is_running(self):
+        return self.socketio.connected
+
     async def _connect_socketio(self) -> None:
-        self.is_running = True
         await self.socketio.connect(self.url)
 
     async def _disconnect_socketio(self) -> None:
         await self.socketio.disconnect()
-        self.is_running = False
 
     def start(self) -> futures.Future:
         """
