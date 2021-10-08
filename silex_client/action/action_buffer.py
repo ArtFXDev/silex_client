@@ -83,10 +83,7 @@ class ActionBuffer:
             status = command.status if command.status > status else status
 
         # If some commands are completed and the rest initialized, then the action is processing
-        if all(
-            command.status in [Status.INITIALIZED, Status.COMPLETED, Status.PROCESSING]
-            for command in self.commands
-        ):
+        if status is Status.INITIALIZED and Status.COMPLETED in [command.status for command in self.commands]:
             status = Status.PROCESSING
 
         return status
