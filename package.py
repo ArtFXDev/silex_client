@@ -1,7 +1,7 @@
 # pylint: skip-file
 name = "silex_client"
 timestamp = 0
-version = "0.2.0"
+version = "0.3.0"
 
 authors = ["ArtFx TD gang"]
 
@@ -53,7 +53,7 @@ def commands():
     env.PYTHONPATH.append("{root}")
     env.SILEX_ZOU_HOST = "http://localhost/api"
     env.SILEX_LOG_LEVEL = "DEBUG"
-    env.SILEX_ACTION_CONFIG = "{root}/config/action"
+    env.SILEX_ACTION_CONFIG.prepend("{root}/config/action")
 
     parser_module = ".".join(["silex_client", "cli", "parser"])
     alias("silex", "python -m {parser_module}")

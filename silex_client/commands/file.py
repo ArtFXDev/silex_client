@@ -30,7 +30,6 @@ class PublishFile(CommandBase):
             "value": "No description",
             "tooltip": "Short description of your work",
         },
-        "name": {"name": "name", "label": "Name", "type": str, "value": "untitled"},
     }
 
     required_metadata = ["project"]
