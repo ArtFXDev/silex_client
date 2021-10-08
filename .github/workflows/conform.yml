@@ -2,6 +2,8 @@ name: Conform
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ dev, beta, prod ]
 
 jobs:
   conform:
