@@ -96,7 +96,7 @@ class WebsocketConnection:
         futures.wait([future])
         return future
 
-    def send(self, namespace: str, event: str, data: Any) -> futures.Future:
+    def send(self, namespace: str, event: str, data: Any = None) -> futures.Future:
         """
         Send a message using websocket from a different thread than the event loop
         """
@@ -110,7 +110,7 @@ class WebsocketConnection:
 
         return self.event_loop.register_task(self.async_send(namespace, event, data))
 
-    async def async_send(self, namespace, event, data) -> asyncio.Future:
+    async def async_send(self, namespace, event, data=None) -> asyncio.Future:
         """
         Send a message using websocket from within the event loop
         """

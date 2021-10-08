@@ -53,6 +53,13 @@ class ActionQuery:
         The result value can be awaited with result = future.result(timeout)
         and the task can be canceled with future.cancel()
         """
+        # If the action has no commands, don't execute it
+        if not self.commands:
+            logger.warning("Could not execute %s: The action has no actions", self.name)
+            future: futures.Future = futures.Future()
+            future.set_result(None)
+            return future
+
         # Initialize the communication with the websocket server
         if self.ws_connection.is_running:
             self.initialize_websocket()
@@ -102,9 +109,7 @@ class ActionQuery:
 
             # Inform the UI of the state of the action (either completed or sucess)
             await self.async_update_websocket()
-            await self.ws_connection.async_send(
-                "/dcc/action", "clearCurrentAction", {"action": self.buffer.uuid}
-            )
+            await self.ws_connection.async_send("/dcc/action", "clearCurrentAction")
 
         # Execute the commands in the event loop
         return self.event_loop.register_task(execute_commands())
