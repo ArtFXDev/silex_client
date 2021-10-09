@@ -31,6 +31,11 @@ jobs:
         if: steps.cache-rez.outputs.cache-hit != 'true'
         run: powershell ./script/install_rez.ps1
 
+      - name: Setup rez
+        if: steps.cache-rez.outputs.cache-hit == 'true'
+        run: Add-Content $env:GITHUB_PATH "~/rez/scripts/rez"
+        shell: powershell
+
       - name: Install silex_client
         run: rez build --install
 
