@@ -29,7 +29,6 @@ jobs:
           key: ${{ runner.os }}-silex_client
 
       - name: Install rez
-        if: steps.cache-rez.outputs.cache-hit != 'true'
         run: powershell ./script/install_rez.ps1
 
       - name: Setup rez
@@ -38,7 +37,8 @@ jobs:
         shell: powershell
 
       - name: Check silex_client
-        run: tree $env:home
+        run: $env:PATH
+        shell: powershell
 
       - name: Install silex_client
         run: rez build --install
