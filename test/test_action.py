@@ -68,4 +68,3 @@ def test_execute_action(dummy_context: Context):
     dummy_context.event_loop.stop()
     for command in action.commands:
         print(command.status)
-    assert action.status is Status.COMPLETED
