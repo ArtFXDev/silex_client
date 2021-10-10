@@ -25,7 +25,7 @@ jobs:
         id: cache-rez
         uses: actions/cache@v2
         with:
-          path: ~\rez
+          path: ${{ env.HOME }}\rez
           key: ${{ runner.os }}-silex_client
 
       - name: Install rez
