@@ -37,7 +37,7 @@ jobs:
         shell: powershell
 
       - name: Check silex_client
-        run: $env:PATH
+        run: tree ~/rez
         shell: powershell
 
       - name: Install silex_client
