@@ -24,7 +24,7 @@ jobs:
         id: cache-rez
         uses: actions/cache@v2
         with:
-          path: ~/rez
+          path: ${{ **env.HOME** }}\rez
           key: ${{ runner.os }}-silex_client
 
       - name: Install rez
@@ -35,6 +35,9 @@ jobs:
         if: steps.cache-rez.outputs.cache-hit == 'true'
         run: Add-Content $env:GITHUB_PATH "~/rez/scripts/rez"
         shell: powershell
+
+      - name: Install silex_client
+        run: tree ~/rez
 
       - name: Install silex_client
         run: rez build --install
