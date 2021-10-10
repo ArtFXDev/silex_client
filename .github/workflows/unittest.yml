@@ -25,23 +25,17 @@ jobs:
         id: cache-rez
         uses: actions/cache@v2
         with:
-          path: ~\rez
+          path: c:/users/runneradmin/rez/
           key: ${{ runner.os }}-silex_client
 
       - name: Install rez
+        if: steps.cache-rez.outputs.cache-hit != 'true'
         run: powershell ./script/install_rez.ps1
 
       - name: Setup rez
         if: steps.cache-rez.outputs.cache-hit == 'true'
-        run: Add-Content $env:GITHUB_PATH "~/rez/scripts/rez"
+        run: Add-Content $env:GITHUB_PATH "c:/users/runneradmin/rez/"
         shell: powershell
-
-      - name: Check silex_client
-        run: tree c:\users\runneradmin\rez\
-        shell: powershell
-
-      - name: Check silex_client again
-        run: tree %userprofile%
 
       - name: Install silex_client
         run: rez build --install
