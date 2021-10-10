@@ -37,6 +37,7 @@ jobs:
         run: Add-Content $env:GITHUB_PATH "c:/users/runneradmin/rez/"
         shell: powershell
 
+
       - name: Install silex_client
         run: rez build --install
 
