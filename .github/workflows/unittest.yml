@@ -38,7 +38,7 @@ jobs:
         shell: powershell
 
       - name: Check silex_client
-        run: tree ${{ env.HOME }}\rez
+        run: tree $env:home
 
       - name: Install silex_client
         run: rez build --install
