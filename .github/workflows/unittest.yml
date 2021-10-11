@@ -29,7 +29,7 @@ jobs:
           key: ${{ runner.os }}-silex_client
 
       - name: Install rez
-        if: steps.cache-rez.outputs.cache-hit != 'true'
+        #if: steps.cache-rez.outputs.cache-hit != 'true'
         run: powershell ./script/install_rez.ps1
 
       - name: Setup rez
@@ -37,6 +37,16 @@ jobs:
         run: Add-Content $env:GITHUB_PATH "c:/users/runneradmin/rez/"
         shell: powershell
 
+      - run: Add-Content $env:GITHUB_PATH "c:/users/runneradmin/rez/"
+        shell: powershell
+      - run: $env:PATH
+        shell: powershell
+      - run: ls "c:/users/runneradmin/rez/"
+        shell: powershell
+      - run: ls "c:/users/runneradmin"
+        shell: powershell
+      - run: $env:HOME
+        shell: powershell
 
       - name: Install silex_client
         run: rez build --install
