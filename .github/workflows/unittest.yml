@@ -10,6 +10,9 @@ on:
 jobs:
   unittest-windows:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: powershell
 
     steps:
       - name: Checkout
@@ -35,12 +38,6 @@ jobs:
       - name: Setup rez
         if: steps.cache-rez.outputs.cache-hit == 'true'
         run: Add-Content $env:GITHUB_PATH "$HOME/rez/script/rez"
-        shell: powershell
-
-      - run: Add-Content $env:GITHUB_PATH "c:/users/runneradmin/rez/"
-        shell: powershell
-      - run: $HOME
-        shell: powershell
 
       - name: Install silex_client
         run: rez build --install
