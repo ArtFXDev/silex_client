@@ -58,8 +58,6 @@ def test_execute_action(dummy_context: Context):
     given by the dummy_context
     """
     action = dummy_context.get_action("publish")
-    # Add some fake value to mimic the UI editing the parameters
-    action.buffer.set_parameter("action", "publish_file", "file_path", "/path/to/file")
 
     dummy_context.event_loop.start()
     future = action.execute()
