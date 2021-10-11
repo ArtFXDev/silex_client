@@ -1,1 +1,9 @@
 
+save:
+  steps:
+    save:
+      label: "Save"
+      index: 20
+      commands:
+        save:
+          path: "silex_client.commands.save.Save"
