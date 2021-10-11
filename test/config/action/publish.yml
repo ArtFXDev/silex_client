@@ -5,13 +5,10 @@ publish: !inherit
   steps:
     action:
       commands:
-        get_ui_response:
-          path: "silex_client.commands.network.SendActionBuffer"
-          hide: true
+        publish:
+          label: "Publish"
+          path: "silex_client.commands.utils.Log"
           parameters:
-            wait_response: true
-            timeout: 5
-            
-        publish_file:
-          path: "silex_client.commands.file.PublishFile"
-          tooltip: "Insert the file you want to publish. For a file sequence use # as variable name for frame index"
+            message: "Publishing files"
+            level: "info"
+          hide: true

@@ -158,6 +158,12 @@ class Loader(yaml.SafeLoader):
 
         # Get node data
         node_data = self._get_node_data(node)
+        # Remove the kwargs from the data
+        for key in inherit_kwargs.keys():
+            if isinstance(node_data, dict):
+                del node_data[key]
+            elif isinstance(node_data, list):
+                del node_data[0]
 
         # Get the inherited file data
         if "parent" not in inherit_kwargs:

@@ -37,7 +37,7 @@ def fix_rez_pip():
 
 def get_requirements():
     spec = importlib.util.spec_from_file_location(
-        "package", os.path.join(__file__, "..", "..", "package.py")
+        "package", os.path.abspath(os.path.join(__file__, "..", "..", "package.py"))
     )
     package = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(package)

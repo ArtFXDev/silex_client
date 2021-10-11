@@ -12,7 +12,7 @@ import copy
 import os
 import sys
 import uuid
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from rez import resolved_context
 
@@ -36,8 +36,9 @@ class Context:
 
     def __init__(self):
         self.config: Config = Config()
-        self._metadata: Dict[str, Any] = {"name": None, "uuid": uuid.uuid1()}
+        self._metadata: Dict[str, Any] = {"name": None, "uuid": str(uuid.uuid1())}
         self.is_outdated: bool = True
+        self.running_actions: Dict[str, ActionQuery] = {}
         self._rez_context: resolved_context.ResolvedContext = (
             resolved_context.ResolvedContext.get_current()
         )
@@ -276,13 +277,16 @@ class Context:
         """
 
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(self.metadata))
-        return ActionQuery(
+        action_query = ActionQuery(
             action_name,
             self.config,
             self.event_loop,
             self.ws_connection,
             metadata_snapshot,
         )
+
+        self.running_actions[action_query.buffer.uuid] = action_query
+        return action_query
 
 
 context = Context()

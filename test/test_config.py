@@ -32,7 +32,8 @@ def test_resolve_action(dummy_config: Config):
     assert isinstance(resolved_action, dict) == True
     assert "publish" in resolved_action.keys()
     assert set(resolved_action["publish"]["steps"].keys()) == set(
-        ["pre_action", "action", "post_action"])
+        ["pre_action", "action", "post_action"]
+    )
     assert len(resolved_action["publish"]["steps"]["pre_action"]) == 3
 
 
@@ -44,4 +45,4 @@ def test_resolve_non_existing_action(dummy_config):
     resolved_action = dummy_config.resolve_action("fix_maya")
 
     # Make sure the the config is empty
-    assert resolved_action == None
+    assert resolved_action == {}

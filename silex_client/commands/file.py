@@ -19,18 +19,17 @@ class PublishFile(CommandBase):
 
     parameters = {
         "file_path": {
-            "name": "file_path",
             "label": "File path",
             "type": str,
             "value": None,
+            "tooltip": "The path to the file you want to publish",
         },
         "description": {
-            "name": "description",
             "label": "Description",
             "type": str,
             "value": "No description",
+            "tooltip": "Short description of your work",
         },
-        "name": {"name": "name", "label": "Name", "type": str, "value": "untitled"},
     }
 
     required_metadata = ["project"]

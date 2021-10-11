@@ -6,8 +6,9 @@ Base class that every command should inherit from
 
 from __future__ import annotations
 
+import copy
 import functools
-from typing import List, TYPE_CHECKING, Any, Callable, Dict, Union
+from typing import List, TYPE_CHECKING, Any, Callable, Dict
 
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     from silex_client.action.command_buffer import CommandBuffer
 
 # Type for parameters
-CommandParameters = Dict[str, Dict[str, Union[Any]]]
+CommandParameters = Dict[str, Dict[str, Any]]
 
 
 class CommandBase:
@@ -46,6 +47,41 @@ class CommandBase:
         Shortcut to get the type name of the command
         """
         return self.__class__.__name__
+
+    @property
+    def conformed_parameters(self) -> CommandParameters:
+        """
+        Make sure all the required keys are there in the parameters set by the command
+        Set some default values for the missing keys or return an error
+        """
+        conformed_parameters = {}
+        for parameter_name, parameter_data in copy.deepcopy(self.parameters).items():
+            # Make sure the "type" entry is given
+            if "type" not in parameter_data or not isinstance(
+                parameter_data["type"], type
+            ):
+                logger.error(
+                    "Invalid parameter %s in the commands %s: The 'type' entry is mendatory",
+                    parameter_name,
+                    self.command_buffer.name,
+                )
+
+            conformed_data = {}
+            # Conform the name entry
+            conformed_data["name"] = parameter_name
+            # Conform the label entry
+            conformed_data["label"] = parameter_data.get(
+                "label", parameter_name.title()
+            )
+            # Conform the value entry
+            conformed_data["value"] = parameter_data.get("value", None)
+            # Conform the hide entry
+            conformed_data["hide"] = parameter_data.get("hide", False)
+            # Conform the tooltip entry
+            conformed_data["tooltip"] = parameter_data.get("tooltip", None)
+            conformed_parameters[parameter_name] = conformed_data
+
+        return conformed_parameters
 
     def check_parameters(self, parameters: CommandParameters) -> bool:
         """
@@ -99,12 +135,25 @@ class CommandBase:
                 ):
                     command.command_buffer.status = Status.INVALID
                     return
-                # TODO: Find a way to catch all the errors and set the status to ERROR
                 command.command_buffer.status = Status.PROCESSING
-                await func(command, *args, **kwargs)
+
                 if kwargs.get("action_query", args[2]).ws_connection.is_running:
                     await kwargs.get("action_query", args[2]).async_update_websocket()
-                command.command_buffer.status = Status.COMPLETED
+
+                # TODO: Find a way to catch all the errors and set the status to ERROR
+                try:
+                    await func(command, *args, **kwargs)
+                    command.command_buffer.status = Status.COMPLETED
+                except Exception as excetion:
+                    logger.error(
+                        "An error occured while executing the action %s: %s",
+                        command.command_buffer.name,
+                        excetion,
+                    )
+                    command.command_buffer.status = Status.ERROR
+
+                if kwargs.get("action_query", args[2]).ws_connection.is_running:
+                    await kwargs.get("action_query", args[2]).async_update_websocket()
 
             return wrapper_conform_command
 

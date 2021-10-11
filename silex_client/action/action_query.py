@@ -53,21 +53,45 @@ class ActionQuery:
         The result value can be awaited with result = future.result(timeout)
         and the task can be canceled with future.cancel()
         """
+        # If the action has no commands, don't execute it
+        if not self.commands:
+            logger.warning("Could not execute %s: The action has no actions", self.name)
+            future: futures.Future = futures.Future()
+            future.set_result(None)
+            return future
+
         # Initialize the communication with the websocket server
         if self.ws_connection.is_running:
             self.initialize_websocket()
 
-        async def execute_commands():
+        async def execute_commands() -> None:
             # Pass the result of every command to pass it to the next one
             upstream_result = None
             # Execut all the commands one by one
-            for command in self.iter_commands():
+            for index, command in enumerate(self.iter_commands()):
                 # Only run the command if it is valid
                 if self.buffer.status in [Status.INVALID, Status.ERROR]:
                     logger.error(
-                        "Stopping action %s because the buffer is invalid", self.name
+                        "Stopping action %s because the buffer is invalid or errored out",
+                        self.name,
                     )
-                    return self.buffer
+                    break
+
+                # If the command requires an input from user, wait for the response
+                if command.ask_user:
+                    commands_left = self.commands[index:]
+                    for command_left in commands_left:
+                        if command_left.ask_user:
+                            command_left.status = Status.WAITING_FOR_RESPONSE
+                    logger.info("Waiting for UI response")
+                    await asyncio.wait_for(
+                        await self.async_update_websocket(apply_response=True), None
+                    )
+                    # TODO: Find a way to we don't have to do this
+                    command = self.commands[index]
+                    for command_left in self.commands[index:]:
+                        command_left.status = Status.INITIALIZED
+
                 # Create a dictionary that only contains the name and the value of the parameters
                 # without infos like the type, label...
                 parameters = {
@@ -83,13 +107,12 @@ class ActionQuery:
                     upstream_result, copy.deepcopy(parameters), self
                 )
 
-        # Execute the commands in the event loop
-        future = self.event_loop.register_task(execute_commands())
+            # Inform the UI of the state of the action (either completed or sucess)
+            await self.async_update_websocket()
+            await self.ws_connection.async_send("/dcc/action", "clearCurrentAction")
 
-        # Inform the UI of the state of the action (either completed or sucess)
-        if self.ws_connection.is_running:
-            self.update_websocket()
-        return future
+        # Execute the commands in the event loop
+        return self.event_loop.register_task(execute_commands())
 
     def _initialize_buffer(self, custom_data: Union[dict, None] = None) -> None:
         """
@@ -99,24 +122,24 @@ class ActionQuery:
         resolved_action = self.config.resolve_action(self.name)
         self._conform_resolved_action(resolved_action)
 
-        # If no config could be found, the result is none
-        if resolved_action is None:
+        # If no config could be found or is invalid, the result is {}
+        if not resolved_action:
             return
 
         # Make sure the required action is in the config
         if self.name not in resolved_action.keys():
             logger.error(
-                "Could not initialise the action: The resolved config is invalid"
+                "Could not resolve the action %s: The root key should be the same as the config file name",
             )
             return
-        resolved_action = resolved_action[self.name]
+        action_definition = resolved_action[self.name]
 
         # Apply any potential custom data
         if custom_data is not None:
-            resolved_action.update(custom_data)
+            action_definition.update(custom_data)
 
         # Update the buffer with the new data
-        self.buffer.deserialize(resolved_action)
+        self.buffer.deserialize(action_definition)
 
     def _conform_resolved_action(self, data: dict):
         """
@@ -140,6 +163,8 @@ class ActionQuery:
                 value["name"] = key
             self._conform_resolved_action(value)
 
+        return data
+
     def initialize_websocket(self) -> None:
         """
         Send a serialised version of the buffer to the websocket server, and store a copy of it
@@ -147,35 +172,38 @@ class ActionQuery:
         self._buffer_diff = copy.deepcopy(self.buffer)
         self.ws_connection.send("/dcc/action", "query", self._buffer_diff)
 
-    def update_websocket(self) -> futures.Future:
+    def update_websocket(self, apply_response=False) -> futures.Future:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
-        return self.event_loop.register_task(self.async_update_websocket())
+        return self.event_loop.register_task(
+            self.async_update_websocket(apply_response)
+        )
 
-    async def async_update_websocket(self) -> asyncio.Future:
+    async def async_update_websocket(self, apply_response=False) -> asyncio.Future:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
+        self._buffer_diff = copy.deepcopy(self.buffer)
 
-        future = self.event_loop.loop.create_future()
+        confirm = await self.ws_connection.async_send("/dcc/action", "update", diff)
 
-        def callback(response):
+        def apply_update(response: asyncio.Future) -> None:
             if response.cancelled():
                 return
-            if not response.result():
-                return
 
+            logger.debug("Applying update: %s", response.result())
             patch = jsondiff.patch(self.buffer.serialize(), response.result())
             self.buffer.deserialize(patch)
             self._buffer_diff = copy.deepcopy(self.buffer)
-            future.set_result(response.result())
 
-        response = await self.ws_connection.async_send("/dcc/action", "update", diff)
-        response.add_done_callback(callback)
-
-        return future
+        if apply_response:
+            return await self.ws_connection.action_namespace.register_update_callback(
+                apply_update
+            )
+        else:
+            return confirm
 
     @property
     def name(self) -> str:
@@ -198,7 +226,7 @@ class ActionQuery:
         return list(self.buffer.steps.values())
 
     @property
-    def commands(self) -> list:
+    def commands(self) -> list[CommandBuffer]:
         """Shortcut to get the commands of the buffer"""
         return self.buffer.commands
 

@@ -11,7 +11,7 @@ import importlib
 import re
 import uuid as unique_id
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, Optional
 
 import dacite
 import jsondiff
@@ -30,17 +30,21 @@ class CommandBuffer:
     #: The path to the command's module
     path: str = field()
     #: Name of the command, must have no space or special characters
-    name: Union[str, None] = field(default=None)
+    name: Optional[str] = field(default=None)
     #: The name of the command, meant to be displayed
-    label: Union[str, None] = field(compare=False, repr=False, default=None)
+    label: Optional[str] = field(compare=False, repr=False, default=None)
     #: Specify if the command must be displayed by the UI or not
     hide: bool = field(compare=False, repr=False, default=False)
+    #: Specify if the parameters must be displayed by the UI or not
+    hide_parameters: bool = field(compare=False, repr=False, default=False)
+    #: Specify if the command should be asking to the UI a feedback
+    ask_user: bool = field(compare=False, repr=False, default=False)
     #: Small explanation for the UI
     tooltip: str = field(compare=False, repr=False, default="")
     #: Dict that represent the parameters of the command, their type, value, name...
     parameters: Union[CommandParameters, dict] = field(default_factory=dict)
     #: A Unique ID to help differentiate multiple actions
-    uuid: unique_id.UUID = field(default_factory=unique_id.uuid1, init=False)
+    uuid: str = field(default_factory=lambda: str(unique_id.uuid1()))
     #: The status of the command, to keep track of the progression, specify the errors
     status: Status = field(default=Status.INITIALIZED, init=False)
 
@@ -58,7 +62,7 @@ class CommandBuffer:
         self.executor = self._get_executor(self.path)
 
         # Get the executor's parameter attributes and override them with the given ones
-        command_parameters = copy.deepcopy(self.executor.parameters)
+        command_parameters = copy.deepcopy(self.executor.conformed_parameters)
         for value in command_parameters.values():
             # If the value is a callable, call it (for mutable default values)
             if callable(value["value"]):

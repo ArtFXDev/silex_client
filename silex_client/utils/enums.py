@@ -13,7 +13,8 @@ class Status(IntEnum):
     """
 
     COMPLETED = 0
-    PROCESSING = 1
-    INITIALIZED = 2
-    INVALID = 3
-    ERROR = 4
+    INITIALIZED = 1
+    WAITING_FOR_RESPONSE = 2
+    PROCESSING = 3
+    INVALID = 4
+    ERROR = 5

@@ -1,7 +1,7 @@
 """
 @author: TD gang
 
-Unit testing functions for the module utils.context
+Unit testing functions for the module core.context
 """
 
 import os
@@ -21,7 +21,7 @@ def dummy_context() -> Context:
     """
     context = Context.get()
     config_root = os.path.join(os.path.dirname(__file__), "config", "action")
-    context.config.action_search_path.append(config_root)
+    context.config.action_search_path.insert(0, config_root)
     context.update_metadata({"project": "TEST_PIPE"})
     context.is_outdated = False
     return context
@@ -41,11 +41,14 @@ def test_get_action(dummy_context: Context):
         loader = Loader(config_data, tuple(config_root))
         manual_action = loader.get_single_data()["publish"]["steps"]
         assert len(resolved_action.buffer.steps["pre_action"].commands.values()) == len(
-            manual_action["pre_action"]["commands"].values())
+            manual_action["pre_action"]["commands"].values()
+        )
         assert len(resolved_action.buffer.steps["action"].commands.values()) == len(
-            manual_action["action"]["commands"].values())
-        assert len(resolved_action.buffer.steps["post_action"].commands.values()) == len(
-            manual_action["post_action"]["commands"].values())
+            manual_action["action"]["commands"].values()
+        )
+        assert len(
+            resolved_action.buffer.steps["post_action"].commands.values()
+        ) == len(manual_action["post_action"]["commands"].values())
         loader.dispose()
 
 
@@ -55,12 +58,12 @@ def test_execute_action(dummy_context: Context):
     given by the dummy_context
     """
     action = dummy_context.get_action("publish")
-    # Add some fake value to mimic the UI editing the parameters
-    action.buffer.set_parameter("action", "publish_file", "file_path", "/path/to/file")
 
     dummy_context.event_loop.start()
     future = action.execute()
     # Let the execution of the action happen in the event loop thread
     futures.wait([future])
     dummy_context.event_loop.stop()
+    for command in action.commands:
+        print(command.status)
     assert action.status is Status.COMPLETED

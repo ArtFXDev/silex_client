@@ -7,9 +7,12 @@ SILEX_ACTION_CONFIG: For the actions
 
 import copy
 import os
-from typing import Any, Union
+from typing import Any, Union, Dict, List
+
+from dacite import types
 
 from silex_client.resolve.loader import Loader
+from silex_client.resolve.config_types import ActionYAML
 from silex_client.utils.log import logger
 
 
@@ -37,7 +40,7 @@ class Config:
             self.action_search_path += env_config_path.split(os.pathsep)
 
     @property
-    def actions(self) -> list:
+    def actions(self) -> List[Dict[str, str]]:
         """
         List of all the available actions config found
         """
@@ -54,20 +57,33 @@ class Config:
 
         return found_actions
 
-    def resolve_action(self, action_name: str) -> Any:
+    def resolve_action(self, action_name: str) -> dict:
         """
         Resolve a config file from its name by looking in the stored root path
         """
         # Find the action config
         if action_name not in [action["name"] for action in self.actions]:
-            logger.error("Could not resolve config for the action %s", action_name)
-            return None
+            logger.error(
+                "Could not resolve the action %s: The action does not exists",
+                action_name,
+            )
+            return {}
 
         config_path = next(
             action["path"] for action in self.actions if action["name"] == action_name
         )
         logger.debug("Found action config at %s", config_path)
-        return self._load_config(config_path)
+        action_config = self._load_config(config_path)
+
+        # Dynamic type checking
+        if not types.is_instance(action_config, ActionYAML):
+            logger.error(
+                "Could not resolve the action %s: The schema is invalid",
+                action_name,
+            )
+            return {}
+
+        return action_config
 
     def _load_config(self, config_path: str) -> Any:
         # Load the config

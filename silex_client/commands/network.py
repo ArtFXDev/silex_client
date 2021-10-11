@@ -70,6 +70,7 @@ class SendActionBuffer(CommandBase):
         response = await action_query.async_update_websocket()
         # If wait_response is on, await the response of the UI
         if parameters["wait_response"]:
+            logger.info("Waiting for UI response")
             if parameters["timeout"] > 0:
                 try:
                     return await asyncio.wait_for(response, parameters["timeout"])
