@@ -8,6 +8,7 @@ from concurrent import futures
 import os
 import pprint
 import subprocess
+from typing import Dict
 
 import gazu.task
 import gazu.shot
@@ -16,16 +17,19 @@ from silex_client.core import context
 from silex_client.utils.log import logger
 
 
-async def resolve_context(task_id: int):
+async def resolve_context(task_id: int) -> Dict[str, str]:
+    """
+    Guess all the context from the task id
+    """
     resolved_context = {}
     task = await gazu.task.get_task(task_id)
     resolved_context["task"] = task["name"]
-    resolved_context["task_id"] = task
+    resolved_context["task_id"] = task["id"]
     resolved_context["task_type"] = task["task_type"]["name"]
     resolved_context["project"] = task["project"]["name"]
     resolved_context["project_id"] = task["project"]["id"]
 
-    resolved_context["silex_entity_type"] = task["entity_type"]["name"]
+    resolved_context["silex_entity_type"] = task["entity_type"]["name"].lower()
 
     if task["entity_type"]["name"].lower() == "shot":
         resolved_context["shot_id"] = task["entity"]["id"]

@@ -82,10 +82,11 @@ class ActionQuery:
                     for command_left in commands_left:
                         if command_left.ask_user:
                             command_left.status = Status.WAITING_FOR_RESPONSE
-                    logger.info("Waiting for UI response")
-                    await asyncio.wait_for(
-                        await self.async_update_websocket(apply_response=True), None
-                    )
+                    if self.ws_connection.is_running:
+                        logger.info("Waiting for UI response")
+                        await asyncio.wait_for(
+                            await self.async_update_websocket(apply_response=True), None
+                        )
                     # TODO: Find a way to we don't have to do this
                     command = self.commands[index]
                     for command_left in self.commands[index:]:

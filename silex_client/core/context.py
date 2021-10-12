@@ -13,6 +13,7 @@ import os
 import sys
 import uuid
 from typing import Any, Dict, Optional
+from concurrent import futures
 
 from rez import resolved_context
 import gazu
@@ -53,9 +54,10 @@ class Context:
         self.ws_connection.start()
 
         gazu.set_host("http://localhost/api")
-        self.event_loop.register_task(
+        future_login = self.event_loop.register_task(
             gazu.log_in("admin@example.com", "mysecretpassword")
         )
+        futures.wait([future_login])
 
     @staticmethod
     def get() -> Context:
@@ -125,7 +127,7 @@ class Context:
         """
         Apply the given dict to the metadata, only if the value was not set already
         """
-        for key, value in data:
+        for key, value in data.items():
             self._metadata.setdefault(key, value)
 
     def update_dcc(self) -> None:
