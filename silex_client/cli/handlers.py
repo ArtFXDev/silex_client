@@ -9,8 +9,37 @@ import os
 import pprint
 import subprocess
 
+import gazu.task
+import gazu.shot
+
 from silex_client.core import context
 from silex_client.utils.log import logger
+
+
+async def resolve_context(task_id: int):
+    resolved_context = {}
+    task = await gazu.task.get_task(task_id)
+    resolved_context["task"] = task["name"]
+    resolved_context["task_id"] = task
+    resolved_context["task_type"] = task["task_type"]["name"]
+    resolved_context["project"] = task["project"]["name"]
+    resolved_context["project_id"] = task["project"]["id"]
+
+    resolved_context["silex_entity_type"] = task["entity_type"]["name"]
+
+    if task["entity_type"]["name"].lower() == "shot":
+        resolved_context["shot_id"] = task["entity"]["id"]
+        resolved_context["shot"] = task["entity"]["name"]
+
+        sequence = await gazu.shot.get_sequence(task["entity"]["parent_id"])
+        resolved_context["sequence_id"] = sequence["id"]
+        resolved_context["sequence"] = sequence["name"]
+
+    else:
+        resolved_context["asset_id"] = task["entity"]["id"]
+        resolved_context["asset"] = task["entity"]["name"]
+
+    return resolved_context
 
 
 def action_handler(action_name: str, **kwargs) -> None:
@@ -42,8 +71,13 @@ def action_handler(action_name: str, **kwargs) -> None:
         pprint.pprint(parameters)
         return
 
-    silex_context.event_loop.start()
-    silex_context.ws_connection.start()
+    if kwargs.get("task_id") is not None:
+        context_future = silex_context.event_loop.register_task(
+            resolve_context(kwargs["task_id"])
+        )
+        resolved_context = context_future.result()
+        silex_context.initialize_metadata(resolved_context)
+
     action = silex_context.get_action(action_name)
 
     for set_parameter in kwargs.get("set_parameters", []):

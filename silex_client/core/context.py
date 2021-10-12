@@ -15,6 +15,7 @@ import uuid
 from typing import Any, Dict, Optional
 
 from rez import resolved_context
+import gazu
 
 from silex_client.action.action_query import ActionQuery
 from silex_client.core.event_loop import EventLoop
@@ -46,6 +47,14 @@ class Context:
         self.event_loop: EventLoop = EventLoop()
         self.ws_connection: WebsocketConnection = WebsocketConnection(
             self.event_loop, self.metadata
+        )
+
+        self.event_loop.start()
+        self.ws_connection.start()
+
+        gazu.set_host("http://localhost/api")
+        self.event_loop.register_task(
+            gazu.log_in("admin@example.com", "mysecretpassword")
         )
 
     @staticmethod
@@ -111,6 +120,13 @@ class Context:
             )
             return
         self._metadata.update(data)
+
+    def initialize_metadata(self, data: Dict[str, Any]) -> None:
+        """
+        Apply the given dict to the metadata, only if the value was not set already
+        """
+        for key, value in data:
+            self._metadata.setdefault(key, value)
 
     def update_dcc(self) -> None:
         """

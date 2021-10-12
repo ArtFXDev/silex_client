@@ -71,6 +71,7 @@ class EventLoop:
             logger.warning("Could not start event loop: The loop is already running")
             return
 
+        logger.info("Starting the event loop")
         self.thread = Thread(target=self._start_event_loop)
         self.thread.start()
 
@@ -86,6 +87,8 @@ class EventLoop:
         self.thread.join(self.JOIN_THREAD_TIMEOUT)
         if self.thread.is_alive():
             logger.error("Could not stop the event loop thread: timout exeded")
+        else:
+            logger.info("Event loop stopped")
 
     def register_task(self, coroutine: Coroutine) -> futures.Future:
         """

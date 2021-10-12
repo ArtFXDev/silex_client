@@ -12,6 +12,7 @@ description = """
 
 requires = [
     "python-3.7",
+    "aiogazu",
     "PyYAML",
     "logzero",
     "python_socketio",

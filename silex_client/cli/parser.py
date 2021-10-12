@@ -24,7 +24,8 @@ def main():
         "--task-id",
         "-t",
         help="Specify the ID of the task you can the set the context in",
-        type=int,
+        dest="task_id",
+        type=str,
     )
 
     execution_parser = argparse.ArgumentParser(add_help=False)
