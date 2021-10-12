@@ -188,8 +188,7 @@ class Loader(yaml.SafeLoader):
         # Merge the two data
         if type(inherit_data) is not type(node_data):
             logger.warning(
-                "The node and the inherited node are not the same time, \
-                skipping inheritance for yaml config %s",
+                "The node and the inherited node are not the same time, skipping inheritance for yaml config %s",
                 inherit_kwargs["parent"],
             )
             return node_data

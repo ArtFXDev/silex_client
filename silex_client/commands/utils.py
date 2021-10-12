@@ -25,6 +25,7 @@ class Log(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+        print(action_query.context_metadata)
         try:
             getattr(logger, parameters["level"])(parameters["message"])
         except ValueError:

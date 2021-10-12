@@ -61,8 +61,7 @@ class ActionQuery:
             return future
 
         # Initialize the communication with the websocket server
-        if self.ws_connection.is_running:
-            self.initialize_websocket()
+        self.initialize_websocket()
 
         async def execute_commands() -> None:
             # Pass the result of every command to pass it to the next one
@@ -184,6 +183,11 @@ class ActionQuery:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
+        if not self.ws_connection.is_running:
+            future = self.event_loop.loop.create_future()
+            future.set_result(None)
+            return future
+
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
         self._buffer_diff = copy.deepcopy(self.buffer)
 

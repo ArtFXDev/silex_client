@@ -114,14 +114,21 @@ class WebsocketConnection:
         """
         Send a message using websocket from within the event loop
         """
-        logger.debug("Websocket client sending %s at %s on %s", data, namespace, event)
-
         future = self.event_loop.loop.create_future()
+        if not self.is_running:
+            logger.warning(
+                "Websocket event at %s on %s was not sent: The websocket connection is not established",
+                namespace,
+                event,
+            )
+            future.set_result(None)
+            return future
 
         def callback(response):
             if not future.cancelled():
                 future.set_result(response)
 
+        logger.debug("Websocket client sending %s at %s on %s", data, namespace, event)
         await self.socketio.emit(event, data, namespace, callback)
         # Make sure a confirmation has been received
         try:
