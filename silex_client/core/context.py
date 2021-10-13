@@ -49,6 +49,7 @@ class Context:
         self.event_loop.start()
 
         gazu.set_host("http://localhost/api")
+        # TODO: Get the auth token from the silex-server, this is temporary
         future_login = self.event_loop.register_task(
             gazu.log_in("admin@example.com", "mysecretpassword")
         )

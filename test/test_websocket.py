@@ -4,18 +4,16 @@
 Unit testing functions for the module networK.websocket
 """
 
-import os
-import pytest
-from concurrent import futures
-
-from aiohttp import web
 import asyncio
-import socketio
+import os
 import threading
-from typing import Callable
+import time
+
+import pytest
+import socketio
+from aiohttp import web
 
 from silex_client.core.context import Context
-from silex_client.utils.enums import Status
 
 
 @pytest.fixture
@@ -32,6 +30,7 @@ def dummy_context() -> Context:
     return context
 
 
+@pytest.fixture
 def dummy_server() -> threading.Thread:
     """
     Return a function to start a server that will listen on the namespaces /dcc and /dcc/action
@@ -70,7 +69,7 @@ def dummy_server() -> threading.Thread:
         asyncio.set_event_loop(loop)
         web.run_app(app, host="127.0.0.1", port=5118)
 
-    return threading.Thread(target=start_server)
+    return threading.Thread(target=start_server, daemon=True)
 
 
 def wip_test_connection_initialization(
@@ -82,3 +81,5 @@ def wip_test_connection_initialization(
     dummy_server.start()
     dummy_context.event_loop.start()
     dummy_context.ws_connection.start()
+
+    assert dummy_context.ws_connection.is_running

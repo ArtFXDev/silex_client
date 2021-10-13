@@ -21,4 +21,6 @@ class WebsocketDCCNamespace(WebsocketNamespace):
         Register the dcc on the silex service on connection
         """
         await super().on_connect()
-        self.send("initialization", self.context_metadata)
+        await self.ws_connection.async_send(
+            self.namespace, "initialization", self.context_metadata
+        )

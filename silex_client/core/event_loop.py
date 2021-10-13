@@ -72,7 +72,7 @@ class EventLoop:
             return
 
         logger.info("Starting the event loop")
-        self.thread = Thread(target=self._start_event_loop)
+        self.thread = Thread(target=self._start_event_loop, daemon=True)
         self.thread.start()
 
     def stop(self) -> None:
