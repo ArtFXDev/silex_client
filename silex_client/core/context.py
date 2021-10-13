@@ -48,7 +48,7 @@ class Context:
         self.event_loop: EventLoop = EventLoop()
         self.event_loop.start()
 
-        gazu.set_host("http://localhost/api")
+        gazu.set_host("http://172.16.2.52:8080/api")
         # TODO: Get the auth token from the silex-server, this is temporary
         future_login = self.event_loop.register_task(
             gazu.log_in("admin@example.com", "mysecretpassword")
@@ -146,8 +146,8 @@ class Context:
         Update the metadata's dcc key using rez environment variable
         """
         software_future = self.event_loop.register_task(gazu.files.all_softwares())
-        request = os.getenv("REZ_USED_REQUEST", "")
         handled_dcc = [software["name"] for software in software_future.result()]
+        request = os.getenv("REZ_USED_REQUEST", "")
 
         # Look for dcc in rez request
         self._metadata["dcc"] = None

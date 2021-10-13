@@ -115,14 +115,6 @@ class WebsocketConnection:
         Send a message using websocket from within the event loop
         """
         future = self.event_loop.loop.create_future()
-        if not self.is_running:
-            logger.warning(
-                "Websocket event at %s on %s was not sent: The websocket connection is not established",
-                namespace,
-                event,
-            )
-            future.set_result(None)
-            return future
 
         def callback(response):
             if not future.cancelled():

@@ -9,6 +9,8 @@ import os
 import pprint
 import subprocess
 
+import gazu.files
+
 from silex_client.core import context
 from silex_client.utils.log import logger
 
@@ -80,8 +82,17 @@ def launch_handler(command: str, **kwargs) -> None:
     """
     Run the given command in the selected context
     """
+    silex_context = context.Context.get()
+    software_future = silex_context.event_loop.register_task(gazu.files.all_softwares())
+    if not command in [software["name"] for software in software_future.result()]:
+        logger.error("Could not launch the given dcc: The selected dcc does exists")
+        return
+
     # TODO: Find a way to get the stdout in the terminal on windows
     if kwargs.get("task_id") is not None:
         os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
+
+    if kwargs.get("file") is not None:
+        command = command + " " + kwargs["file"]
 
     subprocess.Popen(command, cwd=os.getcwd())
