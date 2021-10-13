@@ -12,20 +12,19 @@ if typing.TYPE_CHECKING:
 import gazu.files
 import gazu.task
 
+
 class Build(CommandBase):
     """
     Save current scene with context as path
     """
-
-    parameters = {
-    }
-
 
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         print(action_query.context_metadata)
-        working_files = await gazu.files.build_working_file_path(action_query.context_metadata.get("task_id", "none"))
+        working_files = await gazu.files.build_working_file_path(
+            action_query.context_metadata.get("task_id", "none")
+        )
         soft = await gazu.files.get_software_by_name("maya")
         working_files += soft.get("file_extension", ".nomedia")

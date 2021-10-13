@@ -4,6 +4,7 @@
 Defintion of the handlers for all the CLI commands
 """
 
+import asyncio
 from concurrent import futures
 import os
 import pprint
@@ -11,15 +12,17 @@ import subprocess
 
 import gazu.files
 
-from silex_client.core import context
 from silex_client.utils.log import logger
+from silex_client.utils.authentification import authentificate_gazu
 
 
 def action_handler(action_name: str, **kwargs) -> None:
     """
     Execute the given action in the resolved context
     """
-    silex_context = context.Context.get()
+    from silex_client.core.context import Context
+
+    silex_context = Context.get()
 
     if kwargs.get("list", False):
         # Just print the available actions
@@ -82,19 +85,19 @@ def launch_handler(dcc: str, **kwargs) -> None:
     """
     Run the given command in the selected context
     """
-    silex_context = context.Context.get()
-    software_future = silex_context.event_loop.register_task(gazu.files.all_softwares())
-    if not dcc in [software["short_name"] for software in software_future.result()]:
+    authentificate_gazu()
+    softwares = asyncio.run(gazu.files.all_softwares())
+    if not dcc in [software["short_name"] for software in softwares]:
         logger.error("Could not launch the given dcc: The selected dcc does exists")
         return
 
-    command = dcc
+    command = [dcc]
 
     # TODO: Find a way to get the stdout in the terminal on windows
     if kwargs.get("task_id") is not None:
         os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
 
     if kwargs.get("file") is not None:
-        command = command + " " + kwargs["file"]
+        command.append(kwargs["file"])
 
     subprocess.Popen(command, cwd=os.getcwd())

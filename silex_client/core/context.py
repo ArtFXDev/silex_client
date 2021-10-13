@@ -27,6 +27,7 @@ from silex_client.network.websocket import WebsocketConnection
 from silex_client.resolve.config import Config
 from silex_client.utils.datatypes import ReadOnlyDict
 from silex_client.utils.log import logger
+from silex_client.utils.authentification import authentificate_gazu
 
 
 class Context:
@@ -45,15 +46,10 @@ class Context:
         self.is_outdated: bool = True
         self.running_actions: Dict[str, ActionQuery] = {}
 
+        authentificate_gazu()
+
         self.event_loop: EventLoop = EventLoop()
         self.event_loop.start()
-
-        gazu.set_host("http://172.16.2.52:8080/api")
-        # TODO: Get the auth token from the silex-server, this is temporary
-        future_login = self.event_loop.register_task(
-            gazu.log_in("admin@example.com", "mysecretpassword")
-        )
-        futures.wait([future_login])
 
         self.ws_connection: WebsocketConnection = WebsocketConnection(
             self.event_loop, self.metadata
