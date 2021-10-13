@@ -15,7 +15,6 @@ import uuid
 from typing import Any, Dict, Optional
 from concurrent import futures
 
-from rez import resolved_context
 import gazu
 
 from silex_client.action.action_query import ActionQuery
@@ -41,9 +40,6 @@ class Context:
         self._metadata: Dict[str, Any] = {"name": None, "uuid": str(uuid.uuid1())}
         self.is_outdated: bool = True
         self.running_actions: Dict[str, ActionQuery] = {}
-        self._rez_context: resolved_context.ResolvedContext = (
-            resolved_context.ResolvedContext.get_current()
-        )
 
         self.event_loop: EventLoop = EventLoop()
         self.ws_connection: WebsocketConnection = WebsocketConnection(
@@ -66,22 +62,6 @@ class Context:
         """
         # Get the instance of Context created in this same module
         return getattr(sys.modules[__name__], "context")
-
-    @property
-    def rez_context(self) -> resolved_context.ResolvedContext:
-        """
-        Return the associated rez context, gets it if None is associated
-        """
-        if self._rez_context is None:
-            self._rez_context = resolved_context.ResolvedContext.get_current()
-            self.is_outdated = True
-
-        return self._rez_context
-
-    @rez_context.setter
-    def rez_context(self, rez_context: resolved_context.ResolvedContext):
-        self._rez_context = rez_context
-        self.is_outdated = True
 
     @property
     def metadata(self) -> Dict[str, Any]:
@@ -242,52 +222,6 @@ class Context:
     def user(self) -> Optional[str]:
         """Read only value of the current user"""
         return self.metadata.get("user")
-
-    @property
-    def is_valid(self) -> bool:
-        """
-        Check if the silex context is synchronised with the rez context
-        """
-        for ephemeral in self.rez_context.resolved_ephemerals:
-            entity_name = ephemeral.name.lstrip(".")
-            if entity_name not in ["task", "asset", "shot", "sequence"]:
-                continue
-
-            # The silex context is checking if the queried entity really exists on the database
-            # If if doesn't, the entity is set to None
-            if getattr(self, entity_name) is None:
-                logger.warning(
-                    "Invalid silex context: The entity %s is not set", entity_name
-                )
-                return False
-
-            # If the rez context has changed, the silex context might be desynchronised
-            if getattr(self, entity_name) != self.get_ephemeral_version(entity_name):
-                logger.warning(
-                    "Invalid silex context: The entity %s is not on the right version",
-                    entity_name,
-                )
-                return False
-
-        return True
-
-    def get_ephemeral_version(self, name: str) -> str:
-        """
-        Get the version number of a rez ephemeral package by its name
-        Ephemerals are used mostly to represent entities like task, shot, project...
-        """
-        if self.rez_context is None:
-            return ""
-
-        name = f".{name}"
-        try:
-            ephemeral = next(
-                x for x in self.rez_context.resolved_ephemerals if x.name == name
-            )
-            versions = ephemeral.range.to_versions()[0]
-            return versions[0] if versions else ""
-        except StopIteration:
-            return ""
 
     def get_action(self, action_name: str) -> ActionQuery:
         """

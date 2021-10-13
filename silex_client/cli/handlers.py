@@ -22,7 +22,12 @@ async def resolve_context(task_id: int) -> Dict[str, str]:
     Guess all the context from the task id
     """
     resolved_context = {}
-    task = await gazu.task.get_task(task_id)
+    try:
+        task = await gazu.task.get_task(task_id)
+    except ValueError:
+        logger.error("Could not resolve the context: The task ID is invalid")
+        return resolved_context
+
     resolved_context["task"] = task["name"]
     resolved_context["task_id"] = task["id"]
     resolved_context["task_type"] = task["task_type"]["name"]
