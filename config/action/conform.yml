@@ -1,0 +1,8 @@
+conform:
+  steps:
+    conform:
+      label: "Build"
+      index: 20
+      commands:
+        conform:
+          path: "silex_client.commands.conform.Conform"
