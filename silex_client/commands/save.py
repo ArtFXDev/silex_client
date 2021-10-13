@@ -16,7 +16,6 @@ class Save(CommandBase):
     """
 
     parameters = {
-        "filename": { "label": "filename", "type": str, "value": "", "hide": True }
     }
 
 

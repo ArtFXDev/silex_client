@@ -19,6 +19,7 @@ requires = [
     "aiohttp",
     "jsondiff",
     "dacite",
+    "Qt.py"
 ]
 
 vcs = "git"
