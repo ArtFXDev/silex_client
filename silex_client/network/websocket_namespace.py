@@ -33,12 +33,6 @@ class WebsocketNamespace(socketio.AsyncClientNamespace):
         self.ws_connection = ws_connection
         self.url = ws_connection.url
 
-    def send(self, event: str, data: typing.Any):
-        """
-        Add a message to the queue of message to send
-        """
-        self.ws_connection.send(self.namespace, event, data)
-
     async def on_connect(self):
         """
         Register the dcc on the silex service on connection

@@ -61,8 +61,7 @@ class ActionQuery:
             return future
 
         # Initialize the communication with the websocket server
-        if self.ws_connection.is_running:
-            self.initialize_websocket()
+        self.initialize_websocket()
 
         async def execute_commands() -> None:
             # Pass the result of every command to pass it to the next one
@@ -83,10 +82,11 @@ class ActionQuery:
                     for command_left in commands_left:
                         if command_left.ask_user:
                             command_left.status = Status.WAITING_FOR_RESPONSE
-                    logger.info("Waiting for UI response")
-                    await asyncio.wait_for(
-                        await self.async_update_websocket(apply_response=True), None
-                    )
+                    if self.ws_connection.is_running:
+                        logger.info("Waiting for UI response")
+                        await asyncio.wait_for(
+                            await self.async_update_websocket(apply_response=True), None
+                        )
                     # TODO: Find a way to we don't have to do this
                     command = self.commands[index]
                     for command_left in self.commands[index:]:
@@ -184,6 +184,11 @@ class ActionQuery:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
+        if not self.ws_connection.is_running:
+            future = self.event_loop.loop.create_future()
+            future.set_result(None)
+            return future
+
         diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
         self._buffer_diff = copy.deepcopy(self.buffer)
 

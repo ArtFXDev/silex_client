@@ -9,6 +9,8 @@ import os
 import pprint
 import subprocess
 
+import gazu.files
+
 from silex_client.core import context
 from silex_client.utils.log import logger
 
@@ -18,11 +20,6 @@ def action_handler(action_name: str, **kwargs) -> None:
     Execute the given action in the resolved context
     """
     silex_context = context.Context.get()
-    if not silex_context.is_valid:
-        logger.error(
-            "Could not execute the action %s: The silex context is invalid", action_name
-        )
-        return
 
     if kwargs.get("list", False):
         # Just print the available actions
@@ -42,8 +39,10 @@ def action_handler(action_name: str, **kwargs) -> None:
         pprint.pprint(parameters)
         return
 
-    silex_context.event_loop.start()
-    silex_context.ws_connection.start()
+    if kwargs.get("task_id") is not None:
+        os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
+        silex_context.is_outdated = True
+
     action = silex_context.get_action(action_name)
 
     for set_parameter in kwargs.get("set_parameters", []):
@@ -71,14 +70,6 @@ def command_handler(command_name: str, **kwargs) -> None:
     """
     Execute the given command in the current context
     """
-    silex_context = context.Context.get()
-    if not silex_context.is_valid:
-        logger.error(
-            "Could not execute the command %s: The silex context is invalid",
-            command_name,
-        )
-        return
-
     if kwargs.get("list", False):
         # Just print the available actions
         print("Available commands  :")
@@ -87,9 +78,23 @@ def command_handler(command_name: str, **kwargs) -> None:
     raise NotImplementedError("This feature is still WIP")
 
 
-def launch_handler(command: str, **kwargs) -> None:
+def launch_handler(dcc: str, **kwargs) -> None:
     """
     Run the given command in the selected context
     """
+    silex_context = context.Context.get()
+    software_future = silex_context.event_loop.register_task(gazu.files.all_softwares())
+    if not dcc in [software["short_name"] for software in software_future.result()]:
+        logger.error("Could not launch the given dcc: The selected dcc does exists")
+        return
+
+    command = dcc
+
     # TODO: Find a way to get the stdout in the terminal on windows
-    p = subprocess.Popen(command, cwd=os.getcwd())
+    if kwargs.get("task_id") is not None:
+        os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
+
+    if kwargs.get("file") is not None:
+        command = command + " " + kwargs["file"]
+
+    subprocess.Popen(command, cwd=os.getcwd())

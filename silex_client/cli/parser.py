@@ -24,7 +24,8 @@ def main():
         "--task-id",
         "-t",
         help="Specify the ID of the task you can the set the context in",
-        type=int,
+        dest="task_id",
+        type=str,
     )
 
     execution_parser = argparse.ArgumentParser(add_help=False)
@@ -90,11 +91,19 @@ def main():
     )
 
     launcher_parser.add_argument(
-        "--command",
-        "-c",
-        help="The command to execute in the context",
+        "--dcc",
+        "-d",
+        help="The dcc to start",
         type=str,
         required=True,
+    )
+
+    launcher_parser.add_argument(
+        "--file",
+        "-f",
+        help="The file to open within the dcc",
+        type=str,
+        required=False,
     )
 
     args = vars(parser.parse_args())
