@@ -26,9 +26,6 @@ class Build(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         print(action_query.context_metadata)
-        task = await gazu.task.get_task("ac0e79cf-e5ce-49ff-932f-6aed3d425e4a")
-        working_files = await gazu.files.build_working_file_path(task["id"])
-        print("WF")
+        working_files = await gazu.files.build_working_file_path(action_query.context_metadata.get("task_id", "none"))
         soft = await gazu.files.get_software_by_name("maya")
         working_files += soft.get("file_extension", ".nomedia")
-        print(working_files)
