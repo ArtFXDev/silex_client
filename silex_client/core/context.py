@@ -201,7 +201,7 @@ class Context:
         """
         Guess all the context from the task id, by making requests on the zou api
         """
-        resolved_context = {}
+        resolved_context: Dict[str, str] = {}
         try:
             task = await gazu.task.get_task(task_id)
         except ValueError:

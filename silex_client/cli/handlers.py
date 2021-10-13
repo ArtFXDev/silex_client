@@ -68,14 +68,6 @@ def command_handler(command_name: str, **kwargs) -> None:
     """
     Execute the given command in the current context
     """
-    silex_context = context.Context.get()
-    if not silex_context.is_valid:
-        logger.error(
-            "Could not execute the command %s: The silex context is invalid",
-            command_name,
-        )
-        return
-
     if kwargs.get("list", False):
         # Just print the available actions
         print("Available commands  :")
@@ -89,4 +81,7 @@ def launch_handler(command: str, **kwargs) -> None:
     Run the given command in the selected context
     """
     # TODO: Find a way to get the stdout in the terminal on windows
-    p = subprocess.Popen(command, cwd=os.getcwd())
+    if kwargs.get("task_id") is not None:
+        os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
+
+    subprocess.Popen(command, cwd=os.getcwd())
