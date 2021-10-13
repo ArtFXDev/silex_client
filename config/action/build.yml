@@ -1,0 +1,8 @@
+build:
+  steps:
+    build:
+      label: "Build"
+      index: 20
+      commands:
+        build:
+          path: "silex_client.commands.build.Build"

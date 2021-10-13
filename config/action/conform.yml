@@ -1,8 +1,10 @@
 conform:
   steps:
     conform:
-      label: "Build"
+      label: "Conform"
       index: 20
       commands:
         conform:
           path: "silex_client.commands.conform.Conform"
+          parameters:
+            filename: ""
