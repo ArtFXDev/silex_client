@@ -8,47 +8,9 @@ from concurrent import futures
 import os
 import pprint
 import subprocess
-from typing import Dict
-
-import gazu.task
-import gazu.shot
 
 from silex_client.core import context
 from silex_client.utils.log import logger
-
-
-async def resolve_context(task_id: int) -> Dict[str, str]:
-    """
-    Guess all the context from the task id
-    """
-    resolved_context = {}
-    try:
-        task = await gazu.task.get_task(task_id)
-    except ValueError:
-        logger.error("Could not resolve the context: The task ID is invalid")
-        return resolved_context
-
-    resolved_context["task"] = task["name"]
-    resolved_context["task_id"] = task["id"]
-    resolved_context["task_type"] = task["task_type"]["name"]
-    resolved_context["project"] = task["project"]["name"]
-    resolved_context["project_id"] = task["project"]["id"]
-
-    resolved_context["silex_entity_type"] = task["entity_type"]["name"].lower()
-
-    if task["entity_type"]["name"].lower() == "shot":
-        resolved_context["shot_id"] = task["entity"]["id"]
-        resolved_context["shot"] = task["entity"]["name"]
-
-        sequence = await gazu.shot.get_sequence(task["entity"]["parent_id"])
-        resolved_context["sequence_id"] = sequence["id"]
-        resolved_context["sequence"] = sequence["name"]
-
-    else:
-        resolved_context["asset_id"] = task["entity"]["id"]
-        resolved_context["asset"] = task["entity"]["name"]
-
-    return resolved_context
 
 
 def action_handler(action_name: str, **kwargs) -> None:
@@ -56,11 +18,6 @@ def action_handler(action_name: str, **kwargs) -> None:
     Execute the given action in the resolved context
     """
     silex_context = context.Context.get()
-    if not silex_context.is_valid:
-        logger.error(
-            "Could not execute the action %s: The silex context is invalid", action_name
-        )
-        return
 
     if kwargs.get("list", False):
         # Just print the available actions
@@ -81,11 +38,8 @@ def action_handler(action_name: str, **kwargs) -> None:
         return
 
     if kwargs.get("task_id") is not None:
-        context_future = silex_context.event_loop.register_task(
-            resolve_context(kwargs["task_id"])
-        )
-        resolved_context = context_future.result()
-        silex_context.initialize_metadata(resolved_context)
+        os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
+        silex_context.is_outdated = True
 
     action = silex_context.get_action(action_name)
 

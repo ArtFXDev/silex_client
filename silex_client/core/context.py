@@ -12,10 +12,14 @@ import copy
 import os
 import sys
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Dict, KeysView, ValuesView, ItemsView
 from concurrent import futures
 
 import gazu
+import gazu.client
+import gazu.shot
+import gazu.task
+import gazu.files
 
 from silex_client.action.action_query import ActionQuery
 from silex_client.core.event_loop import EventLoop
@@ -42,18 +46,18 @@ class Context:
         self.running_actions: Dict[str, ActionQuery] = {}
 
         self.event_loop: EventLoop = EventLoop()
-        self.ws_connection: WebsocketConnection = WebsocketConnection(
-            self.event_loop, self.metadata
-        )
-
         self.event_loop.start()
-        self.ws_connection.start()
 
         gazu.set_host("http://localhost/api")
         future_login = self.event_loop.register_task(
             gazu.log_in("admin@example.com", "mysecretpassword")
         )
         futures.wait([future_login])
+
+        self.ws_connection: WebsocketConnection = WebsocketConnection(
+            self.event_loop, self.metadata
+        )
+        self.ws_connection.start()
 
     @staticmethod
     def get() -> Context:
@@ -63,6 +67,30 @@ class Context:
         # Get the instance of Context created in this same module
         return getattr(sys.modules[__name__], "context")
 
+    def __setitem__(self, key: str, value: Any) -> None:
+        if key not in ["user", "name"]:
+            logger.error(
+                "Could not set the context metadata %s: This value is read only", key
+            )
+            return
+
+        self._metadata[key] = value
+
+    def __getitem__(self, key) -> Any:
+        return self.metadata.get(key)
+
+    def __contains__(self, item: str) -> bool:
+        return item in self.metadata
+
+    def keys(self) -> KeysView[str]:
+        return self.metadata.keys()
+
+    def values(self) -> ValuesView[Any]:
+        return self.metadata.values()
+
+    def items(self) -> ItemsView[str, Any]:
+        return self.metadata.items()
+
     @property
     def metadata(self) -> Dict[str, Any]:
         """
@@ -70,11 +98,13 @@ class Context:
         """
         # Lazy load the context's metadata
         if self.is_outdated:
-            self.is_outdated = False
-            self.update_dcc()
-            self.update_user()
-            self.update_entities()
-            self._metadata["pid"] = os.getpid()
+            ping_future = self.event_loop.register_task(gazu.client.host_is_valid())
+            if ping_future.result():
+                self.is_outdated = False
+                self.update_dcc()
+                self.update_user()
+                self.update_entities()
+                self._metadata["pid"] = os.getpid()
 
         return self._metadata
 
@@ -114,17 +144,10 @@ class Context:
         """
         Update the metadata's dcc key using rez environment variable
         """
+        software_future = self.event_loop.register_task(gazu.files.all_softwares())
         request = os.getenv("REZ_USED_REQUEST", "")
-        # TODO: Get the list of DCCs from a centralised database or config
-        handled_dcc = [
-            "maya",
-            "houdini",
-            "nuke",
-            "unreal",
-            "substance",
-            "mari",
-            "clarisse",
-        ]
+        handled_dcc = [software["name"] for software in software_future.result()]
+
         # Look for dcc in rez request
         self._metadata["dcc"] = None
         for dcc in handled_dcc:
@@ -140,88 +163,21 @@ class Context:
         """
         Update the metadata's key like project, shot, task...
         """
-        # TODO: Check the each entity  exists on the database
-        self._metadata["project"] = str(self.get_ephemeral_version("project")) or None
-
-        self._metadata["asset"] = str(self.get_ephemeral_version("asset")) or None
-
-        # The sequence and the shot needs to be converted from string to integer
-        for indexed_entity in ["sequence", "shot"]:
-            version = self.get_ephemeral_version(indexed_entity)
-            if version:
-                try:
-                    self._metadata[indexed_entity] = int(str(version))
-                except TypeError:
-                    logger.error("Skipping context's %s: invalid index", indexed_entity)
-                    self._metadata[indexed_entity] = None
-            else:
-                self._metadata[indexed_entity] = None
-
-        self._metadata["task"] = str(self.get_ephemeral_version("task")) or None
+        if "SILEX_TASK_ID" in os.environ:
+            context_future = self.event_loop.register_task(
+                self.resolve_context(os.environ["SILEX_TASK_ID"])
+            )
+            resolved_context = context_future.result()
+            self._metadata.update(resolved_context)
 
     def update_user(self) -> None:
         """
         Update the metadata's user key using authentification
         """
-        # TODO: Get the current user from the database using authentification
-        self._metadata["user"] = None
-
-    @property
-    def name(self) -> str:
-        """Get the name stored in the context's metadata"""
-        return self.metadata["dcc"]
-
-    @name.setter
-    def name(self, value: str) -> None:
-        """Set the name stored in the context's metadata"""
-        self._metadata["name"] = value
-
-    @property
-    def dcc(self) -> Optional[str]:
-        """Read only value of the current dcc"""
-        return self.metadata.get("dcc")
-
-    @property
-    def project(self) -> Optional[str]:
-        """Read only value of the current project"""
-        return self.metadata.get("project")
-
-    @property
-    def asset(self) -> Optional[str]:
-        """Read only value of the current asset"""
-        return self.metadata.get("asset")
-
-    @property
-    def sequence(self) -> Optional[int]:
-        """Read only value of the current sequence"""
-        return self.metadata.get("sequence")
-
-    @property
-    def shot(self) -> Optional[int]:
-        """Read only value of the current shot"""
-        return self.metadata.get("shot")
-
-    @property
-    def task(self) -> Optional[str]:
-        """Read only value of the current task"""
-        return self.metadata.get("task")
-
-    @property
-    def entity(self) -> Optional[str]:
-        """Compute the type of the lowest set entity"""
-        if self.asset is not None:
-            return "asset"
-        if self.shot is not None:
-            return "shot"
-        if self.sequence is not None:
-            return "sequence"
-
-        return None
-
-    @property
-    def user(self) -> Optional[str]:
-        """Read only value of the current user"""
-        return self.metadata.get("user")
+        user_future = self.event_loop.register_task(gazu.client.get_current_user())
+        user = user_future.result()
+        self._metadata["user"] = user.get("full_name")
+        self._metadata["user_email"] = user.get("email")
 
     def get_action(self, action_name: str) -> ActionQuery:
         """
@@ -239,6 +195,40 @@ class Context:
 
         self.running_actions[action_query.buffer.uuid] = action_query
         return action_query
+
+    @staticmethod
+    async def resolve_context(task_id: str) -> Dict[str, str]:
+        """
+        Guess all the context from the task id, by making requests on the zou api
+        """
+        resolved_context = {}
+        try:
+            task = await gazu.task.get_task(task_id)
+        except ValueError:
+            logger.error("Could not resolve the context: The task ID is invalid")
+            return resolved_context
+
+        resolved_context["task"] = task["name"]
+        resolved_context["task_id"] = task["id"]
+        resolved_context["task_type"] = task["task_type"]["name"]
+        resolved_context["project"] = task["project"]["name"]
+        resolved_context["project_id"] = task["project"]["id"]
+
+        resolved_context["silex_entity_type"] = task["entity_type"]["name"].lower()
+
+        if task["entity_type"]["name"].lower() == "shot":
+            resolved_context["shot"] = task["entity"]["name"]
+            resolved_context["shot_id"] = task["entity"]["id"]
+
+            sequence = await gazu.shot.get_sequence(task["entity"]["parent_id"])
+            resolved_context["sequence"] = sequence["name"]
+            resolved_context["sequence_id"] = sequence["id"]
+
+        else:
+            resolved_context["asset"] = task["entity"]["name"]
+            resolved_context["asset_id"] = task["entity"]["id"]
+
+        return resolved_context
 
 
 context = Context()

@@ -16,7 +16,6 @@ requires = [
     "PyYAML",
     "logzero",
     "python_socketio",
-    "rez",
     "aiohttp",
     "jsondiff",
     "dacite",
