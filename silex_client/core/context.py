@@ -146,7 +146,7 @@ class Context:
         Update the metadata's dcc key using rez environment variable
         """
         software_future = self.event_loop.register_task(gazu.files.all_softwares())
-        handled_dcc = [software["name"] for software in software_future.result()]
+        handled_dcc = [software["short_name"] for software in software_future.result()]
         request = os.getenv("REZ_USED_REQUEST", "")
 
         # Look for dcc in rez request

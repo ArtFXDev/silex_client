@@ -78,15 +78,17 @@ def command_handler(command_name: str, **kwargs) -> None:
     raise NotImplementedError("This feature is still WIP")
 
 
-def launch_handler(command: str, **kwargs) -> None:
+def launch_handler(dcc: str, **kwargs) -> None:
     """
     Run the given command in the selected context
     """
     silex_context = context.Context.get()
     software_future = silex_context.event_loop.register_task(gazu.files.all_softwares())
-    if not command in [software["name"] for software in software_future.result()]:
+    if not dcc in [software["short_name"] for software in software_future.result()]:
         logger.error("Could not launch the given dcc: The selected dcc does exists")
         return
+
+    command = dcc
 
     # TODO: Find a way to get the stdout in the terminal on windows
     if kwargs.get("task_id") is not None:
