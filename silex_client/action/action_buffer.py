@@ -35,6 +35,8 @@ class ActionBuffer:
     name: str = field()
     #: A Unique ID to help differentiate multiple actions
     uuid: str = field(default_factory=lambda: str(unique_id.uuid1()))
+    #: Specify if the action must be displayed by the UI or not
+    hide: bool = field(compare=False, repr=False, default=False)
     #: The status of the action, this value is readonly, it is computed from the commands's status
     status: Status = field(init=False)  # type: ignore
     #: A dict of steps that will contain the commands
@@ -83,7 +85,9 @@ class ActionBuffer:
             status = command.status if command.status > status else status
 
         # If some commands are completed and the rest initialized, then the action is processing
-        if status is Status.INITIALIZED and Status.COMPLETED in [command.status for command in self.commands]:
+        if status is Status.INITIALIZED and Status.COMPLETED in [
+            command.status for command in self.commands
+        ]:
             status = Status.PROCESSING
 
         return status
