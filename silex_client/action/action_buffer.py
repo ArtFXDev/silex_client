@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import uuid as unique_id
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, TYPE_CHECKING, Union
+from typing import Any, Dict, List, TYPE_CHECKING, Union, Optional
 
 import dacite
 
@@ -39,6 +39,8 @@ class ActionBuffer:
     hide: bool = field(compare=False, repr=False, default=False)
     #: The status of the action, this value is readonly, it is computed from the commands's status
     status: Status = field(init=False)  # type: ignore
+    #: The status of the action, this value is readonly, it is computed from the commands's status
+    thumbnail: Optional[str] = field(default=None)  # type: ignore
     #: A dict of steps that will contain the commands
     steps: Dict[str, StepBuffer] = field(default_factory=dict)
     #: Dict of variables that are global to all the commands of this action
