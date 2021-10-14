@@ -55,7 +55,7 @@ class ActionQuery:
         """
         # If the action has no commands, don't execute it
         if not self.commands:
-            logger.warning("Could not execute %s: The action has no actions", self.name)
+            logger.warning("Could not execute %s: The action has no commands", self.name)
             future: futures.Future = futures.Future()
             future.set_result(None)
             return future

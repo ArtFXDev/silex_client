@@ -7,7 +7,7 @@ ActionYAML = Dict[
     # <action name>: <action data>
     str, Dict[
         # "steps": <step names>
-        str, Dict[
+        str, Union[bool, Dict[
             # <step name>: <step data>
             str, Dict[
                 # "commands" : <command names> or
@@ -24,7 +24,7 @@ ActionYAML = Dict[
                     ]
                 ]]
             ]
-        ]
+        ]]
     ]
 ]
 
@@ -33,7 +33,7 @@ ActionDataclass = Dict[
     # <action name>: <action data>
     str, Dict[
         # "steps": <step names>
-        str, Union[str, Dict[
+        str, Union[str, bool, Dict[
             # <step name>: <step data>
             str, Union[str, Dict[
                 # "commands" : <command names> or
