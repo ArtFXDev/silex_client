@@ -13,6 +13,8 @@ import os
 import gazu.files
 import gazu.task
 import shutil
+import re
+
 
 class Conform(CommandBase):
     """
@@ -36,6 +38,7 @@ class Conform(CommandBase):
 
         soft = await gazu.files.get_software_by_name(action_query.context_metadata.get("dcc", ""))
         extension = soft.get("file_extension", ".no")
+        extension = extension if '.' in extension else f".{extension}" 
         working_file += extension
         if extension == ".no":
             logger.error("Sofware not set in Kitsu, file extension will be invalid")
@@ -47,14 +50,31 @@ class Conform(CommandBase):
             logger.error("Input file doesn't exist")
             return
 
-        # if output file exist
-        if os.path.exists(working_file):
-            logger.error("Output file already exist")
+
+        # get filename without extension
+        filename = os.path.basename(working_file)
+        working_file_without_extension = os.path.splitext(filename)[0]
+        working_folders = os.path.dirname(working_file)
+        
+        #get current version
+        version = re.findall("[0-9]*$", working_file_without_extension)
+        version = version[0] if len(version) > 0 else ""  # get last number of file name
+        zf = len(version)
+        version = int(version)
+        if version == "" :
+            logger.error("Failed to get version from regex")
             return
 
+        # if output file exist
+        file_without_version = re.findall("(?![0-9]*$).", working_file_without_extension)
+        file_without_version = ''.join(file_without_version)
+
+        while os.path.exists(working_file):
+            version += 1
+            working_file = os.path.join(working_folders, f"{file_without_version}{str(version).zfill(zf)}{extension}")
+
         # create folders structure
-        working_folders = os.path.dirname(working_file)
-        os.makedirs(working_folders)
+        if not os.path.exists(working_folders):
+            os.makedirs(working_folders)
         
         shutil.copy(input_file, working_file)
-        print(working_file)
