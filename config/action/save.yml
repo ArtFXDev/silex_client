@@ -1,5 +1,5 @@
-
 save:
+  hide: true
   steps:
     save:
       label: "Save"

@@ -1,4 +1,5 @@
 conform:
+  hide: true
   steps:
     conform:
       label: "Conform"

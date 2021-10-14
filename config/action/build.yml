@@ -1,4 +1,5 @@
 build:
+  hide: true
   steps:
     build:
       label: "Build"
