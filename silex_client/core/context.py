@@ -8,12 +8,12 @@ or use the get() static method
 
 from __future__ import annotations
 
+import asyncio
 import copy
 import os
 import sys
 import uuid
 from typing import Any, Dict, KeysView, ValuesView, ItemsView
-from concurrent import futures
 
 import gazu
 import gazu.client
@@ -65,7 +65,7 @@ class Context:
         return getattr(sys.modules[__name__], "context")
 
     def __setitem__(self, key: str, value: Any) -> None:
-        if key not in ["user", "name"]:
+        if key not in ["name"]:
             logger.error(
                 "Could not set the context metadata %s: This value is read only", key
             )
@@ -95,8 +95,7 @@ class Context:
         """
         # Lazy load the context's metadata
         if self.is_outdated:
-            ping_future = self.event_loop.register_task(gazu.client.host_is_valid())
-            if ping_future.result():
+            if asyncio.run(gazu.client.host_is_valid()):
                 self.is_outdated = False
                 self.update_dcc()
                 self.update_user()
@@ -141,8 +140,8 @@ class Context:
         """
         Update the metadata's dcc key using rez environment variable
         """
-        software_future = self.event_loop.register_task(gazu.files.all_softwares())
-        handled_dcc = [software["short_name"] for software in software_future.result()]
+        softwares = asyncio.run(gazu.files.all_softwares())
+        handled_dcc = [software["short_name"] for software in softwares]
         request = os.getenv("REZ_USED_REQUEST", "")
 
         # Look for dcc in rez request
@@ -161,10 +160,9 @@ class Context:
         Update the metadata's key like project, shot, task...
         """
         if "SILEX_TASK_ID" in os.environ:
-            context_future = self.event_loop.register_task(
+            resolved_context = asyncio.run(
                 self.resolve_context(os.environ["SILEX_TASK_ID"])
             )
-            resolved_context = context_future.result()
             self._metadata.update(resolved_context)
 
     def update_user(self) -> None:
