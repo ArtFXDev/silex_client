@@ -55,7 +55,7 @@ class ActionQuery:
         """
         # If the action has no commands, don't execute it
         if not self.commands:
-            logger.warning("Could not execute %s: The action has no actions", self.name)
+            logger.warning("Could not execute %s: The action has no commands", self.name)
             future: futures.Future = futures.Future()
             future.set_result(None)
             return future
@@ -169,6 +169,8 @@ class ActionQuery:
         """
         Send a serialised version of the buffer to the websocket server, and store a copy of it
         """
+        if not self.ws_connection.is_running or self.buffer.hide:
+            return
         self._buffer_diff = copy.deepcopy(self.buffer)
         self.ws_connection.send("/dcc/action", "query", self._buffer_diff)
 
@@ -184,7 +186,7 @@ class ActionQuery:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
-        if not self.ws_connection.is_running:
+        if not self.ws_connection.is_running or self.buffer.hide:
             future = self.event_loop.loop.create_future()
             future.set_result(None)
             return future

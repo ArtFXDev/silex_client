@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import copy
 import functools
+import os
+import traceback
 from typing import List, TYPE_CHECKING, Any, Callable, Dict
 
 from silex_client.utils.enums import Status
@@ -137,19 +139,20 @@ class CommandBase:
                     return
                 command.command_buffer.status = Status.PROCESSING
 
-                if kwargs.get("action_query", args[2]).ws_connection.is_running:
-                    await kwargs.get("action_query", args[2]).async_update_websocket()
+                await kwargs.get("action_query", args[2]).async_update_websocket()
 
                 # TODO: Find a way to catch all the errors and set the status to ERROR
                 try:
                     await func(command, *args, **kwargs)
                     command.command_buffer.status = Status.COMPLETED
-                except Exception as excetion:
+                except Exception as exception:
                     logger.error(
                         "An error occured while executing the action %s: %s",
                         command.command_buffer.name,
-                        excetion,
+                        exception,
                     )
+                    if os.getenv("SILEX_LOG_LEVEL") == "DEBUG":
+                        traceback.print_tb(exception.__traceback__)
                     command.command_buffer.status = Status.ERROR
 
                 if kwargs.get("action_query", args[2]).ws_connection.is_running:

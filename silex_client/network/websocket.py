@@ -13,6 +13,7 @@ from concurrent import futures
 from typing import Any, Dict, TYPE_CHECKING
 
 import socketio
+from socketio.exceptions import ConnectionError
 
 from silex_client.network.websocket_action import WebsocketActionNamespace
 from silex_client.network.websocket_dcc import WebsocketDCCNamespace
@@ -61,7 +62,12 @@ class WebsocketConnection:
         return self.socketio.connected
 
     async def _connect_socketio(self) -> None:
-        await self.socketio.connect(self.url)
+        try:
+            await asyncio.wait_for(self.socketio.connect(self.url), 2)
+        except (asyncio.TimeoutError, ConnectionError):
+            logger.error(
+                "Connection with the websocket server could not be established"
+            )
 
     async def _disconnect_socketio(self) -> None:
         await self.socketio.disconnect()

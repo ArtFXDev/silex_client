@@ -169,8 +169,7 @@ class Context:
         """
         Update the metadata's user key using authentification
         """
-        user_future = self.event_loop.register_task(gazu.client.get_current_user())
-        user = user_future.result()
+        user = asyncio.run(gazu.client.get_current_user())
         self._metadata["user"] = user.get("full_name")
         self._metadata["user_email"] = user.get("email")
 
