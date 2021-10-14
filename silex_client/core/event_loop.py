@@ -117,7 +117,7 @@ class EventLoop:
                     "Exception raised in the task %s: %s", coroutine, exception
                 )
                 if os.getenv("SILEX_LOG_LEVEL") == "DEBUG":
-                    raise task_result.exception()
+                    traceback.print_tb(exception.__traceback__)
 
         future.add_done_callback(callback)
         return future

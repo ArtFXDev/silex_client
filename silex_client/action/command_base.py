@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import copy
 import functools
+import os
+import traceback
 from typing import List, TYPE_CHECKING, Any, Callable, Dict
 
 from silex_client.utils.enums import Status
@@ -144,12 +146,14 @@ class CommandBase:
                 try:
                     await func(command, *args, **kwargs)
                     command.command_buffer.status = Status.COMPLETED
-                except Exception as excetion:
+                except Exception as exception:
                     logger.error(
                         "An error occured while executing the action %s: %s",
                         command.command_buffer.name,
-                        excetion,
+                        exception,
                     )
+                    if os.getenv("SILEX_LOG_LEVEL") == "DEBUG":
+                        traceback.print_tb(exception.__traceback__)
                     command.command_buffer.status = Status.ERROR
 
                 if kwargs.get("action_query", args[2]).ws_connection.is_running:
