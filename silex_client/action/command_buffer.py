@@ -10,7 +10,7 @@ import copy
 import importlib
 import re
 import uuid as unique_id
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, _FIELDS
 from typing import Any, Dict, Union, Optional
 
 import dacite
@@ -26,6 +26,9 @@ class CommandBuffer:
     """
     Store the data of a command, it is used as a comunication payload with the UI
     """
+
+    #: The list of fields that should be ignored when serializing this buffer to json
+    PRIVATE_FIELDS = ["output"]
 
     #: The path to the command's module
     path: str = field()
@@ -47,6 +50,8 @@ class CommandBuffer:
     uuid: str = field(default_factory=lambda: str(unique_id.uuid1()))
     #: The status of the command, to keep track of the progression, specify the errors
     status: Status = field(default=Status.INITIALIZED, init=False)
+    #: The output of the command, it can be passed to an other command
+    output: Any = field(default=None, init=False)
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")
@@ -80,6 +85,12 @@ class CommandBuffer:
             }
         # Apply the parameters to the default parameters
         self.parameters = jsondiff.patch(command_parameters, self.parameters)
+
+        # Hack to prevent from fields from being converted to json
+        field_list = getattr(self, _FIELDS)
+        for field_name in self.PRIVATE_FIELDS:
+            field_list.pop(field_name)
+        setattr(self, _FIELDS, field_list)
 
     def _get_executor(self, path: str) -> CommandBase:
         """
