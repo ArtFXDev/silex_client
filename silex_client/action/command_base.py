@@ -58,6 +58,8 @@ class CommandBase:
         """
         conformed_parameters = {}
         for parameter_name, parameter_data in copy.deepcopy(self.parameters).items():
+            conformed_data = {}
+
             # Make sure the "type" entry is given
             if "type" not in parameter_data or not isinstance(
                 parameter_data["type"], type
@@ -67,8 +69,9 @@ class CommandBase:
                     parameter_name,
                     self.command_buffer.name,
                 )
+            else:
+                conformed_data["type"] = parameter_data["type"]
 
-            conformed_data = {}
             # Conform the name entry
             conformed_data["name"] = parameter_name
             # Conform the label entry
@@ -147,7 +150,7 @@ class CommandBase:
                     command.command_buffer.status = Status.COMPLETED
                 except Exception as exception:
                     logger.error(
-                        "An error occured while executing the action %s: %s",
+                        "An error occured while executing the command %s: %s",
                         command.command_buffer.name,
                         exception,
                     )
