@@ -15,6 +15,7 @@ import dacite
 from silex_client.action.step_buffer import StepBuffer
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
+import pathlib
 
 # Forward references
 if TYPE_CHECKING:
@@ -66,7 +67,7 @@ class ActionBuffer:
         new_data = dacite.from_dict(
             ActionBuffer,
             serialized_data,
-            dacite.Config(cast=[Status]),
+            dacite.Config(cast=[Status, pathlib.Path]),
         )
         self.__dict__.update(new_data.__dict__)
         self.reorder_steps()
