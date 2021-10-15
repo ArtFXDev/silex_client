@@ -46,6 +46,8 @@ class CommandBuffer:
     tooltip: str = field(compare=False, repr=False, default="")
     #: Dict that represent the parameters of the command, their type, value, name...
     parameters: Union[CommandParameters, dict] = field(default_factory=dict)
+    #: The input of the command, a path to an other command
+    input: str = field(default="")
     #: A Unique ID to help differentiate multiple actions
     uuid: str = field(default_factory=lambda: str(unique_id.uuid1()))
     #: The status of the command, to keep track of the progression, specify the errors
