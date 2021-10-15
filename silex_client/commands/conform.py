@@ -22,7 +22,7 @@ class Conform(CommandBase):
     """
 
     parameters: CommandParameters = {
-        "filename": { "label": "filename", "type": str, "value": "" }
+        "filename": { "label": "filename", "type": "file", "value": "" }
     }
 
     @CommandBase.conform_command()
