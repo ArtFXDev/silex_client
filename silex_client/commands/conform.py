@@ -25,7 +25,6 @@ class Conform(CommandBase):
         "filename": { "label": "filename", "type": str, "value": "" }
     }
 
-
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
@@ -34,13 +33,13 @@ class Conform(CommandBase):
         working_file = await gazu.files.build_working_file_path(task_id)
         if task_id == "none":
             logger.error("Invalid task_id !")
-            return
+            raise Exception("Invalid task_id !")
         
         # if input file exist
         input_file = parameters.get("filename", "")
         if not os.path.exists(input_file):
             logger.error("Input file doesn't exist")
-            return
+            raise Exception("Input file doesn't exist")
 
         extension = input_file.split(".")[-1]
         extension = extension if '.' in extension else f".{extension}" 
@@ -59,7 +58,7 @@ class Conform(CommandBase):
         version = int(version)
         if version == "" :
             logger.error("Failed to get version from regex")
-            return
+            raise Exception("Failed to get version from regex")
 
         # if output file exist
         file_without_version = re.findall("(?![0-9]*$).", working_file_without_extension)
