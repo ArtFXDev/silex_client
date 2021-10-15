@@ -14,7 +14,7 @@ import gazu.files
 import gazu.task
 import shutil
 import re
-
+import pathlib
 
 class Conform(CommandBase):
     """
@@ -22,7 +22,7 @@ class Conform(CommandBase):
     """
 
     parameters: CommandParameters = {
-        "filename": { "label": "filename", "type": "file", "value": "" }
+        "filename": { "label": "filename", "type": pathlib.Path, "value": "" }
     }
 
     @CommandBase.conform_command()
