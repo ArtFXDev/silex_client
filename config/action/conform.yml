@@ -5,6 +5,7 @@ conform:
       index: 20
       commands:
         conform:
+          ask_user: true
           path: "silex_client.commands.conform.Conform"
           parameters:
             filename: ""
