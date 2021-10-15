@@ -35,20 +35,16 @@ class Conform(CommandBase):
         if task_id == "none":
             logger.error("Invalid task_id !")
             return
-
-        soft = await gazu.files.get_software_by_name(action_query.context_metadata.get("dcc", ""))
-        extension = soft.get("file_extension", ".no")
-        extension = extension if '.' in extension else f".{extension}" 
-        working_file += extension
-        if extension == ".no":
-            logger.error("Sofware not set in Kitsu, file extension will be invalid")
-            return
-
+        
         # if input file exist
         input_file = parameters.get("filename", "")
         if not os.path.exists(input_file):
             logger.error("Input file doesn't exist")
             return
+
+        extension = input_file.split(".")[-1]
+        extension = extension if '.' in extension else f".{extension}" 
+        working_file += extension
 
 
         # get filename without extension
