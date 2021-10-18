@@ -37,7 +37,11 @@ def action_handler(action_name: str, **kwargs) -> None:
 
     if kwargs.get("list_parameters", False):
         # Just print the available actions
-        parameters = silex_context.get_action(action_name).parameters
+        action = silex_context.get_action(action_name)
+        if action is None:
+            logger.error("The resolved action is invalid")
+            return
+        parameters = action.parameters
         print(f"Parameters for action {action_name} :")
         pprint.pprint(parameters)
         return
@@ -47,6 +51,10 @@ def action_handler(action_name: str, **kwargs) -> None:
         silex_context.is_outdated = True
 
     action = silex_context.get_action(action_name)
+
+    if action is None:
+        logger.error("The resolved action is invalid")
+        return
 
     for set_parameter in kwargs.get("set_parameters", []):
         set_parameter = set_parameter.replace(" ", "")

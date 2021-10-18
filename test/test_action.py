@@ -32,6 +32,7 @@ def test_get_action(dummy_context: Context):
     Test if the resolved action by the context is the same as if we try to resolve it manually
     """
     resolved_action = dummy_context.get_action("publish")
+    assert resolved_action is not None
 
     # Load the file manualy and check if it correspond to the resolved file
     config_root = os.path.join(os.path.dirname(__file__), "config", "action")
@@ -58,6 +59,7 @@ def test_execute_action(dummy_context: Context):
     given by the dummy_context
     """
     action = dummy_context.get_action("publish")
+    assert action is not None
 
     dummy_context.event_loop.start()
     future = action.execute()

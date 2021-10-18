@@ -13,7 +13,7 @@ import copy
 import os
 import sys
 import uuid
-from typing import Any, Dict, KeysView, ValuesView, ItemsView
+from typing import Any, Dict, KeysView, ValuesView, ItemsView, Optional
 
 import gazu
 import gazu.client
@@ -173,15 +173,20 @@ class Context:
         self._metadata["user"] = user.get("full_name")
         self._metadata["user_email"] = user.get("email")
 
-    def get_action(self, action_name: str) -> ActionQuery:
+    def get_action(self, action_name: str) -> Optional[ActionQuery]:
         """
         Return an ActionQuery object initialized with this context
         """
 
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(self.metadata))
+        resolved_config = self.config.resolve_action(action_name)
+
+        if not resolved_config:
+            return None
+
         action_query = ActionQuery(
             action_name,
-            self.config,
+            resolved_config,
             self.event_loop,
             self.ws_connection,
             metadata_snapshot,

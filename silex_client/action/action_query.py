@@ -34,16 +34,15 @@ class ActionQuery:
     def __init__(
         self,
         name: str,
-        config: Config,
+        resolved_config: dict,
         event_loop: EventLoop,
         ws_connection: WebsocketConnection,
         context_metadata: Dict[str, Any],
     ):
-        self.config = config
         self.event_loop = event_loop
         self.ws_connection = ws_connection
         self.buffer = ActionBuffer(name, context_metadata=context_metadata)
-        self._initialize_buffer({"context_metadata": context_metadata})
+        self._initialize_buffer(resolved_config, {"context_metadata": context_metadata})
         self._buffer_diff = copy.deepcopy(self.buffer)
 
     def execute(self) -> futures.Future:
@@ -119,25 +118,24 @@ class ActionQuery:
         # Execute the commands in the event loop
         return self.event_loop.register_task(execute_commands())
 
-    def _initialize_buffer(self, custom_data: Union[dict, None] = None) -> None:
+    def _initialize_buffer(self, resolved_config: dict, custom_data: Union[dict, None] = None) -> None:
         """
         Initialize the buffer from the config
         """
         # Resolve the action config and conform it so it can be converted to objects
-        resolved_action = self.config.resolve_action(self.name)
-        self._conform_resolved_action(resolved_action)
+        self._conform_resolved_config(resolved_config)
 
         # If no config could be found or is invalid, the result is {}
-        if not resolved_action:
+        if not resolved_config:
             return
 
         # Make sure the required action is in the config
-        if self.name not in resolved_action.keys():
+        if self.name not in resolved_config.keys():
             logger.error(
                 "Could not resolve the action %s: The root key should be the same as the config file name",
             )
             return
-        action_definition = resolved_action[self.name]
+        action_definition = resolved_config[self.name]
 
         # Apply any potential custom data
         if custom_data is not None:
@@ -146,7 +144,7 @@ class ActionQuery:
         # Update the buffer with the new data
         self.buffer.deserialize(action_definition)
 
-    def _conform_resolved_action(self, data: dict):
+    def _conform_resolved_config(self, data: dict):
         """
         When an action comes from a yaml, the data is not organised the same
         (It follows a different schema to make the yaml less verbose)
@@ -166,7 +164,7 @@ class ActionQuery:
                 "parameters",
             ]:
                 value["name"] = key
-            self._conform_resolved_action(value)
+            self._conform_resolved_config(value)
 
         return data
 
