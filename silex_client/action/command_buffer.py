@@ -51,7 +51,7 @@ class CommandBuffer:
     #: The status of the command, to keep track of the progression, specify the errors
     status: Status = field(default=Status.INITIALIZED, init=False)
     #: The output of the command, it can be passed to an other command
-    output: Any = field(default=None, init=False)
+    output_result: Any = field(default=None, init=False)
     #: The input of the command, a path following the schema <step>:<command>
     input_path: str = field(default="")
 

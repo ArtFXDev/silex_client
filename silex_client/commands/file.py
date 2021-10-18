@@ -45,3 +45,5 @@ class PublishFile(CommandBase):
         logger.info(
             "Publishing file(s) %s to %s", parameters["file_path"], publish_path
         )
+
+        return publish_path
