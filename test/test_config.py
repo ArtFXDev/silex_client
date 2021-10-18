@@ -45,4 +45,4 @@ def test_resolve_non_existing_action(dummy_config):
     resolved_action = dummy_config.resolve_action("fix_maya")
 
     # Make sure the the config is empty
-    assert resolved_action == {}
+    assert resolved_action is None

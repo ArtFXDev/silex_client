@@ -181,7 +181,7 @@ class Context:
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(self.metadata))
         resolved_config = self.config.resolve_action(action_name)
 
-        if not resolved_config:
+        if resolved_config is None:
             return None
 
         action_query = ActionQuery(

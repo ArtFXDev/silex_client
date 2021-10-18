@@ -7,7 +7,7 @@ SILEX_ACTION_CONFIG: For the actions
 
 import copy
 import os
-from typing import Any, Union, Dict, List
+from typing import Any, Union, Dict, List, Optional
 
 from dacite import types
 
@@ -57,17 +57,22 @@ class Config:
 
         return found_actions
 
-    def resolve_action(self, action_name: str) -> dict:
+    def resolve_action(
+        self, action_name: str, context_metadata: Dict[str, Any] = None
+    ) -> Optional[dict]:
         """
         Resolve a config file from its name by looking in the stored root path
         """
+        if context_metadata is None:
+            context_metadata = {}
+
         # Find the action config
         if action_name not in [action["name"] for action in self.actions]:
             logger.error(
                 "Could not resolve the action %s: The action does not exists",
                 action_name,
             )
-            return {}
+            return None
 
         config_path = next(
             action["path"] for action in self.actions if action["name"] == action_name
@@ -81,7 +86,7 @@ class Config:
                 "Could not resolve the action %s: The schema is invalid",
                 action_name,
             )
-            return {}
+            return None
 
         return action_config
 
