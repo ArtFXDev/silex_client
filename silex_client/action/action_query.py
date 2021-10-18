@@ -85,7 +85,8 @@ class ActionQuery:
                         await asyncio.wait_for(
                             await self.async_update_websocket(apply_response=True), None
                         )
-                    # TODO: Find a way to we don't have to do this
+                    # Since we juste modified the command, the current command we are iterating over
+                    # is not the right one anymore (this is because python is working with smart pointers)
                     command = self.commands[index]
                     for command_left in self.commands[index:]:
                         command_left.status = Status.INITIALIZED
@@ -112,7 +113,8 @@ class ActionQuery:
 
             # Inform the UI of the state of the action (either completed or sucess)
             await self.async_update_websocket()
-            await self.ws_connection.async_send("/dcc/action", "clearCurrentAction")
+            if self.ws_connection.is_running and not self.buffer.hide:
+                await self.ws_connection.async_send("/dcc/action", "clearCurrentAction")
 
         # Execute the commands in the event loop
         return self.event_loop.register_task(execute_commands())
@@ -283,12 +285,12 @@ class ActionQuery:
             step = parameter_split[0]
             command = parameter_split[1]
         elif len(parameter_split) == 2:
-            command = parameter_split[1]
+            command = parameter_split[0]
         elif len(parameter_split) != 1:
-            logger.warning("Invalid parameter path: The given parameter path %s had too many separators")
+            logger.warning("Invalid parameter path: The given parameter path %s has too many separators")
 
         # Guess the info that were not provided by taking the first match
-        valid = False
+        index = None
         for parameter_path, parameters in self.parameters.items():
             parameter_step = parameter_path.split(":")[0]
             parameter_command = parameter_path.split(":")[1]
@@ -296,12 +298,11 @@ class ActionQuery:
             if step is None and command is None and name in parameters:
                 step = parameter_step
                 index = parameter_command
-                valid = True
                 break
             # If the command name and the parameter are provided
             elif step is None and command == parameter_command and name in parameters:
                 step = parameter_step
-                valid = True
+                index = parameter_command
                 break
             # If everything is provided
             elif step is not None and command is not None:
@@ -310,10 +311,10 @@ class ActionQuery:
                     and command == parameter_command
                     and name in parameters
                 ):
-                    valid = True
+                    index = parameter_command
                     break
 
-        if step is None or index is None or not valid:
+        if step is None or index is None:
             logger.error(
                 "Could not set parameter %s: The parameter does not exists",
                 parameter_name,
@@ -337,7 +338,7 @@ class ActionQuery:
         if len(command_split) == 2:
             step = command_split[1]
         elif len(command_split) != 1:
-            logger.warning("Invalid command path: The given command path %s had too many separators")
+            logger.warning("Invalid command path: The given command path %s has too many separators")
 
         # If the command path is explicit, get the command directly
         if step is not None:

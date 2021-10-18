@@ -39,7 +39,7 @@ class PublishFile(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         publish_path = os.path.join(
-            action_query.context_metadata["project"], parameters["name"]
+            action_query.context_metadata["project"], parameters["file_path"]
         )
 
         logger.info(

@@ -89,10 +89,10 @@ class CommandBuffer:
         self.parameters = jsondiff.patch(command_parameters, self.parameters)
 
         # Hack to prevent from fields from being converted to json
-        field_list = getattr(self, _FIELDS)
-        for field_name in self.PRIVATE_FIELDS:
-            field_list.pop(field_name)
-        setattr(self, _FIELDS, field_list)
+        # field_list = getattr(self, _FIELDS)
+        # for field_name in self.PRIVATE_FIELDS:
+        # field_list.pop(field_name)
+        # setattr(self, _FIELDS, field_list)
 
     def _get_executor(self, path: str) -> CommandBase:
         """
@@ -111,7 +111,6 @@ class CommandBuffer:
             logger.error("Invalid command path, skipping %s", path)
             self.status = Status.INVALID
 
-            self.status = Status.INVALID
             return CommandBase(self)
 
     def serialize(self) -> Dict[str, Any]:
