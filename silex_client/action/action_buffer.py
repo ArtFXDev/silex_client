@@ -7,7 +7,7 @@ Dataclass used to store the data related to an action
 from __future__ import annotations
 
 import uuid as unique_id
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import Any, Dict, List, TYPE_CHECKING, Union, Optional
 
 import dacite
@@ -30,6 +30,8 @@ class ActionBuffer:
     # Define the mandatory keys and types for each attribibutes of a buffer
     STEP_TEMPLATE = {"index": int, "commands": list}
     COMMAND_TEMPLATE = {"path": str}
+    #: The list of fields that should be ignored when serializing this buffer to json
+    PRIVATE_FIELDS = ["variables"]
 
     #: The name of the action (usualy the same as the config file)
     name: str = field()
@@ -52,22 +54,43 @@ class ActionBuffer:
         """
         Convert the action's data into json so it can be sent to the UI
         """
-        serialized_data = asdict(self)
+        result = []
 
-        if "variables" in serialized_data:
-            del serialized_data["variables"]
+        for f in fields(self):
+            if f.name == "steps":
+                steps = getattr(self, f.name)
+                step_value = {}
+                for step_name, step in steps.items():
+                    step_value[step_name] = step.serialize()
+                result.append((f.name, step_value))
+            elif f.name in self.PRIVATE_FIELDS:
+                continue
+            else:
+                result.append((f.name, getattr(self, f.name)))
 
-        return serialized_data
+        return dict(result)
+
+    def _deserialize_steps(self, step_data: Any) -> Any:
+        step_name = step_data.get("name")
+        step = self.steps.get(step_name)
+        if step is None:
+            return step_data
+
+        step.deserialize(step_data)
+        return step
 
     def deserialize(self, serialized_data: Dict[str, Any]) -> None:
         """
         Convert back the action's data from json into this object
         """
-        new_data = dacite.from_dict(
-            ActionBuffer,
-            serialized_data,
-            dacite.Config(cast=[Status]),
+        dacite_config = dacite.Config(
+            cast=[Status], type_hooks={StepBuffer: self._deserialize_steps}
         )
+        new_data = dacite.from_dict(ActionBuffer, serialized_data, dacite_config)
+
+        for private_field in self.PRIVATE_FIELDS:
+            setattr(new_data, private_field, getattr(self, private_field))
+
         self.__dict__.update(new_data.__dict__)
         self.reorder_steps()
 

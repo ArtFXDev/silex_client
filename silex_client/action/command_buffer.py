@@ -10,7 +10,7 @@ import copy
 import importlib
 import re
 import uuid as unique_id
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import Any, Dict, Union, Optional
 
 import dacite
@@ -111,11 +111,24 @@ class CommandBuffer:
         """
         Convert the command's data into json so it can be sent to the UI
         """
-        return asdict(self)
+        result = []
+
+        for f in fields(self):
+            if f.name in self.PRIVATE_FIELDS:
+                continue
+            else:
+                result.append((f.name, getattr(self, f.name)))
+
+        return dict(result)
 
     def deserialize(self, serialized_data: Dict[str, Any]) -> None:
         """
         Convert back the action's data from json into this object
         """
-        new_data = dacite.from_dict(CommandBuffer, serialized_data)
-        self.__dict__ = new_data.__dict__
+        dacite_config = dacite.Config(cast=[Status])
+        new_data = dacite.from_dict(CommandBuffer, serialized_data, dacite_config)
+
+        for private_field in self.PRIVATE_FIELDS:
+            setattr(new_data, private_field, getattr(self, private_field))
+
+        self.__dict__.update(new_data.__dict__)

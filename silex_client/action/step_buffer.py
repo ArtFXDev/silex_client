@@ -6,7 +6,7 @@ Dataclass used to store the data related to a step
 
 import re
 import uuid as unique_id
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import Dict, Any, Optional
 
 import dacite
@@ -20,6 +20,9 @@ class StepBuffer:
     """
     Store the data of a step, it is used as a comunication payload with the UI
     """
+
+    #: The list of fields that should be ignored when serializing this buffer to json
+    PRIVATE_FIELDS = []
 
     #: Name of the step, must have no space or special characters
     name: str
@@ -49,14 +52,44 @@ class StepBuffer:
         """
         Convert the command's data into json so it can be sent to the UI
         """
-        return asdict(self)
+        result = []
+
+        for f in fields(self):
+            if f.name == "commands":
+                commands = getattr(self, f.name)
+                command_value = {}
+                for command_name, command in commands.items():
+                    command_value[command_name] = command.serialize()
+                result.append((f.name, command_value))
+            elif f.name in self.PRIVATE_FIELDS:
+                continue
+            else:
+                result.append((f.name, getattr(self, f.name)))
+
+        return dict(result)
+
+    def _deserialize_commands(self, command_data: Any) -> Any:
+        command_name = command_data.get("name")
+        command = self.commands.get(command_name)
+        if command is None:
+            return command_data
+
+        command.deserialize(command_data)
+        return command
 
     def deserialize(self, serialized_data: Dict[str, Any]) -> None:
         """
         Convert back the action's data from json into this object
         """
-        new_data = dacite.from_dict(StepBuffer, serialized_data)
-        self.__dict__ = new_data.__dict__
+        dacite_config = dacite.Config(
+            cast=[Status], type_hooks={CommandBuffer: self._deserialize_commands}
+        )
+        new_data = dacite.from_dict(StepBuffer, serialized_data, dacite_config)
+
+        for private_field in self.PRIVATE_FIELDS:
+            setattr(new_data, private_field, getattr(self, private_field))
+
+        self.__dict__.update(new_data.__dict__)
 
     @property  # type: ignore
     def status(self) -> Status:
@@ -68,7 +101,9 @@ class StepBuffer:
             status = command.status if command.status > status else status
 
         # If some commands are completed and the rest initialized, then the step is processing
-        if status is Status.INITIALIZED and Status.COMPLETED in [command.status for command in self.commands.values()]:
+        if status is Status.INITIALIZED and Status.COMPLETED in [
+            command.status for command in self.commands.values()
+        ]:
             status = Status.PROCESSING
 
         return status
