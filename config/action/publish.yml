@@ -10,13 +10,3 @@ publish: !inherit
           path: "silex_client.commands.file.PublishFile"
           tooltip: "Insert the file you want to publish. For a file sequence use # as variable name for frame index"
           ask_user: True
-
-        publish_test:
-          path: "silex_client.commands.file.PublishFile"
-          tooltip: "Insert the file you want to publish. For a file sequence use # as variable name for frame index"
-          ask_user: True
-
-        publish_hello:
-          path: "silex_client.commands.file.PublishFile"
-          tooltip: "Insert the file you want to publish. For a file sequence use # as variable name for frame index"
-          ask_user: True
