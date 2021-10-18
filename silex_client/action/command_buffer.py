@@ -10,7 +10,7 @@ import copy
 import importlib
 import re
 import uuid as unique_id
-from dataclasses import asdict, dataclass, field, _FIELDS
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, Union, Optional
 
 import dacite
@@ -28,7 +28,7 @@ class CommandBuffer:
     """
 
     #: The list of fields that should be ignored when serializing this buffer to json
-    PRIVATE_FIELDS = ["output"]
+    PRIVATE_FIELDS = ["output_result"]
 
     #: The path to the command's module
     path: str = field()
@@ -87,12 +87,6 @@ class CommandBuffer:
             }
         # Apply the parameters to the default parameters
         self.parameters = jsondiff.patch(command_parameters, self.parameters)
-
-        # Hack to prevent from fields from being converted to json
-        # field_list = getattr(self, _FIELDS)
-        # for field_name in self.PRIVATE_FIELDS:
-        # field_list.pop(field_name)
-        # setattr(self, _FIELDS, field_list)
 
     def _get_executor(self, path: str) -> CommandBase:
         """

@@ -144,7 +144,6 @@ class CommandBase:
 
                 await kwargs.get("action_query", args[2]).async_update_websocket()
 
-                # TODO: Find a way to catch all the errors and set the status to ERROR
                 try:
                     output = await func(command, *args, **kwargs)
                     command.command_buffer.output_result = output
@@ -159,8 +158,7 @@ class CommandBase:
                         traceback.print_tb(exception.__traceback__)
                     command.command_buffer.status = Status.ERROR
 
-                if kwargs.get("action_query", args[2]).ws_connection.is_running:
-                    await kwargs.get("action_query", args[2]).async_update_websocket()
+                await kwargs.get("action_query", args[2]).async_update_websocket()
 
             return wrapper_conform_command
 
