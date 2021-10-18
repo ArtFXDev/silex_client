@@ -146,7 +146,8 @@ class CommandBase:
 
                 # TODO: Find a way to catch all the errors and set the status to ERROR
                 try:
-                    await func(command, *args, **kwargs)
+                    output = await func(command, *args, **kwargs)
+                    command.command_buffer.output = output
                     command.command_buffer.status = Status.COMPLETED
                 except Exception as exception:
                     logger.error(

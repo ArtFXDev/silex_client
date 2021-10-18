@@ -98,6 +98,10 @@ class ActionQuery:
                     key: value.get("value", None)
                     for key, value in command.parameters.items()
                 }
+
+                # Get the input result
+                # input_result = self.buffer.get
+
                 # Run the executor and copy the parameters
                 # to prevent them from being modified during execution
                 logger.debug(
@@ -281,6 +285,8 @@ class ActionQuery:
             command = parameter_split[1]
         elif len(parameter_split) == 2:
             command = parameter_split[1]
+        elif len(parameter_split) != 1:
+            logger.warning("Invalid parameter path: The given parameter path %s had too many separators")
 
         # Guess the info that were not provided by taking the first match
         valid = False
@@ -317,6 +323,38 @@ class ActionQuery:
 
         self.buffer.set_parameter(step, index, name, value)
 
+    def get_command(self, command_path: str) -> Any:
+        """
+        Shortcut to get a command easly
+
+        The command path is parsed, according to the scheme : <step>:<command>
+        If you only provide a <command> the first occurence will be returned
+        """
+
+        command_split = command_path.split(":")
+        name = command_split[-1]
+        step = None
+
+        if len(command_split) == 2:
+            step = command_split[1]
+        elif len(command_split) != 1:
+            logger.warning("Invalid command path: The given command path %s had too many separators")
+
+        # If the command path is explicit, get the command directly
+        if step is not None:
+            try:
+                return self.buffer.steps[step].commands[name]
+            except KeyError:
+                logger.error("Could not retrieve the command: The command does not exists")
+                return None
+
+        # If only the command is given, get the first occurence
+        for command in self.iter_commands():
+            if command.name == name:
+                return command
+
+        return None
+        
 
 class CommandIterator(Iterator):
     """
