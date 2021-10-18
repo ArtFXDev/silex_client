@@ -52,8 +52,8 @@ class CommandBuffer:
     status: Status = field(default=Status.INITIALIZED, init=False)
     #: The output of the command, it can be passed to an other command
     output: Any = field(default=None, init=False)
-    #: The input of the command, a path to an other command
-    input: str = field(default="")
+    #: The input of the command, a path following the schema <step>:<command>
+    input_path: str = field(default="")
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")

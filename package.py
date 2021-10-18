@@ -36,7 +36,7 @@ tests = {
         "run_on": ["default", "pre_release"],
     },
     "typing": {
-        "command": "mypy --install-types --non-interactive {root}/silex_client --ignore-missing-imports",
+        "command": "mypy --install-types --non-interactive --disallow-untyped-defs {root}/silex_client --ignore-missing-imports",
         "requires": ["mypy"],
         "run_on": ["default", "pre_release"],
     },

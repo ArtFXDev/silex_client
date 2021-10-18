@@ -64,8 +64,6 @@ class ActionQuery:
         self.initialize_websocket()
 
         async def execute_commands() -> None:
-            # Pass the result of every command to pass it to the next one
-            upstream_result = None
             # Execut all the commands one by one
             for index, command in enumerate(self.iter_commands()):
                 # Only run the command if it is valid
@@ -100,15 +98,16 @@ class ActionQuery:
                 }
 
                 # Get the input result
-                # input_result = self.buffer.get
+                input_command = self.get_command(command.input_path)
+                input_value = input_command.output if input_command is not None else None
 
                 # Run the executor and copy the parameters
                 # to prevent them from being modified during execution
                 logger.debug(
                     "Executing command %s for action %s", command.name, self.name
                 )
-                upstream_result = await command.executor(
-                    upstream_result, copy.deepcopy(parameters), self
+                await command.executor(
+                    input_value, copy.deepcopy(parameters), self
                 )
 
             # Inform the UI of the state of the action (either completed or sucess)
