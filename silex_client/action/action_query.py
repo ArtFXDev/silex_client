@@ -135,7 +135,11 @@ class ActionQuery:
                 "Could not resolve the action %s: The root key should be the same as the config file name",
             )
             return
+
+        # Get the config related to the current task
         action_definition = resolved_config[self.name]
+        if self.context_metadata.get("task_type") in resolved_config.get("tasks", {}).keys():
+            action_definition = resolved_config["tasks"][self.context_metadata["task_type"]]
 
         # Apply any potential custom data
         if custom_data is not None:
