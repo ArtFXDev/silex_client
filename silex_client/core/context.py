@@ -20,6 +20,7 @@ import gazu.client
 import gazu.shot
 import gazu.task
 import gazu.files
+import gazu.exception
 
 from silex_client.action.action_query import ActionQuery
 from silex_client.core.event_loop import EventLoop
@@ -203,7 +204,7 @@ class Context:
         resolved_context: Dict[str, str] = {}
         try:
             task = await gazu.task.get_task(task_id)
-        except ValueError:
+        except (ValueError, gazu.exception.RouteNotFoundException):
             logger.error("Could not resolve the context: The task ID is invalid")
             return resolved_context
 

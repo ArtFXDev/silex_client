@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from silex_client.action.step_buffer import StepBuffer
     from silex_client.core.event_loop import EventLoop
     from silex_client.network.websocket import WebsocketConnection
-    from silex_client.resolve.config import Config
 
 
 class ActionQuery:
@@ -138,8 +137,9 @@ class ActionQuery:
 
         # Get the config related to the current task
         action_definition = resolved_config[self.name]
-        if self.context_metadata.get("task_type") in resolved_config.get("tasks", {}).keys():
-            action_definition = resolved_config["tasks"][self.context_metadata["task_type"]]
+        if self.context_metadata.get("task_type") in action_definition.get("tasks", {}).keys():
+            task_definition = action_definition["tasks"][self.context_metadata["task_type"]]
+            action_definition = jsondiff.patch(action_definition, task_definition)
 
         # Apply any potential custom data
         if custom_data is not None:
@@ -158,7 +158,7 @@ class ActionQuery:
         if not isinstance(data, dict):
             return
 
-        # To convert the yaml into real objects, there is some missing attributes that
+        # To convert the yaml into python objects, there is some missing attributes that
         for key, value in data.items():
             # TODO: Find a better way to do this,
             # we can't name a step "steps" or "parameters" with this method

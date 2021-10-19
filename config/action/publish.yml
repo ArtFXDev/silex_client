@@ -2,7 +2,7 @@ publish: !inherit
   parent: "./default.yml"
   key: "publish"
 
-  steps:
+  steps: &steps
 
     action:
       commands:
@@ -13,11 +13,8 @@ publish: !inherit
           ask_user: false
 
   tasks:
-
     modeling:
-      steps: !inherit
-        parent: "./publish.yml"
-        key: "publish.steps"
+      steps:
 
         action:
           commands:
