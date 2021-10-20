@@ -86,6 +86,7 @@ class ActionBuffer:
         """
         dacite_config = dacite.Config(
             cast=[Status], type_hooks={StepBuffer: self._deserialize_steps}
+        )
         new_data = dacite.from_dict(ActionBuffer, serialized_data, dacite_config)
 
         for private_field in self.PRIVATE_FIELDS:
