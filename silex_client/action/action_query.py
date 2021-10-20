@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import copy
 from concurrent import futures
-from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING
+from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
 
 import jsondiff
 
@@ -83,9 +83,7 @@ class ActionQuery:
                         await asyncio.wait_for(
                             await self.async_update_websocket(apply_response=True), None
                         )
-                    # Since we juste modified the command, the current command we are iterating over
-                    # is not the right one anymore (this is because python is working with smart pointers)
-                    command = self.commands[index]
+                    # Put the commands back to initialized
                     for command_left in self.commands[index:]:
                         command_left.status = Status.INITIALIZED
 
@@ -98,6 +96,7 @@ class ActionQuery:
 
                 # Get the input result
                 input_command = self.get_command(command.input_path)
+                print(input_command)
                 input_value = input_command.output_result if input_command is not None else None
 
                 # Run the executor and copy the parameters
@@ -325,7 +324,7 @@ class ActionQuery:
 
         self.buffer.set_parameter(step, index, name, value)
 
-    def get_command(self, command_path: str) -> Any:
+    def get_command(self, command_path: str) -> Optional[CommandBuffer]:
         """
         Shortcut to get a command easly
 
@@ -338,16 +337,17 @@ class ActionQuery:
         step = None
 
         if len(command_split) == 2:
-            step = command_split[1]
+            step = command_split[0]
         elif len(command_split) != 1:
             logger.warning("Invalid command path: The given command path %s has too many separators")
+            return None
 
         # If the command path is explicit, get the command directly
         if step is not None:
             try:
                 return self.buffer.steps[step].commands[name]
             except KeyError:
-                logger.error("Could not retrieve the command: The command does not exists")
+                logger.error("Could not retrieve the command %s: The command does not exists", command_path)
                 return None
 
         # If only the command is given, get the first occurence
@@ -355,6 +355,7 @@ class ActionQuery:
             if command.name == name:
                 return command
 
+        logger.error("Could not retrieve the command %s: The command does not exists", command_path)
         return None
         
 
