@@ -10,7 +10,7 @@ import copy
 import importlib
 import re
 import uuid as unique_id
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import Any, Dict, Union, Optional
 
 import dacite
@@ -26,6 +26,9 @@ class CommandBuffer:
     """
     Store the data of a command, it is used as a comunication payload with the UI
     """
+
+    #: The list of fields that should be ignored when serializing this buffer to json
+    PRIVATE_FIELDS = ["output_result", "executor"]
 
     #: The path to the command's module
     path: str = field()
@@ -47,6 +50,12 @@ class CommandBuffer:
     uuid: str = field(default_factory=lambda: str(unique_id.uuid1()))
     #: The status of the command, to keep track of the progression, specify the errors
     status: Status = field(default=Status.INITIALIZED, init=False)
+    #: The output of the command, it can be passed to an other command
+    output_result: Any = field(default=None, init=False)
+    #: The input of the command, a path following the schema <step>:<command>
+    input_path: str = field(default="")
+    #: The callable that will be used when the command is executed
+    executor: CommandBase = field(init=False)
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")
@@ -98,18 +107,30 @@ class CommandBuffer:
             logger.error("Invalid command path, skipping %s", path)
             self.status = Status.INVALID
 
-            self.status = Status.INVALID
             return CommandBase(self)
 
     def serialize(self) -> Dict[str, Any]:
         """
         Convert the command's data into json so it can be sent to the UI
         """
-        return asdict(self)
+        result = []
+
+        for f in fields(self):
+            if f.name in self.PRIVATE_FIELDS:
+                continue
+            else:
+                result.append((f.name, getattr(self, f.name)))
+
+        return dict(result)
 
     def deserialize(self, serialized_data: Dict[str, Any]) -> None:
         """
         Convert back the action's data from json into this object
         """
-        new_data = dacite.from_dict(CommandBuffer, serialized_data)
-        self.__dict__ = new_data.__dict__
+        dacite_config = dacite.Config(cast=[Status])
+        new_data = dacite.from_dict(CommandBuffer, serialized_data, dacite_config)
+
+        for private_field in self.PRIVATE_FIELDS:
+            setattr(new_data, private_field, getattr(self, private_field))
+
+        self.__dict__.update(new_data.__dict__)

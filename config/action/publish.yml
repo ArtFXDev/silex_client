@@ -2,21 +2,24 @@ publish: !inherit
   parent: "./default.yml"
   key: "publish"
 
-  steps:
+  steps: &steps
+
     action:
       commands:
-            
+
         publish_file:
           path: "silex_client.commands.file.PublishFile"
           tooltip: "Insert the file you want to publish. For a file sequence use # as variable name for frame index"
-          ask_user: True
+          ask_user: false
 
-        publish_test:
-          path: "silex_client.commands.file.PublishFile"
-          tooltip: "Insert the file you want to publish. For a file sequence use # as variable name for frame index"
-          ask_user: True
+  tasks:
+    modeling:
+      steps:
 
-        publish_hello:
-          path: "silex_client.commands.file.PublishFile"
-          tooltip: "Insert the file you want to publish. For a file sequence use # as variable name for frame index"
-          ask_user: True
+        action:
+          commands:
+                
+            publish_file:
+              path: "silex_client.commands.file.PublishFile"
+              tooltip: "Insert the file you want to publish. For a file sequence use # as variable name for frame index"
+              ask_user: true

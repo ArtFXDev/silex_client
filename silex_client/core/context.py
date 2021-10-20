@@ -13,13 +13,14 @@ import copy
 import os
 import sys
 import uuid
-from typing import Any, Dict, KeysView, ValuesView, ItemsView
+from typing import Any, Dict, KeysView, ValuesView, ItemsView, Optional
 
 import gazu
 import gazu.client
 import gazu.shot
 import gazu.task
 import gazu.files
+import gazu.exception
 
 from silex_client.action.action_query import ActionQuery
 from silex_client.core.event_loop import EventLoop
@@ -173,15 +174,20 @@ class Context:
         self._metadata["user"] = user.get("full_name")
         self._metadata["user_email"] = user.get("email")
 
-    def get_action(self, action_name: str) -> ActionQuery:
+    def get_action(self, action_name: str) -> Optional[ActionQuery]:
         """
         Return an ActionQuery object initialized with this context
         """
 
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(self.metadata))
+        resolved_config = self.config.resolve_action(action_name)
+
+        if resolved_config is None:
+            return None
+
         action_query = ActionQuery(
             action_name,
-            self.config,
+            resolved_config,
             self.event_loop,
             self.ws_connection,
             metadata_snapshot,
@@ -198,7 +204,7 @@ class Context:
         resolved_context: Dict[str, str] = {}
         try:
             task = await gazu.task.get_task(task_id)
-        except ValueError:
+        except (ValueError, gazu.exception.RouteNotFoundException):
             logger.error("Could not resolve the context: The task ID is invalid")
             return resolved_context
 

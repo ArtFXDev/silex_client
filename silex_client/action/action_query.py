@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import copy
 from concurrent import futures
-from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING
+from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
 
 import jsondiff
 
@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from silex_client.action.step_buffer import StepBuffer
     from silex_client.core.event_loop import EventLoop
     from silex_client.network.websocket import WebsocketConnection
-    from silex_client.resolve.config import Config
 
 
 class ActionQuery:
@@ -34,16 +33,15 @@ class ActionQuery:
     def __init__(
         self,
         name: str,
-        config: Config,
+        resolved_config: dict,
         event_loop: EventLoop,
         ws_connection: WebsocketConnection,
         context_metadata: Dict[str, Any],
     ):
-        self.config = config
         self.event_loop = event_loop
         self.ws_connection = ws_connection
         self.buffer = ActionBuffer(name, context_metadata=context_metadata)
-        self._initialize_buffer({"context_metadata": context_metadata})
+        self._initialize_buffer(resolved_config, {"context_metadata": context_metadata})
         self._buffer_diff = copy.deepcopy(self.buffer)
 
     def execute(self) -> futures.Future:
@@ -64,8 +62,6 @@ class ActionQuery:
         self.initialize_websocket()
 
         async def execute_commands() -> None:
-            # Pass the result of every command to pass it to the next one
-            upstream_result = None
             # Execut all the commands one by one
             for index, command in enumerate(self.iter_commands()):
                 # Only run the command if it is valid
@@ -87,8 +83,7 @@ class ActionQuery:
                         await asyncio.wait_for(
                             await self.async_update_websocket(apply_response=True), None
                         )
-                    # TODO: Find a way to we don't have to do this
-                    command = self.commands[index]
+                    # Put the commands back to initialized
                     for command_left in self.commands[index:]:
                         command_left.status = Status.INITIALIZED
 
@@ -98,41 +93,52 @@ class ActionQuery:
                     key: value.get("value", None)
                     for key, value in command.parameters.items()
                 }
+
+                # Get the input result
+                input_command = self.get_command(command.input_path)
+                print(input_command)
+                input_value = input_command.output_result if input_command is not None else None
+
                 # Run the executor and copy the parameters
                 # to prevent them from being modified during execution
                 logger.debug(
                     "Executing command %s for action %s", command.name, self.name
                 )
-                upstream_result = await command.executor(
-                    upstream_result, copy.deepcopy(parameters), self
+                await command.executor(
+                    input_value, copy.deepcopy(parameters), self
                 )
 
             # Inform the UI of the state of the action (either completed or sucess)
             await self.async_update_websocket()
-            await self.ws_connection.async_send("/dcc/action", "clearCurrentAction")
+            if self.ws_connection.is_running and not self.buffer.hide:
+                await self.ws_connection.async_send("/dcc/action", "clearCurrentAction")
 
         # Execute the commands in the event loop
         return self.event_loop.register_task(execute_commands())
 
-    def _initialize_buffer(self, custom_data: Union[dict, None] = None) -> None:
+    def _initialize_buffer(self, resolved_config: dict, custom_data: Union[dict, None] = None) -> None:
         """
         Initialize the buffer from the config
         """
         # Resolve the action config and conform it so it can be converted to objects
-        resolved_action = self.config.resolve_action(self.name)
-        self._conform_resolved_action(resolved_action)
+        self._conform_resolved_config(resolved_config)
 
         # If no config could be found or is invalid, the result is {}
-        if not resolved_action:
+        if not resolved_config:
             return
 
         # Make sure the required action is in the config
-        if self.name not in resolved_action.keys():
+        if self.name not in resolved_config.keys():
             logger.error(
                 "Could not resolve the action %s: The root key should be the same as the config file name",
             )
             return
-        action_definition = resolved_action[self.name]
+
+        # Get the config related to the current task
+        action_definition = resolved_config[self.name]
+        if self.context_metadata.get("task_type") in action_definition.get("tasks", {}).keys():
+            task_definition = action_definition["tasks"][self.context_metadata["task_type"]]
+            action_definition = jsondiff.patch(action_definition, task_definition)
 
         # Apply any potential custom data
         if custom_data is not None:
@@ -141,7 +147,7 @@ class ActionQuery:
         # Update the buffer with the new data
         self.buffer.deserialize(action_definition)
 
-    def _conform_resolved_action(self, data: dict):
+    def _conform_resolved_config(self, data: dict):
         """
         When an action comes from a yaml, the data is not organised the same
         (It follows a different schema to make the yaml less verbose)
@@ -151,7 +157,7 @@ class ActionQuery:
         if not isinstance(data, dict):
             return
 
-        # To convert the yaml into real objects, there is some missing attributes that
+        # To convert the yaml into python objects, there is some missing attributes that
         for key, value in data.items():
             # TODO: Find a better way to do this,
             # we can't name a step "steps" or "parameters" with this method
@@ -161,7 +167,7 @@ class ActionQuery:
                 "parameters",
             ]:
                 value["name"] = key
-            self._conform_resolved_action(value)
+            self._conform_resolved_config(value)
 
         return data
 
@@ -280,10 +286,12 @@ class ActionQuery:
             step = parameter_split[0]
             command = parameter_split[1]
         elif len(parameter_split) == 2:
-            command = parameter_split[1]
+            command = parameter_split[0]
+        elif len(parameter_split) != 1:
+            logger.warning("Invalid parameter path: The given parameter path %s has too many separators")
 
         # Guess the info that were not provided by taking the first match
-        valid = False
+        index = None
         for parameter_path, parameters in self.parameters.items():
             parameter_step = parameter_path.split(":")[0]
             parameter_command = parameter_path.split(":")[1]
@@ -291,12 +299,11 @@ class ActionQuery:
             if step is None and command is None and name in parameters:
                 step = parameter_step
                 index = parameter_command
-                valid = True
                 break
             # If the command name and the parameter are provided
             elif step is None and command == parameter_command and name in parameters:
                 step = parameter_step
-                valid = True
+                index = parameter_command
                 break
             # If everything is provided
             elif step is not None and command is not None:
@@ -305,10 +312,10 @@ class ActionQuery:
                     and command == parameter_command
                     and name in parameters
                 ):
-                    valid = True
+                    index = parameter_command
                     break
 
-        if step is None or index is None or not valid:
+        if step is None or index is None:
             logger.error(
                 "Could not set parameter %s: The parameter does not exists",
                 parameter_name,
@@ -317,6 +324,40 @@ class ActionQuery:
 
         self.buffer.set_parameter(step, index, name, value)
 
+    def get_command(self, command_path: str) -> Optional[CommandBuffer]:
+        """
+        Shortcut to get a command easly
+
+        The command path is parsed, according to the scheme : <step>:<command>
+        If you only provide a <command> the first occurence will be returned
+        """
+
+        command_split = command_path.split(":")
+        name = command_split[-1]
+        step = None
+
+        if len(command_split) == 2:
+            step = command_split[0]
+        elif len(command_split) != 1:
+            logger.warning("Invalid command path: The given command path %s has too many separators")
+            return None
+
+        # If the command path is explicit, get the command directly
+        if step is not None:
+            try:
+                return self.buffer.steps[step].commands[name]
+            except KeyError:
+                logger.error("Could not retrieve the command %s: The command does not exists", command_path)
+                return None
+
+        # If only the command is given, get the first occurence
+        for command in self.iter_commands():
+            if command.name == name:
+                return command
+
+        logger.error("Could not retrieve the command %s: The command does not exists", command_path)
+        return None
+        
 
 class CommandIterator(Iterator):
     """

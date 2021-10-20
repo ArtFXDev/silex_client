@@ -13,5 +13,6 @@ def authentificate_gazu():
         asyncio.run(
             asyncio.wait_for(gazu.log_in("admin@example.com", "mysecretpassword"), 2)
         )
+        logger.info("Connected to the zou API")
     except (asyncio.TimeoutError, ClientConnectionError):
         logger.error("Connection with the zou api could not be established")
