@@ -15,6 +15,7 @@ import dacite
 from silex_client.action.step_buffer import StepBuffer
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
+import pathlib
 
 # Forward references
 if TYPE_CHECKING:
@@ -85,7 +86,6 @@ class ActionBuffer:
         """
         dacite_config = dacite.Config(
             cast=[Status], type_hooks={StepBuffer: self._deserialize_steps}
-        )
         new_data = dacite.from_dict(ActionBuffer, serialized_data, dacite_config)
 
         for private_field in self.PRIVATE_FIELDS:

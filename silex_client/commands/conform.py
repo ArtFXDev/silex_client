@@ -15,15 +15,14 @@ import gazu.task
 import shutil
 import re
 import pathlib
-class file:
-    pass
+
 class Conform(CommandBase):
     """
     Save current scene with context as path
     """
 
     parameters: CommandParameters = {
-        "filename": { "label": "filename", "type": file , "value": "" }
+        "filename": { "label": "filename", "type": pathlib.Path, "value": "" }
     }
 
     @CommandBase.conform_command()
