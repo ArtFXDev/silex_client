@@ -108,7 +108,7 @@ class CommandBase:
                 parameters[parameter_name] = parameter_data["type"](
                     parameters[parameter_name]
                 )
-            except ValueError:
+            except (ValueError, TypeError):
                 logger.error(
                     "Could not execute %s: The parameter %s is invalid",
                     self.command_buffer.name,

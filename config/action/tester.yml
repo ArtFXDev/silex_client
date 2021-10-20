@@ -19,6 +19,12 @@ tester:
         select:
           path: "silex_client.commands.tester.SelectTester"
           ask_user: True
-        range:
-          path: "silex_client.commands.tester.RangeTester"
+        range_low:
+          path: "silex_client.commands.tester.RangeTesterLow"
+          ask_user: True
+        range_mid:
+          path: "silex_client.commands.tester.RangeTesterMid"
+          ask_user: True
+        range_high:
+          path: "silex_client.commands.tester.RangeTesterHigh"
           ask_user: True

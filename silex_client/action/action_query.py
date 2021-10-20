@@ -96,7 +96,7 @@ class ActionQuery:
 
                 # Get the input result
                 input_value = None
-                if input_command is not None:
+                if command.input_path:
                     input_command = self.get_command(command.input_path)
                     input_value = input_command.output_result if input_command is not None else None
 

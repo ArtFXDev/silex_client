@@ -144,7 +144,7 @@ class SelectTester(CommandBase):
         return parameters["select_tester"]
 
 
-class RangeTester(CommandBase):
+class RangeTesterLow(CommandBase):
     """
     Testing the range parameters
     """
@@ -152,7 +152,59 @@ class RangeTester(CommandBase):
     parameters = {
         "range_tester": {
             "label": "Range Tester",
-            "type": RangeParameterMeta(1, 50, 5),
+            "type": RangeParameterMeta(1, 475, 1),
+            "value": None,
+            "tooltip": "Testing the range parameters",
+        }
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+    ):
+        logger.info(
+            "Range parameter tester: %s, %s",
+            parameters["range_tester"],
+            type(parameters["range_tester"]),
+        )
+        return parameters["range_tester"]
+
+
+class RangeTesterMid(CommandBase):
+    """
+    Testing the range parameters
+    """
+
+    parameters = {
+        "range_tester": {
+            "label": "Range Tester",
+            "type": RangeParameterMeta(1, 30, 5),
+            "value": None,
+            "tooltip": "Testing the range parameters",
+        }
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+    ):
+        logger.info(
+            "Range parameter tester: %s, %s",
+            parameters["range_tester"],
+            type(parameters["range_tester"]),
+        )
+        return parameters["range_tester"]
+
+
+class RangeTesterHigh(CommandBase):
+    """
+    Testing the range parameters
+    """
+
+    parameters = {
+        "range_tester": {
+            "label": "Range Tester",
+            "type": RangeParameterMeta(1000, 10000, 100),
             "value": None,
             "tooltip": "Testing the range parameters",
         }
