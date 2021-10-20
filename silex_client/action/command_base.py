@@ -93,14 +93,29 @@ class CommandBase:
         Check the if the input kwargs are valid accoring to the parameters list
         and conform it if nessesary
         """
-        for parameter_name, parameter_value in parameters.items():
-            if parameter_value is None:
+        for parameter_name, parameter_data in self.conformed_parameters.items():
+            # Check if the parameter is here
+            if parameter_name not in parameters.keys():
                 logger.error(
                     "Could not execute %s: The parameter %s is missing",
                     self.command_buffer.name,
                     parameter_name,
                 )
                 return False
+
+            # Check if the parameter is the right type
+            try:
+                parameters[parameter_name] = parameter_data["type"](
+                    parameters[parameter_name]
+                )
+            except ValueError:
+                logger.error(
+                    "Could not execute %s: The parameter %s is invalid",
+                    self.command_buffer.name,
+                    parameter_name,
+                )
+                return False
+
         return True
 
     def check_context_metadata(self, context_metadata: Dict[str, Any]):

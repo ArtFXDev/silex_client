@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import typing
+import pathlib
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
@@ -37,6 +38,12 @@ class PublishFile(CommandBase):
             "value": 1,
             "tooltip": "Range",
         },
+        "path": {
+            "label": "Test",
+            "type": pathlib.Path,
+            "value": None,
+            "tooltip": "Range",
+        },
     }
 
     required_metadata = ["project"]
@@ -49,6 +56,7 @@ class PublishFile(CommandBase):
             action_query.context_metadata["project"], parameters["file_path"]
         )
         print(parameters["parameter_test"])
+        print(type(parameters["parameter_test"]))
 
         logger.info(
             "Publishing file(s) %s to %s", parameters["file_path"], publish_path

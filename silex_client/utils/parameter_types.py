@@ -31,7 +31,7 @@ class RangeParameterMeta(CommandParameterMeta):
         return super().__new__(cls, "RangeParameter", (int,), attributes)
 
 
-class SelectParameter(CommandParameterMeta):
+class SelectParameterMeta(CommandParameterMeta):
     def __init__(cls, *options):
         pass
 
@@ -42,4 +42,4 @@ class SelectParameter(CommandParameterMeta):
         attributes = {
             "serialize": serialize,
         }
-        return super().__new__(cls, "RangeParameter", (str,), attributes)
+        return super().__new__(cls, "SelectParameter", (str,), attributes)

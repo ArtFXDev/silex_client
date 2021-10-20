@@ -1,0 +1,24 @@
+tester:
+  steps:
+    parameter_tester:
+      index: 50
+      label: "Parameter Tester"
+      commands:
+        string:
+          path: "silex_client.commands.tester.StringTester"
+          ask_user: True
+        integer:
+          path: "silex_client.commands.tester.IntegerTester"
+          ask_user: True
+        boolean:
+          path: "silex_client.commands.tester.BooleanTester"
+          ask_user: True
+        path:
+          path: "silex_client.commands.tester.PathTester"
+          ask_user: True
+        select:
+          path: "silex_client.commands.tester.SelectTester"
+          ask_user: True
+        range:
+          path: "silex_client.commands.tester.RangeTester"
+          ask_user: True
