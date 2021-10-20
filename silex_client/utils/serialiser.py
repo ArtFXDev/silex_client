@@ -33,4 +33,4 @@ def silex_encoder(obj):
 
     # Convert types into string
     if isinstance(obj, type):
-        return obj.__name__
+        return {"name": obj.__name__}
