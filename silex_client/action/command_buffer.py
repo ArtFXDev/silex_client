@@ -28,7 +28,7 @@ class CommandBuffer:
     """
 
     #: The list of fields that should be ignored when serializing this buffer to json
-    PRIVATE_FIELDS = ["output_result"]
+    PRIVATE_FIELDS = ["output_result", "executor"]
 
     #: The path to the command's module
     path: str = field()
@@ -54,6 +54,8 @@ class CommandBuffer:
     output_result: Any = field(default=None, init=False)
     #: The input of the command, a path following the schema <step>:<command>
     input_path: str = field(default="")
+    #: The callable that will be used when the command is executed
+    executor: CommandBase = field(init=False)
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")
