@@ -25,7 +25,13 @@ class StringTester(CommandBase):
             "type": str,
             "value": None,
             "tooltip": "Testing the string parameters",
-        }
+        },
+        "string_tester_2": {
+            "label": "String Tester 2",
+            "type": str,
+            "value": None,
+            "tooltip": "Testing the string parameters",
+        },
     }
 
     @CommandBase.conform_command()
@@ -51,7 +57,13 @@ class IntegerTester(CommandBase):
             "type": int,
             "value": None,
             "tooltip": "Testing the int parameters",
-        }
+        },
+        "int_tester_2": {
+            "label": "Integer Tester 2",
+            "type": int,
+            "value": None,
+            "tooltip": "Testing the int parameters",
+        },
     }
 
     @CommandBase.conform_command()
@@ -77,7 +89,13 @@ class BooleanTester(CommandBase):
             "type": bool,
             "value": None,
             "tooltip": "Testing the bool parameters",
-        }
+        },
+        "bool_tester_2": {
+            "label": "Boolean Tester 2",
+            "type": bool,
+            "value": None,
+            "tooltip": "Testing the bool parameters",
+        },
     }
 
     @CommandBase.conform_command()
@@ -103,7 +121,13 @@ class PathTester(CommandBase):
             "type": pathlib.Path,
             "value": None,
             "tooltip": "Testing the path parameters",
-        }
+        },
+        "path_tester_2": {
+            "label": "Path Tester 2",
+            "type": pathlib.Path,
+            "value": None,
+            "tooltip": "Testing the path parameters",
+        },
     }
 
     @CommandBase.conform_command()
@@ -129,7 +153,13 @@ class SelectTester(CommandBase):
             "type": SelectParameterMeta("hello", "world", "foo", "bar"),
             "value": None,
             "tooltip": "Testing the select parameters",
-        }
+        },
+        "select_tester_2": {
+            "label": "Select Tester 2",
+            "type": SelectParameterMeta("hello", "world", "foo", "bar"),
+            "value": None,
+            "tooltip": "Testing the select parameters",
+        },
     }
 
     @CommandBase.conform_command()
@@ -155,7 +185,13 @@ class RangeTesterLow(CommandBase):
             "type": RangeParameterMeta(1, 475, 1),
             "value": None,
             "tooltip": "Testing the range parameters",
-        }
+        },
+        "range_tester_2": {
+            "label": "Range Tester 2",
+            "type": RangeParameterMeta(1, 475, 1),
+            "value": None,
+            "tooltip": "Testing the range parameters",
+        },
     }
 
     @CommandBase.conform_command()
@@ -181,7 +217,13 @@ class RangeTesterMid(CommandBase):
             "type": RangeParameterMeta(1, 30, 5),
             "value": None,
             "tooltip": "Testing the range parameters",
-        }
+        },
+        "range_tester_2": {
+            "label": "Range Tester 2",
+            "type": RangeParameterMeta(1, 30, 5),
+            "value": None,
+            "tooltip": "Testing the range parameters",
+        },
     }
 
     @CommandBase.conform_command()
@@ -207,7 +249,13 @@ class RangeTesterHigh(CommandBase):
             "type": RangeParameterMeta(1000, 10000, 100),
             "value": None,
             "tooltip": "Testing the range parameters",
-        }
+        },
+        "range_tester_2": {
+            "label": "Range Tester 2",
+            "type": RangeParameterMeta(1000, 10000, 100),
+            "value": None,
+            "tooltip": "Testing the range parameters",
+        },
     }
 
     @CommandBase.conform_command()
