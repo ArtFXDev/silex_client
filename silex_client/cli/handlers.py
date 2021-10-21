@@ -26,7 +26,8 @@ def action_handler(action_name: str, **kwargs) -> None:
 
     if kwargs.get("list", False):
         # Just print the available actions
-        action_names = [action["name"] for action in silex_context.config.actions]
+        action_names = [action["name"]
+                        for action in silex_context.config.actions]
         print("Available actions :")
         pprint.pprint(action_names)
         return
@@ -88,7 +89,8 @@ def launch_handler(dcc: str, **kwargs) -> None:
     authentificate_gazu()
     softwares = asyncio.run(gazu.files.all_softwares())
     if not dcc in [software["short_name"] for software in softwares]:
-        logger.error("Could not launch the given dcc: The selected dcc does exists")
+        logger.error(
+            "Could not launch the given dcc: The selected dcc %s does not exists", dcc)
         return
 
     command = [dcc]
@@ -99,5 +101,9 @@ def launch_handler(dcc: str, **kwargs) -> None:
 
     if kwargs.get("file") is not None:
         command.append(kwargs["file"])
+
+    # check for env variable
+    if os.environ.get(dcc) is not None:
+        command[0] = os.environ[dcc]
 
     subprocess.Popen(command, cwd=os.getcwd())
