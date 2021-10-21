@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import os
 import typing
+import pathlib
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
+from silex_client.utils.parameter_types import RangeParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -30,6 +32,18 @@ class PublishFile(CommandBase):
             "value": "No description",
             "tooltip": "Short description of your work",
         },
+        "parameter_test": {
+            "label": "Test",
+            "type": RangeParameterMeta(1, 2),
+            "value": 1,
+            "tooltip": "Range",
+        },
+        "path": {
+            "label": "Test",
+            "type": pathlib.Path,
+            "value": None,
+            "tooltip": "Range",
+        },
     }
 
     required_metadata = ["project"]
@@ -41,6 +55,8 @@ class PublishFile(CommandBase):
         publish_path = os.path.join(
             action_query.context_metadata["project"], parameters["file_path"]
         )
+        print(parameters["parameter_test"])
+        print(type(parameters["parameter_test"]))
 
         logger.info(
             "Publishing file(s) %s to %s", parameters["file_path"], publish_path

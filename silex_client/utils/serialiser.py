@@ -8,6 +8,7 @@ import uuid
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.action.command_buffer import CommandBuffer
+from silex_client.utils.parameter_types import CommandParameterMeta
 
 
 def silex_encoder(obj):
@@ -27,5 +28,9 @@ def silex_encoder(obj):
         return obj.serialize()
 
     # Convert types into string
+    if isinstance(obj, CommandParameterMeta):
+        return obj.serialize()
+
+    # Convert types into string
     if isinstance(obj, type):
-        return obj.__name__
+        return {"name": obj.__name__}

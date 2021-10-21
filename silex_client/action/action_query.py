@@ -95,9 +95,10 @@ class ActionQuery:
                 }
 
                 # Get the input result
-                input_command = self.get_command(command.input_path)
-                print(input_command)
-                input_value = input_command.output_result if input_command is not None else None
+                input_value = None
+                if command.input_path:
+                    input_command = self.get_command(command.input_path)
+                    input_value = input_command.output_result if input_command is not None else None
 
                 # Run the executor and copy the parameters
                 # to prevent them from being modified during execution
