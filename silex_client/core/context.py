@@ -43,7 +43,7 @@ class Context:
 
     def __init__(self):
         self.config: Config = Config()
-        self._metadata: Dict[str, Any] = {"name": None, "uuid": str(uuid.uuid1())}
+        self._metadata: Dict[str, Any] = {"name": None, "uuid": str(uuid.uuid4())}
         self.is_outdated: bool = True
         self.running_actions: Dict[str, ActionQuery] = {}
 

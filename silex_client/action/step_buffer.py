@@ -39,7 +39,7 @@ class StepBuffer:
     #: Dict that represent the parameters of the command, their type, value, name...
     commands: Dict[str, CommandBuffer] = field(default_factory=dict)
     #: A Unique ID to help differentiate multiple actions
-    uuid: str = field(default_factory=lambda: str(unique_id.uuid1()))
+    uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")

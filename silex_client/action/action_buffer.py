@@ -37,7 +37,7 @@ class ActionBuffer:
     #: The name of the action (usualy the same as the config file)
     name: str = field()
     #: A Unique ID to help differentiate multiple actions
-    uuid: str = field(default_factory=lambda: str(unique_id.uuid1()))
+    uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
     #: Specify if the action must be displayed by the UI or not
     hide: bool = field(compare=False, repr=False, default=False)
     #: The status of the action, this value is readonly, it is computed from the commands's status
