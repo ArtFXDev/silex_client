@@ -14,6 +14,7 @@ from typing import List, TYPE_CHECKING, Any, Callable, Dict
 
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
+from silex_client.utils.parameter_types import CommandParameterMeta
 
 # Forward references
 if TYPE_CHECKING:
@@ -80,6 +81,10 @@ class CommandBase:
             )
             # Conform the value entry
             conformed_data["value"] = parameter_data.get("value", None)
+            if conformed_data["value"] is None and isinstance(
+                conformed_data["type"], CommandParameterMeta
+            ):
+                conformed_data["value"] = conformed_data["type"].get_default()
             # Conform the hide entry
             conformed_data["hide"] = parameter_data.get("hide", False)
             # Conform the tooltip entry
