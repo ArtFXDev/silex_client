@@ -24,11 +24,9 @@ import gazu.exception
 
 from silex_client.action.action_query import ActionQuery
 from silex_client.core.event_loop import EventLoop
-from silex_client.network.websocket import WebsocketConnection
 from silex_client.resolve.config import Config
 from silex_client.utils.datatypes import ReadOnlyDict
 from silex_client.utils.log import logger
-from silex_client.utils.authentification import authentificate_gazu
 
 
 class Context:
@@ -47,15 +45,19 @@ class Context:
         self.is_outdated: bool = True
         self.running_actions: Dict[str, ActionQuery] = {}
 
-        authentificate_gazu()
+        self.event_loop: EventLoop
+        self._tasks: Dict[str, object] = {}
 
-        self.event_loop: EventLoop = EventLoop()
-        self.event_loop.start()
+    @property
+    def tasks(self) -> Dict[str, object]:
+        return self._tasks
 
-        self.ws_connection: WebsocketConnection = WebsocketConnection(
-            self.event_loop, self.metadata
-        )
-        self.ws_connection.start()
+    def register_manager(self, name: str, manager: object):
+        if name in self.tasks.keys():
+            return
+
+        # TODO: Test if the given manager has a mixin to make him start and start it here
+        self._tasks[name] = manager
 
     @staticmethod
     def get() -> Context:
