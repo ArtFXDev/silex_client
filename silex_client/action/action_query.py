@@ -43,6 +43,7 @@ class ActionQuery:
         self.buffer = ActionBuffer(name, context_metadata=context_metadata)
         self._initialize_buffer(resolved_config, {"context_metadata": context_metadata})
         self._buffer_diff = copy.deepcopy(self.buffer)
+        self._task: Optional[asyncio.Task] = None
 
     def execute(self) -> futures.Future:
         """
@@ -114,8 +115,20 @@ class ActionQuery:
             if self.ws_connection.is_running and not self.buffer.hide:
                 await self.ws_connection.async_send("/dcc/action", "clearAction", {"uuid": self.buffer.uuid})
 
+        async def create_task():
+            self._task = self.event_loop.loop.create_task(execute_commands())
+
         # Execute the commands in the event loop
-        return self.event_loop.register_task(execute_commands())
+        return self.event_loop.register_task(create_task())
+
+    def cancel(self):
+        """
+        Cancel the execution of the action
+        """
+        if self._task is None or self._task.done():
+            return
+
+        self._task.cancel()
 
     def _initialize_buffer(self, resolved_config: dict, custom_data: Union[dict, None] = None) -> None:
         """
