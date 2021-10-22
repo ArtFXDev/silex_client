@@ -112,7 +112,7 @@ class ActionQuery:
             # Inform the UI of the state of the action (either completed or sucess)
             await self.async_update_websocket()
             if self.ws_connection.is_running and not self.buffer.hide:
-                await self.ws_connection.async_send("/dcc/action", "clearCurrentAction")
+                await self.ws_connection.async_send("/dcc/action", "clearAction", {"uuid": self.buffer.uuid})
 
         # Execute the commands in the event loop
         return self.event_loop.register_task(execute_commands())
