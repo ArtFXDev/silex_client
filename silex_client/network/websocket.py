@@ -34,7 +34,7 @@ class WebsocketConnection:
     #: How long to wait for a confirmation fom every messages sent
     MESSAGE_CALLBACK_TIMEOUT = 1
 
-    def __init__(self, url: str, context=Context):
+    def __init__(self, url: str, context: Context):
         self.url = url
 
         self.socketio = socketio.AsyncClient()

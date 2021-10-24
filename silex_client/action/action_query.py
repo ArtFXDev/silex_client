@@ -42,6 +42,7 @@ class ActionQuery:
 
         self.event_loop: EventLoop = context.event_loop
         self.ws_connection: WebsocketConnection = context.ws_connection
+
         self.buffer: ActionBuffer = ActionBuffer(name, context_metadata=metadata_snapshot)
         self._initialize_buffer(resolved_config, {"context_metadata": metadata_snapshot})
         self._buffer_diff = copy.deepcopy(self.buffer)
