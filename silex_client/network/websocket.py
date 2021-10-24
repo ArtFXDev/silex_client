@@ -22,7 +22,7 @@ from silex_client.utils.serialiser import silex_encoder
 
 # Forward references
 if TYPE_CHECKING:
-    from silex_client.core.event_loop import EventLoop
+    from silex_client.core.context import Context
 
 
 class WebsocketConnection:
@@ -34,27 +34,16 @@ class WebsocketConnection:
     #: How long to wait for a confirmation fom every messages sent
     MESSAGE_CALLBACK_TIMEOUT = 1
 
-    def __init__(
-        self,
-        event_loop: EventLoop,
-        context_metadata: dict = None,
-        url: str = "ws://127.0.0.1:5118",
-    ):
+    def __init__(self, url: str, context=Context):
         self.url = url
 
         self.socketio = socketio.AsyncClient()
-        self.event_loop = event_loop
-
-        # Set the default context
-        if context_metadata is None:
-            context_metadata = {}
+        self.event_loop = context.event_loop
 
         # Register the different namespaces
-        self.dcc_namespace = WebsocketDCCNamespace("/dcc", context_metadata, self)
+        self.dcc_namespace = WebsocketDCCNamespace("/dcc", context, self)
         self.socketio.register_namespace(self.dcc_namespace)
-        self.action_namespace = WebsocketActionNamespace(
-            "/dcc/action", context_metadata, self
-        )
+        self.action_namespace = WebsocketActionNamespace("/dcc/action", context, self)
         self.socketio.register_namespace(self.action_namespace)
 
     @property

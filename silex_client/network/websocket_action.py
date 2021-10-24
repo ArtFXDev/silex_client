@@ -15,6 +15,7 @@ from silex_client.utils.log import logger
 
 # Forward references
 if TYPE_CHECKING:
+    from silex_client.core.context import Context
     from silex_client.network.websocket import WebsocketConnection
 
 
@@ -27,9 +28,9 @@ class WebsocketActionNamespace(WebsocketNamespace):
     namespace = "/dcc/action"
 
     def __init__(
-        self, namespace: str, context_metadata: dict, ws_connection: WebsocketConnection
+        self, namespace: str, context: Context, ws_connection: WebsocketConnection
     ):
-        super().__init__(namespace, context_metadata, ws_connection)
+        super().__init__(namespace, context, ws_connection)
 
         self.update_futures: List[asyncio.Future] = []
         self.query_futures: List[asyncio.Future] = []

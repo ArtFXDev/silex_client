@@ -22,5 +22,5 @@ class WebsocketDCCNamespace(WebsocketNamespace):
         """
         await super().on_connect()
         await self.ws_connection.async_send(
-            self.namespace, "initialization", self.context_metadata
+            self.namespace, "initialization", self.context.metadata
         )

@@ -13,7 +13,10 @@ from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
 
 import jsondiff
 
+from silex_client.core.context import Context
+from silex_client.resolve.config import Config
 from silex_client.action.action_buffer import ActionBuffer
+from silex_client.utils.datatypes import ReadOnlyDict
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
 
@@ -24,26 +27,27 @@ if TYPE_CHECKING:
     from silex_client.core.event_loop import EventLoop
     from silex_client.network.websocket import WebsocketConnection
 
-
 class ActionQuery:
     """
     Initialize and execute a given action
     """
 
-    def __init__(
-        self,
-        name: str,
-        resolved_config: dict,
-        event_loop: EventLoop,
-        ws_connection: WebsocketConnection,
-        context_metadata: Dict[str, Any],
-    ):
-        self.event_loop = event_loop
-        self.ws_connection = ws_connection
-        self.buffer = ActionBuffer(name, context_metadata=context_metadata)
-        self._initialize_buffer(resolved_config, {"context_metadata": context_metadata})
+    def __init__(self, name: str, search_path: Optional[List[str]] = None):
+        context = Context.get()
+        metadata_snapshot = ReadOnlyDict(copy.deepcopy(context.metadata))
+        resolved_config = Config(search_path).resolve_action(name)
+
+        if resolved_config is None:
+            return
+
+        self.event_loop: EventLoop = context.event_loop
+        self.ws_connection: WebsocketConnection = context.ws_connection
+        self.buffer: ActionBuffer = ActionBuffer(name, context_metadata=metadata_snapshot)
+        self._initialize_buffer(resolved_config, {"context_metadata": metadata_snapshot})
         self._buffer_diff = copy.deepcopy(self.buffer)
         self._task: Optional[asyncio.Task] = None
+
+        context.register_action(self)
 
     def execute(self) -> futures.Future:
         """

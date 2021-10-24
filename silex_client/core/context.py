@@ -9,11 +9,10 @@ or use the get() static method
 from __future__ import annotations
 
 import asyncio
-import copy
 import os
 import sys
 import uuid
-from typing import Any, Dict, KeysView, ValuesView, ItemsView, Optional
+from typing import Any, Dict, KeysView, ValuesView, ItemsView, TYPE_CHECKING
 
 import gazu
 import gazu.client
@@ -22,11 +21,14 @@ import gazu.task
 import gazu.files
 import gazu.exception
 
-from silex_client.action.action_query import ActionQuery
+from silex_client.utils.authentification import authentificate_gazu
+from silex_client.network.websocket import WebsocketConnection
 from silex_client.core.event_loop import EventLoop
-from silex_client.resolve.config import Config
-from silex_client.utils.datatypes import ReadOnlyDict
 from silex_client.utils.log import logger
+
+# Forward references
+if TYPE_CHECKING:
+    from silex_client.action.action_query import ActionQuery
 
 
 class Context:
@@ -40,24 +42,28 @@ class Context:
     """
 
     def __init__(self):
-        self.config: Config = Config()
         self._metadata: Dict[str, Any] = {"name": None, "uuid": str(uuid.uuid4())}
         self.is_outdated: bool = True
         self.running_actions: Dict[str, ActionQuery] = {}
 
-        self.event_loop: EventLoop
-        self._tasks: Dict[str, object] = {}
+        authentificate_gazu()
+
+        self.event_loop = EventLoop()
+        self.event_loop.start()
+        self.ws_connection = WebsocketConnection("ws://127.0.0.1:5118", self)
+        self.ws_connection.start()
+
+        self._actions: Dict[str, ActionQuery] = {}
 
     @property
-    def tasks(self) -> Dict[str, object]:
-        return self._tasks
+    def actions(self) -> Dict[str, ActionQuery]:
+        return self._actions
 
-    def register_manager(self, name: str, manager: object):
-        if name in self.tasks.keys():
+    def register_action(self, action: ActionQuery):
+        if action.buffer.uuid in self.actions.keys():
             return
 
-        # TODO: Test if the given manager has a mixin to make him start and start it here
-        self._tasks[name] = manager
+        self._actions[action.buffer.uuid] = action
 
     @staticmethod
     def get() -> Context:
@@ -175,28 +181,6 @@ class Context:
         user = asyncio.run(gazu.client.get_current_user())
         self._metadata["user"] = user.get("full_name")
         self._metadata["user_email"] = user.get("email")
-
-    def get_action(self, action_name: str) -> Optional[ActionQuery]:
-        """
-        Return an ActionQuery object initialized with this context
-        """
-
-        metadata_snapshot = ReadOnlyDict(copy.deepcopy(self.metadata))
-        resolved_config = self.config.resolve_action(action_name)
-
-        if resolved_config is None:
-            return None
-
-        action_query = ActionQuery(
-            action_name,
-            resolved_config,
-            self.event_loop,
-            self.ws_connection,
-            metadata_snapshot,
-        )
-
-        self.running_actions[action_query.buffer.uuid] = action_query
-        return action_query
 
     @staticmethod
     async def resolve_context(task_id: str) -> Dict[str, str]:
