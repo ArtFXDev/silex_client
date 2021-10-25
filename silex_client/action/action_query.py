@@ -146,6 +146,15 @@ class ActionQuery:
         self._task.cancel()
         self.ws_connection.send("/dcc/action", "clearAction", {"uuid": self.buffer.uuid})
 
+    def undo(self):
+        self.execution_type = Execution.BACKWARD
+
+    def redo(self):
+        self.execution_type = Execution.FORWARD
+
+    def pause(self):
+        self.execution_type = Execution.PAUSE
+
     def _initialize_buffer(self, resolved_config: dict, custom_data: Union[dict, None] = None) -> None:
         """
         Initialize the buffer from the config
@@ -254,10 +263,10 @@ class ActionQuery:
         return self.buffer.execution_type
 
     @execution_type.setter
-    def execution_type(self, value) -> Execution:
+    def execution_type(self, value: Execution) -> None:
         """Shortcut to get the status of the action stored in the buffer"""
         self.update_event.set()
-        return self.buffer.execution_type
+        self.buffer.execution_type = value
 
     @property
     def name(self) -> str:
@@ -419,6 +428,9 @@ class CommandIterator(Iterator):
             self.command_index += 1
         if self.action_buffer.execution_type == Execution.BACKWARD:
             self.command_index -= 1
+
+        if self.command_index < 0:
+            raise StopIteration
 
         try:
             command = commands[self.command_index]

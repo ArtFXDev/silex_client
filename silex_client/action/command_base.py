@@ -12,7 +12,7 @@ import os
 import traceback
 from typing import List, TYPE_CHECKING, Any, Callable, Dict
 
-from silex_client.utils.enums import Status
+from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
 from silex_client.utils.parameter_types import CommandParameterMeta
 
@@ -38,11 +38,6 @@ class CommandBase:
 
     def __init__(self, command_buffer: CommandBuffer):
         self.command_buffer = command_buffer
-
-    async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
-    ) -> Any:
-        pass
 
     @property
     def type_name(self) -> str:
@@ -167,7 +162,11 @@ class CommandBase:
                 try:
                     output = await func(command, *args, **kwargs)
                     command.command_buffer.output_result = output
-                    command.command_buffer.status = Status.COMPLETED
+                    execution_type = kwargs.get("action_query", args[2]).execution_type
+                    if execution_type == Execution.FORWARD:
+                        command.command_buffer.status = Status.COMPLETED
+                    elif execution_type == Execution.BACKWARD:
+                        command.command_buffer.status = Status.INITIALIZED
                 except Exception as exception:
                     logger.error(
                         "An error occured while executing the command %s: %s",
@@ -183,3 +182,23 @@ class CommandBase:
             return wrapper_conform_command
 
         return decorator_conform_command
+
+    async def __call__(
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+    ) -> Any:
+        def default(upstream, parameters, action_query):
+            raise NotImplementedError(
+                "This command does not have any execution function"
+            )
+
+        self.conform_command()(default)
+
+    async def undo(
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+    ) -> Any:
+        def default(upstream, parameters, action_query):
+            raise NotImplementedError(
+                "This command does not have any execution function"
+            )
+
+        self.conform_command()(default)
