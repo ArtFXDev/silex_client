@@ -102,8 +102,15 @@ class Context:
         """
         Lazy loaded property that updates when the is_outdated attribute is set to True
         """
+        # Hack to know id the metadata is queried from an event loop or not
+        in_event_loop = True
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            in_event_loop = False
+
         # Lazy load the context's metadata
-        if self.is_outdated:
+        if self.is_outdated and not in_event_loop:
             if asyncio.run(gazu.client.host_is_valid()):
                 self.is_outdated = False
                 self.update_dcc()

@@ -14,6 +14,8 @@ import gazu.files
 
 from silex_client.utils.log import logger
 from silex_client.utils.authentification import authentificate_gazu
+from silex_client.action.action_query import ActionQuery
+from silex_client.resolve.config import Config
 
 
 def action_handler(action_name: str, **kwargs) -> None:
@@ -26,8 +28,7 @@ def action_handler(action_name: str, **kwargs) -> None:
 
     if kwargs.get("list", False):
         # Just print the available actions
-        action_names = [action["name"]
-                        for action in silex_context.config.actions]
+        action_names = [action["name"] for action in Config().actions]
         print("Available actions :")
         pprint.pprint(action_names)
         return
@@ -36,12 +37,13 @@ def action_handler(action_name: str, **kwargs) -> None:
         logger.error("No action name provided")
         return
 
+    action = ActionQuery(action_name)
+    if not action.commands:
+        logger.error("The resolved action is invalid")
+        return
+
     if kwargs.get("list_parameters", False):
         # Just print the available actions
-        action = silex_context.get_action(action_name)
-        if action is None:
-            logger.error("The resolved action is invalid")
-            return
         parameters = action.parameters
         print(f"Parameters for action {action_name} :")
         pprint.pprint(parameters)
@@ -50,12 +52,6 @@ def action_handler(action_name: str, **kwargs) -> None:
     if kwargs.get("task_id") is not None:
         os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
         silex_context.is_outdated = True
-
-    action = silex_context.get_action(action_name)
-
-    if action is None:
-        logger.error("The resolved action is invalid")
-        return
 
     for set_parameter in kwargs.get("set_parameters", []):
         set_parameter = set_parameter.replace(" ", "")
@@ -98,7 +94,8 @@ def launch_handler(dcc: str, **kwargs) -> None:
     softwares = asyncio.run(gazu.files.all_softwares())
     if not dcc in [software["short_name"] for software in softwares]:
         logger.error(
-            "Could not launch the given dcc: The selected dcc %s does not exists", dcc)
+            "Could not launch the given dcc: The selected dcc %s does not exists", dcc
+        )
         return
 
     command = [dcc]

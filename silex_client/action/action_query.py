@@ -48,6 +48,7 @@ class ActionQuery:
         self._buffer_diff = copy.deepcopy(self.buffer)
         self._task: Optional[asyncio.Task] = None
 
+        self.current_command: CommandBuffer = self.commands[0]
         context.register_action(self)
 
     def execute(self) -> futures.Future:
@@ -70,6 +71,7 @@ class ActionQuery:
         async def execute_commands() -> None:
             # Execut all the commands one by one
             for index, command in enumerate(self.iter_commands()):
+                self.current_command = command
                 # Only run the command if it is valid
                 if self.buffer.status in [Status.INVALID, Status.ERROR]:
                     logger.error(
@@ -134,6 +136,7 @@ class ActionQuery:
             return
 
         self._task.cancel()
+        self.ws_connection.send("/dcc/action", "clearAction", {"uuid": self.buffer.uuid})
 
     def _initialize_buffer(self, resolved_config: dict, custom_data: Union[dict, None] = None) -> None:
         """
