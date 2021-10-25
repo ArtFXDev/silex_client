@@ -47,7 +47,6 @@ class ActionQuery:
         self._initialize_buffer(resolved_config, {"context_metadata": metadata_snapshot})
         self._buffer_diff = copy.deepcopy(self.buffer)
         self._task: Optional[asyncio.Task] = None
-        self.update_event = asyncio.Event(loop=self.event_loop.loop)
 
         context.register_action(self)
 
@@ -112,9 +111,6 @@ class ActionQuery:
                 logger.debug(
                     "Executing command %s for action %s", command.name, self.name
                 )
-                while self.execution_type == Execution.PAUSE:
-                    await self.update_event.wait()
-
                 if self.execution_type == Execution.FORWARD:
                     await command.executor(
                         input_value, copy.deepcopy(parameters), self
@@ -151,9 +147,6 @@ class ActionQuery:
 
     def redo(self):
         self.execution_type = Execution.FORWARD
-
-    def pause(self):
-        self.execution_type = Execution.PAUSE
 
     def _initialize_buffer(self, resolved_config: dict, custom_data: Union[dict, None] = None) -> None:
         """
@@ -416,6 +409,7 @@ class CommandIterator(Iterator):
 
     def __init__(self, action_buffer: ActionBuffer):
         self.action_buffer = action_buffer
+        self.execution_type = copy.deepcopy(action_buffer.execution_type)
         self.command_index = -1
 
     def __iter__(self) -> CommandIterator:
@@ -424,10 +418,15 @@ class CommandIterator(Iterator):
 
     def __next__(self) -> CommandBuffer:
         commands = self.action_buffer.commands
+        execution_type_transition = self.execution_type != self.action_buffer.execution_type
+        self.execution_type = copy.deepcopy(self.action_buffer.execution_type)
+
         if self.action_buffer.execution_type == Execution.FORWARD:
-            self.command_index += 1
+            if not execution_type_transition:
+                self.command_index += 1
         if self.action_buffer.execution_type == Execution.BACKWARD:
-            self.command_index -= 1
+            if not execution_type_transition:
+                self.command_index -= 1
 
         if self.command_index < 0:
             raise StopIteration
