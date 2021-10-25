@@ -13,7 +13,7 @@ from typing import Any, Dict, List, TYPE_CHECKING, Union, Optional
 import dacite
 
 from silex_client.action.step_buffer import StepBuffer
-from silex_client.utils.enums import Status
+from silex_client.utils.enums import Status, Execution
 from silex_client.utils.log import logger
 import pathlib
 
@@ -42,8 +42,10 @@ class ActionBuffer:
     hide: bool = field(compare=False, repr=False, default=False)
     #: The status of the action, this value is readonly, it is computed from the commands's status
     status: Status = field(init=False)  # type: ignore
+    #: The way this action is executed (backward, forward, paused...)
+    execution_type: Execution = field(default=Execution.FORWARD)
     #: The status of the action, this value is readonly, it is computed from the commands's status
-    thumbnail: Optional[str] = field(default=None)  # type: ignore
+    thumbnail: Optional[str] = field(default=None)
     #: A dict of steps that will contain the commands
     steps: Dict[str, StepBuffer] = field(default_factory=dict)
     #: Dict of variables that are global to all the commands of this action
@@ -85,7 +87,7 @@ class ActionBuffer:
         Convert back the action's data from json into this object
         """
         dacite_config = dacite.Config(
-            cast=[Status], type_hooks={StepBuffer: self._deserialize_steps}
+            cast=[Status, Execution], type_hooks={StepBuffer: self._deserialize_steps}
         )
         new_data = dacite.from_dict(ActionBuffer, serialized_data, dacite_config)
 

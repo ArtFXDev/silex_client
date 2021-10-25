@@ -68,7 +68,7 @@ def action_handler(action_name: str, **kwargs) -> None:
         while not action_future.done():
             futures.wait([action_future], timeout=0.1)
     except KeyboardInterrupt:
-        pass
+        action.cancel()
     finally:
         futures.wait([silex_context.ws_connection.stop()], timeout=None)
         silex_context.event_loop.stop()

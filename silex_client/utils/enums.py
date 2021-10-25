@@ -18,3 +18,13 @@ class Status(IntEnum):
     PROCESSING = 3
     INVALID = 4
     ERROR = 5
+
+
+class Execution(IntEnum):
+    """
+    Used by actions to set the type of execution
+    """
+
+    PAUSE = 0
+    FORWARD = 1
+    BACKWARD = 2
