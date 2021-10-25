@@ -124,6 +124,7 @@ class ActionQuery:
 
         async def create_task():
             self._task = self.event_loop.loop.create_task(execute_commands())
+            await self._task
 
         # Execute the commands in the event loop
         return self.event_loop.register_task(create_task())
