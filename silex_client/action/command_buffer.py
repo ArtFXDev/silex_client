@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import copy
 import importlib
+import os
+import traceback
 import re
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
@@ -98,15 +100,18 @@ class CommandBuffer:
         try:
             split_path = path.split(".")
             module = importlib.import_module(".".join(split_path[:-1]))
+            importlib.reload(module)
             executor = getattr(module, split_path[-1])
             if issubclass(executor, CommandBase):
                 return executor(self)
 
             # If the module is not a subclass or CommandBase, return an error
             raise ImportError
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError) as exception:
             logger.error("Invalid command path, skipping %s", path)
             self.status = Status.INVALID
+            if os.getenv("SILEX_LOG_LEVEL") == "DEBUG":
+                traceback.print_tb(exception.__traceback__)
 
             return CommandBase(self)
 
