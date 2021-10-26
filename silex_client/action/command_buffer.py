@@ -93,6 +93,14 @@ class CommandBuffer:
         # Apply the parameters to the default parameters
         self.parameters = jsondiff.patch(command_parameters, self.parameters)
 
+        for parameter_data in self.parameters.values():
+            # Check if the parameter gets a command output
+            if not isinstance(parameter_data["value"], CommandOutput):
+                parameter_data["command_output"] = False
+                continue
+            parameter_data["command_output"] = True
+            parameter_data["hide"] = True
+
     def _get_executor(self, path: str) -> CommandBase:
         """
         Try to import the module and get the Command object
@@ -138,5 +146,15 @@ class CommandBuffer:
 
         for private_field in self.PRIVATE_FIELDS:
             setattr(new_data, private_field, getattr(self, private_field))
+
+        # Don't take the modifications of the hidden parameters
+        for parameter_name, parameter_data in self.parameters.items():
+            if (
+                not parameter_data.get("hide", False)
+                or parameter_name not in new_data.parameters.keys()
+            ):
+                continue
+
+            new_data.parameters[parameter_name] = parameter_data
 
         self.__dict__.update(new_data.__dict__)

@@ -23,7 +23,7 @@ tester:
           path: "silex_client.commands.tester.PathTester"
           parameters:
             path_tester: "/foo/bar/tester.txt"
-            path_tester_2: !command-output "parameter_tester:string:string_tester"
+            path_tester_2: !command-output "parameter_tester:string"
           ask_user: True
         select:
           path: "silex_client.commands.tester.SelectTester"

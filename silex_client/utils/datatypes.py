@@ -51,7 +51,3 @@ class CommandOutput(str):
     """
     Helper to differenciate the strings from the command_output
     """
-
-    def get_output_data(self, action_buffer: ActionQuery) -> Any:
-        command = action_buffer.get_command(self)
-        return command.output_result if command is not None else None

@@ -24,6 +24,7 @@ def action_handler(action_name: str, **kwargs) -> None:
     Execute the given action in the resolved context
     """
     silex_context = Context.get()
+    silex_context.start_services()
 
     if kwargs.get("list", False):
         # Just print the available actions

@@ -356,7 +356,7 @@ class ActionQuery:
         if len(command_split) == 2:
             step = command_split[0]
         elif len(command_split) != 1:
-            logger.warning("Invalid command path: The given command path %s has too many separators")
+            logger.warning("Invalid command path: The given command path %s has too many separators", command_path)
             return None
 
         # If the command path is explicit, get the command directly

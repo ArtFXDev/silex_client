@@ -107,10 +107,11 @@ class CommandBase:
                 return False
 
             # Get the value if the parameter is a command output
-            if isinstance(parameters[parameter_name], CommandOutput):
-                parameters[parameter_name] = parameters[parameter_name].get_output_data(
-                    action_query
-                )
+            parameter_buffer = self.command_buffer.parameters.get(parameter_name, {})
+            if parameter_buffer.get("command_output", False):
+                command = action_query.get_command(parameters[parameter_name])
+                value = command.output_result if command is not None else None
+                parameters[parameter_name] = value
 
             # Check if the parameter is the right type
             try:
