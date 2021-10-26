@@ -13,6 +13,7 @@ import yaml
 
 from silex_client.resolve.merge import merge_data
 from silex_client.utils.log import logger
+from silex_client.utils.datatypes import CommandOutput
 
 
 class Loader(yaml.SafeLoader):
@@ -195,7 +196,16 @@ class Loader(yaml.SafeLoader):
 
         return merge_data(node_data, inherit_data)
 
+    def command_output(self, node: yaml.Node) -> CommandOutput:
+        """
+        Contructor function to handle the !command-output statement
+        The result will be a CommandOutput object that will tell the ActionQuery object
+        to get the result from an other command
+        """
+        return CommandOutput(node.value)
+
 
 # Set the include method as a handler for the !include statement
 Loader.add_constructor("!include", Loader.include)
 Loader.add_constructor("!inherit", Loader.inherit)
+Loader.add_constructor("!command-output", Loader.command_output)

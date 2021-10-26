@@ -17,6 +17,7 @@ import dacite
 import jsondiff
 
 from silex_client.action.command_base import CommandBase, CommandParameters
+from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
 
@@ -28,7 +29,7 @@ class CommandBuffer:
     """
 
     #: The list of fields that should be ignored when serializing this buffer to json
-    PRIVATE_FIELDS = ["output_result", "executor"]
+    PRIVATE_FIELDS = ["output_result", "executor", "input_path"]
 
     #: The path to the command's module
     path: str = field()
@@ -53,7 +54,7 @@ class CommandBuffer:
     #: The output of the command, it can be passed to an other command
     output_result: Any = field(default=None, init=False)
     #: The input of the command, a path following the schema <step>:<command>
-    input_path: str = field(default="")
+    input_path: CommandOutput = field(default=CommandOutput(""))
     #: The callable that will be used when the command is executed
     executor: CommandBase = field(init=False)
 
@@ -127,7 +128,7 @@ class CommandBuffer:
         """
         Convert back the action's data from json into this object
         """
-        dacite_config = dacite.Config(cast=[Status])
+        dacite_config = dacite.Config(cast=[Status, CommandOutput])
         new_data = dacite.from_dict(CommandBuffer, serialized_data, dacite_config)
 
         for private_field in self.PRIVATE_FIELDS:
