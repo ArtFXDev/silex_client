@@ -74,6 +74,36 @@ class WebsocketActionNamespace(WebsocketNamespace):
 
         action.cancel()
 
+    async def on_undo(self, data):
+        """
+        Undo an executing action
+        """
+        logger.debug("Action undo request received: %s from %s", data, self.url)
+        action = self.context.actions.get(data.get("uuid"))
+        if action is None:
+            logger.error(
+                "Could not undo the action %s: The action does not exists",
+                data.get("uuid"),
+            )
+            return
+
+        action.undo()
+
+    async def on_redo(self, data):
+        """
+        Redo an executing action
+        """
+        logger.debug("Action redo request received: %s from %s", data, self.url)
+        action = self.context.actions.get(data.get("uuid"))
+        if action is None:
+            logger.error(
+                "Could not redo the action %s: The action does not exists",
+                data.get("uuid"),
+            )
+            return
+
+        action.redo()
+
     async def register_query_callback(
         self, coroutine: Callable[[asyncio.Future], Any]
     ) -> asyncio.Future:
