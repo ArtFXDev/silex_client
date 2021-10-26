@@ -15,6 +15,7 @@ from typing import List, TYPE_CHECKING, Any, Callable, Dict
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
 from silex_client.utils.parameter_types import CommandParameterMeta
+from silex_client.utils.datatypes import CommandOutput
 
 # Forward references
 if TYPE_CHECKING:
@@ -88,7 +89,9 @@ class CommandBase:
 
         return conformed_parameters
 
-    def check_parameters(self, parameters: CommandParameters) -> bool:
+    def check_parameters(
+        self, parameters: CommandParameters, action_query: ActionQuery
+    ) -> bool:
         """
         Check the if the input kwargs are valid accoring to the parameters list
         and conform it if nessesary
@@ -102,6 +105,12 @@ class CommandBase:
                     parameter_name,
                 )
                 return False
+
+            # Get the value if the parameter is a command output
+            if isinstance(parameters[parameter_name], CommandOutput):
+                parameters[parameter_name] = parameters[parameter_name].get_output_data(
+                    action_query
+                )
 
             # Check if the parameter is the right type
             try:
@@ -145,24 +154,25 @@ class CommandBase:
             async def wrapper_conform_command(
                 command: CommandBase, *args, **kwargs
             ) -> None:
+                parameters: CommandParameters = kwargs.get("parameters", args[1])
+                action_query: ActionQuery = kwargs.get("action_query", args[2])
+
                 # Make sure the given parameters are valid
-                if not command.check_parameters(kwargs.get("parameters", args[1])):
+                if not command.check_parameters(parameters, action_query):
                     command.command_buffer.status = Status.INVALID
                     return
                 # Make sure all the required metatada is here
-                if not command.check_context_metadata(
-                    kwargs.get("action_query", args[2]).context_metadata
-                ):
+                if not command.check_context_metadata(action_query.context_metadata):
                     command.command_buffer.status = Status.INVALID
                     return
                 command.command_buffer.status = Status.PROCESSING
 
-                await kwargs.get("action_query", args[2]).async_update_websocket()
+                await action_query.async_update_websocket()
 
                 try:
                     output = await func(command, *args, **kwargs)
                     command.command_buffer.output_result = output
-                    execution_type = kwargs.get("action_query", args[2]).execution_type
+                    execution_type = action_query.execution_type
                     if execution_type == Execution.FORWARD:
                         command.command_buffer.status = Status.COMPLETED
                     elif execution_type == Execution.BACKWARD:
@@ -177,7 +187,7 @@ class CommandBase:
                         traceback.print_tb(exception.__traceback__)
                     command.command_buffer.status = Status.ERROR
 
-                await kwargs.get("action_query", args[2]).async_update_websocket()
+                await action_query.async_update_websocket()
 
             return wrapper_conform_command
 

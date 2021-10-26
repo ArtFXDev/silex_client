@@ -117,7 +117,8 @@ class Context:
         self.update_entities()
         self._metadata["pid"] = os.getpid()
 
-        self.ws_connection.send("/dcc", "initialization", self.metadata)
+        if self.ws_connection.is_running:
+            self.ws_connection.send("/dcc", "initialization", self.metadata)
 
     @property
     def metadata(self) -> Dict[str, Any]:
