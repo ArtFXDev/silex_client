@@ -108,12 +108,16 @@ class Context:
         """
         Compute all the metadata info
         """
-        if asyncio.run(gazu.client.host_is_valid()):
-            self.is_outdated = False
-            self.update_dcc()
-            self.update_user()
-            self.update_entities()
-            self._metadata["pid"] = os.getpid()
+        if not asyncio.run(gazu.client.host_is_valid()):
+            return
+
+        self.is_outdated = False
+        self.update_dcc()
+        self.update_user()
+        self.update_entities()
+        self._metadata["pid"] = os.getpid()
+
+        self.ws_connection.send("/dcc", "initialization", self.metadata)
 
     @property
     def metadata(self) -> Dict[str, Any]:
