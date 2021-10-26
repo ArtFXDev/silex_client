@@ -22,7 +22,6 @@ class Build(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        print(action_query.context_metadata)
         working_files = await gazu.files.build_working_file_path(
             action_query.context_metadata.get("task_id", "none")
         )

@@ -23,7 +23,7 @@ class Config:
     :ivar action_search_path: List of path to look for config files. The order matters.
     """
 
-    def __init__(self, action_search_path: Union[list, str] = None):
+    def __init__(self, action_search_path: Optional[Union[List[str], str]] = None):
         # List of the path to look for any included file
         self.action_search_path = ["/"]
 

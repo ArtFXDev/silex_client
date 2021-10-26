@@ -13,8 +13,11 @@ from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
 
 import jsondiff
 
+from silex_client.core.context import Context
+from silex_client.resolve.config import Config
 from silex_client.action.action_buffer import ActionBuffer
-from silex_client.utils.enums import Status
+from silex_client.utils.datatypes import ReadOnlyDict
+from silex_client.utils.enums import Status, Execution
 from silex_client.utils.log import logger
 
 # Forward references
@@ -24,25 +27,28 @@ if TYPE_CHECKING:
     from silex_client.core.event_loop import EventLoop
     from silex_client.network.websocket import WebsocketConnection
 
-
 class ActionQuery:
     """
     Initialize and execute a given action
     """
 
-    def __init__(
-        self,
-        name: str,
-        resolved_config: dict,
-        event_loop: EventLoop,
-        ws_connection: WebsocketConnection,
-        context_metadata: Dict[str, Any],
-    ):
-        self.event_loop = event_loop
-        self.ws_connection = ws_connection
-        self.buffer = ActionBuffer(name, context_metadata=context_metadata)
-        self._initialize_buffer(resolved_config, {"context_metadata": context_metadata})
+    def __init__(self, name: str, search_path: Optional[List[str]] = None):
+        context = Context.get()
+        metadata_snapshot = ReadOnlyDict(copy.deepcopy(context.metadata))
+        resolved_config = Config(search_path).resolve_action(name)
+
+        if resolved_config is None:
+            return
+
+        self.event_loop: EventLoop = context.event_loop
+        self.ws_connection: WebsocketConnection = context.ws_connection
+
+        self.buffer: ActionBuffer = ActionBuffer(name, context_metadata=metadata_snapshot)
+        self._initialize_buffer(resolved_config, {"context_metadata": metadata_snapshot})
         self._buffer_diff = copy.deepcopy(self.buffer)
+        self._task: Optional[asyncio.Task] = None
+
+        context.register_action(self)
 
     def execute(self) -> futures.Future:
         """
@@ -105,17 +111,42 @@ class ActionQuery:
                 logger.debug(
                     "Executing command %s for action %s", command.name, self.name
                 )
-                await command.executor(
-                    input_value, copy.deepcopy(parameters), self
-                )
+                if self.execution_type == Execution.FORWARD:
+                    await command.executor(
+                        input_value, copy.deepcopy(parameters), self
+                    )
+                elif self.execution_type == Execution.BACKWARD:
+                    await command.executor.undo(
+                        input_value, copy.deepcopy(parameters), self
+                    )
 
             # Inform the UI of the state of the action (either completed or sucess)
             await self.async_update_websocket()
             if self.ws_connection.is_running and not self.buffer.hide:
-                await self.ws_connection.async_send("/dcc/action", "clearCurrentAction")
+                await self.ws_connection.async_send("/dcc/action", "clearAction", {"uuid": self.buffer.uuid})
+
+        async def create_task():
+            self._task = self.event_loop.loop.create_task(execute_commands())
+            await self._task
 
         # Execute the commands in the event loop
-        return self.event_loop.register_task(execute_commands())
+        return self.event_loop.register_task(create_task())
+
+    def cancel(self):
+        """
+        Cancel the execution of the action
+        """
+        if self._task is None or self._task.done():
+            return
+
+        self._task.cancel()
+        self.ws_connection.send("/dcc/action", "clearAction", {"uuid": self.buffer.uuid})
+
+    def undo(self):
+        self.execution_type = Execution.BACKWARD
+
+    def redo(self):
+        self.execution_type = Execution.FORWARD
 
     def _initialize_buffer(self, resolved_config: dict, custom_data: Union[dict, None] = None) -> None:
         """
@@ -218,6 +249,17 @@ class ActionQuery:
             )
         else:
             return confirm
+
+    @property
+    def execution_type(self) -> Execution:
+        """Shortcut to get the status of the action stored in the buffer"""
+        return self.buffer.execution_type
+
+    @execution_type.setter
+    def execution_type(self, value: Execution) -> None:
+        """Shortcut to get the status of the action stored in the buffer"""
+        self.update_event.set()
+        self.buffer.execution_type = value
 
     @property
     def name(self) -> str:
@@ -367,18 +409,30 @@ class CommandIterator(Iterator):
 
     def __init__(self, action_buffer: ActionBuffer):
         self.action_buffer = action_buffer
-        self.command_index = 0
-        self.action_index = 0
+        self.execution_type = copy.deepcopy(action_buffer.execution_type)
+        self.command_index = -1
 
     def __iter__(self) -> CommandIterator:
-        self.action_index = 0
+        self.command_index = -1
         return self
 
     def __next__(self) -> CommandBuffer:
         commands = self.action_buffer.commands
-        if self.action_index < len(commands):
-            command = commands[self.action_index]
-            self.action_index += 1
-            return command
+        execution_type_transition = self.execution_type != self.action_buffer.execution_type
+        self.execution_type = copy.deepcopy(self.action_buffer.execution_type)
 
-        raise StopIteration
+        if self.action_buffer.execution_type == Execution.FORWARD:
+            if not execution_type_transition:
+                self.command_index += 1
+        if self.action_buffer.execution_type == Execution.BACKWARD:
+            if not execution_type_transition:
+                self.command_index -= 1
+
+        if self.command_index < 0:
+            raise StopIteration
+
+        try:
+            command = commands[self.command_index]
+            return command
+        except IndexError:
+            raise StopIteration

@@ -9,11 +9,11 @@ or use the get() static method
 from __future__ import annotations
 
 import asyncio
-import copy
 import os
 import sys
 import uuid
-from typing import Any, Dict, KeysView, ValuesView, ItemsView, Optional
+from concurrent import futures
+from typing import Any, Dict, KeysView, ValuesView, ItemsView, TYPE_CHECKING
 
 import gazu
 import gazu.client
@@ -22,13 +22,14 @@ import gazu.task
 import gazu.files
 import gazu.exception
 
-from silex_client.action.action_query import ActionQuery
-from silex_client.core.event_loop import EventLoop
-from silex_client.network.websocket import WebsocketConnection
-from silex_client.resolve.config import Config
-from silex_client.utils.datatypes import ReadOnlyDict
-from silex_client.utils.log import logger
 from silex_client.utils.authentification import authentificate_gazu
+from silex_client.network.websocket import WebsocketConnection
+from silex_client.core.event_loop import EventLoop
+from silex_client.utils.log import logger
+
+# Forward references
+if TYPE_CHECKING:
+    from silex_client.action.action_query import ActionQuery
 
 
 class Context:
@@ -42,20 +43,34 @@ class Context:
     """
 
     def __init__(self):
-        self.config: Config = Config()
         self._metadata: Dict[str, Any] = {"name": None, "uuid": str(uuid.uuid4())}
         self.is_outdated: bool = True
         self.running_actions: Dict[str, ActionQuery] = {}
 
+        self.event_loop = EventLoop()
+        self.ws_connection = WebsocketConnection("ws://127.0.0.1:5118", self)
+
+        self._actions: Dict[str, ActionQuery] = {}
+
+    def start_services(self):
         authentificate_gazu()
-
-        self.event_loop: EventLoop = EventLoop()
+        self.compute_metadata()
         self.event_loop.start()
-
-        self.ws_connection: WebsocketConnection = WebsocketConnection(
-            self.event_loop, self.metadata
-        )
         self.ws_connection.start()
+
+    def stop_services(self):
+        futures.wait([self.ws_connection.stop()], timeout=None)
+        self.event_loop.stop()
+
+    @property
+    def actions(self) -> Dict[str, ActionQuery]:
+        return self._actions
+
+    def register_action(self, action: ActionQuery):
+        if action.buffer.uuid in self.actions.keys():
+            return
+
+        self._actions[action.buffer.uuid] = action
 
     @staticmethod
     def get() -> Context:
@@ -89,19 +104,36 @@ class Context:
     def items(self) -> ItemsView[str, Any]:
         return self.metadata.items()
 
+    def compute_metadata(self):
+        """
+        Compute all the metadata info
+        """
+        if not asyncio.run(gazu.client.host_is_valid()):
+            return
+
+        self.is_outdated = False
+        self.update_dcc()
+        self.update_user()
+        self.update_entities()
+        self._metadata["pid"] = os.getpid()
+
+        self.ws_connection.send("/dcc", "initialization", self.metadata)
+
     @property
     def metadata(self) -> Dict[str, Any]:
         """
         Lazy loaded property that updates when the is_outdated attribute is set to True
         """
+        # Hack to know id the metadata is queried from an event loop or not
+        in_event_loop = True
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            in_event_loop = False
+
         # Lazy load the context's metadata
-        if self.is_outdated:
-            if asyncio.run(gazu.client.host_is_valid()):
-                self.is_outdated = False
-                self.update_dcc()
-                self.update_user()
-                self.update_entities()
-                self._metadata["pid"] = os.getpid()
+        if self.is_outdated and not in_event_loop:
+            self.compute_metadata()
 
         return self._metadata
 
@@ -173,28 +205,6 @@ class Context:
         user = asyncio.run(gazu.client.get_current_user())
         self._metadata["user"] = user.get("full_name")
         self._metadata["user_email"] = user.get("email")
-
-    def get_action(self, action_name: str) -> Optional[ActionQuery]:
-        """
-        Return an ActionQuery object initialized with this context
-        """
-
-        metadata_snapshot = ReadOnlyDict(copy.deepcopy(self.metadata))
-        resolved_config = self.config.resolve_action(action_name)
-
-        if resolved_config is None:
-            return None
-
-        action_query = ActionQuery(
-            action_name,
-            resolved_config,
-            self.event_loop,
-            self.ws_connection,
-            metadata_snapshot,
-        )
-
-        self.running_actions[action_query.buffer.uuid] = action_query
-        return action_query
 
     @staticmethod
     async def resolve_context(task_id: str) -> Dict[str, str]:

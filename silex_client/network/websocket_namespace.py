@@ -15,6 +15,7 @@ from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
+    from silex_client.core.context import Context
     from silex_client.network.websocket import WebsocketConnection
 
 
@@ -26,10 +27,10 @@ class WebsocketNamespace(socketio.AsyncClientNamespace):
     namespace = ""
 
     def __init__(
-        self, namespace: str, context_metadata: dict, ws_connection: WebsocketConnection
+        self, namespace: str, context: Context, ws_connection: WebsocketConnection
     ):
         super().__init__(namespace)
-        self.context_metadata = context_metadata
+        self.context = context
         self.ws_connection = ws_connection
         self.url = ws_connection.url
 

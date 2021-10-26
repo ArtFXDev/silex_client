@@ -15,6 +15,7 @@ from silex_client.utils.log import logger
 
 # Forward references
 if TYPE_CHECKING:
+    from silex_client.core.context import Context
     from silex_client.network.websocket import WebsocketConnection
 
 
@@ -27,9 +28,9 @@ class WebsocketActionNamespace(WebsocketNamespace):
     namespace = "/dcc/action"
 
     def __init__(
-        self, namespace: str, context_metadata: dict, ws_connection: WebsocketConnection
+        self, namespace: str, context: Context, ws_connection: WebsocketConnection
     ):
-        super().__init__(namespace, context_metadata, ws_connection)
+        super().__init__(namespace, context, ws_connection)
 
         self.update_futures: List[asyncio.Future] = []
         self.query_futures: List[asyncio.Future] = []
@@ -57,6 +58,51 @@ class WebsocketActionNamespace(WebsocketNamespace):
                 future.set_result(data)
 
         self.update_futures.clear()
+
+    async def on_clearAction(self, data):
+        """
+        Clear an executing action
+        """
+        logger.debug("Action cancel request received: %s from %s", data, self.url)
+        action = self.context.actions.get(data.get("uuid"))
+        if action is None:
+            logger.error(
+                "Could not stop the action %s: The action does not exists",
+                data.get("uuid"),
+            )
+            return
+
+        action.cancel()
+
+    async def on_undo(self, data):
+        """
+        Undo an executing action
+        """
+        logger.debug("Action undo request received: %s from %s", data, self.url)
+        action = self.context.actions.get(data.get("uuid"))
+        if action is None:
+            logger.error(
+                "Could not undo the action %s: The action does not exists",
+                data.get("uuid"),
+            )
+            return
+
+        action.undo()
+
+    async def on_redo(self, data):
+        """
+        Redo an executing action
+        """
+        logger.debug("Action redo request received: %s from %s", data, self.url)
+        action = self.context.actions.get(data.get("uuid"))
+        if action is None:
+            logger.error(
+                "Could not redo the action %s: The action does not exists",
+                data.get("uuid"),
+            )
+            return
+
+        action.redo()
 
     async def register_query_callback(
         self, coroutine: Callable[[asyncio.Future], Any]
