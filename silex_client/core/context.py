@@ -12,6 +12,7 @@ import asyncio
 import os
 import sys
 import uuid
+from concurrent import futures
 from typing import Any, Dict, KeysView, ValuesView, ItemsView, TYPE_CHECKING
 
 import gazu
@@ -46,14 +47,20 @@ class Context:
         self.is_outdated: bool = True
         self.running_actions: Dict[str, ActionQuery] = {}
 
-        authentificate_gazu()
-
         self.event_loop = EventLoop()
-        self.event_loop.start()
         self.ws_connection = WebsocketConnection("ws://127.0.0.1:5118", self)
-        self.ws_connection.start()
 
         self._actions: Dict[str, ActionQuery] = {}
+
+    def start_services(self):
+        authentificate_gazu()
+        self.compute_metadata()
+        self.event_loop.start()
+        self.ws_connection.start()
+
+    def stop_services(self):
+        futures.wait([self.ws_connection.stop()], timeout=None)
+        self.event_loop.stop()
 
     @property
     def actions(self) -> Dict[str, ActionQuery]:
@@ -97,6 +104,17 @@ class Context:
     def items(self) -> ItemsView[str, Any]:
         return self.metadata.items()
 
+    def compute_metadata(self):
+        """
+        Compute all the metadata info
+        """
+        if asyncio.run(gazu.client.host_is_valid()):
+            self.is_outdated = False
+            self.update_dcc()
+            self.update_user()
+            self.update_entities()
+            self._metadata["pid"] = os.getpid()
+
     @property
     def metadata(self) -> Dict[str, Any]:
         """
@@ -111,12 +129,7 @@ class Context:
 
         # Lazy load the context's metadata
         if self.is_outdated and not in_event_loop:
-            if asyncio.run(gazu.client.host_is_valid()):
-                self.is_outdated = False
-                self.update_dcc()
-                self.update_user()
-                self.update_entities()
-                self._metadata["pid"] = os.getpid()
+            self.compute_metadata()
 
         return self._metadata
 

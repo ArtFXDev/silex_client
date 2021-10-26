@@ -14,6 +14,7 @@ import gazu.files
 
 from silex_client.utils.log import logger
 from silex_client.utils.authentification import authentificate_gazu
+from silex_client.core.context import Context
 from silex_client.action.action_query import ActionQuery
 from silex_client.resolve.config import Config
 
@@ -22,8 +23,6 @@ def action_handler(action_name: str, **kwargs) -> None:
     """
     Execute the given action in the resolved context
     """
-    from silex_client.core.context import Context
-
     silex_context = Context.get()
 
     if kwargs.get("list", False):
