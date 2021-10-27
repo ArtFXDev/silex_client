@@ -1,9 +1,10 @@
 publish:
   steps:
     action:
+      index: 50
       commands:
         get_publish_output:
           label: "Select publish type"
-          path: "silex_client.commands.publish.SelectPublish"
+          path: "silex_client.commands.select_publish.SelectPublish"
           tooltip: "Select the type of publish you want to make"
           ask_user: true

@@ -59,6 +59,7 @@ def commands():
     )
     env.SILEX_LOG_LEVEL = os.getenv("SILEX_LOG_LEVEL", "DEBUG")
     env.SILEX_ACTION_CONFIG.prepend("{root}/config/action")
+    env.SILEX_PUBLISH_ACTION_CONFIG.prepend("{root}/config/publish")
 
     parser_module = ".".join(["silex_client", "cli", "parser"])
     alias("silex", "python -m {parser_module}")
