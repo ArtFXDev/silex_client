@@ -43,6 +43,11 @@ class StringTester(CommandBase):
             parameters["string_tester"],
             type(parameters["string_tester"]),
         )
+        logger.info(
+            "String parameter tester 2: %s, %s",
+            parameters["string_tester_2"],
+            type(parameters["string_tester_2"]),
+        )
         return parameters["string_tester"]
 
 
@@ -74,6 +79,11 @@ class IntegerTester(CommandBase):
             "Integer parameter tester: %s, %s",
             parameters["int_tester"],
             type(parameters["int_tester"]),
+        )
+        logger.info(
+            "Integer parameter tester_2: %s, %s",
+            parameters["int_tester_2"],
+            type(parameters["int_tester_2"]),
         )
         return parameters["int_tester"]
 
@@ -107,6 +117,11 @@ class BooleanTester(CommandBase):
             parameters["bool_tester"],
             type(parameters["bool_tester"]),
         )
+        logger.info(
+            "Boolean parameter tester_2: %s, %s",
+            parameters["bool_tester_2"],
+            type(parameters["bool_tester_2"]),
+        )
         return parameters["bool_tester"]
 
 
@@ -138,6 +153,11 @@ class PathTester(CommandBase):
             "Path parameter tester: %s, %s",
             parameters["path_tester"],
             type(parameters["path_tester"]),
+        )
+        logger.info(
+            "Path parameter tester: %s, %s",
+            parameters["path_tester_2"],
+            type(parameters["path_tester_2"]),
         )
         return parameters["path_tester"]
 
@@ -171,6 +191,11 @@ class SelectTester(CommandBase):
             parameters["select_tester"],
             type(parameters["select_tester"]),
         )
+        logger.info(
+            "Select parameter tester: %s, %s",
+            parameters["select_tester_2"],
+            type(parameters["select_tester_2"]),
+        )
         return parameters["select_tester"]
 
 
@@ -202,6 +227,11 @@ class RangeTesterLow(CommandBase):
             "Range parameter tester: %s, %s",
             parameters["range_tester"],
             type(parameters["range_tester"]),
+        )
+        logger.info(
+            "Range parameter tester: %s, %s",
+            parameters["range_tester_2"],
+            type(parameters["range_tester_2"]),
         )
         return parameters["range_tester"]
 
@@ -235,6 +265,11 @@ class RangeTesterMid(CommandBase):
             parameters["range_tester"],
             type(parameters["range_tester"]),
         )
+        logger.info(
+            "Range parameter tester: %s, %s",
+            parameters["range_tester_2"],
+            type(parameters["range_tester_2"]),
+        )
         return parameters["range_tester"]
 
 
@@ -266,5 +301,10 @@ class RangeTesterHigh(CommandBase):
             "Range parameter tester: %s, %s",
             parameters["range_tester"],
             type(parameters["range_tester"]),
+        )
+        logger.info(
+            "Range parameter tester: %s, %s",
+            parameters["range_tester_2"],
+            type(parameters["range_tester_2"]),
         )
         return parameters["range_tester"]

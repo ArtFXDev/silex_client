@@ -23,6 +23,7 @@ tester:
           path: "silex_client.commands.tester.PathTester"
           parameters:
             path_tester: "/foo/bar/tester.txt"
+            path_tester_2: !command-output "parameter_tester:string"
           ask_user: True
         select:
           path: "silex_client.commands.tester.SelectTester"
@@ -43,4 +44,5 @@ tester:
           path: "silex_client.commands.tester.RangeTesterHigh"
           parameters:
             range_tester: 1200
+            range_tester_2: !command-output "parameter_tester:range_mid"
           ask_user: True

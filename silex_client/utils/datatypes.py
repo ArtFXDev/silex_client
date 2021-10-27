@@ -8,6 +8,11 @@ to add specific behaviour
 from __future__ import annotations
 
 import copy
+from typing import TYPE_CHECKING, Any
+
+# Forward references
+if TYPE_CHECKING:
+    from silex_client.action.action_query import ActionQuery
 
 
 class ReadOnlyError(Exception):
@@ -40,3 +45,9 @@ class ReadOnlyDict(dict):
     pop = __readonly__
     clear = __readonly__
     update = __readonly__
+
+
+class CommandOutput(str):
+    """
+    Helper to differenciate the strings from the command_output
+    """

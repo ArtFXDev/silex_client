@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import copy
 import importlib
+import os
+import traceback
 import re
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
@@ -17,6 +19,7 @@ import dacite
 import jsondiff
 
 from silex_client.action.command_base import CommandBase, CommandParameters
+from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
 
@@ -28,7 +31,7 @@ class CommandBuffer:
     """
 
     #: The list of fields that should be ignored when serializing this buffer to json
-    PRIVATE_FIELDS = ["output_result", "executor"]
+    PRIVATE_FIELDS = ["output_result", "executor", "input_path"]
 
     #: The path to the command's module
     path: str = field()
@@ -53,7 +56,7 @@ class CommandBuffer:
     #: The output of the command, it can be passed to an other command
     output_result: Any = field(default=None, init=False)
     #: The input of the command, a path following the schema <step>:<command>
-    input_path: str = field(default="")
+    input_path: CommandOutput = field(default=CommandOutput(""))
     #: The callable that will be used when the command is executed
     executor: CommandBase = field(init=False)
 
@@ -90,6 +93,14 @@ class CommandBuffer:
         # Apply the parameters to the default parameters
         self.parameters = jsondiff.patch(command_parameters, self.parameters)
 
+        for parameter_data in self.parameters.values():
+            # Check if the parameter gets a command output
+            if not isinstance(parameter_data["value"], CommandOutput):
+                parameter_data["command_output"] = False
+                continue
+            parameter_data["command_output"] = True
+            parameter_data["hide"] = True
+
     def _get_executor(self, path: str) -> CommandBase:
         """
         Try to import the module and get the Command object
@@ -97,15 +108,18 @@ class CommandBuffer:
         try:
             split_path = path.split(".")
             module = importlib.import_module(".".join(split_path[:-1]))
+            importlib.reload(module)
             executor = getattr(module, split_path[-1])
             if issubclass(executor, CommandBase):
                 return executor(self)
 
             # If the module is not a subclass or CommandBase, return an error
             raise ImportError
-        except (ImportError, AttributeError):
+        except (ImportError, AttributeError) as exception:
             logger.error("Invalid command path, skipping %s", path)
             self.status = Status.INVALID
+            if os.getenv("SILEX_LOG_LEVEL") == "DEBUG":
+                traceback.print_tb(exception.__traceback__)
 
             return CommandBase(self)
 
@@ -127,10 +141,20 @@ class CommandBuffer:
         """
         Convert back the action's data from json into this object
         """
-        dacite_config = dacite.Config(cast=[Status])
+        dacite_config = dacite.Config(cast=[Status, CommandOutput])
         new_data = dacite.from_dict(CommandBuffer, serialized_data, dacite_config)
 
         for private_field in self.PRIVATE_FIELDS:
             setattr(new_data, private_field, getattr(self, private_field))
+
+        # Don't take the modifications of the hidden parameters
+        for parameter_name, parameter_data in self.parameters.items():
+            if (
+                not parameter_data.get("hide", False)
+                or parameter_name not in new_data.parameters.keys()
+            ):
+                continue
+
+            new_data.parameters[parameter_name] = parameter_data
 
         self.__dict__.update(new_data.__dict__)

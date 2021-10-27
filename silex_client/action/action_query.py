@@ -152,9 +152,6 @@ class ActionQuery:
         """
         Initialize the buffer from the config
         """
-        # Resolve the action config and conform it so it can be converted to objects
-        self._conform_resolved_config(resolved_config)
-
         # If no config could be found or is invalid, the result is {}
         if not resolved_config:
             return
@@ -168,6 +165,7 @@ class ActionQuery:
 
         # Get the config related to the current task
         action_definition = resolved_config[self.name]
+        action_definition["name"] = self.name
         if self.context_metadata.get("task_type") in action_definition.get("tasks", {}).keys():
             task_definition = action_definition["tasks"][self.context_metadata["task_type"]]
             action_definition = jsondiff.patch(action_definition, task_definition)
@@ -178,30 +176,6 @@ class ActionQuery:
 
         # Update the buffer with the new data
         self.buffer.deserialize(action_definition)
-
-    def _conform_resolved_config(self, data: dict):
-        """
-        When an action comes from a yaml, the data is not organised the same
-        (It follows a different schema to make the yaml less verbose)
-
-        This conform the data for the command buffer dataclass
-        """
-        if not isinstance(data, dict):
-            return
-
-        # To convert the yaml into python objects, there is some missing attributes that
-        for key, value in data.items():
-            # TODO: Find a better way to do this,
-            # we can't name a step "steps" or "parameters" with this method
-            if isinstance(value, dict) and key not in [
-                "steps",
-                "commands",
-                "parameters",
-            ]:
-                value["name"] = key
-            self._conform_resolved_config(value)
-
-        return data
 
     def initialize_websocket(self) -> None:
         """
@@ -382,7 +356,7 @@ class ActionQuery:
         if len(command_split) == 2:
             step = command_split[0]
         elif len(command_split) != 1:
-            logger.warning("Invalid command path: The given command path %s has too many separators")
+            logger.warning("Invalid command path: The given command path %s has too many separators", command_path)
             return None
 
         # If the command path is explicit, get the command directly
