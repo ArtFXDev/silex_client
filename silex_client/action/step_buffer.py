@@ -12,6 +12,7 @@ from typing import Dict, Any, Optional
 import dacite
 
 from silex_client.action.command_buffer import CommandBuffer
+from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
 
 
@@ -82,7 +83,8 @@ class StepBuffer:
         Convert back the action's data from json into this object
         """
         dacite_config = dacite.Config(
-            cast=[Status], type_hooks={CommandBuffer: self._deserialize_commands}
+            cast=[Status, CommandOutput],
+            type_hooks={CommandBuffer: self._deserialize_commands},
         )
         for command_name, command in serialized_data.get("commands", {}).items():
             command["name"] = command_name
