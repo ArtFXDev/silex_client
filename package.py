@@ -54,7 +54,9 @@ def commands():
     env.PATH.append("{root}/silex_client")
     env.PATH.append("{root}/tools")
     env.PYTHONPATH.append("{root}")
-    env.SILEX_ZOU_HOST = os.getenv("SILEX_ZOU_HOST", "http://172.16.2.52:8080/api")
+    env.SILEX_ZOU_HOST = os.getenv(
+        "SILEX_ZOU_HOST", "http://kitsu.prod.silex.artfx.fr/api"
+    )
     env.SILEX_LOG_LEVEL = os.getenv("SILEX_LOG_LEVEL", "DEBUG")
     env.SILEX_ACTION_CONFIG.prepend("{root}/config/action")
 
