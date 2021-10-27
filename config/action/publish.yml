@@ -1,25 +1,9 @@
-publish: !inherit
-  parent: "./default.yml"
-  key: "publish"
-
-  steps: &steps
-
+publish:
+  steps:
     action:
       commands:
-
-        publish_file:
-          path: "silex_client.commands.file.PublishFile"
-          tooltip: "Insert the file you want to publish. For a file sequence use # as variable name for frame index"
-          ask_user: false
-
-  tasks:
-    modeling:
-      steps:
-
-        action:
-          commands:
-                
-            publish_file:
-              path: "silex_client.commands.file.PublishFile"
-              tooltip: "Insert the file you want to publish. For a file sequence use # as variable name for frame index"
-              ask_user: true
+        get_publish_output:
+          label: "Select publish type"
+          path: "silex_client.commands.publish.SelectPublish"
+          tooltip: "Select the type of publish you want to make"
+          ask_user: true
