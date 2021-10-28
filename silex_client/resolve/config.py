@@ -27,30 +27,19 @@ class Config:
 
     def __init__(
         self,
-        action_search_path: search_path = None,
-        publish_search_path: search_path = None,
+        config_search_path: search_path = None,
     ):
         # List of the path to look for any included file
         self.action_search_path = ["/"]
-        self.publish_search_path = ["/"]
 
         # Add the custom action config search path
-        if action_search_path is not None:
+        if config_search_path is not None:
             self.action_search_path += action_search_path
 
         # Look for config search path in the environment variables
         env_config_path = os.getenv("SILEX_ACTION_CONFIG")
         if env_config_path is not None:
             self.action_search_path += env_config_path.split(os.pathsep)
-
-        # Add the custom config publish search path
-        if publish_search_path is not None:
-            self.publish_search_path += publish_search_path
-
-        # Look for publish config search path in the environment variables
-        publish_config_path = os.getenv("SILEX_PUBLISH_ACTION_CONFIG")
-        if publish_config_path is not None:
-            self.publish_search_path += publish_config_path.split(os.pathsep)
 
     def find_config(self, search_path: List[str]) -> List[Dict[str, str]]:
         """
@@ -59,6 +48,8 @@ class Config:
         found_actions = []
 
         for path in search_path:
+            if not os.path.isdir(path):
+                continue
             for file_path in os.listdir(path):
                 split_path = os.path.splitext(file_path)
                 if os.path.splitext(file_path)[1] in [".yaml", ".yml"]:
@@ -72,14 +63,18 @@ class Config:
         """
         List of all the available actions config found
         """
-        return self.find_config(self.action_search_path)
+        return self.find_config(
+            [os.path.join(path, "action") for path in self.action_search_path]
+        )
 
     @property
     def publishes(self) -> List[Dict[str, str]]:
         """
         List of all the available actions config found
         """
-        return self.find_config(self.publish_search_path)
+        return self.find_config(
+            [os.path.join(path, "publish") for path in self.action_search_path]
+        )
 
     def resolve_config(
         self,
