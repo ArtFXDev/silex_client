@@ -15,7 +15,7 @@ import dacite
 from silex_client.action.step_buffer import StepBuffer
 from silex_client.utils.enums import Status, Execution
 from silex_client.utils.log import logger
-import pathlib
+from silex_client.utils.datatypes import CommandOutput
 
 # Forward references
 if TYPE_CHECKING:
@@ -87,7 +87,7 @@ class ActionBuffer:
         Convert back the action's data from json into this object
         """
         dacite_config = dacite.Config(
-            cast=[Status, Execution], type_hooks={StepBuffer: self._deserialize_steps}
+            cast=[Status, Execution, CommandOutput], type_hooks={StepBuffer: self._deserialize_steps}
         )
         for step_name, step in serialized_data.get("steps", {}).items():
             step["name"] = step_name
