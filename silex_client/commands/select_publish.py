@@ -21,20 +21,32 @@ class SelectPublish(CommandBase):
         "publish_type": {
             "label": "Select a publish type",
             "type": SelectParameterMeta(
-                [publish_action["name"] for publish_action in Config().publishes]
+                *[publish_action["name"] for publish_action in Config().publishes]
             ),
             "value": None,
             "tooltip": "Select a publish type in the list",
         },
     }
 
-    required_metadata = ["project"]
-
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        print(parameters["publish_type"])
-
         publish_action = Config().resolve_publish(parameters["publish_type"])
-        print(publish_action)
+
+        if publish_action is None:
+            raise Exception("Could not resolve the action %s")
+
+        # Make sure the required action is in the config
+        if parameters["publish_type"] not in publish_action.keys():
+            raise Exception(
+                "Could not resolve the action %s: The root key should be the same as the config file name"
+            )
+
+        action_definition = publish_action[parameters["publish_type"]]
+        action_definition["name"] = parameters["publish_type"]
+
+        import jsondiff
+
+        patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
+        action_query.buffer.deserialize(patch)

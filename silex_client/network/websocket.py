@@ -95,14 +95,6 @@ class WebsocketConnection:
         """
         Send a message using websocket from a different thread than the event loop
         """
-        try:
-            data = json.loads(json.dumps(data, default=silex_encoder))
-        except TypeError:
-            logger.error("Could not send %s: The data is not json serialisable", data)
-            future: futures.Future = futures.Future()
-            future.set_result(None)
-            return future
-
         return self.event_loop.register_task(self.async_send(namespace, event, data))
 
     async def async_send(self, namespace, event, data=None) -> asyncio.Future:
@@ -114,6 +106,13 @@ class WebsocketConnection:
         def callback(response):
             if not future.cancelled():
                 future.set_result(response)
+
+        try:
+            data = json.loads(json.dumps(data, default=silex_encoder))
+        except TypeError:
+            logger.error("Could not send %s: The data is not json serialisable", data)
+            future.set_result(None)
+            return future
 
         logger.debug("Websocket client sending %s at %s on %s", data, namespace, event)
         await self.socketio.emit(event, data, namespace, callback)

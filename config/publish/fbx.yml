@@ -1,4 +1,4 @@
-tester:
+fbx:
   steps:
     parameter_tester:
       index: 100
@@ -48,6 +48,6 @@ tester:
           path: "silex_client.commands.tester.RangeTesterHigh"
           parameters:
             range_tester: 1200
-            range_tester_2: !command-output "parameter_tester:range_mid"
+            range_tester_2: !command-output "parameter_tester_2:range_mid"
           ask_user: True
 

@@ -56,7 +56,6 @@ class Config:
         """
         Find all the configs in the given paths
         """
-        search_path = copy.deepcopy(self.action_search_path)
         found_actions = []
 
         for path in search_path:
@@ -100,7 +99,7 @@ class Config:
             return None
 
         config_path = next(
-            action["path"] for action in self.actions if action["name"] == action_name
+            action["path"] for action in configs if action["name"] == action_name
         )
         logger.debug("Found action config at %s", config_path)
         action_config = self._load_config(config_path)
