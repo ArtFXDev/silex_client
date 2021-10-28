@@ -52,7 +52,9 @@ class Config:
                 continue
             for file_path in os.listdir(path):
                 split_path = os.path.splitext(file_path)
-                if os.path.splitext(file_path)[1] in [".yaml", ".yml"]:
+                if split_path[0] in [action["name"] for action in found_actions]:
+                    continue
+                if split_path[1] in [".yaml", ".yml"]:
                     action_path = os.path.abspath(os.path.join(path, file_path))
                     found_actions.append({"name": split_path[0], "path": action_path})
 
