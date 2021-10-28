@@ -1,7 +1,7 @@
 fbx:
   steps:
     parameter_tester:
-      index: 100
+      index: 50
       label: "Parameter Tester"
       commands:
         string:
@@ -26,7 +26,7 @@ fbx:
             path_tester_2: !command-output "parameter_tester:string"
           ask_user: True
     parameter_tester_2:
-      index: 150
+      index: 100
       label: "Parameter Tester 2"
       commands:
         select:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import jsondiff
 import typing
 from typing import Any, Dict
 
@@ -46,7 +47,12 @@ class SelectPublish(CommandBase):
         action_definition = publish_action[parameters["publish_type"]]
         action_definition["name"] = parameters["publish_type"]
 
-        import jsondiff
+        last_index = action_query.steps[-1].index
+        if "steps" in action_definition and isinstance(
+            action_definition["steps"], dict
+        ):
+            for step_value in action_definition["steps"].values():
+                step_value["index"] = step_value.get("index", 10) + last_index
 
         patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
         action_query.buffer.deserialize(patch)
