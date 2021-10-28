@@ -222,10 +222,14 @@ class Context:
         resolved_context["task"] = task["name"]
         resolved_context["task_id"] = task["id"]
         resolved_context["task_type"] = task["task_type"]["name"]
+        resolved_context["task_type_id"] = task["task_type"]["id"]
         resolved_context["project"] = task["project"]["name"]
         resolved_context["project_id"] = task["project"]["id"]
 
-        resolved_context["silex_entity_type"] = task["entity_type"]["name"].lower()
+        resolved_context["entity"] = task["entity"]["name"]
+        resolved_context["entity_id"] = task["entity"]["id"]
+        resolved_context["entity_type"] = task["entity_type"]["name"].lower()
+        resolved_context["entity_type_id"] = task["entity_type"]["id"].lower()
 
         if task["entity_type"]["name"].lower() == "shot":
             resolved_context["shot"] = task["entity"]["name"]

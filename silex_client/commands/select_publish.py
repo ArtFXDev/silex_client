@@ -56,3 +56,4 @@ class SelectPublish(CommandBase):
 
         patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
         action_query.buffer.deserialize(patch)
+        return parameters["publish_type"]
