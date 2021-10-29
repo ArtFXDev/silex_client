@@ -1,3 +1,7 @@
+class entity(str):
+    pass
+
+
 class CommandParameterMeta(type):
     def __new__(cls, name: str, bases: tuple, dct: dict):
         def serialize():
@@ -16,6 +20,27 @@ class CommandParameterMeta(type):
 
     def serialize(self):
         return None
+
+
+class IntArrayParameterMeta(CommandParameterMeta):
+    def __init__(cls, size: int):
+        pass
+
+    def __new__(cls, size: int):
+        def serialize():
+            return {
+                "name": "int_array",
+                "size": size,
+            }
+
+        def get_default():
+            return []
+
+        attributes = {
+            "serialize": serialize,
+            "get_default": get_default,
+        }
+        return super().__new__(cls, "IntArrayParameter", (list,), attributes)
 
 
 class RangeParameterMeta(CommandParameterMeta):
@@ -57,3 +82,21 @@ class SelectParameterMeta(CommandParameterMeta):
             "get_default": get_default,
         }
         return super().__new__(cls, "SelectParameter", (str,), attributes)
+
+
+class MultipleSelectParameterMeta(CommandParameterMeta):
+    def __init__(cls, *options):
+        pass
+
+    def __new__(cls, *options):
+        def serialize():
+            return {"name": "multiple_select", "options": options}
+
+        def get_default():
+            return [options[0]] if options else None
+
+        attributes = {
+            "serialize": serialize,
+            "get_default": get_default,
+        }
+        return super().__new__(cls, "SelectParameter", (list,), attributes)
