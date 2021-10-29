@@ -47,3 +47,33 @@ tester:
             range_tester: 1200
             range_tester_2: !command-output "parameter_tester:range_mid"
           ask_user: True
+        entity:
+          path: "silex_client.commands.tester.EntityTester"
+          parameters:
+            entity_tester: "ogjpsjtgipsrtjg"
+          ask_user: True
+        multiple_select:
+          path: "silex_client.commands.tester.MultipleSelectTester"
+          parameters:
+            multiple_select_tester:
+              - "hello"
+              - "bar"
+          ask_user: True
+        int_array_low:
+          path: "silex_client.commands.tester.IntArrayTesterLow"
+          parameters:
+            int_array_tester:
+              - 5
+              - 7
+          ask_user: True
+        int_array_high:
+          path: "silex_client.commands.tester.IntArrayTesterLow"
+          parameters:
+            int_array_tester:
+              - 2048
+              - 7
+              - 49
+              - 7
+              - 80
+              - 400
+          ask_user: True
