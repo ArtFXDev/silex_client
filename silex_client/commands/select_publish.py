@@ -41,7 +41,9 @@ class SelectPublish(CommandBase):
         # Make sure the required action is in the config
         if parameters["publish_type"] not in publish_action.keys():
             raise Exception(
-                "Could not resolve the action %s: The root key should be the same as the config file name"
+                "Could not resolve the action {}: The root key should be the same as the config file name".format(
+                    parameters["publish_type"]
+                )
             )
 
         action_definition = publish_action[parameters["publish_type"]]
