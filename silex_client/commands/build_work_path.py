@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing
 from typing import Any, Dict
 
@@ -57,9 +58,17 @@ class BuildWorkPath(CommandBase):
         extension: str = software.get("file_extension", ".no")
 
         # Build the work path
+        version = 1
         work_path = await gazu.files.build_working_file_path(
-            task,
-            software=software,
+            task, software=software, revision=version
         )
+        full_path = f"{work_path}.{extension}"
+        while os.path.exists(full_path):
+            version += 1
+            work_path = await gazu.files.build_working_file_path(
+                task, software=software, revision=version
+            )
+            full_path = f"{work_path}.{extension}"
 
-        return f"{work_path}.{extension}"
+        logger.warning(full_path)
+        return full_path
