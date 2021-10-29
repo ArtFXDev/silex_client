@@ -120,9 +120,10 @@ class CommandBase:
                 )
             except (ValueError, TypeError):
                 logger.error(
-                    "Could not execute %s: The parameter %s is invalid",
+                    "Could not execute %s: The parameter %s is invalid (%s)",
                     self.command_buffer.name,
                     parameter_name,
+                    parameters[parameter_name],
                 )
                 return False
 
