@@ -1,4 +1,5 @@
 tester:
+  shelf: false
   steps:
     parameter_tester:
       index: 50
