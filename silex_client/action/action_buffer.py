@@ -40,6 +40,8 @@ class ActionBuffer:
     uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
     #: Specify if the action must be displayed by the UI or not
     hide: bool = field(compare=False, repr=False, default=False)
+    #: Specify if the action must be displayed by the shelf or not
+    shelf: bool = field(compare=False, repr=False, default=True)
     #: The status of the action, this value is readonly, it is computed from the commands's status
     status: Status = field(init=False)  # type: ignore
     #: The way this action is executed (backward, forward, paused...)
@@ -87,7 +89,8 @@ class ActionBuffer:
         Convert back the action's data from json into this object
         """
         dacite_config = dacite.Config(
-            cast=[Status, Execution, CommandOutput], type_hooks={StepBuffer: self._deserialize_steps}
+            cast=[Status, Execution, CommandOutput],
+            type_hooks={StepBuffer: self._deserialize_steps},
         )
         for step_name, step in serialized_data.get("steps", {}).items():
             step["name"] = step_name
