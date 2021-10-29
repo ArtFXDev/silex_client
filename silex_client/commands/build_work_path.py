@@ -60,13 +60,13 @@ class BuildWorkPath(CommandBase):
         # Build the work path
         version = 1
         work_path = await gazu.files.build_working_file_path(
-            task, software=software, revision=version
+            task, software=software, revision=version, sep=os.path.sep
         )
         full_path = f"{work_path}.{extension}"
         while os.path.exists(full_path):
             version += 1
             work_path = await gazu.files.build_working_file_path(
-                task, software=software, revision=version
+                task, software=software, revision=version, sep=os.path.sep
             )
             full_path = f"{work_path}.{extension}"
 
