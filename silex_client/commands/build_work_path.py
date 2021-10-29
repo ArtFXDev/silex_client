@@ -70,5 +70,4 @@ class BuildWorkPath(CommandBase):
             )
             full_path = f"{work_path}.{extension}"
 
-        logger.warning(full_path)
         return full_path
