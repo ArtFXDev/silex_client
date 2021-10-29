@@ -48,6 +48,9 @@ class ActionQuery:
         self._buffer_diff = copy.deepcopy(self.buffer)
         self._task: Optional[asyncio.Task] = None
 
+        # This is temporary until full support of multiple actions at the same time
+        for action in context.actions.values():
+            action.cancel()
         context.register_action(self)
 
     def execute(self) -> futures.Future:
