@@ -18,7 +18,7 @@ if typing.TYPE_CHECKING:
 
 class BuildOutputPath(CommandBase):
     """
-    Put the given file on database and to locked file system
+    Build the path where the output files should be saved to
     """
 
     parameters = {
@@ -46,18 +46,33 @@ class BuildOutputPath(CommandBase):
                 action_query.context_metadata["entity_id"]
             )
 
-        # Get the output type and the task type
+        # Get the output type
         output_type = await gazu.files.get_output_type_by_short_name(
             parameters["publish_type"]
         )
         if output_type is None:
-            raise Exception(
-                "Could not get the output type %s: The output type does not exists",
+            logger.error(
+                "Could not build the output type %s: The output type does not exists in the zou database",
                 parameters["publish_type"],
             )
+            raise Exception(
+                "Could not build the output type %s: The output type does not exists in the zou database",
+                parameters["publish_type"],
+            )
+
+        # Get the task type
         task_type = await gazu.task.get_task_type(
             action_query.context_metadata["task_type_id"]
         )
+        if task_type is None:
+            logger.error(
+                "Could not get the task type %s: The task type does not exists",
+                action_query.context_metadata["task_type_id"],
+            )
+            raise Exception(
+                "Could not get the task type %s: The task type does not exists",
+                action_query.context_metadata["task_type_id"],
+            )
 
         # Build the output path
         return await gazu.files.build_entity_output_file_path(
