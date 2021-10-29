@@ -54,6 +54,7 @@ class BuildWorkPath(CommandBase):
                     action_query.context_metadata["task_id"]
                 )
             )
+        extension: str = software.get("file_extension", ".no")
 
         # Build the work path
         work_path = await gazu.files.build_working_file_path(
@@ -61,4 +62,4 @@ class BuildWorkPath(CommandBase):
             software=software,
         )
 
-        logger.warning(work_path)
+        return f"{work_path}.{extension}"
