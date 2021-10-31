@@ -21,13 +21,13 @@ from silex_client.utils.parameter_types import CommandParameterMeta
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-ParameterType = CommandParameterMeta("Parameter", (), {})
+Type = type
 
 
 @dataclass()
 class ParameterBuffer:
     """
-    Store the data of a command, it is used as a comunication payload with the UI
+    Store the data of a parameter, it is used as a comunication payload with the UI
     """
 
     #: The list of fields that should be ignored when serializing and deserializing this buffer to json
@@ -36,7 +36,7 @@ class ParameterBuffer:
     READONLY_FIELDS = ["type"]
 
     #: The type of the parameter, must be a class definition or a CommandParameterMeta instance
-    type: Union[Type[object], Type[ParameterType]] = field()
+    type: Type = field()
     #: Name of the parameter, must have no space or special characters
     name: str = field()
     #: The value that will return the parameter
@@ -64,7 +64,7 @@ class ParameterBuffer:
             self.command_output = True
             self.hide = True
 
-        # Get the default value accoring to the type
+        # Get the default value from to the type
         if self.value is None and isinstance(self.type, CommandParameterMeta):
             self.value = self.type.get_default()
 
@@ -115,7 +115,7 @@ class ParameterBuffer:
     @classmethod
     def construct(cls, serialized_data: Dict[str, Any]) -> ParameterBuffer:
         """
-        Create an step buffer from serialized data
+        Create an parameter buffer from serialized data
         """
         dacite_config = dacite.Config(cast=[Status, CommandOutput])
         parameter = dacite.from_dict(ParameterBuffer, serialized_data, dacite_config)

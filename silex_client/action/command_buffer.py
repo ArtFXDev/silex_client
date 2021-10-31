@@ -140,6 +140,7 @@ class CommandBuffer:
             type_hooks={ParameterBuffer: self._deserialize_parameters},
         )
 
+        # Format the parameters corectly
         executor_parameters = copy.deepcopy(self.executor.parameters)
         serialized_parameters = serialized_data.get("parameters", {})
         for parameter_name, parameter in executor_parameters.items():
@@ -166,7 +167,7 @@ class CommandBuffer:
     @classmethod
     def construct(cls, serialized_data: Dict[str, Any]) -> CommandBuffer:
         """
-        Create an step buffer from serialized data
+        Create an command buffer from serialized data
         """
         dacite_config = dacite.Config(cast=[Status, CommandOutput])
         if "parameters" in serialized_data:

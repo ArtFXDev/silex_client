@@ -93,8 +93,11 @@ class StepBuffer:
             cast=[Status, CommandOutput],
             type_hooks={CommandBuffer: self._deserialize_commands},
         )
+
+        # Format the commands corectly
         for command_name, command in serialized_data.get("commands", {}).items():
             command["name"] = command_name
+
         new_data = dacite.from_dict(StepBuffer, serialized_data, dacite_config)
 
         for private_field in self.PRIVATE_FIELDS:
