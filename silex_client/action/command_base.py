@@ -46,48 +46,6 @@ class CommandBase:
         """
         return self.__class__.__name__
 
-    @property
-    def conformed_parameters(self) -> CommandParameters:
-        """
-        Make sure all the required keys are there in the parameters set by the command
-        Set some default values for the missing keys or return an error
-        """
-        conformed_parameters = {}
-        for parameter_name, parameter_data in copy.deepcopy(self.parameters).items():
-            conformed_data = {}
-
-            # Make sure the "type" entry is given
-            if "type" not in parameter_data or not isinstance(
-                parameter_data["type"], type
-            ):
-                logger.error(
-                    "Invalid parameter %s in the commands %s: The 'type' entry is mendatory",
-                    parameter_name,
-                    self.command_buffer.name,
-                )
-            else:
-                conformed_data["type"] = parameter_data["type"]
-
-            # Conform the name entry
-            conformed_data["name"] = parameter_name
-            # Conform the label entry
-            conformed_data["label"] = parameter_data.get(
-                "label", parameter_name.title()
-            )
-            # Conform the value entry
-            conformed_data["value"] = parameter_data.get("value", None)
-            if conformed_data["value"] is None and isinstance(
-                conformed_data["type"], CommandParameterMeta
-            ):
-                conformed_data["value"] = conformed_data["type"].get_default()
-            # Conform the hide entry
-            conformed_data["hide"] = parameter_data.get("hide", False)
-            # Conform the tooltip entry
-            conformed_data["tooltip"] = parameter_data.get("tooltip", None)
-            conformed_parameters[parameter_name] = conformed_data
-
-        return conformed_parameters
-
     def check_parameters(self, parameters: CommandParameters) -> bool:
         """
         Check the if the input kwargs are valid accoring to the parameters list

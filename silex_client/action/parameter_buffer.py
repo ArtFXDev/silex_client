@@ -63,10 +63,15 @@ class ParameterBuffer:
             self.hide = True
 
     def get_value(self, action_query: ActionQuery):
+        # If the value is the output of an other command, get is
         if self.command_output:
             command = action_query.get_command(self.value)
             value = command.output_result if command is not None else None
             return value
+
+        # If the value is a callable, call it (for mutable default values)
+        if callable(self.value):
+            return self.value()
 
     def serialize(self) -> Dict[str, Any]:
         """
