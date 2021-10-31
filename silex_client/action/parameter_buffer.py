@@ -64,6 +64,10 @@ class ParameterBuffer:
             self.command_output = True
             self.hide = True
 
+        # Get the default value accoring to the type
+        if self.value is None and isinstance(self.type, CommandParameterMeta):
+            self.value = self.type.get_default()
+
     def get_value(self, action_query: ActionQuery) -> Any:
         # If the value is the output of an other command, get is
         if self.command_output:
