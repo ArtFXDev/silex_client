@@ -53,6 +53,11 @@ class ParameterBuffer:
             self.label = slugify_pattern.sub(" ", self.name)
             self.label = self.label.title()
 
+        # Check if the parameter gets a command output
+        if isinstance(self.value, CommandOutput):
+            self.command_output = True
+            self.hide = True
+
     def serialize(self) -> Dict[str, Any]:
         """
         Convert the command's data into json so it can be sent to the UI
@@ -82,3 +87,14 @@ class ParameterBuffer:
             setattr(new_data, private_field, getattr(self, private_field))
 
         self.__dict__.update(new_data.__dict__)
+
+    @classmethod
+    def construct(cls, serialized_data: Dict[str, Any]) -> ParameterBuffer:
+        """
+        Create an step buffer from serialized data
+        """
+        dacite_config = dacite.Config(cast=[Status, CommandOutput])
+        parameter = dacite.from_dict(ParameterBuffer, serialized_data, dacite_config)
+
+        parameter.deserialize(serialized_data)
+        return parameter

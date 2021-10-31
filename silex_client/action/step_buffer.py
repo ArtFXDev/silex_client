@@ -4,6 +4,9 @@
 Dataclass used to store the data related to a step
 """
 
+from __future__ import annotations
+
+import copy
 import re
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
@@ -73,7 +76,7 @@ class StepBuffer:
         command_name = command_data.get("name")
         command = self.commands.get(command_name)
         if command is None:
-            return command_data
+            return CommandBuffer.construct(command_data)
 
         command.deserialize(command_data)
         return command
@@ -94,6 +97,22 @@ class StepBuffer:
             setattr(new_data, private_field, getattr(self, private_field))
 
         self.__dict__.update(new_data.__dict__)
+
+    @classmethod
+    def construct(cls, serialized_data: Dict[str, Any]) -> StepBuffer:
+        """
+        Create an step buffer from serialized data
+        """
+        dacite_config = dacite.Config(cast=[Status, CommandOutput])
+        if "commands" in serialized_data:
+            filtered_data = copy.deepcopy(serialized_data)
+            del filtered_data["commands"]
+            step = dacite.from_dict(StepBuffer, filtered_data, dacite_config)
+        else:
+            step = dacite.from_dict(StepBuffer, serialized_data, dacite_config)
+
+        step.deserialize(serialized_data)
+        return step
 
     @property  # type: ignore
     def status(self) -> Status:

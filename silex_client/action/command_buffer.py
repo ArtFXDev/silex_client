@@ -19,6 +19,7 @@ import dacite
 import jsondiff
 
 from silex_client.action.command_base import CommandBase, CommandParameters
+from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
@@ -48,7 +49,7 @@ class CommandBuffer:
     #: Small explanation for the UI
     tooltip: str = field(compare=False, repr=False, default="")
     #: Dict that represent the parameters of the command, their type, value, name...
-    parameters: Union[CommandParameters, dict] = field(default_factory=dict)
+    parameters: Dict[str, ParameterBuffer] = field(default_factory=dict)
     #: A Unique ID to help differentiate multiple actions
     uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
     #: The status of the command, to keep track of the progression, specify the errors
@@ -72,34 +73,6 @@ class CommandBuffer:
 
         # Get the executor
         self.executor = self._get_executor(self.path)
-
-        # Get the executor's parameter attributes and override them with the given ones
-        command_parameters = copy.deepcopy(self.executor.conformed_parameters)
-        for value in command_parameters.values():
-            # If the value is a callable, call it (for mutable default values)
-            if callable(value["value"]):
-                value["value"] = value["value"]()
-
-        # The formatting of the parameters can be different, it can be:
-        # {<parameter_name>: <parameter_value>} or {<parameter_name>: {"value": <parameter_value>}}
-        # We must make sure it follows the format {<parameter_name>: {"value": <parameter_value>}}
-        if all(
-            not isinstance(value, dict) or "value" not in value.keys()
-            for value in self.parameters.values()
-        ):
-            self.parameters = {
-                key: {"value": value} for key, value in self.parameters.items()
-            }
-        # Apply the parameters to the default parameters
-        self.parameters = jsondiff.patch(command_parameters, self.parameters)
-
-        for parameter_data in self.parameters.values():
-            # Check if the parameter gets a command output
-            if not isinstance(parameter_data["value"], CommandOutput):
-                parameter_data["command_output"] = False
-                continue
-            parameter_data["command_output"] = True
-            parameter_data["hide"] = True
 
     def _get_executor(self, path: str) -> CommandBase:
         """
@@ -130,31 +103,80 @@ class CommandBuffer:
         result = []
 
         for f in fields(self):
-            if f.name in self.PRIVATE_FIELDS:
+            if f.name == "parameters":
+                parameters = getattr(self, f.name)
+                parameters_value = {}
+                for parameter_name, parameter in parameters.items():
+                    parameters_value[parameter_name] = parameter.serialize()
+                result.append((f.name, parameters_value))
                 continue
-            else:
-                result.append((f.name, getattr(self, f.name)))
+            elif f.name in self.PRIVATE_FIELDS:
+                continue
+
+            result.append((f.name, getattr(self, f.name)))
 
         return dict(result)
+
+    def _deserialize_parameters(self, parameter_data: Any) -> Any:
+        parameter_name = parameter_data.get("name")
+        parameter = self.parameters.get(parameter_name)
+
+        # Get the executor's parameter attributes and override them with the given ones
+        command_parameter = copy.deepcopy(
+            self.executor.conformed_parameters.get(parameter_name)
+        )
+        if command_parameter is None:
+            return parameter_data
+
+        # If the value is a callable, call it (for mutable default values)
+        if callable(command_parameter.get("value")):
+            command_parameter["value"] = command_parameter["value"]()
+
+        # Apply the parameters to the default parameters
+        parameter_data = jsondiff.patch(command_parameter, parameter_data)
+
+        if parameter is None:
+            return ParameterBuffer.construct(parameter_data)
+
+        parameter.deserialize(parameter_data)
+        return parameter
 
     def deserialize(self, serialized_data: Dict[str, Any]) -> None:
         """
         Convert back the action's data from json into this object
         """
-        dacite_config = dacite.Config(cast=[Status, CommandOutput])
+        # Don't take the modifications of the hidden commands
+        if self.hide:
+            return
+
+        dacite_config = dacite.Config(
+            cast=[Status, CommandOutput],
+            type_hooks={ParameterBuffer: self._deserialize_parameters},
+        )
+        for parameter_name, parameter in serialized_data.get("parameters", {}).items():
+            if not isinstance(parameter, dict):
+                serialized_data["parameters"][parameter_name] = {"value": parameter}
+                parameter = serialized_data["parameters"][parameter_name]
+            parameter["name"] = parameter_name
         new_data = dacite.from_dict(CommandBuffer, serialized_data, dacite_config)
 
         for private_field in self.PRIVATE_FIELDS:
             setattr(new_data, private_field, getattr(self, private_field))
 
-        # Don't take the modifications of the hidden parameters
-        for parameter_name, parameter_data in self.parameters.items():
-            if (
-                not parameter_data.get("hide", False)
-                or parameter_name not in new_data.parameters.keys()
-            ):
-                continue
-
-            new_data.parameters[parameter_name] = parameter_data
-
         self.__dict__.update(new_data.__dict__)
+
+    @classmethod
+    def construct(cls, serialized_data: Dict[str, Any]) -> CommandBuffer:
+        """
+        Create an step buffer from serialized data
+        """
+        dacite_config = dacite.Config(cast=[Status, CommandOutput])
+        if "parameters" in serialized_data:
+            filtered_data = copy.deepcopy(serialized_data)
+            del filtered_data["parameters"]
+            parameter = dacite.from_dict(CommandBuffer, filtered_data, dacite_config)
+        else:
+            parameter = dacite.from_dict(CommandBuffer, serialized_data, dacite_config)
+
+        parameter.deserialize(serialized_data)
+        return parameter

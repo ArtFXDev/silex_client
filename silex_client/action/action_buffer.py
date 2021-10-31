@@ -79,7 +79,7 @@ class ActionBuffer:
         step_name = step_data.get("name")
         step = self.steps.get(step_name)
         if step is None:
-            return step_data
+            return StepBuffer.construct(step_data)
 
         step.deserialize(step_data)
         return step
