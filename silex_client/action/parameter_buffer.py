@@ -21,6 +21,7 @@ from silex_client.utils.parameter_types import CommandParameterMeta
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
+# Alias the metaclass type, to avoid clash with the type attribute
 Type = type
 
 
