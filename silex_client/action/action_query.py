@@ -99,7 +99,7 @@ class ActionQuery:
                 # Create a dictionary that only contains the name and the value of the parameters
                 # without infos like the type, label...
                 parameters = {
-                    key: value.get("value", None)
+                    key: value.get_value(self)
                     for key, value in command.parameters.items()
                 }
 

@@ -121,20 +121,6 @@ class CommandBuffer:
         parameter_name = parameter_data.get("name")
         parameter = self.parameters.get(parameter_name)
 
-        # Get the executor's parameter attributes and override them with the given ones
-        command_parameter = copy.deepcopy(
-            self.executor.conformed_parameters.get(parameter_name)
-        )
-        if command_parameter is None:
-            return parameter_data
-
-        # If the value is a callable, call it (for mutable default values)
-        if callable(command_parameter.get("value")):
-            command_parameter["value"] = command_parameter["value"]()
-
-        # Apply the parameters to the default parameters
-        parameter_data = jsondiff.patch(command_parameter, parameter_data)
-
         if parameter is None:
             return ParameterBuffer.construct(parameter_data)
 
@@ -153,11 +139,23 @@ class CommandBuffer:
             cast=[Status, CommandOutput],
             type_hooks={ParameterBuffer: self._deserialize_parameters},
         )
-        for parameter_name, parameter in serialized_data.get("parameters", {}).items():
-            if not isinstance(parameter, dict):
-                serialized_data["parameters"][parameter_name] = {"value": parameter}
-                parameter = serialized_data["parameters"][parameter_name]
+
+        executor_parameters = copy.deepcopy(self.executor.parameters)
+        serialized_parameters = serialized_data.get("parameters", {})
+        for parameter_name, parameter in executor_parameters.items():
             parameter["name"] = parameter_name
+
+            # The parameters can be defined with <key>=<value> as a shortcut
+            if not isinstance(serialized_parameters.get(parameter_name, {}), dict):
+                serialized_parameters[parameter_name] = {
+                    "value": serialized_parameters[parameter_name]
+                }
+
+            # Apply the parameters to the default parameters
+            serialized_data["parameters"] = jsondiff.patch(
+                executor_parameters, serialized_parameters
+            )
+
         new_data = dacite.from_dict(CommandBuffer, serialized_data, dacite_config)
 
         for private_field in self.PRIVATE_FIELDS:

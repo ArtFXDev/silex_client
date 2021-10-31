@@ -15,7 +15,6 @@ from typing import List, TYPE_CHECKING, Any, Callable, Dict
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
 from silex_client.utils.parameter_types import CommandParameterMeta
-from silex_client.utils.datatypes import CommandOutput
 
 # Forward references
 if TYPE_CHECKING:
@@ -89,14 +88,12 @@ class CommandBase:
 
         return conformed_parameters
 
-    def check_parameters(
-        self, parameters: CommandParameters, action_query: ActionQuery
-    ) -> bool:
+    def check_parameters(self, parameters: CommandParameters) -> bool:
         """
         Check the if the input kwargs are valid accoring to the parameters list
         and conform it if nessesary
         """
-        for parameter_name, parameter_data in self.conformed_parameters.items():
+        for parameter_name, parameter_buffer in self.command_buffer.parameters.items():
             # Check if the parameter is here
             if parameter_name not in parameters.keys():
                 logger.error(
@@ -106,16 +103,9 @@ class CommandBase:
                 )
                 return False
 
-            # Get the value if the parameter is a command output
-            parameter_buffer = self.command_buffer.parameters.get(parameter_name, {})
-            if parameter_buffer.get("command_output", False):
-                command = action_query.get_command(parameters[parameter_name])
-                value = command.output_result if command is not None else None
-                parameters[parameter_name] = value
-
             # Check if the parameter is the right type
             try:
-                parameters[parameter_name] = parameter_data["type"](
+                parameters[parameter_name] = parameter_buffer.type(
                     parameters[parameter_name]
                 )
             except (ValueError, TypeError):
@@ -160,7 +150,7 @@ class CommandBase:
                 action_query: ActionQuery = kwargs.get("action_query", args[2])
 
                 # Make sure the given parameters are valid
-                if not command.check_parameters(parameters, action_query):
+                if not command.check_parameters(parameters):
                     command.command_buffer.status = Status.INVALID
                     return
                 # Make sure all the required metatada is here

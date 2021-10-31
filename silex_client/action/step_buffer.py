@@ -85,6 +85,10 @@ class StepBuffer:
         """
         Convert back the action's data from json into this object
         """
+        # Don't take the modifications of the hidden steps
+        if self.hide:
+            return
+
         dacite_config = dacite.Config(
             cast=[Status, CommandOutput],
             type_hooks={CommandBuffer: self._deserialize_commands},

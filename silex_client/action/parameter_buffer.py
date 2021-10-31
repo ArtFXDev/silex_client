@@ -9,13 +9,17 @@ from __future__ import annotations
 import re
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
-from typing import Any, Dict, Union, Optional, Type
+from typing import Any, Dict, Optional, Type, TYPE_CHECKING, Union
 
 import dacite
 
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
 from silex_client.utils.parameter_types import CommandParameterMeta
+
+# Forward references
+if TYPE_CHECKING:
+    from silex_client.action.action_query import ActionQuery
 
 ParameterType = CommandParameterMeta("Parameter", (), {})
 
@@ -57,6 +61,12 @@ class ParameterBuffer:
         if isinstance(self.value, CommandOutput):
             self.command_output = True
             self.hide = True
+
+    def get_value(self, action_query: ActionQuery):
+        if self.command_output:
+            command = action_query.get_command(self.value)
+            value = command.output_result if command is not None else None
+            return value
 
     def serialize(self) -> Dict[str, Any]:
         """
