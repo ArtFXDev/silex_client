@@ -30,8 +30,10 @@ class ParameterBuffer:
     Store the data of a command, it is used as a comunication payload with the UI
     """
 
-    #: The list of fields that should be ignored when serializing this buffer to json
+    #: The list of fields that should be ignored when serializing and deserializing this buffer to json
     PRIVATE_FIELDS = []
+    #: The list of fields that should be ignored when deserializing this buffer to json
+    READONLY_FIELDS = ["type"]
 
     #: The type of the parameter, must be a class definition or a CommandParameterMeta instance
     type: Union[Type[object], Type[ParameterType]] = field()
@@ -62,7 +64,7 @@ class ParameterBuffer:
             self.command_output = True
             self.hide = True
 
-    def get_value(self, action_query: ActionQuery):
+    def get_value(self, action_query: ActionQuery) -> Any:
         # If the value is the output of an other command, get is
         if self.command_output:
             command = action_query.get_command(self.value)
@@ -72,6 +74,8 @@ class ParameterBuffer:
         # If the value is a callable, call it (for mutable default values)
         if callable(self.value):
             return self.value()
+
+        return self.value
 
     def serialize(self) -> Dict[str, Any]:
         """
@@ -96,10 +100,11 @@ class ParameterBuffer:
             return
 
         dacite_config = dacite.Config(cast=[Status, CommandOutput])
-        new_data = dacite.from_dict(ParameterBuffer, serialized_data, dacite_config)
 
-        for private_field in self.PRIVATE_FIELDS:
-            setattr(new_data, private_field, getattr(self, private_field))
+        for private_field in self.PRIVATE_FIELDS + self.READONLY_FIELDS:
+            serialized_data[private_field] = getattr(self, private_field)
+
+        new_data = dacite.from_dict(ParameterBuffer, serialized_data, dacite_config)
 
         self.__dict__.update(new_data.__dict__)
 
