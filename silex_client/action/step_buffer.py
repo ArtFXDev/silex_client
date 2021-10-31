@@ -12,7 +12,8 @@ import uuid as unique_id
 from dataclasses import dataclass, field, fields
 from typing import Dict, Any, Optional
 
-import dacite
+import dacite.config as dacite_config
+import dacite.core as dacite
 
 from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.datatypes import CommandOutput
@@ -89,16 +90,15 @@ class StepBuffer:
         if self.hide:
             return
 
-        dacite_config = dacite.Config(
-            cast=[Status, CommandOutput],
-            type_hooks={CommandBuffer: self._deserialize_commands},
-        )
-
         # Format the commands corectly
         for command_name, command in serialized_data.get("commands", {}).items():
             command["name"] = command_name
 
-        new_data = dacite.from_dict(StepBuffer, serialized_data, dacite_config)
+        config = dacite_config.Config(
+            cast=[Status, CommandOutput],
+            type_hooks={CommandBuffer: self._deserialize_commands},
+        )
+        new_data = dacite.from_dict(StepBuffer, serialized_data, config)
 
         for private_field in self.PRIVATE_FIELDS:
             setattr(new_data, private_field, getattr(self, private_field))
@@ -110,13 +110,13 @@ class StepBuffer:
         """
         Create an step buffer from serialized data
         """
-        dacite_config = dacite.Config(cast=[Status, CommandOutput])
+        config = dacite_config.Config(cast=[Status, CommandOutput])
         if "commands" in serialized_data:
             filtered_data = copy.deepcopy(serialized_data)
             del filtered_data["commands"]
-            step = dacite.from_dict(StepBuffer, filtered_data, dacite_config)
+            step = dacite.from_dict(StepBuffer, filtered_data, config)
         else:
-            step = dacite.from_dict(StepBuffer, serialized_data, dacite_config)
+            step = dacite.from_dict(StepBuffer, serialized_data, config)
 
         step.deserialize(serialized_data)
         return step

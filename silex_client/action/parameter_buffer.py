@@ -9,9 +9,10 @@ from __future__ import annotations
 import re
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
-from typing import Any, Dict, Optional, Type, TYPE_CHECKING, Union
+from typing import Any, Dict, Optional, Type, TYPE_CHECKING
 
-import dacite
+import dacite.config as dacite_config
+import dacite.core as dacite
 
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
@@ -104,12 +105,11 @@ class ParameterBuffer:
         if self.hide:
             return
 
-        dacite_config = dacite.Config(cast=[Status, CommandOutput])
-
         for private_field in self.PRIVATE_FIELDS + self.READONLY_FIELDS:
             serialized_data[private_field] = getattr(self, private_field)
 
-        new_data = dacite.from_dict(ParameterBuffer, serialized_data, dacite_config)
+        config = dacite_config.Config(cast=[Status, CommandOutput])
+        new_data = dacite.from_dict(ParameterBuffer, serialized_data, config)
 
         self.__dict__.update(new_data.__dict__)
 
@@ -118,8 +118,8 @@ class ParameterBuffer:
         """
         Create an parameter buffer from serialized data
         """
-        dacite_config = dacite.Config(cast=[Status, CommandOutput])
-        parameter = dacite.from_dict(ParameterBuffer, serialized_data, dacite_config)
+        config = dacite_config.Config(cast=[Status, CommandOutput])
+        parameter = dacite.from_dict(ParameterBuffer, serialized_data, config)
 
         parameter.deserialize(serialized_data)
         return parameter

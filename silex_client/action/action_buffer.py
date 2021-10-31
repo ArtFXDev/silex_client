@@ -10,7 +10,8 @@ import uuid as unique_id
 from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-import dacite
+import dacite.config as dacite_config
+import dacite.core as dacite
 
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.action.step_buffer import StepBuffer
@@ -89,16 +90,15 @@ class ActionBuffer:
         """
         Convert back the action's data from json into this object
         """
-        dacite_config = dacite.Config(
-            cast=[Status, Execution, CommandOutput],
-            type_hooks={StepBuffer: self._deserialize_steps},
-        )
-
         # Format the steps corectly
         for step_name, step in serialized_data.get("steps", {}).items():
             step["name"] = step_name
 
-        new_data = dacite.from_dict(ActionBuffer, serialized_data, dacite_config)
+        config = dacite_config.Config(
+            cast=[Status, Execution, CommandOutput],
+            type_hooks={StepBuffer: self._deserialize_steps},
+        )
+        new_data = dacite.from_dict(ActionBuffer, serialized_data, config)
 
         for private_field in self.PRIVATE_FIELDS:
             setattr(new_data, private_field, getattr(self, private_field))

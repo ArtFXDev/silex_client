@@ -13,12 +13,13 @@ import traceback
 import re
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
-from typing import Any, Dict, Union, Optional
+from typing import Any, Dict, Optional
 
-import dacite
+import dacite.config as dacite_config
+import dacite.core as dacite
 import jsondiff
 
-from silex_client.action.command_base import CommandBase, CommandParameters
+from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
@@ -135,11 +136,6 @@ class CommandBuffer:
         if self.hide:
             return
 
-        dacite_config = dacite.Config(
-            cast=[Status, CommandOutput],
-            type_hooks={ParameterBuffer: self._deserialize_parameters},
-        )
-
         # Format the parameters corectly
         executor_parameters = copy.deepcopy(self.executor.parameters)
         serialized_parameters = serialized_data.get("parameters", {})
@@ -157,7 +153,11 @@ class CommandBuffer:
                 executor_parameters, serialized_parameters
             )
 
-        new_data = dacite.from_dict(CommandBuffer, serialized_data, dacite_config)
+        config = dacite_config.Config(
+            cast=[Status, CommandOutput],
+            type_hooks={ParameterBuffer: self._deserialize_parameters},
+        )
+        new_data = dacite.from_dict(CommandBuffer, serialized_data, config)
 
         for private_field in self.PRIVATE_FIELDS:
             setattr(new_data, private_field, getattr(self, private_field))
@@ -169,13 +169,13 @@ class CommandBuffer:
         """
         Create an command buffer from serialized data
         """
-        dacite_config = dacite.Config(cast=[Status, CommandOutput])
+        config = dacite_config.Config(cast=[Status, CommandOutput])
         if "parameters" in serialized_data:
             filtered_data = copy.deepcopy(serialized_data)
             del filtered_data["parameters"]
-            parameter = dacite.from_dict(CommandBuffer, filtered_data, dacite_config)
+            parameter = dacite.from_dict(CommandBuffer, filtered_data, config)
         else:
-            parameter = dacite.from_dict(CommandBuffer, serialized_data, dacite_config)
+            parameter = dacite.from_dict(CommandBuffer, serialized_data, config)
 
         parameter.deserialize(serialized_data)
         return parameter
