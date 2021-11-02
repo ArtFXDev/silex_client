@@ -96,7 +96,8 @@ class ActionQuery:
                     for command_left in self.commands[index:]:
                         command_left.status = Status.INITIALIZED
 
-                    command.execute(self, self.execution_type)
+                # Execution of the command
+                command.execute(self, self.execution_type)
 
             # Inform the UI of the state of the action (either completed or sucess)
             await self.async_update_websocket()
