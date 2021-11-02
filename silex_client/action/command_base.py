@@ -6,7 +6,6 @@ Base class that every command should inherit from
 
 from __future__ import annotations
 
-import copy
 import functools
 import os
 import traceback
@@ -14,7 +13,6 @@ from typing import List, TYPE_CHECKING, Any, Callable, Dict
 
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
-from silex_client.utils.parameter_types import CommandParameterMeta
 
 # Forward references
 if TYPE_CHECKING:

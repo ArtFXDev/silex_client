@@ -9,11 +9,11 @@ from __future__ import annotations
 import copy
 import importlib
 import os
-import traceback
 import re
+import traceback
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import dacite.config as dacite_config
 import dacite.core as dacite
@@ -22,8 +22,12 @@ import jsondiff
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.datatypes import CommandOutput
-from silex_client.utils.enums import Status
+from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
+
+# Forward references
+if TYPE_CHECKING:
+    from silex_client.action.action_query import ActionQuery
 
 
 @dataclass()
@@ -96,6 +100,36 @@ class CommandBuffer:
                 traceback.print_tb(exception.__traceback__)
 
             return CommandBase(self)
+
+    async def execute(
+        self, action_query: ActionQuery, execution_type: Execution = Execution.FORWARD
+    ):
+        """
+        Execute the command using the executor
+        """
+        # Create a dictionary that only contains the name and the value of the parameters
+        # without infos like the type, label...
+        parameters = {
+            key: value.get_value(action_query) for key, value in self.parameters.items()
+        }
+
+        # Get the input result
+        input_value = None
+        if self.input_path:
+            input_command = action_query.get_command(self.input_path)
+            input_value = (
+                input_command.output_result if input_command is not None else None
+            )
+
+        # Run the executor and copy the parameters
+        # to prevent them from being modified during execution
+        logger.debug("Executing command %s", self.name)
+        if execution_type == Execution.FORWARD:
+            await self.executor(input_value, copy.deepcopy(parameters), action_query)
+        elif execution_type == Execution.BACKWARD:
+            await self.executor.undo(
+                input_value, copy.deepcopy(parameters), action_query
+            )
 
     def serialize(self) -> Dict[str, Any]:
         """
