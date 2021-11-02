@@ -10,5 +10,5 @@ with open(convert_path("silex_client/__version__.py")) as ver_file:
 
 setup(
     version=main_ns["__version__"],
-    python_requires="==3.7",
+    python_requires="==3.7.*",
 )
