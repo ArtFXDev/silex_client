@@ -7,7 +7,13 @@ from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
-from silex_client.utils.parameter_types import RangeParameterMeta, SelectParameterMeta
+from silex_client.utils.parameter_types import (
+    RangeParameterMeta,
+    SelectParameterMeta,
+    MultipleSelectParameterMeta,
+    IntArrayParameterMeta,
+    entity,
+)
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -308,3 +314,151 @@ class RangeTesterHigh(CommandBase):
             type(parameters["range_tester_2"]),
         )
         return parameters["range_tester"]
+
+
+class EntityTester(CommandBase):
+    """
+    Testing the entity parameters
+    """
+
+    parameters = {
+        "entity_tester": {
+            "label": "Entity Tester",
+            "type": entity,
+            "value": None,
+            "tooltip": "Testing the entity parameters",
+        },
+        "entity_tester_2": {
+            "label": "Entity Tester 2",
+            "type": entity,
+            "value": None,
+            "tooltip": "Testing the entity parameters",
+        },
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+    ):
+        logger.info(
+            "Entity parameter tester: %s, %s",
+            parameters["entity_tester"],
+            type(parameters["entity_tester"]),
+        )
+        logger.info(
+            "Entity parameter tester: %s, %s",
+            parameters["entity_tester_2"],
+            type(parameters["entity_tester_2"]),
+        )
+        return parameters["entity_tester"]
+
+
+class MultipleSelectTester(CommandBase):
+    """
+    Testing the multiple_select parameters
+    """
+
+    parameters = {
+        "multiple_select_tester": {
+            "label": "MultipleSelect Tester",
+            "type": MultipleSelectParameterMeta("foo", "bar", "hello", "world"),
+            "value": None,
+            "tooltip": "Testing the multiple_select parameters",
+        },
+        "multiple_select_tester_2": {
+            "label": "MultipleSelect Tester 2",
+            "type": MultipleSelectParameterMeta("foo", "bar", "hello", "world"),
+            "value": None,
+            "tooltip": "Testing the multiple_select parameters",
+        },
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+    ):
+        logger.info(
+            "MultipleSelect parameter tester: %s, %s",
+            parameters["multiple_select_tester"],
+            type(parameters["multiple_select_tester"]),
+        )
+        logger.info(
+            "MultipleSelect parameter tester: %s, %s",
+            parameters["multiple_select_tester_2"],
+            type(parameters["multiple_select_tester_2"]),
+        )
+        return parameters["multiple_select_tester"]
+
+
+class IntArrayTesterLow(CommandBase):
+    """
+    Testing the int_array parameters
+    """
+
+    parameters = {
+        "int_array_tester": {
+            "label": "IntArray Tester",
+            "type": IntArrayParameterMeta(2),
+            "value": None,
+            "tooltip": "Testing the int_array parameters",
+        },
+        "int_array_tester_2": {
+            "label": "IntArray Tester 2",
+            "type": IntArrayParameterMeta(2),
+            "value": None,
+            "tooltip": "Testing the int_array parameters",
+        },
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+    ):
+        logger.info(
+            "IntArray parameter tester: %s, %s",
+            parameters["int_array_tester"],
+            type(parameters["int_array_tester"]),
+        )
+        logger.info(
+            "IntArray parameter tester: %s, %s",
+            parameters["int_array_tester_2"],
+            type(parameters["int_array_tester_2"]),
+        )
+        return parameters["int_array_tester"]
+
+
+class IntArrayTesterHigh(CommandBase):
+    """
+    Testing the int_array parameters
+    """
+
+    parameters = {
+        "int_array_tester": {
+            "label": "IntArray Tester",
+            "type": IntArrayParameterMeta(6),
+            "value": None,
+            "tooltip": "Testing the int_array parameters",
+        },
+        "int_array_tester_2": {
+            "label": "IntArray Tester 2",
+            "type": IntArrayParameterMeta(6),
+            "value": None,
+            "tooltip": "Testing the int_array parameters",
+        },
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+    ):
+        logger.info(
+            "IntArray parameter tester: %s, %s",
+            parameters["int_array_tester"],
+            type(parameters["int_array_tester"]),
+        )
+        logger.info(
+            "IntArray parameter tester: %s, %s",
+            parameters["int_array_tester_2"],
+            type(parameters["int_array_tester_2"]),
+        )
+        return parameters["int_array_tester"]
