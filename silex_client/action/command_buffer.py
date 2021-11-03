@@ -38,6 +38,8 @@ class CommandBuffer:
 
     #: The list of fields that should be ignored when serializing this buffer to json
     PRIVATE_FIELDS = ["output_result", "executor", "input_path"]
+    #: The list of fields that should be ignored when deserializing this buffer to json
+    READONLY_FIELDS = ["type"]
 
     #: The path to the command's module
     path: str = field()
@@ -195,7 +197,7 @@ class CommandBuffer:
         )
         new_data = dacite.from_dict(CommandBuffer, serialized_data, config)
 
-        for private_field in self.PRIVATE_FIELDS:
+        for private_field in self.PRIVATE_FIELDS + self.READONLY_FIELDS:
             setattr(new_data, private_field, getattr(self, private_field))
 
         self.__dict__.update(new_data.__dict__)
