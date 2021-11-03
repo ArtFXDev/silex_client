@@ -13,7 +13,7 @@ import re
 import traceback
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, List
 
 import dacite.config as dacite_config
 import dacite.core as dacite
@@ -65,6 +65,8 @@ class CommandBuffer:
     input_path: CommandOutput = field(default=CommandOutput(""))
     #: The callable that will be used when the command is executed
     executor: CommandBase = field(init=False)
+    #: Name of the command, must have no space or special characters
+    logs: List[Dict[str, str]] = field(default_factory=list)
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")
