@@ -107,15 +107,20 @@ class CommandBase:
                 action_query: ActionQuery = kwargs.get("action_query", args[2])
 
                 # Make sure the given parameters are valid
-                if not command.check_parameters(parameters):
-                    command.command_buffer.status = Status.INVALID
-                    return
-                # Make sure all the required metatada is here
-                if not command.check_context_metadata(action_query.context_metadata):
-                    command.command_buffer.status = Status.INVALID
-                    return
-                command.command_buffer.status = Status.PROCESSING
+                with RedirectWebsocketLogs(
+                    logger, action_query, command.command_buffer
+                ):
+                    if not command.check_parameters(parameters):
+                        command.command_buffer.status = Status.INVALID
+                        return
+                    # Make sure all the required metatada is here
+                    if not command.check_context_metadata(
+                        action_query.context_metadata
+                    ):
+                        command.command_buffer.status = Status.INVALID
+                        return
 
+                command.command_buffer.status = Status.PROCESSING
                 await action_query.async_update_websocket()
 
                 try:
