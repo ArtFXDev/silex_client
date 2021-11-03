@@ -39,7 +39,7 @@ class CommandBuffer:
     #: The list of fields that should be ignored when serializing this buffer to json
     PRIVATE_FIELDS = ["output_result", "executor", "input_path"]
     #: The list of fields that should be ignored when deserializing this buffer to json
-    READONLY_FIELDS = ["type"]
+    READONLY_FIELDS = ["logs"]
 
     #: The path to the command's module
     path: str = field()

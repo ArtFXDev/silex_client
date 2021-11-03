@@ -1,13 +1,8 @@
 import logging
-from typing import TYPE_CHECKING
 
 import logzero
 
 from silex_client.utils.log import formatter
-
-# Forward references
-if TYPE_CHECKING:
-    from silex_client.action.command_buffer import CommandBuffer
 
 # Formatting of the output log to look like
 __LOG_FORMAT = "[SILEX]\
@@ -44,5 +39,5 @@ class RedirectWebsocketLogs(object):
     def __enter__(self):
         self.logger.addHandler(self.handler)
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         self.logger.handlers.remove(self.handler)
