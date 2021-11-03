@@ -7,7 +7,8 @@ SILEX_ACTION_CONFIG: For the actions
 
 import copy
 import os
-from typing import Any, Union, Dict, List, Optional
+import pkg_resources
+from typing import Any, Dict, List, Optional
 
 from dacite import types
 
@@ -34,12 +35,16 @@ class Config:
 
         # Add the custom action config search path
         if config_search_path is not None:
-            self.action_search_path += action_search_path
+            self.action_search_path += config_search_path
 
         # Look for config search path in the environment variables
         env_config_path = os.getenv("SILEX_ACTION_CONFIG")
         if env_config_path is not None:
             self.action_search_path += env_config_path.split(os.pathsep)
+
+        # Look for config search path in silex_config entry_point
+        for entry_point in pkg_resources.iter_entry_points("silex_action_config"):
+            self.action_search_path += entry_point.load()
 
     def find_config(self, search_path: List[str]) -> List[Dict[str, str]]:
         """

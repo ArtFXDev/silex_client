@@ -9,7 +9,6 @@ def build(source_path, build_path, install_path, targets):
     Build the rez package and install it if requested
     """
     src = os.path.join(source_path, "silex_client")
-    config = os.path.join(source_path, "config")
     test = os.path.join(source_path, "test")
     package = os.path.join(source_path, "package.py")
 
@@ -21,7 +20,6 @@ def build(source_path, build_path, install_path, targets):
     if os.path.exists(build_path):
         with contextlib.suppress(FileNotFoundError):
             shutil.rmtree(os.path.join(build_path, "silex_client"))
-            shutil.rmtree(os.path.join(build_path, "config"))
             shutil.rmtree(os.path.join(build_path, "test"))
             os.remove(os.path.join(build_path, "package.py"))
             os.remove(os.path.join(build_path, ".pylintrc"))
@@ -29,7 +27,6 @@ def build(source_path, build_path, install_path, targets):
 
     # Copy the source to the build location
     shutil.copytree(src, os.path.join(build_path, "silex_client"))
-    shutil.copytree(config, os.path.join(build_path, "config"))
     shutil.copytree(test, os.path.join(build_path, "test"))
     shutil.copy(package, build_path)
     shutil.copy(lint, build_path)
@@ -43,15 +40,16 @@ def build(source_path, build_path, install_path, targets):
 
         # Copy the source to the install location
         shutil.copytree(src, os.path.join(install_path, "silex_client"))
-        shutil.copytree(config, os.path.join(install_path, "config"))
         shutil.copytree(test, os.path.join(install_path, "test"))
         shutil.copy(package, install_path)
         shutil.copy(lint, install_path)
         shutil.copy(unit, install_path)
 
 
-if __name__ == '__main__':
-    build(source_path=os.environ['REZ_BUILD_SOURCE_PATH'],
-          build_path=os.environ['REZ_BUILD_PATH'],
-          install_path=os.environ['REZ_BUILD_INSTALL_PATH'],
-          targets=sys.argv[1:])
+if __name__ == "__main__":
+    build(
+        source_path=os.environ["REZ_BUILD_SOURCE_PATH"],
+        build_path=os.environ["REZ_BUILD_PATH"],
+        install_path=os.environ["REZ_BUILD_INSTALL_PATH"],
+        targets=sys.argv[1:],
+    )

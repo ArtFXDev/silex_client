@@ -23,9 +23,6 @@ def action_handler(action_name: str, **kwargs) -> None:
     """
     Execute the given action in the resolved context
     """
-    silex_context = Context.get()
-    silex_context.start_services()
-
     if kwargs.get("list", False):
         # Just print the available actions
         action_names = [action["name"] for action in Config().actions]
@@ -48,6 +45,9 @@ def action_handler(action_name: str, **kwargs) -> None:
         print(f"Parameters for action {action_name} :")
         pprint.pprint(parameters)
         return
+
+    silex_context = Context.get()
+    silex_context.start_services()
 
     if kwargs.get("task_id") is not None:
         os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
