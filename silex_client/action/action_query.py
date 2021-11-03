@@ -96,32 +96,8 @@ class ActionQuery:
                     for command_left in self.commands[index:]:
                         command_left.status = Status.INITIALIZED
 
-                # Create a dictionary that only contains the name and the value of the parameters
-                # without infos like the type, label...
-                parameters = {
-                    key: value.get("value", None)
-                    for key, value in command.parameters.items()
-                }
-
-                # Get the input result
-                input_value = None
-                if command.input_path:
-                    input_command = self.get_command(command.input_path)
-                    input_value = input_command.output_result if input_command is not None else None
-
-                # Run the executor and copy the parameters
-                # to prevent them from being modified during execution
-                logger.debug(
-                    "Executing command %s for action %s", command.name, self.name
-                )
-                if self.execution_type == Execution.FORWARD:
-                    await command.executor(
-                        input_value, copy.deepcopy(parameters), self
-                    )
-                elif self.execution_type == Execution.BACKWARD:
-                    await command.executor.undo(
-                        input_value, copy.deepcopy(parameters), self
-                    )
+                # Execution of the command
+                await command.execute(self, self.execution_type)
 
             # Inform the UI of the state of the action (either completed or sucess)
             await self.async_update_websocket()

@@ -6,7 +6,6 @@ Base class that every command should inherit from
 
 from __future__ import annotations
 
-import copy
 import functools
 import os
 import traceback
@@ -14,8 +13,6 @@ from typing import List, TYPE_CHECKING, Any, Callable, Dict
 
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
-from silex_client.utils.parameter_types import CommandParameterMeta
-from silex_client.utils.datatypes import CommandOutput
 
 # Forward references
 if TYPE_CHECKING:
@@ -47,56 +44,12 @@ class CommandBase:
         """
         return self.__class__.__name__
 
-    @property
-    def conformed_parameters(self) -> CommandParameters:
-        """
-        Make sure all the required keys are there in the parameters set by the command
-        Set some default values for the missing keys or return an error
-        """
-        conformed_parameters = {}
-        for parameter_name, parameter_data in copy.deepcopy(self.parameters).items():
-            conformed_data = {}
-
-            # Make sure the "type" entry is given
-            if "type" not in parameter_data or not isinstance(
-                parameter_data["type"], type
-            ):
-                logger.error(
-                    "Invalid parameter %s in the commands %s: The 'type' entry is mendatory",
-                    parameter_name,
-                    self.command_buffer.name,
-                )
-            else:
-                conformed_data["type"] = parameter_data["type"]
-
-            # Conform the name entry
-            conformed_data["name"] = parameter_name
-            # Conform the label entry
-            conformed_data["label"] = parameter_data.get(
-                "label", parameter_name.title()
-            )
-            # Conform the value entry
-            conformed_data["value"] = parameter_data.get("value", None)
-            if conformed_data["value"] is None and isinstance(
-                conformed_data["type"], CommandParameterMeta
-            ):
-                conformed_data["value"] = conformed_data["type"].get_default()
-            # Conform the hide entry
-            conformed_data["hide"] = parameter_data.get("hide", False)
-            # Conform the tooltip entry
-            conformed_data["tooltip"] = parameter_data.get("tooltip", None)
-            conformed_parameters[parameter_name] = conformed_data
-
-        return conformed_parameters
-
-    def check_parameters(
-        self, parameters: CommandParameters, action_query: ActionQuery
-    ) -> bool:
+    def check_parameters(self, parameters: CommandParameters) -> bool:
         """
         Check the if the input kwargs are valid accoring to the parameters list
         and conform it if nessesary
         """
-        for parameter_name, parameter_data in self.conformed_parameters.items():
+        for parameter_name, parameter_buffer in self.command_buffer.parameters.items():
             # Check if the parameter is here
             if parameter_name not in parameters.keys():
                 logger.error(
@@ -106,16 +59,9 @@ class CommandBase:
                 )
                 return False
 
-            # Get the value if the parameter is a command output
-            parameter_buffer = self.command_buffer.parameters.get(parameter_name, {})
-            if parameter_buffer.get("command_output", False):
-                command = action_query.get_command(parameters[parameter_name])
-                value = command.output_result if command is not None else None
-                parameters[parameter_name] = value
-
             # Check if the parameter is the right type
             try:
-                parameters[parameter_name] = parameter_data["type"](
+                parameters[parameter_name] = parameter_buffer.type(
                     parameters[parameter_name]
                 )
             except (ValueError, TypeError):
@@ -160,7 +106,7 @@ class CommandBase:
                 action_query: ActionQuery = kwargs.get("action_query", args[2])
 
                 # Make sure the given parameters are valid
-                if not command.check_parameters(parameters, action_query):
+                if not command.check_parameters(parameters):
                     command.command_buffer.status = Status.INVALID
                     return
                 # Make sure all the required metatada is here

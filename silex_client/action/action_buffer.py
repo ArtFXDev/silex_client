@@ -8,14 +8,16 @@ from __future__ import annotations
 
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
-from typing import Any, Dict, List, TYPE_CHECKING, Union, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-import dacite
+import dacite.config as dacite_config
+import dacite.core as dacite
 
+from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.action.step_buffer import StepBuffer
-from silex_client.utils.enums import Status, Execution
-from silex_client.utils.log import logger
 from silex_client.utils.datatypes import CommandOutput
+from silex_client.utils.enums import Execution, Status
+from silex_client.utils.log import logger
 
 # Forward references
 if TYPE_CHECKING:
@@ -79,7 +81,7 @@ class ActionBuffer:
         step_name = step_data.get("name")
         step = self.steps.get(step_name)
         if step is None:
-            return step_data
+            return StepBuffer.construct(step_data)
 
         step.deserialize(step_data)
         return step
@@ -88,13 +90,15 @@ class ActionBuffer:
         """
         Convert back the action's data from json into this object
         """
-        dacite_config = dacite.Config(
+        # Format the steps corectly
+        for step_name, step in serialized_data.get("steps", {}).items():
+            step["name"] = step_name
+
+        config = dacite_config.Config(
             cast=[Status, Execution, CommandOutput],
             type_hooks={StepBuffer: self._deserialize_steps},
         )
-        for step_name, step in serialized_data.get("steps", {}).items():
-            step["name"] = step_name
-        new_data = dacite.from_dict(ActionBuffer, serialized_data, dacite_config)
+        new_data = dacite.from_dict(ActionBuffer, serialized_data, config)
 
         for private_field in self.PRIVATE_FIELDS:
             setattr(new_data, private_field, getattr(self, private_field))
@@ -147,7 +151,7 @@ class ActionBuffer:
 
     def get_parameter(
         self, step: str, command: str, name: str
-    ) -> Union[Dict[str, Any], None]:
+    ) -> Optional[ParameterBuffer]:
         """
         Helper to get a parameter of a command that belong to this action
         The data is quite nested, this is just for conveniance
@@ -168,11 +172,11 @@ class ActionBuffer:
             return
 
         # Check if the given value is the right type
-        if not isinstance(value, parameter.get("type", object)):
+        if not isinstance(value, parameter.type):
             try:
-                value = parameter["type"](value)
+                value = parameter.type(value)
             except TypeError:
                 logger.error("Could not set parameter %s: Invalid value", name)
                 return
 
-        parameter["value"] = value
+        parameter.value = value

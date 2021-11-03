@@ -4,12 +4,16 @@
 Dataclass used to store the data related to a step
 """
 
+from __future__ import annotations
+
+import copy
 import re
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
 from typing import Dict, Any, Optional
 
-import dacite
+import dacite.config as dacite_config
+import dacite.core as dacite
 
 from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.datatypes import CommandOutput
@@ -73,7 +77,7 @@ class StepBuffer:
         command_name = command_data.get("name")
         command = self.commands.get(command_name)
         if command is None:
-            return command_data
+            return CommandBuffer.construct(command_data)
 
         command.deserialize(command_data)
         return command
@@ -82,18 +86,40 @@ class StepBuffer:
         """
         Convert back the action's data from json into this object
         """
-        dacite_config = dacite.Config(
+        # Don't take the modifications of the hidden steps
+        if self.hide:
+            return
+
+        # Format the commands corectly
+        for command_name, command in serialized_data.get("commands", {}).items():
+            command["name"] = command_name
+
+        config = dacite_config.Config(
             cast=[Status, CommandOutput],
             type_hooks={CommandBuffer: self._deserialize_commands},
         )
-        for command_name, command in serialized_data.get("commands", {}).items():
-            command["name"] = command_name
-        new_data = dacite.from_dict(StepBuffer, serialized_data, dacite_config)
+        new_data = dacite.from_dict(StepBuffer, serialized_data, config)
 
         for private_field in self.PRIVATE_FIELDS:
             setattr(new_data, private_field, getattr(self, private_field))
 
         self.__dict__.update(new_data.__dict__)
+
+    @classmethod
+    def construct(cls, serialized_data: Dict[str, Any]) -> StepBuffer:
+        """
+        Create an step buffer from serialized data
+        """
+        config = dacite_config.Config(cast=[Status, CommandOutput])
+        if "commands" in serialized_data:
+            filtered_data = copy.deepcopy(serialized_data)
+            del filtered_data["commands"]
+            step = dacite.from_dict(StepBuffer, filtered_data, config)
+        else:
+            step = dacite.from_dict(StepBuffer, serialized_data, config)
+
+        step.deserialize(serialized_data)
+        return step
 
     @property  # type: ignore
     def status(self) -> Status:
