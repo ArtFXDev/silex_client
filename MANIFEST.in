@@ -1,3 +1,0 @@
-include .env
-include *.yaml
-include *.yml
