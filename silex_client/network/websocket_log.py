@@ -7,7 +7,6 @@ from silex_client.utils.log import formatter
 
 # Forward references
 if TYPE_CHECKING:
-    from silex_client.action.action_query import ActionQuery
     from silex_client.action.command_buffer import CommandBuffer
 
 # Formatting of the output log to look like
@@ -22,7 +21,7 @@ class WebsocketLogHandler(logging.Handler):
     Handler to send all the logs to the given namespace and event through websocket
     """
 
-    def __init__(self, action_query: ActionQuery, command: CommandBuffer):
+    def __init__(self, action_query, command):
         self.action_query = action_query
         self.silex_command = command
         super().__init__()
@@ -38,9 +37,7 @@ class WebsocketLogHandler(logging.Handler):
 
 
 class RedirectWebsocketLogs(object):
-    def __init__(
-        self, logger: logging.Logger, action_query: ActionQuery, command: CommandBuffer
-    ):
+    def __init__(self, logger: logging.Logger, action_query, command):
         self.logger = logger
         self.handler = WebsocketLogHandler(action_query, command)
 
