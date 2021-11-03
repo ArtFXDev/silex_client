@@ -20,7 +20,8 @@ requires = [
     "jsondiff",
     "dacite",
     "Qt.py",
-    "python_dotenv"
+    "python_dotenv",
+    "setuptools",
 ]
 
 vcs = "git"
