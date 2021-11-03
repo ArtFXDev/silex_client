@@ -67,15 +67,18 @@ class RangeParameterMeta(CommandParameterMeta):
 
 
 class SelectParameterMeta(CommandParameterMeta):
-    def __init__(cls, *options):
+    def __init__(cls, *list_options, **options):
         pass
 
-    def __new__(cls, *options):
+    def __new__(cls, *list_options, **options):
+        for unnamed_option in list_options:
+            options[unnamed_option] = unnamed_option
+
         def serialize():
             return {"name": "select", "options": options}
 
         def get_default():
-            return options[0] if options else None
+            return list(options.values())[0] if options else None
 
         attributes = {
             "serialize": serialize,
@@ -85,15 +88,18 @@ class SelectParameterMeta(CommandParameterMeta):
 
 
 class MultipleSelectParameterMeta(CommandParameterMeta):
-    def __init__(cls, *options):
+    def __init__(cls, *list_options, **options):
         pass
 
-    def __new__(cls, *options):
+    def __new__(cls, *list_options, **options):
+        for unnamed_option in list_options:
+            options[unnamed_option] = unnamed_option
+
         def serialize():
             return {"name": "multiple_select", "options": options}
 
         def get_default():
-            return [options[0]] if options else None
+            return [list(options.values())[0]] if options else None
 
         attributes = {
             "serialize": serialize,
