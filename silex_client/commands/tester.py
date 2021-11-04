@@ -482,7 +482,7 @@ class TracebackTester(CommandBase):
         "raise_exception": {
             "label": "Raise exception",
             "type": bool,
-            "value": False,
+            "value": True,
             "tooltip": "Specify if you what this command to rase an exception or not",
         },
     }
@@ -491,6 +491,12 @@ class TracebackTester(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+        logger.info(
+            "Traceback tester: %s, %s",
+            parameters["raise_exception"],
+            type(parameters["raise_exception"]),
+        )
+
         if parameters["raise_exception"]:
             raise ValueError("Don't worry, this is a fake error for testing purpose")
         return parameters["raise_exception"]

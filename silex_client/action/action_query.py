@@ -212,7 +212,6 @@ class ActionQuery:
     @execution_type.setter
     def execution_type(self, value: Execution) -> None:
         """Shortcut to get the status of the action stored in the buffer"""
-        self.update_event.set()
         self.buffer.execution_type = value
 
     @property
