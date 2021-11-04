@@ -277,13 +277,13 @@ class RangeTesterMid(CommandBase):
             type(parameters["range_tester_2"]),
         )
 
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(1)
         logger.info("Pretending to work")
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(1)
         logger.info("Keep pretending to work")
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(1)
         logger.info("Work done")
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(1)
         return parameters["range_tester"]
 
 
@@ -469,4 +469,5 @@ class IntArrayTesterHigh(CommandBase):
             parameters["int_array_tester_2"],
             type(parameters["int_array_tester_2"]),
         )
+        raise ValueError("Don't worry, this is a fake error for testing purpose")
         return parameters["int_array_tester"]
