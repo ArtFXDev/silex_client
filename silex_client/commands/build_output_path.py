@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import uuid
 import typing
 from typing import Any, Dict
 
@@ -79,5 +80,10 @@ class BuildOutputPath(CommandBase):
         directory = await gazu.files.build_entity_output_file_path(
             entity, output_type, task_type, sep=os.path.sep
         )
-        file_path = directory.split(os.path.sep)[-1]
-        return {"directory": directory, "file_path": file_path}
+        temp_directory = os.path.join(os.path.dirname(directory), str(uuid.uuid4()))
+        file_name = directory.split(os.path.sep)[-1]
+        return {
+            "directory": directory,
+            "file_name": file_name,
+            "temp_directory": temp_directory,
+        }
