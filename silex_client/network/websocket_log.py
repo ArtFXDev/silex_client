@@ -47,8 +47,7 @@ class RedirectWebsocketLogs(object):
     def __exit__(self, exc_type, exc_value, exc_traceback):
         if exc_type:
             exception = traceback.format_exception(exc_type, exc_value, exc_traceback)
-            if exception:
-                exception = exception[0]
+            exception = "\n".join(exception)
             log = {"level": "TRACEBACK", "message": str(exception)}
             self.silex_command.logs.append(log)
             self.action_query.update_websocket()
