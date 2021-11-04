@@ -1,11 +1,20 @@
 conform:
   steps:
-    conform:
-      label: "Conform"
-      index: 20
+    setup:
+      lavel: "Setup"
+      index: 50
       commands:
-        conform:
-          ask_user: true
-          path: "silex_client.commands.conform.Conform"
+        get_conform_output:
+          label: "Select conform type"
+          path: "silex_client.commands.select_conform.SelectConform"
+          tooltip: "Select the type of conform you want to make"
           parameters:
-            filename: ""
+            auto_select_type: true
+          ask_user: true
+
+        build_output_path:
+          label: "Build output path"
+          path: "silex_client.commands.build_output_path.BuildOutputPath"
+          tooltip: "Build the complete output path"
+          parameters:
+            output_type: !command-output "setup:get_conform_output"

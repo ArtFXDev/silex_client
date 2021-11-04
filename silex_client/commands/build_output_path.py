@@ -24,7 +24,7 @@ class BuildOutputPath(CommandBase):
     """
 
     parameters = {
-        "publish_type": {
+        "output_type": {
             "label": "Insert publish type",
             "type": str,
             "value": None,
@@ -56,16 +56,16 @@ class BuildOutputPath(CommandBase):
 
         # Get the output type
         output_type = await gazu.files.get_output_type_by_short_name(
-            parameters["publish_type"]
+            parameters["output_type"]
         )
         if output_type is None:
             logger.error(
                 "Could not build the output type %s: The output type does not exists in the zou database",
-                parameters["publish_type"],
+                parameters["output_type"],
             )
             raise Exception(
                 "Could not build the output type %s: The output type does not exists in the zou database",
-                parameters["publish_type"],
+                parameters["output_type"],
             )
 
         # Get the task type

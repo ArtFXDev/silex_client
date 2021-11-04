@@ -1,0 +1,82 @@
+tester:
+  shelf: false
+  steps:
+    parameter_tester:
+      index: 50
+      label: "Parameter Tester"
+      commands:
+        string:
+          path: "silex_client.commands.tester.StringTester"
+          parameters:
+            string_tester: "hello world!"
+          ask_user: True
+        integer:
+          path: "silex_client.commands.tester.IntegerTester"
+          parameters:
+            int_tester: 42
+          ask_user: True
+        boolean:
+          path: "silex_client.commands.tester.BooleanTester"
+          parameters:
+            bool_tester: true
+          ask_user: True
+        path:
+          path: "silex_client.commands.tester.PathTester"
+          parameters:
+            path_tester: "/foo/bar/tester.txt"
+            path_tester_2: !command-output "parameter_tester:string:testing_values"
+          ask_user: True
+        select:
+          path: "silex_client.commands.tester.SelectTester"
+          parameters:
+            select_tester: "foo"
+          ask_user: True
+        range_low:
+          path: "silex_client.commands.tester.RangeTesterLow"
+          parameters:
+            range_tester: 22
+          ask_user: True
+        range_mid:
+          path: "silex_client.commands.tester.RangeTesterMid"
+          parameters:
+            range_tester: 6
+          ask_user: True
+        range_high:
+          path: "silex_client.commands.tester.RangeTesterHigh"
+          parameters:
+            range_tester: 1200
+            range_tester_2: !command-output "parameter_tester:range_mid"
+          ask_user: True
+        entity:
+          path: "silex_client.commands.tester.EntityTester"
+          parameters:
+            entity_tester: "ogjpsjtgipsrtjg"
+          ask_user: True
+        multiple_select:
+          path: "silex_client.commands.tester.MultipleSelectTester"
+          parameters:
+            multiple_select_tester:
+              - "hello"
+              - "bar"
+          ask_user: True
+        int_array_low:
+          path: "silex_client.commands.tester.IntArrayTesterLow"
+          parameters:
+            int_array_tester:
+              - 5
+              - 7
+          ask_user: True
+        int_array_high:
+          path: "silex_client.commands.tester.IntArrayTesterLow"
+          parameters:
+            int_array_tester:
+              - 2048
+              - 7
+              - 49
+              - 7
+              - 80
+              - 400
+          ask_user: True
+        traceback:
+          path: "silex_client.commands.tester.TracebackTester"
+          ask_user: True

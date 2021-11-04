@@ -77,10 +77,19 @@ class Config:
     @property
     def publishes(self) -> List[Dict[str, str]]:
         """
-        List of all the available actions config found
+        List of all the available publish config found
         """
         return self.find_config(
             [os.path.join(path, "publish") for path in self.action_search_path]
+        )
+
+    @property
+    def conforms(self) -> List[Dict[str, str]]:
+        """
+        List of all the available conform config found
+        """
+        return self.find_config(
+            [os.path.join(path, "conform") for path in self.action_search_path]
         )
 
     def resolve_config(
@@ -131,6 +140,14 @@ class Config:
             context_metadata = {}
 
         return self.resolve_config(action_name, context_metadata, self.publishes)
+
+    def resolve_conform(
+        self, action_name: str, context_metadata: Dict[str, Any] = None
+    ) -> Optional[dict]:
+        if context_metadata is None:
+            context_metadata = {}
+
+        return self.resolve_config(action_name, context_metadata, self.conforms)
 
     def _load_config(self, config_path: str) -> Any:
         # Load the config
