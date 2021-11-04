@@ -44,13 +44,13 @@ class CustomDiffSyntax(jsondiff.CompactJsonDiffSyntax):
 
 
 class CustomJsonDiffer(jsondiff.JsonDiffer):
-    def __init__(self):
-        super().__init__(marshal=True)
+    def __init__(self, marshal=False):
+        super().__init__(marshal=marshal)
         self.options.syntax = CustomDiffSyntax()
 
 
-def silex_diff(a, b):
+def silex_diff(a, b, marshal=False):
     """
     Helper to make a diff with right configuration to make it json serializable
     """
-    return jsondiff.diff(a, b, cls=CustomJsonDiffer)
+    return jsondiff.diff(a, b, cls=CustomJsonDiffer, marshal=marshal)
