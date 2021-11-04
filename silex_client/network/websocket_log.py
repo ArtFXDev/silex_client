@@ -1,6 +1,7 @@
 import logging
 
 import logzero
+import traceback
 
 from silex_client.utils.log import formatter
 
@@ -33,6 +34,8 @@ class WebsocketLogHandler(logging.Handler):
 
 class RedirectWebsocketLogs(object):
     def __init__(self, logger: logging.Logger, action_query, command):
+        self.action_query = action_query
+        self.silex_command = command
         self.logger = logger
         self.handler = WebsocketLogHandler(action_query, command)
 
@@ -40,4 +43,8 @@ class RedirectWebsocketLogs(object):
         self.logger.addHandler(self.handler)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
+        exception = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        log = {"level": "TRACEBACK", "message": exception}
+        self.silex_command.logs.append(log)
+        self.action_query.update_websocket()
         self.logger.handlers.remove(self.handler)
