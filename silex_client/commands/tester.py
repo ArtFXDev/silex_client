@@ -182,7 +182,7 @@ class SelectTester(CommandBase):
         },
         "select_tester_2": {
             "label": "Select Tester 2",
-            "type": SelectParameterMeta("hello", "world", "foo", "bar"),
+            "type": SelectParameterMeta(**{"Hello Label": "hello", "World Label": "world", "Foo Label": "foo", "Bar Label": "bar"}),
             "value": None,
             "tooltip": "Testing the select parameters",
         },
