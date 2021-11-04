@@ -60,7 +60,7 @@ class SelectConform(CommandBase):
         if conform_type not in conform_action.keys():
             raise Exception(
                 "Could not resolve the action {}: The root key should be the same as the config file name".format(
-                    parameters["publish_type"]
+                    conform_type
                 )
             )
 
