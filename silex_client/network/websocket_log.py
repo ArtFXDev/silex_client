@@ -26,6 +26,8 @@ class WebsocketLogHandler(logging.Handler):
         """
         Capture the record and append it to the action logs
         """
+        if record.levelname == "DEBUG":
+            return
 
         log = {"level": record.levelname, "message": formatter.format(record)}
         self.silex_command.logs.append(log)

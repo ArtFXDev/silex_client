@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+import asyncio
 import typing
 import pathlib
 from typing import Any, Dict
@@ -276,6 +276,14 @@ class RangeTesterMid(CommandBase):
             parameters["range_tester_2"],
             type(parameters["range_tester_2"]),
         )
+
+        await asyncio.sleep(0.5)
+        logger.info("Pretending to work")
+        await asyncio.sleep(0.5)
+        logger.info("Keep pretending to work")
+        await asyncio.sleep(0.5)
+        logger.info("Work done")
+        await asyncio.sleep(0.5)
         return parameters["range_tester"]
 
 
