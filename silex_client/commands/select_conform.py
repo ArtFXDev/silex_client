@@ -76,4 +76,4 @@ class SelectConform(CommandBase):
 
         patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
         action_query.buffer.deserialize(patch)
-        return conform_type
+        return {"type": conform_type, "file_path": parameters["file_path"]}

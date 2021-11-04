@@ -17,4 +17,4 @@ conform:
           path: "silex_client.commands.build_output_path.BuildOutputPath"
           tooltip: "Build the complete output path"
           parameters:
-            output_type: !command-output "setup:get_conform_output"
+            output_type: !command-output "setup:get_conform_output:type"
