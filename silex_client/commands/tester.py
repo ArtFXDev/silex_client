@@ -54,7 +54,7 @@ class StringTester(CommandBase):
             parameters["string_tester_2"],
             type(parameters["string_tester_2"]),
         )
-        return parameters["string_tester"]
+        return {"testing_values": parameters["string_tester"]}
 
 
 class IntegerTester(CommandBase):

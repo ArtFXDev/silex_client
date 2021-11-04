@@ -76,13 +76,13 @@ class ParameterBuffer:
             splited_path = self.value.split(":")
 
             command_path = splited_path[0]
-            if len(command_path) > 1:
-                command_path = ":".join(command_path[:2])
-            command = action_query.get_command(self.value)
+            if len(splited_path) > 1:
+                command_path = ":".join(splited_path[:2])
+            command = action_query.get_command(command_path)
 
             value = command.output_result if command is not None else None
-            if len(command_path) > 2 and isinstance(value, dict):
-                value = value.get(command_path[3])
+            if len(splited_path) > 2 and isinstance(value, dict):
+                value = value.get(splited_path[2])
             return value
 
         # If the value is a callable, call it (for mutable default values)
