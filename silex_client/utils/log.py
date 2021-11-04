@@ -22,7 +22,8 @@ __LOG_FORMAT = "[SILEX]\
     [%(module)s.%(funcName)s] %(color)s%(message)-50s%(end_color)s (%(lineno)d)"
 
 handler = logging.StreamHandler(sys.stdout)  # stream to stdout for pycharm
-handler.setFormatter(logzero.LogFormatter(fmt=__LOG_FORMAT))
+formatter = logzero.LogFormatter(fmt=__LOG_FORMAT)
+handler.setFormatter(formatter)
 logger.handlers = []
 logger.addHandler(handler)
 

@@ -16,6 +16,7 @@ import jsondiff
 from silex_client.core.context import Context
 from silex_client.resolve.config import Config
 from silex_client.action.action_buffer import ActionBuffer
+from silex_client.utils.serialiser import silex_diff
 from silex_client.utils.datatypes import ReadOnlyDict
 from silex_client.utils.enums import Status, Execution
 from silex_client.utils.log import logger
@@ -182,7 +183,7 @@ class ActionQuery:
             future.set_result(None)
             return future
 
-        diff = jsondiff.diff(self._buffer_diff.serialize(), self.buffer.serialize())
+        diff = silex_diff(self._buffer_diff.serialize(), self.buffer.serialize())
         self._buffer_diff = copy.deepcopy(self.buffer)
 
         confirm = await self.ws_connection.async_send("/dcc/action", "update", diff)
@@ -211,7 +212,6 @@ class ActionQuery:
     @execution_type.setter
     def execution_type(self, value: Execution) -> None:
         """Shortcut to get the status of the action stored in the buffer"""
-        self.update_event.set()
         self.buffer.execution_type = value
 
     @property

@@ -13,7 +13,7 @@ import re
 import traceback
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, List
 
 import dacite.config as dacite_config
 import dacite.core as dacite
@@ -38,6 +38,8 @@ class CommandBuffer:
 
     #: The list of fields that should be ignored when serializing this buffer to json
     PRIVATE_FIELDS = ["output_result", "executor", "input_path"]
+    #: The list of fields that should be ignored when deserializing this buffer to json
+    READONLY_FIELDS = ["logs"]
 
     #: The path to the command's module
     path: str = field()
@@ -65,6 +67,8 @@ class CommandBuffer:
     input_path: CommandOutput = field(default=CommandOutput(""))
     #: The callable that will be used when the command is executed
     executor: CommandBase = field(init=False)
+    #: Name of the command, must have no space or special characters
+    logs: List[Dict[str, str]] = field(default_factory=list)
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")
@@ -193,7 +197,7 @@ class CommandBuffer:
         )
         new_data = dacite.from_dict(CommandBuffer, serialized_data, config)
 
-        for private_field in self.PRIVATE_FIELDS:
+        for private_field in self.PRIVATE_FIELDS + self.READONLY_FIELDS:
             setattr(new_data, private_field, getattr(self, private_field))
 
         self.__dict__.update(new_data.__dict__)

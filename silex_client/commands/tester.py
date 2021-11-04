@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+import asyncio
 import typing
 import pathlib
 from typing import Any, Dict
@@ -276,6 +276,14 @@ class RangeTesterMid(CommandBase):
             parameters["range_tester_2"],
             type(parameters["range_tester_2"]),
         )
+
+        await asyncio.sleep(1)
+        logger.info("Pretending to work")
+        await asyncio.sleep(1)
+        logger.info("Keep pretending to work")
+        await asyncio.sleep(1)
+        logger.info("Work done")
+        await asyncio.sleep(1)
         return parameters["range_tester"]
 
 
@@ -461,4 +469,34 @@ class IntArrayTesterHigh(CommandBase):
             parameters["int_array_tester_2"],
             type(parameters["int_array_tester_2"]),
         )
+        
         return parameters["int_array_tester"]
+
+
+class TracebackTester(CommandBase):
+    """
+    Testing the int_array parameters
+    """
+
+    parameters = {
+        "raise_exception": {
+            "label": "Raise exception",
+            "type": bool,
+            "value": True,
+            "tooltip": "Specify if you what this command to rase an exception or not",
+        },
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+    ):
+        logger.info(
+            "Traceback tester: %s, %s",
+            parameters["raise_exception"],
+            type(parameters["raise_exception"]),
+        )
+
+        if parameters["raise_exception"]:
+            raise ValueError("Don't worry, this is a fake error for testing purpose")
+        return parameters["raise_exception"]

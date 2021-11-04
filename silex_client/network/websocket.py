@@ -110,7 +110,8 @@ class WebsocketConnection:
         try:
             data = json.loads(json.dumps(data, default=silex_encoder))
         except TypeError:
-            logger.error("Could not send %s: The data is not json serialisable", data)
+            # TODO: Set this log as an error, but make sure it works with the WebsocketLog context
+            logger.debug("Could not send %s: The data is not json serialisable", data)
             future.set_result(None)
             return future
 
