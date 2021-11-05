@@ -12,6 +12,7 @@ import gazu.task
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
+from silex_client.utils.parameter_types import TaskParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -30,11 +31,33 @@ class BuildOutputPath(CommandBase):
             "value": None,
             "tooltip": "Insert the short name of the output type",
         },
-        "create_temp_dir": { "label": "Create temp directory", "type": bool, "value": True, "hide": True },
-        "create_output_dir": { "label": "Create output directory" ,"type": bool, "value": True, "hide": True }
+        "create_temp_dir": {
+            "label": "Create temp directory",
+            "type": bool,
+            "value": True,
+            "hide": True,
+        },
+        "create_output_dir": {
+            "label": "Create output directory",
+            "type": bool,
+            "value": True,
+            "hide": True,
+        },
+        "use_current_context": {
+            "label": "Conform the given file to the current context",
+            "type": bool,
+            "value": True,
+            "tooltip": "This parameter will overrite the select conform location",
+        },
+        "destination": {
+            "label": "Select conform location",
+            "type": TaskParameterMeta(),
+            "value": None,
+            "tooltip": "Select the task where you can to conform your file",
+        },
     }
 
-    required_metadata = ["entity_type", "entity_id", "task_type_id"]
+    required_metadata = ["entity_id", "task_type_id"]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -45,14 +68,7 @@ class BuildOutputPath(CommandBase):
         create_temp_dir = parameters["create_temp_dir"]
 
         # Get the entity dict
-        if action_query.context_metadata["entity_type"] == "shot":
-            entity = await gazu.shot.get_shot(
-                action_query.context_metadata["entity_id"]
-            )
-        else:
-            entity = await gazu.asset.get_asset(
-                action_query.context_metadata["entity_id"]
-            )
+        entity = await gazu.shot.get_shot(action_query.context_metadata["entity_id"])
 
         # Get the output type
         output_type = await gazu.files.get_output_type_by_short_name(
@@ -82,6 +98,12 @@ class BuildOutputPath(CommandBase):
                 "Could not get the task type %s: The task type does not exists",
                 action_query.context_metadata["task_type_id"],
             )
+
+        # Override with the given task if specified
+        if not parameters["use_current_context"]:
+            task = await gazu.task.get_task(parameters["destination"])
+            entity = task.get("entity", {}).get("id")
+            task_type = task.get("task_type", {}).get("id")
 
         # Build the output path
         directory = await gazu.files.build_entity_output_file_path(

@@ -18,3 +18,4 @@ conform:
           tooltip: "Build the complete output path"
           parameters:
             output_type: !command-output "setup:get_conform_output:type"
+          ask_user: true

@@ -34,6 +34,13 @@ def action_handler(action_name: str, **kwargs) -> None:
         logger.error("No action name provided")
         return
 
+    silex_context = Context.get()
+    silex_context.start_services()
+
+    if kwargs.get("task_id") is not None:
+        os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
+        silex_context.is_outdated = True
+
     action = ActionQuery(action_name)
     if not action.commands:
         logger.error("The resolved action is invalid")
@@ -45,13 +52,6 @@ def action_handler(action_name: str, **kwargs) -> None:
         print(f"Parameters for action {action_name} :")
         pprint.pprint(parameters)
         return
-
-    silex_context = Context.get()
-    silex_context.start_services()
-
-    if kwargs.get("task_id") is not None:
-        os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
-        silex_context.is_outdated = True
 
     for set_parameter in kwargs.get("set_parameters", []):
         set_parameter = set_parameter.replace(" ", "")
@@ -100,7 +100,6 @@ def launch_handler(dcc: str, **kwargs) -> None:
 
     command = [dcc]
 
-    # TODO: Find a way to get the stdout in the terminal on windows
     if kwargs.get("task_id") is not None:
         os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
 

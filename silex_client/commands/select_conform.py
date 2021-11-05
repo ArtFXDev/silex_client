@@ -27,6 +27,12 @@ class SelectConform(CommandBase):
             "value": None,
             "tooltip": "Insert the path to the file you want to conform",
         },
+        "auto_select_type": {
+            "label": "Auto select the conform type",
+            "type": bool,
+            "value": True,
+            "tooltip": "Guess the conform type from the extension",
+        },
         "conform_type": {
             "label": "Select a conform type",
             "type": SelectParameterMeta(
@@ -34,12 +40,6 @@ class SelectConform(CommandBase):
             ),
             "value": None,
             "tooltip": "Select a conform type in the list",
-        },
-        "auto_select_type": {
-            "label": "Auto select the conform type",
-            "type": bool,
-            "value": True,
-            "tooltip": "Guess the conform type from the extension",
         },
     }
 
