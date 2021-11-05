@@ -1,0 +1,13 @@
+png:
+  steps:
+    conform:
+      label: "Conform"
+      index: 50
+      commands:
+        copy:
+          label: "Copy file to pipeline"
+          path: "silex_client.commands.copy.Copy"
+          parameters:
+            source_path: !command-output "setup:get_conform_output:file_path"
+            destination_dir: !command-output "setup:build_output_path:directory"
+            ask_user: True

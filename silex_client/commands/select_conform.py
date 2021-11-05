@@ -51,6 +51,7 @@ class SelectConform(CommandBase):
         if parameters["auto_select_type"]:
             conform_type = os.path.splitext(parameters["file_path"])[-1][1:]
 
+        conform_type = conform_type.lower()
         conform_action = Config().resolve_conform(conform_type)
 
         if conform_action is None:
