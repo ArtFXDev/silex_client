@@ -15,3 +15,4 @@ publish:
           tooltip: "Build the complete output path"
           parameters:
             output_type: !command-output "setup:get_publish_output"
+            use_current_context: true
