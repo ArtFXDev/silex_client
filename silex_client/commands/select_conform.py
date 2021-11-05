@@ -54,7 +54,7 @@ class SelectConform(CommandBase):
         conform_action = Config().resolve_conform(conform_type)
 
         if conform_action is None:
-            raise Exception("Could not resolve the action %s")
+            raise Exception("Could not resolve the action %s", conform_type)
 
         # Make sure the required action is in the config
         if conform_type not in conform_action.keys():

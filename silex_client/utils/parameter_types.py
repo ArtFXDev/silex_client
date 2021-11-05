@@ -1,7 +1,3 @@
-class entity(str):
-    pass
-
-
 class CommandParameterMeta(type):
     def __new__(cls, name: str, bases: tuple, dct: dict):
         def serialize():
@@ -20,6 +16,26 @@ class CommandParameterMeta(type):
 
     def serialize(self):
         return None
+
+
+class TaskParameterMeta(CommandParameterMeta):
+    def __init__(cls):
+        pass
+
+    def __new__(cls):
+        def serialize():
+            return {
+                "name": "task",
+            }
+
+        def get_default():
+            return ""
+
+        attributes = {
+            "serialize": serialize,
+            "get_default": get_default,
+        }
+        return super().__new__(cls, "TaskParameter", (str,), attributes)
 
 
 class IntArrayParameterMeta(CommandParameterMeta):
