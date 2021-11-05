@@ -159,7 +159,9 @@ class ActionBuffer:
         command_buffer = self.steps[step].commands[command]
         return command_buffer.parameters.get(name, None)
 
-    def set_parameter(self, step: str, command: str, name: str, value: Any) -> None:
+    def set_parameter(
+        self, step: str, command: str, name: str, value: Any, **kwargs
+    ) -> None:
         """
         Helper to set a parameter of a command that belong to this action
         The data is quite nested, this is just for conveniance
@@ -180,3 +182,13 @@ class ActionBuffer:
                 return
 
         parameter.value = value
+
+        for key, value in kwargs.items():
+            if not hasattr(parameter, key):
+                logger.warning(
+                    "Could not set the attribute %s on the parameter %s: The attribute does not exists",
+                    key,
+                    parameter,
+                )
+                continue
+            setattr(parameter, key, value)

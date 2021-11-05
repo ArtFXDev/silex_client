@@ -74,12 +74,10 @@ class IterateAction(CommandBase):
                 for step_name, step_value in action_definition["steps"].items():
                     step_value["index"] = step_value.get("index", 10) + last_index
                     step_value["label"] = step_value.get("label", step_name.title())
-                    logger.info(item)
-                    logger.info(step_value["label"])
                     step_value["label"] += f" {item}"
 
                 for step_name in copy.copy(list(action_definition["steps"].keys())):
-                    new_name = step_name + ":" + str(uuid.uuid4())
+                    new_name = step_name + "_" + str(uuid.uuid4())
                     action_definition["steps"][new_name] = action_definition[
                         "steps"
                     ].pop(step_name)
@@ -88,5 +86,6 @@ class IterateAction(CommandBase):
 
             patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
             action_query.buffer.deserialize(patch)
+            logger.info(parameter_path)
             if parameters["parameter"]:
-                action_query.set_parameter(":".join(parameter_path), item)
+                action_query.set_parameter(":".join(parameter_path), item, hide=True)

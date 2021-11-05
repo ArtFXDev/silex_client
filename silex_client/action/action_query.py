@@ -265,7 +265,7 @@ class ActionQuery:
         """
         return CommandIterator(self.buffer)
 
-    def set_parameter(self, parameter_name: str, value: Any) -> None:
+    def set_parameter(self, parameter_name: str, value: Any, **kwargs) -> None:
         """
         Shortcut to set variables on the buffer easly
 
@@ -284,7 +284,7 @@ class ActionQuery:
         elif len(parameter_split) == 2:
             command = parameter_split[0]
         elif len(parameter_split) != 1:
-            logger.warning("Invalid parameter path: The given parameter path %s has too many separators")
+            logger.warning("Invalid parameter path: The given parameter path %s has too many separators", parameter_name)
 
         # Guess the info that were not provided by taking the first match
         index = None
@@ -318,7 +318,7 @@ class ActionQuery:
             )
             return
 
-        self.buffer.set_parameter(step, index, name, value)
+        self.buffer.set_parameter(step, index, name, value, **kwargs)
 
     def get_command(self, command_path: str) -> Optional[CommandBuffer]:
         """
