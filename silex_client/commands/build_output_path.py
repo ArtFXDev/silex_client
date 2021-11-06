@@ -49,7 +49,7 @@ class BuildOutputPath(CommandBase):
             "value": True,
             "tooltip": "This parameter will overrite the select conform location",
         },
-        "destination": {
+        "task": {
             "label": "Select conform location",
             "type": TaskParameterMeta(),
             "value": None,
@@ -101,7 +101,7 @@ class BuildOutputPath(CommandBase):
 
         # Override with the given task if specified
         if not parameters["use_current_context"]:
-            task = await gazu.task.get_task(parameters["destination"])
+            task = await gazu.task.get_task(parameters["task"])
             entity = task.get("entity", {}).get("id")
             task_type = task.get("task_type", {}).get("id")
 

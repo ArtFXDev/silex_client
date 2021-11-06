@@ -3,6 +3,7 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.log import logger
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -54,6 +55,7 @@ class Copy(CommandBase):
             os.remove(destination_dir)
 
         # Copy file to location
+        logger.info("Copying %s to %s", source_path, destination_dir)
         os.makedirs(str(destination_dir), exist_ok=True)
         shutil.copy(source_path, destination_dir)
 

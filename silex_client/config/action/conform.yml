@@ -12,10 +12,12 @@ conform:
             auto_select_type: true
           ask_user: true
 
-        build_output_path:
-          label: "Build output path"
-          path: "silex_client.commands.build_output_path.BuildOutputPath"
-          tooltip: "Build the complete output path"
+        append_conform_action:
+          label: "Append conform action"
+          path: "silex_client.commands.iterate_action.IterateAction"
+          tooltip: "Append the selected conform to the list of commands to execute"
           parameters:
-            output_type: !command-output "setup:get_conform_output:type"
-          ask_user: true
+            list: !command-output "setup:get_conform_output:file_path"
+            action: !command-output "setup:get_conform_output:type"
+            parameter: "conform:get_input:input"
+            category: "conform"

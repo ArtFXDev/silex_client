@@ -1,9 +1,12 @@
 from __future__ import annotations
+from silex_client.utils.datatypes import CommandOutput
 
 import jsondiff
+import copy
 import os
 import pathlib
 import typing
+import uuid
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
@@ -52,29 +55,4 @@ class SelectConform(CommandBase):
             conform_type = os.path.splitext(parameters["file_path"])[-1][1:]
 
         conform_type = conform_type.lower()
-        conform_action = Config().resolve_conform(conform_type)
-
-        if conform_action is None:
-            raise Exception("Could not resolve the action %s", conform_type)
-
-        # Make sure the required action is in the config
-        if conform_type not in conform_action.keys():
-            raise Exception(
-                "Could not resolve the action {}: The root key should be the same as the config file name".format(
-                    conform_type
-                )
-            )
-
-        action_definition = conform_action[conform_type]
-        action_definition["name"] = conform_type
-
-        last_index = action_query.steps[-1].index
-        if "steps" in action_definition and isinstance(
-            action_definition["steps"], dict
-        ):
-            for step_value in action_definition["steps"].values():
-                step_value["index"] = step_value.get("index", 10) + last_index
-
-        patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
-        action_query.buffer.deserialize(patch)
-        return {"type": conform_type, "file_path": parameters["file_path"]}
+        return {"type": conform_type, "file_path": [parameters["file_path"]]}

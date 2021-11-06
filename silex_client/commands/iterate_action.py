@@ -9,6 +9,7 @@ from typing import Any, Dict
 from silex_client.action.command_base import CommandBase
 from silex_client.resolve.config import Config
 from silex_client.utils.log import logger
+from silex_client.utils.datatypes import CommandOutput
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -34,6 +35,12 @@ class IterateAction(CommandBase):
             "value": None,
             "tooltip": "This action will be executed for each items in the given list",
         },
+        "category": {
+            "label": "Action category",
+            "type": str,
+            "value": "action",
+            "tooltip": "Set the category of the action you want to execute",
+        },
         "parameter": {
             "label": "Parameters to set on the action",
             "type": str,
@@ -48,7 +55,7 @@ class IterateAction(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         action_type = parameters["action"]
-        action = Config().resolve_action(action_type)
+        action = Config().resolve_action(action_type, parameters["category"])
 
         if action is None:
             raise Exception("Could not resolve the action %s", action_type)
@@ -61,31 +68,53 @@ class IterateAction(CommandBase):
                 )
             )
 
+        resolved_action_definition = action[action_type]
+        resolved_action_definition["name"] = action_type
+        if not isinstance(resolved_action_definition.get("steps"), dict):
+            raise Exception(
+                "Could not append new action: The resolved action has not steps"
+            )
+
         for item in parameters["list"]:
             logger.info("Adding action %s for item %s", action_type, item)
+            action_definition = copy.deepcopy(resolved_action_definition)
+            action_steps = action_definition.get("steps")
             parameter_path = parameters["parameter"].split(":")
-            action_definition = copy.deepcopy(action[action_type])
-            action_definition["name"] = action_type
 
+            # Rename each steps to make sure they don't override existing steps
+            step_name_mapping = {name: name for name in list(action_steps.keys())}
+            for step_name in step_name_mapping.keys():
+                new_name = step_name + "_" + str(uuid.uuid4())
+                step_name_mapping[step_name] = new_name
+                action_steps[step_name].setdefault("label", step_name.title())
+                action_steps[step_name]["label"] = (
+                    action_steps[step_name]["label"] + " : " + str(item)
+                )
+                action_steps[new_name] = action_steps.pop(step_name)
+                if parameter_path[0] == step_name:
+                    parameter_path[0] = new_name
+
+            # Edit the steps to avoid conflict when they will be merged with the current action
             last_index = action_query.steps[-1].index
-            if "steps" in action_definition and isinstance(
-                action_definition["steps"], dict
-            ):
-                for step_name, step_value in action_definition["steps"].items():
-                    step_value["index"] = step_value.get("index", 10) + last_index
-                    step_value["label"] = step_value.get("label", step_name.title())
-                    step_value["label"] += f" {item}"
+            for step_name, step_value in action_definition["steps"].items():
+                step_value["index"] = step_value.get("index", 10) + last_index
 
-                for step_name in copy.copy(list(action_definition["steps"].keys())):
-                    new_name = step_name + "_" + str(uuid.uuid4())
-                    action_definition["steps"][new_name] = action_definition[
-                        "steps"
-                    ].pop(step_name)
-                    if parameter_path[0] == step_name:
-                        parameter_path[0] = new_name
+                # TODO: Refactor this mess
+                for command in step_value.get("commands", {}).values():
+                    for parameter_name, parameter in command.get(
+                        "parameters", {}
+                    ).items():
+                        if not isinstance(parameter, CommandOutput):
+                            continue
+
+                        parameter_split = parameter.split(":")
+                        if parameter_split[0] in step_name_mapping.keys():
+                            parameter_split[0] = step_name_mapping[parameter_split[0]]
+                            command["parameters"][parameter_name] = CommandOutput(
+                                ":".join(parameter_split)
+                            )
 
             patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
             action_query.buffer.deserialize(patch)
-            logger.info(parameter_path)
             if parameters["parameter"]:
                 action_query.set_parameter(":".join(parameter_path), item, hide=True)
