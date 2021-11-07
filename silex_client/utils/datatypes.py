@@ -51,3 +51,43 @@ class CommandOutput(str):
     """
     Helper to differenciate the strings from the command_output
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+
+        splited_path = self.split(":")
+
+        # Initialize attrubutes
+        self.step = None
+        self.command = splited_path[0]
+        self.output_keys = []
+
+        # If the user specified more that just the command name
+        if len(splited_path) > 1:
+            # Get the step and the command
+            self.command = splited_path[1]
+            self.step = splited_path[0]
+            # The output keys are in case the command returns a dict
+            # The user can get a particular value in the dict
+            for key in splited_path[2:]:
+                self.output_keys.append(key)
+
+    def get_command_path(self):
+        """
+        Get the path to get the command with the method ActionQuery::get_command
+        """
+        if self.step is not None:
+            return f"{self.step}:{self.command}"
+
+        return self.command
+
+    def rebuild(self) -> CommandOutput:
+        """
+        Since strings a immutable, when modifying the step or command attrubutes
+        We need to rebuild entirely the string.
+
+        TODO: Recreate a class that contains a string instead of inheriting from it,
+        we let this for now to keep string features like json serialisability,
+        but it is not ideal
+        """
+        return CommandOutput(":".join([self.get_command_path(), *self.output_keys]))

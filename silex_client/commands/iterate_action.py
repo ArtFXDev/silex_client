@@ -86,35 +86,45 @@ class IterateAction(CommandBase):
             for step_name in step_name_mapping.keys():
                 new_name = step_name + "_" + str(uuid.uuid4())
                 step_name_mapping[step_name] = new_name
+                # Set the step label before applying it on the action query
                 action_steps[step_name].setdefault("label", step_name.title())
-                action_steps[step_name]["label"] = (
-                    action_steps[step_name]["label"] + " : " + str(item)
-                )
+                if item:
+                    action_steps[step_name]["label"] = (
+                        action_steps[step_name]["label"] + " : " + str(item)
+                    )
+                # Rename the step
                 action_steps[new_name] = action_steps.pop(step_name)
-                if parameter_path[0] == step_name:
-                    parameter_path[0] = new_name
 
-            # Edit the steps to avoid conflict when they will be merged with the current action
-            last_index = action_query.steps[-1].index
-            for step_name, step_value in action_definition["steps"].items():
-                step_value["index"] = step_value.get("index", 10) + last_index
-
-                # TODO: Refactor this mess
-                for command in step_value.get("commands", {}).values():
-                    for parameter_name, parameter in command.get(
-                        "parameters", {}
-                    ).items():
-                        if not isinstance(parameter, CommandOutput):
-                            continue
-
-                        parameter_split = parameter.split(":")
-                        if parameter_split[0] in step_name_mapping.keys():
-                            parameter_split[0] = step_name_mapping[parameter_split[0]]
-                            command["parameters"][parameter_name] = CommandOutput(
-                                ":".join(parameter_split)
-                            )
-
+            # Apply the new action to the current action
             patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
             action_query.buffer.deserialize(patch)
+
+            # Change some values on the new steps
+            last_index = action_query.steps[-1].index
+            for old_step_name, step_name in step_name_mapping.items():
+                step = action_query.buffer.steps[step_name]
+                # Change the index to make sure the new step in executed after the current step
+                step.index = step.index + last_index
+
+                # Adapt the parameter_path to the new step's name
+                if parameter_path[0] == old_step_name:
+                    parameter_path[0] = step_name
+
+                # Loop over all the parameters of the step
+                step_parameters = [
+                    parameter
+                    for command in step.commands.values()
+                    for parameter in command.parameters.values()
+                    if isinstance(parameter.value, CommandOutput)
+                ]
+                for parameter in step_parameters:
+                    # If the parameter was pointing to a newly added step
+                    if parameter.value.step in step_name_mapping.keys():
+                        # Make it point to the new name of the step
+                        parameter.value.step = step_name_mapping[parameter.value.step]
+                        parameter.value = parameter.value.rebuild()
+
             if parameters["parameter"]:
                 action_query.set_parameter(":".join(parameter_path), item, hide=True)
+
+            action_query.buffer.reorder_steps()

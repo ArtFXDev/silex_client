@@ -72,17 +72,14 @@ class ParameterBuffer:
 
     def get_value(self, action_query: ActionQuery) -> Any:
         # If the value is the output of an other command, get is
-        if self.command_output:
-            splited_path = self.value.split(":")
-
-            command_path = splited_path[0]
-            if len(splited_path) > 1:
-                command_path = ":".join(splited_path[:2])
-            command = action_query.get_command(command_path)
-
+        if isinstance(self.value, CommandOutput):
+            command = action_query.get_command(self.value.get_command_path())
             value = command.output_result if command is not None else None
-            if len(splited_path) > 2 and isinstance(value, dict):
-                value = value.get(splited_path[2])
+
+            for key in self.value.output_keys:
+                if isinstance(value, dict):
+                    value = value.get(key, {})
+
             return value
 
         # If the value is a callable, call it (for mutable default values)
