@@ -96,6 +96,7 @@ class ActionQuery:
                         )
                     # Put the commands back to initialized
                     for command_left in self.commands[index:]:
+                        command_left.ask_user = False
                         command_left.status = Status.INITIALIZED
 
                 # Execution of the command
