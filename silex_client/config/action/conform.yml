@@ -14,10 +14,22 @@ conform:
 
         append_conform_action:
           label: "Append conform action"
-          path: "silex_client.commands.iterate_action.IterateAction"
+          path: "silex_client.commands.insert_action.InsertAction"
           tooltip: "Append the selected conform to the list of commands to execute"
           parameters:
-            list: !command-output "setup:get_conform_output:file_path"
+            value: !command-output "setup:get_conform_output:file_path"
             action: !command-output "setup:get_conform_output:type"
             parameter: "conform:get_input:input"
             category: "conform"
+
+    test:
+      lavel: "Setup"
+      index: 100
+      commands:
+        get_conform_output:
+          label: "Select conform type"
+          path: "silex_client.commands.select_conform.SelectConform"
+          tooltip: "Select the type of conform you want to make"
+          parameters:
+            auto_select_type: true
+          ask_user: true

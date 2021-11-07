@@ -19,6 +19,8 @@ if typing.TYPE_CHECKING:
 class IterateAction(CommandBase):
     """
     Execute an action over a given list
+
+    TODO: Find a way to actually use the InsertAction multiple times to avoid repeting
     """
 
     parameters = {
@@ -81,6 +83,15 @@ class IterateAction(CommandBase):
             action_steps = action_definition.get("steps")
             parameter_path = parameters["parameter"].split(":")
 
+            # Get the current step and the next step to insert the new steps in between
+            current_step_index = next(
+                index
+                for index, step in enumerate(action_query.steps)
+                if self.command_buffer in step.commands.values()
+            )
+            current_step = action_query.steps[current_step_index]
+            next_steps = action_query.steps[current_step_index + 1 :]
+
             # Rename each steps to make sure they don't override existing steps
             step_name_mapping = {name: name for name in list(action_steps.keys())}
             for step_name in step_name_mapping.keys():
@@ -100,11 +111,12 @@ class IterateAction(CommandBase):
             action_query.buffer.deserialize(patch)
 
             # Change some values on the new steps
-            last_index = action_query.steps[-1].index
+            last_index = current_step.index
             for old_step_name, step_name in step_name_mapping.items():
                 step = action_query.buffer.steps[step_name]
                 # Change the index to make sure the new step in executed after the current step
-                step.index = step.index + last_index
+                step.index += current_step.index
+                last_index = step.index
 
                 # Adapt the parameter_path to the new step's name
                 if parameter_path[0] == old_step_name:
@@ -126,5 +138,9 @@ class IterateAction(CommandBase):
 
             if parameters["parameter"]:
                 action_query.set_parameter(":".join(parameter_path), item, hide=True)
+
+            # Change the index of the steps that where after to maintain them after
+            for step in next_steps:
+                step.index += last_index
 
             action_query.buffer.reorder_steps()

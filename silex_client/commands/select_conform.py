@@ -55,4 +55,4 @@ class SelectConform(CommandBase):
             conform_type = os.path.splitext(parameters["file_path"])[-1][1:]
 
         conform_type = conform_type.lower()
-        return {"type": conform_type, "file_path": [parameters["file_path"]]}
+        return {"type": conform_type, "file_path": parameters["file_path"]}
