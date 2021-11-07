@@ -17,7 +17,7 @@ if typing.TYPE_CHECKING:
 
 class InsertAction(CommandBase):
     """
-    Execute an action over a given list
+    Insert an action's steps after the current step
     """
 
     parameters = {
@@ -37,7 +37,7 @@ class InsertAction(CommandBase):
             "label": "Value to set on the new action",
             "type": str,
             "value": None,
-            "tooltip": "A new action will be appended for each items in this list",
+            "tooltip": "This value will be append to action's steps labels",
             "hide": True,
         },
         "parameter": {
@@ -101,6 +101,10 @@ class InsertAction(CommandBase):
             # Rename the step
             action_steps[new_name] = action_steps.pop(step_name)
 
+        # Remove all the action's infor that are not about the steps
+        for key in list(action_definition.keys()):
+            if key != "steps":
+                del action_definition[key]
         # Apply the new action to the current action
         patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
         action_query.buffer.deserialize(patch)
@@ -133,7 +137,8 @@ class InsertAction(CommandBase):
 
         # Change the index of the steps that where after to maintain them after
         for step in next_steps:
-            step.index += last_index
+            index_difference = step.index - current_step.index
+            step.index = last_index + index_difference
 
         if parameters["parameter"]:
             action_query.set_parameter(":".join(parameter_path), value, hide=True)

@@ -21,15 +21,3 @@ conform:
             action: !command-output "setup:get_conform_output:type"
             parameter: "conform:get_input:input"
             category: "conform"
-
-    test:
-      lavel: "Setup"
-      index: 100
-      commands:
-        get_conform_output:
-          label: "Select conform type"
-          path: "silex_client.commands.select_conform.SelectConform"
-          tooltip: "Select the type of conform you want to make"
-          parameters:
-            auto_select_type: true
-          ask_user: true
