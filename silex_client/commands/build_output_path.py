@@ -114,14 +114,17 @@ class BuildOutputPath(CommandBase):
 
         if create_output_dir:
             os.makedirs(directory, exist_ok=True)
-            logger.info(f"output directory created: {directory}")
+            logger.info(f"Output directory created: {directory}")
 
         temp_directory = os.path.join(os.path.dirname(directory), str(uuid.uuid4()))
         if create_temp_dir:
             os.makedirs(temp_directory)
-            logger.info(f"temp directory created: {temp_directory}")
+            logger.info(f"Temp directory created: {temp_directory}")
+
+        file_name = os.path.basename(directory)
         return {
             "directory": directory,
             "file_name": file_name,
             "temp_directory": temp_directory,
+            "full_path": f"os.path.join(directory, file_name).{parameters['output_type']}",
         }
