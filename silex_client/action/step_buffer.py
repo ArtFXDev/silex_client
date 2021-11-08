@@ -82,12 +82,12 @@ class StepBuffer:
         command.deserialize(command_data)
         return command
 
-    def deserialize(self, serialized_data: Dict[str, Any]) -> None:
+    def deserialize(self, serialized_data: Dict[str, Any], force=True) -> None:
         """
         Convert back the action's data from json into this object
         """
         # Don't take the modifications of the hidden steps
-        if self.hide:
+        if self.hide and not force:
             return
 
         # Format the commands corectly
@@ -118,7 +118,7 @@ class StepBuffer:
         else:
             step = dacite.from_dict(StepBuffer, serialized_data, config)
 
-        step.deserialize(serialized_data)
+        step.deserialize(serialized_data, force=True)
         return step
 
     @property  # type: ignore

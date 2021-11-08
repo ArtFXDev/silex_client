@@ -102,12 +102,12 @@ class ParameterBuffer:
 
         return dict(result)
 
-    def deserialize(self, serialized_data: Dict[str, Any]) -> None:
+    def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
         """
         Convert back the action's data from json into this object
         """
         # Don't take the modifications of the hidden parameters
-        if self.hide:
+        if self.hide and not force:
             return
 
         for private_field in self.PRIVATE_FIELDS + self.READONLY_FIELDS:
@@ -126,5 +126,5 @@ class ParameterBuffer:
         config = dacite_config.Config(cast=[Status, CommandOutput])
         parameter = dacite.from_dict(ParameterBuffer, serialized_data, config)
 
-        parameter.deserialize(serialized_data)
+        parameter.deserialize(serialized_data, force=True)
         return parameter

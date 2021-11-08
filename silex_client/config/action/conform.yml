@@ -19,5 +19,5 @@ conform:
           parameters:
             value: !command-output "setup:get_conform_output:file_path"
             action: !command-output "setup:get_conform_output:type"
-            parameter: "conform:get_input:input"
+            parameter: "input:input:input"
             category: "conform"
