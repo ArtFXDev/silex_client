@@ -58,5 +58,10 @@ class Copy(CommandBase):
         logger.info("Copying %s to %s", source_path, destination_dir)
         os.makedirs(str(destination_dir), exist_ok=True)
         shutil.copy(source_path, destination_dir)
+        destination_path = os.path.join(destination_dir, os.path.basename(source_path))
 
-        return {"source_path": source_path, "destination_dir": destination_dir}
+        return {
+            "source_path": source_path,
+            "destination_dir": destination_dir,
+            "destination_path": destination_path,
+        }

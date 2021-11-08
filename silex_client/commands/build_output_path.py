@@ -126,5 +126,5 @@ class BuildOutputPath(CommandBase):
             "directory": directory,
             "file_name": file_name,
             "temp_directory": temp_directory,
-            "full_path": f"os.path.join(directory, file_name).{parameters['output_type']}",
+            "full_path": f"{os.path.join(directory, file_name)}.{parameters['output_type']}",
         }
