@@ -73,14 +73,7 @@ class ParameterBuffer:
     def get_value(self, action_query: ActionQuery) -> Any:
         # If the value is the output of an other command, get is
         if isinstance(self.value, CommandOutput):
-            command = action_query.get_command(self.value.get_command_path())
-            value = command.output_result if command is not None else None
-
-            for key in self.value.output_keys:
-                if isinstance(value, dict):
-                    value = value.get(key, {})
-
-            return value
+            return self.value.get_value(action_query)
 
         # If the value is a callable, call it (for mutable default values)
         if callable(self.value):

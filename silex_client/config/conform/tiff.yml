@@ -29,6 +29,7 @@ tiff:
 
     output:
       index: 30
+      hide: true
       commands:
         output:
           path: "silex_client.commands.pass.Pass"

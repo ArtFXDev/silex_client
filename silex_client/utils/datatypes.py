@@ -91,3 +91,18 @@ class CommandOutput(str):
         but it is not ideal
         """
         return CommandOutput(":".join([self.get_command_path(), *self.output_keys]))
+
+    def get_value(self, action_query: ActionQuery) -> Any:
+        """
+        Get the actual returned value of the command this path is pointing to
+        """
+        command = action_query.get_command(self.get_command_path())
+        value = command.output_result if command is not None else None
+
+        for key in self.output_keys:
+            if isinstance(value, dict):
+                value = value.get(key, {})
+
+        if isinstance(value, CommandOutput):
+            return value.get_value(action_query)
+        return value

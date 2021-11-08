@@ -51,14 +51,26 @@ class IterateAction(InsertAction):
             "tooltip": "Set wich parameter will be overriden by the item's value",
             "hide": True,
         },
+        "output": {
+            "label": "The command to get the output from",
+            "type": str,
+            "value": "",
+            "tooltip": "The output of the given command will be returned",
+            "hide": True,
+        },
     }
 
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+        outputs = []
         for value in parameters["list"]:
             logger.info("Adding action %s for item %s", parameters["action"], value)
             self.command_buffer.parameters["value"].value = value
             parameters["value"] = value
             await super().__call__(upstream, parameters, action_query)
+            # TODO: Figure out why tf the returned value is always None
+            outputs.append(self._transfer_data)
+
+        return outputs

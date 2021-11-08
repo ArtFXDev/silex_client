@@ -8,7 +8,6 @@ from typing import Any, Dict
 from silex_client.action.command_base import CommandBase
 from silex_client.resolve.config import Config
 from silex_client.utils.datatypes import CommandOutput
-from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -47,6 +46,13 @@ class InsertAction(CommandBase):
             "tooltip": "Set wich parameter will be overriden by the given value",
             "hide": True,
         },
+        "output": {
+            "label": "The command to get the output from",
+            "type": str,
+            "value": "",
+            "tooltip": "The output of the given command will be returned",
+            "hide": True,
+        },
     }
 
     @CommandBase.conform_command()
@@ -76,7 +82,8 @@ class InsertAction(CommandBase):
             )
 
         action_steps = action_definition.get("steps")
-        parameter_path = parameters["parameter"].split(":")
+        parameter_path = CommandOutput(parameters["parameter"])
+        output_path = CommandOutput(parameters["output"])
 
         # Get the current step and the next step to insert the new steps in between
         current_step_index = next(
@@ -118,8 +125,11 @@ class InsertAction(CommandBase):
             last_index = step.index
 
             # Adapt the parameter_path to the new step's name
-            if parameter_path[0] == old_step_name:
-                parameter_path[0] = step_name
+            if parameter_path.step == old_step_name:
+                parameter_path.step = step_name
+            # Adapt the output_path to the new step's name
+            if output_path.step == old_step_name:
+                output_path.step = step_name
 
             # Loop over all the parameters of the step
             step_parameters = [
@@ -140,7 +150,11 @@ class InsertAction(CommandBase):
             index_difference = step.index - current_step.index
             step.index = last_index + index_difference
 
-        if parameters["parameter"]:
-            action_query.set_parameter(":".join(parameter_path), value, hide=True)
-
         action_query.buffer.reorder_steps()
+
+        if parameter_path:
+            action_query.set_parameter(parameter_path.rebuild(), value, hide=True)
+
+        # TODO: Figure out why tf i can't get the returned value in the IterateAction command
+        self._transfer_data = output_path.rebuild()
+        return output_path.rebuild()
