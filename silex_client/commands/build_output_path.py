@@ -66,6 +66,7 @@ class BuildOutputPath(CommandBase):
         task_type = await gazu.task.get_task_type(
             action_query.context_metadata["task_type_id"]
         )
+
         if task_type is None:
             logger.error(
                 "Could not get the task type %s: The task type does not exists",
@@ -80,6 +81,7 @@ class BuildOutputPath(CommandBase):
         directory = await gazu.files.build_entity_output_file_path(
             entity, output_type, task_type, sep=os.path.sep
         )
+
         temp_directory = os.path.join(os.path.dirname(directory), str(uuid.uuid4()))
         file_name = directory.split(os.path.sep)[-1]
         return {

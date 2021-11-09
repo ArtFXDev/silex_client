@@ -54,10 +54,16 @@ class MoveFile(CommandBase):
         # check already existing file
         if os.path.exists(dst_path):
             os.remove(dst_path)
-
+        
+        logger.info(f"destination : {dst_path}")
+        logger.info(f"source : {dst_dir}")
+        logger.info(f"file : {file_path}")
+        
         # move file to location
         os.makedirs(str(dst_dir), exist_ok=True)
         shutil.move(file_path, dst_path)
+
+        
         # Delete temp dir
         if parameters.get('fromm_temp'):
             temp: pathlib.Path = pathlib.Path(file_path)
