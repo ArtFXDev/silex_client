@@ -26,11 +26,14 @@ class FileStructure(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        projects: str = gazu.project.all_open_projects()
+        projects = await gazu.project.all_open_projects()
 
         for project in projects:
 
             tasks = await gazu.task.all_tasks_for_project(project)
+
+            if not tasks:
+                return
 
             for task in tasks:
 
@@ -45,8 +48,11 @@ class FileStructure(CommandBase):
                 os.makedirs(working_path_work,exist_ok=True)
 
                 if decompo[3] == "shots":
-                    sequ_path = f'{os.path.join(*decompo[:3])}{os.path.sep}sequences{os.path.sep}{decompo[4]}{os.path.sep}{decompo[6]}{os.path.sep}work'
-                    os.makedirs(sequ_path,exist_ok=True)
+                    try:
+                        sequ_path = f'{os.path.join(*decompo[:3])}{os.path.sep}sequences{os.path.sep}{decompo[4]}{os.path.sep}{decompo[6]}{os.path.sep}work'
+                        os.makedirs(sequ_path,exist_ok=True)
+                    except:
+                        logger.info('Could not create the sequence folder')
 
                 rushes = f'{os.path.join(*decompo[:3])}{os.path.sep}rushes'
                 os.makedirs(rushes,exist_ok=True)
