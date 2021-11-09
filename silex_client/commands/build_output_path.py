@@ -122,6 +122,7 @@ class BuildOutputPath(CommandBase):
             logger.info(f"Temp directory created: {temp_directory}")
 
         file_name = os.path.basename(directory)
+        logger.info("Output path built: %s", os.path.join(directory, file_name))
         return {
             "directory": directory,
             "file_name": file_name,

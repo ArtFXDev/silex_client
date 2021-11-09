@@ -54,14 +54,19 @@ class Copy(CommandBase):
         if os.path.exists(destination_dir) and parameters["override"]:
             os.remove(destination_dir)
 
-        # Copy file to location
-        logger.info("Copying %s to %s", source_path, destination_dir)
+        # Copy only if the files does not already existrs
         os.makedirs(str(destination_dir), exist_ok=True)
-
-        if os.path.normcase(os.path.abspath(source_path)) == os.path.normcase(
+        if not os.path.normcase(os.path.abspath(source_path)) == os.path.normcase(
             os.path.abspath(destination_dir)
         ):
+            logger.info("Copying %s to %s", source_path, destination_dir)
             shutil.copy(source_path, destination_dir)
+        else:
+            logger.info(
+                "The file(s) %s was not copied to %s: It already exists",
+                source_path,
+                destination_dir,
+            )
         destination_path = os.path.join(destination_dir, os.path.basename(source_path))
 
         return {
