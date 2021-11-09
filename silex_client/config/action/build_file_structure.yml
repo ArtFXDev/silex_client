@@ -1,5 +1,5 @@
-file_structure:
-  # hide: true
+build_file_structure:
+  hide: true
   steps:
     file_structure:
       label: "File structure"
