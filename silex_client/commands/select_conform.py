@@ -52,7 +52,22 @@ class SelectConform(CommandBase):
     ):
         conform_type = parameters["conform_type"]
         if parameters["auto_select_type"]:
-            conform_type = os.path.splitext(parameters["file_path"])[-1][1:]
+            extension = os.path.splitext(parameters["file_path"])[-1][1:]
+            conform_type = extension.lower()
+            # Some extensions are not the exact same as their conform type
+            if conform_type not in [
+                publish_action["name"] for publish_action in Config().conforms
+            ]:
+                # TODO: This mapping
+                EXTENSION_TYPES_MAPPING = {"mb": "ma", "jpg": "jpeg"}
+                # Find the right conform action for the given extension
+                conform_type = EXTENSION_TYPES_MAPPING.get(conform_type)
 
-        conform_type = conform_type.lower()
+            # Some extensions are just not handled at all
+            if conform_type is None:
+                raise Exception(
+                    "Could not guess the conform for the selected file: The extension %s does not match any conform",
+                    extension,
+                )
+
         return {"type": conform_type, "file_path": parameters["file_path"]}

@@ -16,7 +16,9 @@ png:
           path: "silex_client.commands.build_output_path.BuildOutputPath"
           tooltip: "Build the complete output path"
           parameters:
-            output_type: "png"
+            output_type:
+              value: "png"
+              hide: true
           ask_user: true
         copy:
           label: "Copy file to pipeline"

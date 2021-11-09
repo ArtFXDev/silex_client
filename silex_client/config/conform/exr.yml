@@ -16,7 +16,9 @@ exr:
           path: "silex_client.commands.build_output_path.BuildOutputPath"
           tooltip: "Build the complete output path"
           parameters:
-            output_type: "exr"
+            output_type:
+              value: "exr"
+              hide: true
           ask_user: true
         copy:
           label: "Copy file to pipeline"

@@ -57,7 +57,11 @@ class Copy(CommandBase):
         # Copy file to location
         logger.info("Copying %s to %s", source_path, destination_dir)
         os.makedirs(str(destination_dir), exist_ok=True)
-        shutil.copy(source_path, destination_dir)
+
+        if os.path.normcase(os.path.abspath(source_path)) == os.path.normcase(
+            os.path.abspath(destination_dir)
+        ):
+            shutil.copy(source_path, destination_dir)
         destination_path = os.path.join(destination_dir, os.path.basename(source_path))
 
         return {
