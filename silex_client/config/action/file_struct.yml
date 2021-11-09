@@ -1,0 +1,8 @@
+file_structure:
+  steps:
+    file_structure:
+      label: "File structure"
+      index: 20
+      commands:
+        file_structure:
+          path: "silex_client.file_struct.FileStructure"
