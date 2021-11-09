@@ -3,6 +3,7 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.log import logger
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -41,9 +42,9 @@ class MoveFile(CommandBase):
     ):
 
         file_path: pathlib.Path = parameters.get("file_path")
-        dst_dir: pathlib.Path = parameters.get("dst_path")
+        dst_dir: pathlib.Path = parameters.get("dst_dir")
         file_name_with_extension: str = str(file_path).split(os.path.sep)[-1]
-        dst_path: pathlib.Path = f"{dst_dir}{os.path.sep}{os.path.sep}{file_name_with_extension}"
+        dst_path: pathlib.Path = os.path.join(dst_dir, file_name_with_extension)
 
         # Check for file to copy
         if not os.path.exists(file_path):
@@ -57,7 +58,6 @@ class MoveFile(CommandBase):
         # move file to location
         os.makedirs(str(dst_dir), exist_ok=True)
         shutil.move(file_path, dst_path)
-
         # Delete temp dir
         if parameters.get('fromm_temp'):
             temp: pathlib.Path = pathlib.Path(file_path)
