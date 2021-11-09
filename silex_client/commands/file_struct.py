@@ -13,7 +13,7 @@ import gazu.files
 import os
 
 
-class MoveFile(CommandBase):
+class FileStructure(CommandBase):
     """
     Copy file and override if necessary
     """
