@@ -66,7 +66,7 @@ class FileStructure(CommandBase):
                         logger.info('Could not create the sequence folder')
 
                 # create rushes folder
-                rushes: str = f'{os.path.join(*decompo[:3])}{os.path.sep}rushes'
+                rushes: str = f'{os.path.join(*decompo[:3])}{os.path.sep}editing'
                 os.makedirs(rushes,exist_ok=True)
                 logger.info('rushes folder created')
 
