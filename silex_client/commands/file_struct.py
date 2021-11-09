@@ -1,9 +1,9 @@
 from __future__ import annotations
 import typing
 from typing import Any, Dict
-from gazu.exception import MethodNotAllowedException
 
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.log import logger
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery

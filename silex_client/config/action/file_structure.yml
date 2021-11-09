@@ -1,9 +1,9 @@
 file_structure:
-  hide: true
+  # hide: true
   steps:
     file_structure:
       label: "File structure"
       index: 20
       commands:
         file_structure:
-          path: "silex_client.file_struct.FileStructure"
+          path: "silex_client.commands.file_struct.FileStructure"
