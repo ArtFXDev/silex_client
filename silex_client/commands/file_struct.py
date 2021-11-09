@@ -35,14 +35,14 @@ class MoveFile(CommandBase):
                 task = task
             )
 
-            working_path_work = f'{os.path.dirname(working_path)}{os.path.sep}work{os.path.sep}latest'
+            working_path_work = os.path.dirname(working_path)
             working_path_work = working_path_work.replace('/', f'{os.path.sep}')
             decompo = working_path_work.split(os.path.sep)
 
             os.makedirs(working_path_work,exist_ok=True)
 
             if decompo[3] == "shots":
-                sequ_path = f'{os.path.join(*decompo[:3])}{os.path.sep}sequences{os.path.sep}{decompo[4]}{os.path.sep}{decompo[6]}{os.path.sep}work{os.path.sep}latest'
+                sequ_path = f'{os.path.join(*decompo[:3])}{os.path.sep}sequences{os.path.sep}{decompo[4]}{os.path.sep}{decompo[6]}{os.path.sep}work'
                 os.makedirs(sequ_path,exist_ok=True)
 
             rushes = f'{os.path.join(*decompo[:3])}{os.path.sep}rushes'
