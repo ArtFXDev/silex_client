@@ -27,7 +27,12 @@ tiff:
           parameters:
             source_path: !command-output "input:input"
             destination_dir: !command-output "conform:build_output_path:directory"
-            override: false
+        rename:
+          label: "Rename the copied files"
+          path: "silex_client.commands.rename.Rename"
+          parameters:
+            source_path: !command-output "conform:copy:destination_path"
+            new_name: !command-output "conform:build_output_path:file_name"
 
     output:
       index: 30

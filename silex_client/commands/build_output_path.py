@@ -55,6 +55,11 @@ class BuildOutputPath(CommandBase):
             "value": None,
             "tooltip": "Select the task where you can to conform your file",
         },
+        "name": {
+            "label": "Name",
+            "type": str,
+            "value": "",
+        },
     }
 
     required_metadata = ["entity_id", "task_type_id"]
@@ -63,9 +68,10 @@ class BuildOutputPath(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        # f/p
         create_output_dir = parameters["create_output_dir"]
         create_temp_dir = parameters["create_temp_dir"]
+        name = parameters["name"]
+        extension = parameters["output_type"]
 
         # Get the entity dict
         entity = await gazu.shot.get_shot(action_query.context_metadata["entity_id"])
@@ -106,12 +112,13 @@ class BuildOutputPath(CommandBase):
             task_type = task.get("task_type", {}).get("id")
 
         # Build the output path
-        directory = await gazu.files.build_entity_output_file_path(
+        output_path = await gazu.files.build_entity_output_file_path(
             entity, output_type, task_type, sep=os.path.sep
         )
-        file_name = os.path.basename(directory)
-        directory = os.path.dirname(directory)
+        file_name = os.path.basename(output_path)
+        directory = os.path.dirname(output_path)
 
+        # Create the directories
         if create_output_dir:
             os.makedirs(directory, exist_ok=True)
             logger.info(f"Output directory created: {directory}")
@@ -121,11 +128,18 @@ class BuildOutputPath(CommandBase):
             os.makedirs(temp_directory)
             logger.info(f"Temp directory created: {temp_directory}")
 
-        file_name = os.path.basename(directory)
-        logger.info("Output path built: %s", os.path.join(directory, file_name))
+        # Build the file name
+        if name:
+            file_name += f"_{name}"
+        file_name += f".{extension}"
+
+        # Build the full path
+        full_path = os.path.join(directory, file_name)
+        logger.info("Output path built: %s", full_path)
+
         return {
             "directory": directory,
             "file_name": file_name,
             "temp_directory": temp_directory,
-            "full_path": f"{os.path.join(directory, file_name)}.{parameters['output_type']}",
+            "full_path": full_path,
         }
