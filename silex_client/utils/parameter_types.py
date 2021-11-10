@@ -110,11 +110,8 @@ class MultipleSelectParameterMeta(CommandParameterMeta):
 class ListParameter(list):
     def __init__(self, value):
         from silex_client.utils.log import logger
-        logger.info(f"aaaa {type(value)}  {value}")
         data = value
-        logger.info(f" dd {self}")
 
         if not isinstance(value, list):
             data = [value]
         self.extend(data)
-        logger.info(f" ddd{self}")

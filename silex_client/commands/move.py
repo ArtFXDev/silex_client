@@ -44,8 +44,6 @@ class Move(CommandBase):
         if not os.path.exists(dst):
             raise Exception(f"{dst} doesn't exist.")
 
-        logger.info(f"source : {src}")
-        logger.info(f"type : {type(src)}")
         for item in src:
             # Check for file to copy
             if not os.path.exists(item):
