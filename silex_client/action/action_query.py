@@ -197,7 +197,8 @@ class ActionQuery:
             logger.debug("Applying update: %s", response.result())
             patch = jsondiff.patch(self.buffer.serialize(), response.result())
             self.buffer.deserialize(patch)
-            self._buffer_diff = copy.deepcopy(self.buffer)
+            # The front is not updating its own data, we must update him about the data he sends us
+            # self._buffer_diff = copy.deepcopy(self.buffer)
 
         if apply_response:
             return await self.ws_connection.action_namespace.register_update_callback(
