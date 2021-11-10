@@ -81,9 +81,13 @@ class BuildOutputPath(CommandBase):
         directory = await gazu.files.build_entity_output_file_path(
             entity, output_type, task_type, sep=os.path.sep
         )
-
+        file_name = os.path.basename(directory)
+        directory = os.path.dirname(directory)
+        os.makedirs(directory, exist_ok=True)
         temp_directory = os.path.join(os.path.dirname(directory), str(uuid.uuid4()))
-        file_name = directory.split(os.path.sep)[-1]
+
+        os.makedirs(temp_directory)
+        logger.info(f"temp directory created: {temp_directory}")
         return {
             "directory": directory,
             "file_name": file_name,
