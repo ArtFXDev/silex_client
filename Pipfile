@@ -12,8 +12,9 @@ silex-client = {editable = true, extras = ["dev"], path = "."}
 python_version = "3.7"
 
 [scripts]
+unittest = "pytest --timeout 180 ."
+typing = "mypy --install-types --non-interactive --disallow-untyped-defs --ignore-missing-imports ./silex_client"
 lint = "python -m pylint --fail-under=8 ./silex_client"
-unittest = "python -m pytest"
-format = "yapf silex_client --recursive --verbose"
+format = "black ."
 doc_unix = "sphinx-apidoc --separate --force -o ./docs/source/pages ./silex_client && cd ./docs && make html && cd .."
 doc_win = "sphinx-apidoc --separate --force -o ./docs/source/pages ./silex_client && ./docs/make.bat html"
