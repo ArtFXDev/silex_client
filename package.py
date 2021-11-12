@@ -22,6 +22,7 @@ requires = [
     "Qt.py",
     "python_dotenv",
     "setuptools",
+    "tractor",
 ]
 
 vcs = "git"
