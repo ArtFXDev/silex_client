@@ -1,0 +1,45 @@
+obj:
+  steps:
+    input:
+      hide: true
+      index: 10
+      commands:
+        input:
+          path: "silex_client.commands.pass.Pass"
+
+    conform:
+      label: "Conform"
+      index: 20
+      commands:
+        build_output_path:
+          label: "Build output path"
+          path: "silex_client.commands.build_output_path.BuildOutputPath"
+          tooltip: "Build the complete output path"
+          parameters:
+            output_type:
+              value: "obj"
+              hide: true
+          ask_user: true
+        copy:
+          label: "Copy file to pipeline"
+          path: "silex_client.commands.copy.Copy"
+          ask_user: True
+          parameters:
+            source_path: !command-output "input:input"
+            destination_dir: !command-output "conform:build_output_path:directory"
+        rename:
+          label: "Rename the copied files"
+          path: "silex_client.commands.rename.Rename"
+          parameters:
+            source_path: !command-output "conform:copy:destination_path"
+            new_name: !command-output "conform:build_output_path:file_name"
+
+    output:
+      index: 30
+      hide: true
+      commands:
+        output:
+          path: "silex_client.commands.pass.Pass"
+          parameters:
+            input: !command-output "conform:rename:new_path"
+
