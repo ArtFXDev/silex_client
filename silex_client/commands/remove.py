@@ -8,6 +8,7 @@ from silex_client.utils.log import logger
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
+from silex_client.utils.parameter_types import ListParameter
 import shutil
 import os
 import pathlib
@@ -21,7 +22,7 @@ class Remove(CommandBase):
     parameters = {
         "file_path": {
             "label": "File path",
-            "type": pathlib.Path,
+            "type": ListParameter,
             "value": None,
         },
     }
@@ -33,17 +34,15 @@ class Remove(CommandBase):
 
         file_path: pathlib.Path = parameters.get("file_path")
 
-        # Check for file to copy
-        if not os.path.exists(file_path):
-            raise Exception(
-                "{} temporary file doesn't exist".format(file_path))
+        for item in file_path:
+            # Check for file to copy
+            if not os.path.exists(item):
+                raise Exception(
+                    f"{item} doesn't exist.")
 
-        # check already existing file
-        if not os.path.exists(file_path):
-            return
+            if os.path.isfile(item):
+                os.remove(item)
+            else:
+                shutil.rmtree(item)
 
-        if os.path.isfile(file_path):
-            os.remove(file_path)
-        else:
-            os.removedirs(file_path)
-        logger.info(f"OK remove {file_path}")
+            logger.info(f"OK remove {item}")

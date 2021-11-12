@@ -106,3 +106,12 @@ class MultipleSelectParameterMeta(CommandParameterMeta):
             "get_default": get_default,
         }
         return super().__new__(cls, "SelectParameter", (list,), attributes)
+
+class ListParameter(list):
+    def __init__(self, value):
+        from silex_client.utils.log import logger
+        data = value
+
+        if not isinstance(value, list):
+            data = [value]
+        self.extend(data)
