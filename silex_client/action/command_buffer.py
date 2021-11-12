@@ -217,3 +217,8 @@ class CommandBuffer:
 
         command.deserialize(serialized_data, force=True)
         return command
+
+    def require_prompt(self) -> bool:
+        return self.ask_user or not all(
+            parameter.value is not None for parameter in self.parameters.values()
+        )

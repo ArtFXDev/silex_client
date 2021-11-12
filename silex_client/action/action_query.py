@@ -84,20 +84,8 @@ class ActionQuery:
                     break
 
                 # If the command requires an input from user, wait for the response
-                if command.ask_user:
-                    commands_left = self.commands[index:]
-                    for command_left in commands_left:
-                        if command_left.ask_user:
-                            command_left.status = Status.WAITING_FOR_RESPONSE
-                    if self.ws_connection.is_running:
-                        logger.info("Waiting for UI response")
-                        await asyncio.wait_for(
-                            await self.async_update_websocket(apply_response=True), None
-                        )
-                    # Put the commands back to initialized
-                    for command_left in self.commands[index:]:
-                        command_left.ask_user = False
-                        command_left.status = Status.INITIALIZED
+                if command.require_prompt():
+                    await self.prompt_commands(index)
 
                 # Execution of the command
                 await command.execute(self, self.execution_type)
@@ -113,6 +101,26 @@ class ActionQuery:
 
         # Execute the commands in the event loop
         return self.event_loop.register_task(create_task())
+
+    async def prompt_commands(self, start: Optional[int] = None, end: Optional[int] = None):
+        # Get the range of commands
+        commands_prompt = self.commands[start:end]
+        # Set the commands to WAITING_FOR_RESPONSE
+        for command_left in commands_prompt:
+            if not command_left.require_prompt():
+                break
+            command_left.status = Status.WAITING_FOR_RESPONSE
+        # Send the update to the UI and wait for its response
+        if self.ws_connection.is_running:
+            logger.info("Waiting for UI response")
+            await asyncio.wait_for(
+                await self.async_update_websocket(apply_response=True), None
+            )
+        # Put the commands back to initialized
+        for command_left in self.commands[start:end]:
+            command_left.ask_user = False
+            command_left.status = Status.INITIALIZED
+
 
     def cancel(self):
         """

@@ -40,7 +40,7 @@ class IterateAction(InsertAction):
         "value": {
             "label": "Value to set on the new action",
             "type": str,
-            "value": None,
+            "value": "",
             "tooltip": "This value will be append to action's steps labels",
             "hide": True,
         },

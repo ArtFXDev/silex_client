@@ -10,7 +10,6 @@ conform:
           tooltip: "Select the type of conform you want to make"
           parameters:
             auto_select_type: true
-          ask_user: true
 
         append_conform_action:
           label: "Append conform action"
