@@ -106,8 +106,9 @@ class ActionQuery:
         # Get the range of commands
         commands_prompt = self.commands[start:end]
         # Set the commands to WAITING_FOR_RESPONSE
-        for command_left in commands_prompt:
+        for index, command_left in enumerate(commands_prompt):
             if not command_left.require_prompt():
+                end = start + index if start is not None else index
                 break
             command_left.status = Status.WAITING_FOR_RESPONSE
         # Send the update to the UI and wait for its response

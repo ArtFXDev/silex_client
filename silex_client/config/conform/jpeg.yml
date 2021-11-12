@@ -41,4 +41,4 @@ jpeg:
         output:
           path: "silex_client.commands.pass.Pass"
           parameters:
-            input: !command-output "conform:copy:destination_path"
+            input: !command-output "conform:rename:new_path"
