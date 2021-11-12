@@ -30,6 +30,8 @@ class BuildOutputPath(CommandBase):
             "value": None,
             "tooltip": "Insert the short name of the output type",
         },
+        "create_temp_dir": { "label": "Create temp directory", "type": bool, "value": True, "hide": True },
+        "create_output_dir": { "label": "Create output directory" ,"type": bool, "value": True, "hide": True }
     }
 
     required_metadata = ["entity_type", "entity_id", "task_type_id"]
@@ -38,6 +40,10 @@ class BuildOutputPath(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+        # f/p
+        create_output_dir = parameters["create_output_dir"]
+        create_temp_dir = parameters["create_temp_dir"]
+
         # Get the entity dict
         if action_query.context_metadata["entity_type"] == "shot":
             entity = await gazu.shot.get_shot(
@@ -83,11 +89,15 @@ class BuildOutputPath(CommandBase):
         )
         file_name = os.path.basename(directory)
         directory = os.path.dirname(directory)
-        os.makedirs(directory, exist_ok=True)
-        temp_directory = os.path.join(os.path.dirname(directory), str(uuid.uuid4()))
 
-        os.makedirs(temp_directory)
-        logger.info(f"temp directory created: {temp_directory}")
+        if create_output_dir:
+            os.makedirs(directory, exist_ok=True)
+            logger.info(f"output directory created: {directory}")
+
+        temp_directory = os.path.join(os.path.dirname(directory), str(uuid.uuid4()))
+        if create_temp_dir:
+            os.makedirs(temp_directory)
+            logger.info(f"temp directory created: {temp_directory}")
         return {
             "directory": directory,
             "file_name": file_name,
