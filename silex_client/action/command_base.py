@@ -6,6 +6,7 @@ Base class that every command should inherit from
 
 from __future__ import annotations
 
+import asyncio
 import functools
 import os
 import traceback
@@ -19,6 +20,7 @@ from silex_client.utils.log import logger
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
     from silex_client.action.command_buffer import CommandBuffer
+    from silex_client.action.parameter_buffer import ParameterBuffer
 
 # Type for parameters
 CommandParameters = Dict[str, Dict[str, Any]]
@@ -149,6 +151,39 @@ class CommandBase:
             return wrapper_conform_command
 
         return decorator_conform_command
+
+    async def prompt_user(
+        self, action_query: ActionQuery, new_parameters: dict[str, ParameterBuffer]
+    ) -> Dict[str, Any]:
+        """
+        Add the given parameters to to current command parameters and ask an update from the user
+        """
+        if not action_query.ws_connection.is_running:
+            return {}
+
+        # Hide the existing parameters
+        for parameter in self.command_buffer.parameters.values():
+            parameter.hide = True
+        # Add the parameters to the command buffer's parameters
+        self.command_buffer.parameters.update(new_parameters)
+        # Set the current command to WAITING_FOR_RESPONSE
+        self.command_buffer.status = Status.WAITING_FOR_RESPONSE
+        self.command_buffer.ask_user = True
+
+        # Send the update to the user and wait for its response
+        logger.info("Waiting for UI response")
+        await asyncio.wait_for(
+            await action_query.async_update_websocket(apply_response=True), None
+        )
+
+        # Put the commands back to processing
+        self.command_buffer.ask_user = False
+        self.command_buffer.status = Status.PROCESSING
+
+        return {
+            key: value.get_value(action_query)
+            for key, value in self.command_buffer.parameters.items()
+        }
 
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
