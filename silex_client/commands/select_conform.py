@@ -58,8 +58,8 @@ class SelectConform(CommandBase):
             if conform_type not in [
                 publish_action["name"] for publish_action in Config().conforms
             ]:
-                # TODO: This mapping
-                EXTENSION_TYPES_MAPPING = {"mb": "ma", "jpg": "jpeg"}
+                # TODO: This mapping should be somewhere else
+                EXTENSION_TYPES_MAPPING = {"mb": "ma", "jpeg": "jpg", "hdri": "hdr"}
                 # Find the right conform action for the given extension
                 conform_type = EXTENSION_TYPES_MAPPING.get(conform_type)
 
