@@ -23,6 +23,7 @@ requires = [
     "python_dotenv",
     "setuptools",
     "tractor",
+    "Fileseq",
 ]
 
 vcs = "git"
