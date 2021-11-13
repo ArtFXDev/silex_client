@@ -1,12 +1,8 @@
 from __future__ import annotations
-from silex_client.utils.datatypes import CommandOutput
 
-import jsondiff
-import copy
 import os
 import pathlib
 import typing
-import uuid
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
@@ -59,7 +55,13 @@ class SelectConform(CommandBase):
                 publish_action["name"] for publish_action in Config().conforms
             ]:
                 # TODO: This mapping should be somewhere else
-                EXTENSION_TYPES_MAPPING = {"mb": "ma", "jpeg": "jpg", "hdri": "hdr"}
+                EXTENSION_TYPES_MAPPING = {
+                    "mb": "ma",
+                    "jpeg": "jpg",
+                    "hdri": "hdr",
+                    "hipnc": "hip",
+                    "hiplc": "hip",
+                }
                 # Find the right conform action for the given extension
                 conform_type = EXTENSION_TYPES_MAPPING.get(conform_type)
 
