@@ -1,8 +1,16 @@
 submit:
   steps:
-    submit:
+    build_vray_cmd:
       index: 20
       commands:
-        submit:
-          path: "silex_client.commands.submitter_vray.SubmitterVray"
+        build_vray_cmd:
+          path: "silex_client.commands.build_vray_cmd.VrayCommand"
           ask_user: true
+
+    submit_to_tractor:
+      index: 30
+      commands:
+        submit_to_tractor:
+          path: "silex_client.commands.submit_to_tractor.TractorSubmitter"
+          parameters:
+            cmd_list: !command-output "build_vray_cmd:build_vray_cmd"
