@@ -5,6 +5,7 @@ from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
+from silex_client.utils.parameter_types import AnyParameter
 from silex_client.commands.insert_action import InsertAction
 
 # Forward references
@@ -39,7 +40,7 @@ class IterateAction(InsertAction):
         },
         "value": {
             "label": "Value to set on the new action",
-            "type": str,
+            "type": AnyParameter,
             "value": "",
             "tooltip": "This value will be append to action's steps labels",
             "hide": True,
@@ -49,6 +50,20 @@ class IterateAction(InsertAction):
             "type": str,
             "value": "",
             "tooltip": "Set wich parameter will be overriden by the item's value",
+            "hide": True,
+        },
+        "value_key": {
+            "label": "Value's key to set on the parameter",
+            "type": str,
+            "value": "",
+            "tooltip": "If the value is a dictionary, the value at that key will be set on the parameter",
+            "hide": True,
+        },
+        "label_key": {
+            "label": "Value's key to set on the label",
+            "type": str,
+            "value": "",
+            "tooltip": "If the value is a dictionary, the value at that key will be set on the label",
             "hide": True,
         },
         "output": {

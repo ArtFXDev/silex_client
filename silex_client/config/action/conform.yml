@@ -21,3 +21,4 @@ conform:
             parameter: "input:input:input"
             output: "output:output"
             category: "conform"
+            label_key: "file_paths"

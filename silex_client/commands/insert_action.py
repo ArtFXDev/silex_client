@@ -1,4 +1,5 @@
 from __future__ import annotations
+import copy
 from silex_client.utils.parameter_types import AnyParameter
 import uuid
 
@@ -47,6 +48,13 @@ class InsertAction(CommandBase):
             "tooltip": "Set wich parameter will be overriden by the given value",
             "hide": True,
         },
+        "label_key": {
+            "label": "Value's key to set on the label",
+            "type": str,
+            "value": "",
+            "tooltip": "If the value is a dictionary, the value at that key will be set on the label",
+            "hide": True,
+        },
         "output": {
             "label": "The command to get the output from",
             "type": str,
@@ -61,6 +69,7 @@ class InsertAction(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         action_type = parameters["action"]
+        label_key = parameters["label_key"]
         value = parameters["value"]
         action = Config().resolve_action(action_type, parameters["category"])
 
@@ -103,8 +112,13 @@ class InsertAction(CommandBase):
             # Set the step label before applying it on the action query
             action_steps[step_name].setdefault("label", step_name.title())
             if value:
+                splitted_key = label_key.split(":") if label_key else []
+                value_copy = copy.deepcopy(value)
+                while isinstance(value_copy, dict) and splitted_key:
+                    value_copy = value_copy.get(splitted_key[0])
+                    splitted_key.pop(0)
                 action_steps[step_name]["label"] = (
-                    action_steps[step_name]["label"] + " : " + str(value)
+                    action_steps[step_name]["label"] + " : " + str(value_copy)
                 )
             # Rename the step
             action_steps[new_name] = action_steps.pop(step_name)
