@@ -1,0 +1,8 @@
+submit:
+  steps:
+    submit:
+      index: 20
+      commands:
+        submit:
+          path: "silex_client.commands.submitter_vray.SubmitterVray"
+          ask_user: true
