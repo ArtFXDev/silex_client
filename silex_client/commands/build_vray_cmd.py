@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
 import tractor.api.author as author
 
 
-class SubmitterVray(CommandBase):
+class VrayCommand(CommandBase):
     """
     Put the given file on database and to locked file system
     """
@@ -47,13 +47,13 @@ class SubmitterVray(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        author.setEngineClientParam(debug=True)
+        # author.setEngineClientParam(debug=True)
 
         scene: pathlib.Path = parameters.get('scene_file')
-        frame_range: list[int] =  parameters.get("frame_range")
+        frame_range: List[int] =  parameters.get("frame_range")
         frame_padding: int = parameters.get("frame_padding")
         
-        job = author.Job(title=f"vray render {scene.stem}")
+        # job = author.Job(title=f"vray render {scene.stem}")
 
         arg_list = [
             "C:/Maya2022/Maya2022/vray/bin/vray.exe",
@@ -67,21 +67,27 @@ class SubmitterVray(CommandBase):
         ]
 
         chunks = list()
+        cmd_dict = dict()
 
-        for frame in range(frame_range[0], frame_range[1] - frame_padding, frame_padding):
-            end_frame = frame + frame_padding - 1
-            chunks.append((frame, end_frame))
+        if frame_range[1] - frame_padding <= 0:
+            chunks.append((frame_range[0], frame_range[1]))
+        else:
+            for frame in range(frame_range[0], frame_range[1] - frame_padding, frame_padding):
+                end_frame = frame + frame_padding - 1
+                chunks.append((frame, end_frame))
 
         rest = frame_range[1] % frame_padding
         if rest:
             chunks.append((frame_range[1] - rest, frame_range[1]))
 
+        logger.info(chunks)
+
         for start, end in chunks:
             logger.info(f"Creating a new task with frames: {start} {end}")
-            job.newTask(title=f"frames={start}-{end}", argv = arg_list + [f"-frames={start}-{end}"], service="TD_TEST_107")
+            cmd_dict[f"frames={start}-{end}"] = arg_list + [f"-frames={start}-{end}"]
+            # job.newTask(title=f"frames={start}-{end}", argv = arg_list + [f"-frames={start}-{end}"], service="TD_TEST_107")
         
-        cmd = ' '.join(arg_list)
-        logger.info("Launching command: " + cmd)
-
-        jid = job.spool()
-        logger.info(f"Created job: {jid}")
+        # jid = job.spool()
+        # logger.info(f"Created job: {jid}")
+        logger.info(cmd_dict)
+        return cmd_dict
