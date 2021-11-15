@@ -42,5 +42,4 @@ vdb:
         output:
           path: "silex_client.commands.pass.Pass"
           parameters:
-            input: !command-output "conform:rename:new_path"
-
+            input: !command-output "conform:rename:new_paths"
