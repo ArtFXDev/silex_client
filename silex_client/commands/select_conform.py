@@ -5,6 +5,8 @@ import pathlib
 import typing
 from typing import Any, Dict
 
+import fileseq
+
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import SelectParameterMeta
 from silex_client.resolve.config import Config
@@ -26,6 +28,12 @@ class SelectConform(CommandBase):
             "value": None,
             "tooltip": "Insert the path to the file you want to conform",
         },
+        "find_sequence": {
+            "label": "Conform the sequence of the selected file",
+            "type": bool,
+            "value": False,
+            "tooltip": "The file sequences will be automaticaly detected from the file you select",
+        },
         "auto_select_type": {
             "label": "Auto select the conform type",
             "type": bool,
@@ -46,9 +54,14 @@ class SelectConform(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        conform_type = parameters["conform_type"]
-        if parameters["auto_select_type"]:
-            extension = os.path.splitext(parameters["file_path"])[-1][1:]
+        file_path: pathlib.Path = parameters["file_path"]
+        find_sequence: bool = parameters["find_sequence"]
+        conform_type: str = parameters["conform_type"]
+        auto_select_type: bool = parameters["auto_select_type"]
+
+        # Guess the conform type from the extension of the given file
+        if auto_select_type:
+            extension = file_path.suffix[1:]
             conform_type = extension.lower()
             # Some extensions are not the exact same as their conform type
             if conform_type not in [
@@ -72,4 +85,17 @@ class SelectConform(CommandBase):
                     extension,
                 )
 
-        return {"type": conform_type, "file_path": parameters["file_path"]}
+        frame_set = fileseq.FrameSet(0)
+        file_paths = [file_path]
+        if not find_sequence:
+            return {"type": conform_type, "file_paths": file_paths, "frame_set": frame_set}
+
+        for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
+            # Find the file sequence that correspond the to file we are looking for
+            sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
+            if file_path in sequence_list and len(sequence_list) > 1:
+                frame_set = file_sequence.frameSet()
+                file_paths = sequence_list
+                break
+
+        return {"type": conform_type, "file_paths": file_paths, "frame_set": frame_set}

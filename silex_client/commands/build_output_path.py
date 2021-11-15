@@ -4,7 +4,6 @@ import os
 import uuid
 import typing
 import pathlib
-import math
 from typing import Any, Dict
 
 import fileseq
@@ -15,7 +14,7 @@ import gazu.task
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
-from silex_client.utils.parameter_types import TaskParameterMeta, IntArrayParameterMeta
+from silex_client.utils.parameter_types import TaskParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -66,7 +65,7 @@ class BuildOutputPath(CommandBase):
         "frame_set": {
             "label": "Insert the quantity of items if file sequence",
             "type": fileseq.FrameSet,
-            "value": [0, 0, 0],
+            "value": fileseq.FrameSet(0),
             "tooltip": "The range is start, end, increment",
         },
         "padding": {

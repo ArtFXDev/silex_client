@@ -16,7 +16,7 @@ conform:
           path: "silex_client.commands.insert_action.InsertAction"
           tooltip: "Append the selected conform to the list of commands to execute"
           parameters:
-            value: !command-output "setup:get_conform_output:file_path"
+            value: !command-output "setup:get_conform_output"
             action: !command-output "setup:get_conform_output:type"
             parameter: "input:input:input"
             output: "output:output"
