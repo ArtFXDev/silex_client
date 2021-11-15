@@ -34,7 +34,7 @@ class IntArrayParameterMeta(CommandParameterMeta):
             }
 
         def get_default():
-            return []
+            return [0 for i in range(size)]
 
         attributes = {
             "serialize": serialize,
