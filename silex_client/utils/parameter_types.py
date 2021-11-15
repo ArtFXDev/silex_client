@@ -1,3 +1,17 @@
+import pathlib
+
+
+class PathList(list):
+    def __init__(self, value):
+        if not isinstance(value, list):
+            value = [value]
+
+        for index, item in enumerate(value):
+            value[index] = pathlib.Path(item)
+
+        self.extend(value)
+
+
 class CommandParameterMeta(type):
     def __new__(cls, name: str, bases: tuple, dct: dict):
         def serialize():

@@ -3,8 +3,11 @@ from __future__ import annotations
 import os
 import uuid
 import typing
+import pathlib
+import math
 from typing import Any, Dict
 
+import fileseq
 import gazu.shot
 import gazu.asset
 import gazu.files
@@ -12,7 +15,7 @@ import gazu.task
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
-from silex_client.utils.parameter_types import TaskParameterMeta
+from silex_client.utils.parameter_types import TaskParameterMeta, IntArrayParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -60,6 +63,18 @@ class BuildOutputPath(CommandBase):
             "type": str,
             "value": "",
         },
+        "frame_set": {
+            "label": "Insert the quantity of items if file sequence",
+            "type": fileseq.FrameSet,
+            "value": [0, 0, 0],
+            "tooltip": "The range is start, end, increment",
+        },
+        "padding": {
+            "label": "padding for index in sequences",
+            "type": int,
+            "value": 1,
+            "tooltip": "A padding of 4 would return an index of 0024 for the index 24",
+        },
     }
 
     required_metadata = ["entity_id", "task_type_id"]
@@ -68,10 +83,13 @@ class BuildOutputPath(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        create_output_dir = parameters["create_output_dir"]
-        create_temp_dir = parameters["create_temp_dir"]
-        name = parameters["name"]
-        extension = parameters["output_type"]
+        create_output_dir: bool = parameters["create_output_dir"]
+        create_temp_dir: bool = parameters["create_temp_dir"]
+        name: str = parameters["name"]
+        extension: str = parameters["output_type"]
+        frame_set: fileseq.FrameSet = parameters["frame_set"]
+        padding: int = parameters["padding"]
+        nb_elements = len(frame_set)
 
         # Get the entity dict
         entity = await gazu.shot.get_shot(action_query.context_metadata["entity_id"])
@@ -113,29 +131,37 @@ class BuildOutputPath(CommandBase):
 
         # Build the output path
         output_path = await gazu.files.build_entity_output_file_path(
-            entity, output_type, task_type, sep=os.path.sep
+            entity, output_type, task_type, sep=os.path.sep, nb_elements=nb_elements
         )
-        file_name = os.path.basename(output_path)
-        directory = os.path.dirname(output_path)
+        output_path = pathlib.Path(output_path)
+        directory = output_path.parent
+        temp_directory = directory / str(uuid.uuid4())
+        file_name = output_path.name + f"_{name}" if name else output_path.name
+        full_path = directory / file_name
 
         # Create the directories
         if create_output_dir:
             os.makedirs(directory, exist_ok=True)
             logger.info(f"Output directory created: {directory}")
 
-        temp_directory = os.path.join(os.path.dirname(directory), str(uuid.uuid4()))
         if create_temp_dir:
             os.makedirs(temp_directory)
             logger.info(f"Temp directory created: {temp_directory}")
 
-        # Build the file name
-        if name:
-            file_name += f"_{name}"
-        file_name += f".{extension}"
+        # Handle the sequences of files
+        if nb_elements > 1:
+            file_names = []
+            for item in frame_set:
+                file_names.append(
+                    file_name + f"_{str(item).zfill(padding)}.{extension}"
+                )
+            file_name = file_names
+            full_path = [directory / name for name in file_names]
+        else:
+            file_name += f".{extension}"
+            full_path = directory / file_name
 
-        # Build the full path
-        full_path = os.path.join(directory, file_name)
-        logger.info("Output path built: %s", full_path)
+        logger.info("Output path(s) built: %s", full_path)
 
         return {
             "directory": directory,
