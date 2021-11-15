@@ -86,16 +86,16 @@ class SelectConform(CommandBase):
                 )
 
         frame_set = fileseq.FrameSet(0)
-        file_paths = [file_path]
 
         # Just return a sequence of one item to conform a single file
         if not find_sequence:
             return {
                 "type": conform_type,
-                "file_paths": file_paths,
+                "file_paths": file_path,
                 "frame_set": frame_set,
             }
 
+        file_paths = [file_path]
         # Handle file sequences
         for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
             # Find the file sequence that correspond the to file we are looking for
