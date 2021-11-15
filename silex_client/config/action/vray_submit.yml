@@ -1,4 +1,4 @@
-submit:
+vray_submit:
   steps:
     build_vray_cmd:
       index: 20
