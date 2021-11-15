@@ -1,14 +1,20 @@
 from __future__ import annotations
 
 import pathlib
+import copy
 import typing
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import fileseq
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import SelectParameterMeta
+from silex_client.action.parameter_buffer import ParameterBuffer
+from silex_client.utils.parameter_types import (
+    SelectParameterMeta,
+    PathListParameterMeta,
+)
 from silex_client.resolve.config import Config
+from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -21,9 +27,9 @@ class SelectConform(CommandBase):
     """
 
     parameters = {
-        "file_path": {
+        "file_paths": {
             "label": "Insert the file to conform",
-            "type": pathlib.Path,
+            "type": PathListParameterMeta(),
             "value": None,
             "tooltip": "Insert the path to the file you want to conform",
         },
@@ -49,18 +55,45 @@ class SelectConform(CommandBase):
         },
     }
 
+    async def _prompt_new_type(self, action_query: ActionQuery) -> str:
+        """
+        Helper to prompt the user for a new conform type and wait for its response
+        """
+        # Create a new parameter to prompt for the new file path
+        new_parameter = ParameterBuffer(
+            type=SelectParameterMeta(
+                *[publish_action["name"] for publish_action in Config().conforms]
+            ),
+            name="new_type",
+            label=f"Conform type",
+        )
+        # Prompt the user to get the new path
+        new_type = await self.prompt_user(
+            action_query,
+            {"new_type": new_parameter},
+        )
+        return new_type["new_type"]
+
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        file_path: pathlib.Path = parameters["file_path"]
+        file_paths: List[pathlib.Path] = parameters["file_paths"]
         find_sequence: bool = parameters["find_sequence"]
         conform_type: str = parameters["conform_type"]
         auto_select_type: bool = parameters["auto_select_type"]
 
+        sequences = fileseq.findSequencesInList(file_paths)
+        frame_sets = [sequence.frameSet() for sequence in sequences]
+        conform_types = []
+
         # Guess the conform type from the extension of the given file
-        if auto_select_type:
-            extension = file_path.suffix[1:]
+        for sequence in sequences:
+            if not auto_select_type:
+                conform_types.append(conform_type)
+                continue
+
+            extension = str(sequence.extension())[1:]
             conform_type = extension.lower()
             # Some extensions are not the exact same as their conform type
             if conform_type not in [
@@ -76,33 +109,53 @@ class SelectConform(CommandBase):
                     "hiplc": "hip",
                 }
                 # Find the right conform action for the given extension
-                conform_type = EXTENSION_TYPES_MAPPING.get(conform_type)
+                conform_type = EXTENSION_TYPES_MAPPING.get(conform_type, "")
 
             # Some extensions are just not handled at all
-            if conform_type is None:
-                raise Exception(
-                    "Could not guess the conform for the selected file: The extension %s does not match any conform",
-                    extension,
-                )
+            if conform_type not in [
+                publish_action["name"] for publish_action in Config().conforms
+            ]:
+                logger.warning("Could not guess the conform type of %s", sequence)
+                conform_type = await self._prompt_new_type(action_query)
 
-        frame_set = fileseq.FrameSet(0)
+            conform_types.append(conform_type)
 
-        # Just return a sequence of one item to conform a single file
+        # Convert the fileseq's sequences into list of pathlib.Path
+        sequences = [
+            [pathlib.Path(str(path)) for path in list(sequence)]
+            for sequence in sequences
+        ]
+
+        # Simply return what was sent if find_sequence not set
         if not find_sequence:
-            return {
-                "type": conform_type,
-                "file_paths": file_path,
-                "frame_set": frame_set,
-            }
+            return [
+                {"type": a, "file_paths": b, "frame_set": c}
+                for a, b, c in zip(conform_types, sequences, frame_sets)
+            ]
 
-        file_paths = [file_path]
         # Handle file sequences
-        for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
-            # Find the file sequence that correspond the to file we are looking for
-            sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
-            if file_path in sequence_list and len(sequence_list) > 1:
-                frame_set = file_sequence.frameSet()
-                file_paths = sequence_list
-                break
+        for index, sequence in enumerate(sequences):
+            if not sequence:
+                continue
+            file_path = sequence[0]
+            for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
+                # Find the file sequence that correspond the to file we are looking for
+                sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
+                if file_path in sequence_list and len(sequence_list) > 1:
+                    frame_sets[index] = file_sequence.frameSet()
+                    sequences[index] = sequence_list
+                    break
 
-        return {"type": conform_type, "file_paths": file_paths, "frame_set": frame_set}
+        # Finding sequences might result in duplicates
+        sequences_copy = copy.deepcopy(sequences)
+        for index, sequence in enumerate(sequences_copy):
+            offset = len(sequences_copy) - len(sequences)
+            if sequence in sequences[:index - offset]:
+                sequences.pop(index - offset)
+                frame_sets.pop(index - offset)
+                conform_types.pop(index - offset)
+
+        return [
+            {"type": a, "file_paths": b, "frame_set": c}
+            for a, b, c in zip(conform_types, sequences, frame_sets)
+        ]

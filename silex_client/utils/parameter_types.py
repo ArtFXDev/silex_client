@@ -1,17 +1,8 @@
 import pathlib
 
+
 class AnyParameter(object):
     pass
-
-class PathList(list):
-    def __init__(self, value):
-        if not isinstance(value, list):
-            value = [value]
-
-        for index, item in enumerate(value):
-            value[index] = pathlib.Path(item)
-
-        self.extend(value)
 
 
 class CommandParameterMeta(type):
@@ -139,11 +130,42 @@ class MultipleSelectParameterMeta(CommandParameterMeta):
         }
         return super().__new__(cls, "SelectParameter", (list,), attributes)
 
+# TODO: Replace this parameter with ListParameterMeta
 class ListParameter(list):
     def __init__(self, value):
-        from silex_client.utils.log import logger
         data = value
 
         if not isinstance(value, list):
             data = [value]
         self.extend(data)
+
+class PathListParameterMeta(CommandParameterMeta):
+    def __init__(cls, extensions=None):
+        pass
+
+    def __new__(cls, extensions=None):
+        if extensions is None:
+            extensions = ["*"]
+
+        def __init__(self, value):
+            if not isinstance(value, list):
+                value = [value]
+
+            for index, item in enumerate(value):
+                value[index] = pathlib.Path(item)
+
+            self.extend(value)
+
+        def serialize():
+            return {"name": "Path"}
+
+        def get_default():
+            return pathlib.Path()
+
+        attributes = {
+            "__init__": __init__,
+            "serialize": serialize,
+            "get_default": get_default,
+        }
+
+        return super().__new__(cls, "PathParameter", (list,), attributes)

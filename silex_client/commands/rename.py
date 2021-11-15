@@ -3,7 +3,7 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import PathList
+from silex_client.utils.parameter_types import PathListParameterMeta
 from silex_client.utils.log import logger
 
 if typing.TYPE_CHECKING:
@@ -21,7 +21,7 @@ class Rename(CommandBase):
     parameters = {
         "source_paths": {
             "label": "Source path",
-            "type": PathList,
+            "type": PathListParameterMeta(),
             "value": None,
             "tooltip": "Select the file or the directory you want to rename",
         },

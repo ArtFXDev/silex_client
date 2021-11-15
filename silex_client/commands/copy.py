@@ -4,7 +4,7 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import PathList
+from silex_client.utils.parameter_types import PathListParameterMeta
 from silex_client.utils.log import logger
 
 if typing.TYPE_CHECKING:
@@ -23,13 +23,13 @@ class Copy(CommandBase):
     parameters = {
         "source_paths": {
             "label": "Source path",
-            "type": PathList,
+            "type": PathListParameterMeta(),
             "value": None,
             "tooltip": "Select the file or the directory you want to copy",
         },
         "destination_dirs": {
             "label": "Destination directory",
-            "type": PathList,
+            "type": PathListParameterMeta(),
             "value": None,
             "tooltip": "Select the directory in wich you want to copy you file(s)",
         },
