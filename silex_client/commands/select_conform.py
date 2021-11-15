@@ -84,8 +84,10 @@ class SelectConform(CommandBase):
         auto_select_type: bool = parameters["auto_select_type"]
 
         sequences = fileseq.findSequencesInList(file_paths)
-        frame_sets = [sequence.frameSet() for sequence in sequences]
         conform_types = []
+        frame_sets = [
+            sequence.frameSet() or fileseq.FrameSet(0) for sequence in sequences
+        ]
 
         # Guess the conform type from the extension of the given file
         for sequence in sequences:
@@ -121,10 +123,15 @@ class SelectConform(CommandBase):
             conform_types.append(conform_type)
 
         # Convert the fileseq's sequences into list of pathlib.Path
-        sequences = [
-            [pathlib.Path(str(path)) for path in list(sequence)]
-            for sequence in sequences
-        ]
+        sequences_copy = copy.deepcopy(sequences)
+        sequences = []
+        for sequence in sequences_copy:
+            # For sequences of one item, don't return a list
+            if len(sequence) > 1:
+                sequences.append([pathlib.Path(str(path)) for path in list(sequence)])
+                continue
+            elif len(sequence) == 1:
+                sequences.append(pathlib.Path(str(sequence[0])))
 
         # Simply return what was sent if find_sequence not set
         if not find_sequence:
