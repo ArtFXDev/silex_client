@@ -11,14 +11,15 @@ conform:
           parameters:
             auto_select_type: true
 
-        append_conform_action:
-          label: "Append conform action"
-          path: "silex_client.commands.insert_action.InsertAction"
-          tooltip: "Append the selected conform to the list of commands to execute"
+        append_conform_actions:
+          label: "Append conform actions"
+          path: "silex_client.commands.iterate_action.IterateAction"
+          tooltip: "Append the selected conforms to the list of commands to execute"
           parameters:
-            value: !command-output "setup:get_conform_output"
-            action: !command-output "setup:get_conform_output:type"
+            values: !command-output "setup:get_conform_output:files"
+            categories: 
+              - "conform"
+            actions: !command-output "setup:get_conform_output:types"
             parameter: "input:input:input"
             output: "output:output"
-            category: "conform"
             label_key: "file_paths"

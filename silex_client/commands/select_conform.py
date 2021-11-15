@@ -128,10 +128,13 @@ class SelectConform(CommandBase):
 
         # Simply return what was sent if find_sequence not set
         if not find_sequence:
-            return [
-                {"type": a, "file_paths": b, "frame_set": c}
-                for a, b, c in zip(conform_types, sequences, frame_sets)
-            ]
+            return {
+                "files": [
+                    {"file_paths": sequence, "frame_set": frame_set}
+                    for sequence, frame_set in zip(sequences, frame_sets)
+                ],
+                "types": conform_types,
+            }
 
         # Handle file sequences
         for index, sequence in enumerate(sequences):
@@ -150,12 +153,15 @@ class SelectConform(CommandBase):
         sequences_copy = copy.deepcopy(sequences)
         for index, sequence in enumerate(sequences_copy):
             offset = len(sequences_copy) - len(sequences)
-            if sequence in sequences[:index - offset]:
+            if sequence in sequences[: index - offset]:
                 sequences.pop(index - offset)
                 frame_sets.pop(index - offset)
                 conform_types.pop(index - offset)
 
-        return [
-            {"type": a, "file_paths": b, "frame_set": c}
-            for a, b, c in zip(conform_types, sequences, frame_sets)
-        ]
+        return {
+            "files": [
+                {"file_paths": sequence, "frame_set": frame_set}
+                for sequence, frame_set in zip(sequences, frame_sets)
+            ],
+            "types": conform_types,
+        }

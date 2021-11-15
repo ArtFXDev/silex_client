@@ -160,7 +160,7 @@ class PathListParameterMeta(CommandParameterMeta):
             return {"name": "Path"}
 
         def get_default():
-            return pathlib.Path()
+            return None
 
         attributes = {
             "__init__": __init__,

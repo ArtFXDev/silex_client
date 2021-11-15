@@ -5,8 +5,8 @@ from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
-from silex_client.utils.parameter_types import AnyParameter
 from silex_client.commands.insert_action import InsertAction
+from silex_client.action.parameter_buffer import ParameterBuffer
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -19,30 +19,23 @@ class IterateAction(InsertAction):
     """
 
     parameters = {
-        "action": {
+        "actions": {
             "label": "Action to execute",
-            "type": str,
+            "type": list,
             "value": None,
             "tooltip": "This action will be executed for each items in the given list",
         },
-        "category": {
+        "categories": {
             "label": "Action category",
-            "type": str,
+            "type": list,
             "value": "action",
             "tooltip": "Set the category of the action you want to execute",
         },
-        "list": {
+        "values": {
             "label": "List to iterate over",
             "type": list,
             "value": None,
             "tooltip": "A new action will be appended for each items in this list",
-            "hide": True,
-        },
-        "value": {
-            "label": "Value to set on the new action",
-            "type": AnyParameter,
-            "value": "",
-            "tooltip": "This value will be append to action's steps labels",
             "hide": True,
         },
         "parameter": {
@@ -50,13 +43,6 @@ class IterateAction(InsertAction):
             "type": str,
             "value": "",
             "tooltip": "Set wich parameter will be overriden by the item's value",
-            "hide": True,
-        },
-        "value_key": {
-            "label": "Value's key to set on the parameter",
-            "type": str,
-            "value": "",
-            "tooltip": "If the value is a dictionary, the value at that key will be set on the parameter",
             "hide": True,
         },
         "label_key": {
@@ -79,11 +65,24 @@ class IterateAction(InsertAction):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+        actions = parameters["actions"]
+        values = parameters["values"]
+        categories = parameters["categories"]
+
+        # Inherit from the parameters of the InsertAction command
+        for key, value in super().parameters.items():
+            value["name"] = key
+            self.command_buffer.parameters.setdefault(key, ParameterBuffer(**value))
+
         outputs = []
-        for value in parameters["list"]:
-            logger.info("Adding action %s for item %s", parameters["action"], value)
-            self.command_buffer.parameters["value"].value = value
-            parameters["value"] = value
+        for index, value in enumerate(values):
+            action = actions[index % len(actions)]
+            category = categories[index % len(categories)]
+
+            logger.info("Adding action %s for item %s", action, value)
+
+            # Set the new values to the command
+            parameters.update({"action": action, "value": value, "category": category})
             await super().__call__(upstream, parameters, action_query)
             # TODO: Figure out why tf the returned value is always None
             outputs.append(self._transfer_data)
