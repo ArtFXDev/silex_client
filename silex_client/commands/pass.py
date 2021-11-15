@@ -4,6 +4,7 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.parameter_types import AnyParameter
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -17,7 +18,7 @@ class Pass(CommandBase):
 
     parameters = {
         "input": {
-            "type": str,
+            "type": AnyParameter,
             "value": None,
         },
     }

@@ -1,5 +1,7 @@
 import pathlib
 
+class AnyParameter(object):
+    pass
 
 class PathList(list):
     def __init__(self, value):

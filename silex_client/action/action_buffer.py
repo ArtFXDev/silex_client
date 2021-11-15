@@ -16,6 +16,7 @@ import dacite.core as dacite
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.action.step_buffer import StepBuffer
 from silex_client.utils.datatypes import CommandOutput
+from silex_client.utils.parameter_types import AnyParameter
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
 
@@ -174,11 +175,11 @@ class ActionBuffer:
             return
 
         # Check if the given value is the right type
-        if not isinstance(value, parameter.type):
+        if not isinstance(value, parameter.type) and parameter.type is not AnyParameter:
             try:
                 value = parameter.type(value)
             except TypeError:
-                logger.error("Could not set parameter %s: Invalid value", name)
+                logger.error("Could not set parameter %s: Invalid value (%s)", name, value)
                 return
 
         parameter.value = value

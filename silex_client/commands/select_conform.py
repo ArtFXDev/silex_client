@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import pathlib
 import typing
 from typing import Any, Dict
@@ -34,12 +33,6 @@ class SelectConform(CommandBase):
             "value": False,
             "tooltip": "The file sequences will be automaticaly detected from the file you select",
         },
-        "auto_select_type": {
-            "label": "Auto select the conform type",
-            "type": bool,
-            "value": True,
-            "tooltip": "Guess the conform type from the extension",
-        },
         "conform_type": {
             "label": "Select a conform type",
             "type": SelectParameterMeta(
@@ -47,6 +40,12 @@ class SelectConform(CommandBase):
             ),
             "value": None,
             "tooltip": "Select a conform type in the list",
+        },
+        "auto_select_type": {
+            "label": "Auto select the conform type",
+            "type": bool,
+            "value": True,
+            "tooltip": "Guess the conform type from the extension",
         },
     }
 
@@ -70,6 +69,7 @@ class SelectConform(CommandBase):
                 # TODO: This mapping should be somewhere else
                 EXTENSION_TYPES_MAPPING = {
                     "mb": "ma",
+                    "tif": "tiff",
                     "jpeg": "jpg",
                     "hdri": "hdr",
                     "hipnc": "hip",
@@ -87,9 +87,16 @@ class SelectConform(CommandBase):
 
         frame_set = fileseq.FrameSet(0)
         file_paths = [file_path]
-        if not find_sequence:
-            return {"type": conform_type, "file_paths": file_paths, "frame_set": frame_set}
 
+        # Just return a sequence of one item to conform a single file
+        if not find_sequence:
+            return {
+                "type": conform_type,
+                "file_paths": file_paths,
+                "frame_set": frame_set,
+            }
+
+        # Handle file sequences
         for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
             # Find the file sequence that correspond the to file we are looking for
             sequence_list = [pathlib.Path(str(file)) for file in file_sequence]

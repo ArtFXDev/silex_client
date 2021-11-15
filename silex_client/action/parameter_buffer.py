@@ -16,7 +16,7 @@ import dacite.core as dacite
 
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
-from silex_client.utils.parameter_types import CommandParameterMeta
+from silex_client.utils.parameter_types import CommandParameterMeta, AnyParameter
 
 # Forward references
 if TYPE_CHECKING:
@@ -64,6 +64,10 @@ class ParameterBuffer:
         # Check if the parameter gets a command output
         if isinstance(self.value, CommandOutput):
             self.command_output = True
+            self.hide = True
+
+        # The AnyParameter type does not have any widget in the frontend
+        if self.type is AnyParameter:
             self.hide = True
 
         # Get the default value from to the type

@@ -13,6 +13,7 @@ import traceback
 from typing import List, TYPE_CHECKING, Any, Callable, Dict
 
 from silex_client.network.websocket_log import RedirectWebsocketLogs
+from silex_client.utils.parameter_types import AnyParameter
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
 
@@ -61,6 +62,10 @@ class CommandBase:
                     parameter_name,
                 )
                 return False
+
+            # The AnyParameter type allow any type of parameters
+            if parameter_buffer.type is AnyParameter:
+                continue
 
             # Check if the parameter is the right type
             try:

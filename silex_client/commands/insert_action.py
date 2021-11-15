@@ -1,4 +1,5 @@
 from __future__ import annotations
+from silex_client.utils.parameter_types import AnyParameter
 import uuid
 
 import jsondiff
@@ -34,7 +35,7 @@ class InsertAction(CommandBase):
         },
         "value": {
             "label": "Value to set on the new action",
-            "type": str,
+            "type": AnyParameter,
             "value": "",
             "tooltip": "This value will be append to action's steps labels",
             "hide": True,

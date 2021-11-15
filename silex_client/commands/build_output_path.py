@@ -72,6 +72,7 @@ class BuildOutputPath(CommandBase):
             "label": "padding for index in sequences",
             "type": int,
             "value": 1,
+            "hide": True,
             "tooltip": "A padding of 4 would return an index of 0024 for the index 24",
         },
     }
