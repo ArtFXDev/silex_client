@@ -16,6 +16,7 @@ png:
           path: "silex_client.commands.build_output_path.BuildOutputPath"
           tooltip: "Build the complete output path"
           parameters:
+            frame_set: !command-output "input:input:frame_set"
             output_type:
               value: "png"
               hide: true
@@ -25,14 +26,14 @@ png:
           path: "silex_client.commands.copy.Copy"
           ask_user: True
           parameters:
-            source_path: !command-output "input:input"
-            destination_dir: !command-output "conform:build_output_path:directory"
+            source_paths: !command-output "input:input:file_paths"
+            destination_dirs: !command-output "conform:build_output_path:directory"
         rename:
           label: "Rename the copied files"
           path: "silex_client.commands.rename.Rename"
           parameters:
-            source_path: !command-output "conform:copy:destination_path"
-            new_name: !command-output "conform:build_output_path:file_name"
+            source_paths: !command-output "conform:copy:destination_paths"
+            new_names: !command-output "conform:build_output_path:file_names"
 
     output:
       index: 30

@@ -1,4 +1,4 @@
-fbx:
+vdb:
   steps:
     input:
       hide: true
@@ -18,7 +18,7 @@ fbx:
           parameters:
             frame_set: !command-output "input:input:frame_set"
             output_type:
-              value: "fbx"
+              value: "vdb"
               hide: true
           ask_user: true
         copy:
@@ -43,3 +43,4 @@ fbx:
           path: "silex_client.commands.pass.Pass"
           parameters:
             input: !command-output "conform:rename:new_path"
+
