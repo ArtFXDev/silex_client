@@ -76,18 +76,13 @@ class VrayCommand(CommandBase):
                 end_frame = frame + frame_padding - 1
                 chunks.append((frame, end_frame))
 
-        rest = frame_range[1] % frame_padding
-        if rest:
-            chunks.append((frame_range[1] - rest, frame_range[1]))
+            rest = frame_range[1] % frame_padding
+            if rest:
+                chunks.append((frame_range[1] - rest, frame_range[1]))
 
-        logger.info(chunks)
 
         for start, end in chunks:
             logger.info(f"Creating a new task with frames: {start} {end}")
             cmd_dict[f"frames={start}-{end}"] = arg_list + [f"-frames={start}-{end}"]
-            # job.newTask(title=f"frames={start}-{end}", argv = arg_list + [f"-frames={start}-{end}"], service="TD_TEST_107")
         
-        # jid = job.spool()
-        # logger.info(f"Created job: {jid}")
-        logger.info(cmd_dict)
         return cmd_dict

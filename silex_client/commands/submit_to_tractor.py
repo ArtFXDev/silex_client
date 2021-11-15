@@ -44,13 +44,12 @@ class TractorSubmitter(CommandBase):
         service: str = parameters.get('service')
         
         job = author.Job(title=f"vray render", service=service)
-        logger.info("create job")
-        logger.info(cmds)
 
         for cmd in cmds:
-            logger.info(f"create task: {cmds.get(cmd)}")
+            logger.info(f"command --> {cmds.get(cmd)}")
             job.newTask(title=str(cmd), argv = cmds.get(cmd))
         
 
         jid = job.spool()
-        logger.info(f"Created job: {jid}")
+        logger.info(job.asTcl)
+        logger.info(f"Created job --> {jid}")
