@@ -1,9 +1,10 @@
 from __future__ import annotations
 import contextlib
 import typing
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.parameter_types import PathList
 from silex_client.utils.log import logger
 
 if typing.TYPE_CHECKING:
@@ -20,15 +21,15 @@ class Copy(CommandBase):
     """
 
     parameters = {
-        "source_path": {
+        "source_paths": {
             "label": "Source path",
-            "type": pathlib.Path,
+            "type": PathList,
             "value": None,
             "tooltip": "Select the file or the directory you want to copy",
         },
-        "destination_dir": {
+        "destination_dirs": {
             "label": "Destination directory",
-            "type": pathlib.Path,
+            "type": PathList,
             "value": None,
             "tooltip": "Select the directory in wich you want to copy you file(s)",
         },
@@ -38,22 +39,27 @@ class Copy(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        source_path: pathlib.Path = parameters["source_path"]
-        destination_dir: pathlib.Path = parameters["destination_dir"]
+        source_paths: List[pathlib.Path] = parameters["source_paths"]
+        destination_dirs: List[pathlib.Path] = parameters["destination_dirs"]
 
-        # Check the file(s) to copy
-        if not os.path.exists(parameters["source_path"]):
-            raise Exception(f"Source path {source_path} does not exists")
+        destination_paths = []
+        # Loop over all the files to copy
+        for index, source_path in enumerate(source_paths):
+            # If only one directory is given, this will still work thanks to the modulo
+            destination_dir = destination_dirs[index % len(destination_dirs)]
+            # Check the file to copy
+            if not source_path.exists():
+                raise Exception(f"Source path {source_path} does not exists")
 
-        # Copy only if the files does not already existrs
-        os.makedirs(str(destination_dir), exist_ok=True)
-        logger.info("Copying %s to %s", source_path, destination_dir)
-        with contextlib.suppress(shutil.SameFileError):
-            shutil.copy(source_path, destination_dir)
-        destination_path = os.path.join(destination_dir, os.path.basename(source_path))
+            # Copy only if the files does not already exists
+            os.makedirs(str(destination_dir), exist_ok=True)
+            logger.info("Copying %s to %s", source_path, destination_dir)
+            with contextlib.suppress(shutil.SameFileError):
+                shutil.copy(source_path, destination_dir)
+            destination_paths.append(destination_dir / source_path.name)
 
         return {
-            "source_path": source_path,
-            "destination_dir": destination_dir,
-            "destination_path": destination_path,
+            "source_paths": source_paths,
+            "destination_dirs": destination_dirs,
+            "destination_paths": destination_paths,
         }

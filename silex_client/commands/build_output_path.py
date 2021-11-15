@@ -137,7 +137,8 @@ class BuildOutputPath(CommandBase):
         directory = output_path.parent
         temp_directory = directory / str(uuid.uuid4())
         file_name = output_path.name + f"_{name}" if name else output_path.name
-        full_path = directory / file_name
+        file_names = []
+        full_paths = [directory / file_name]
 
         # Create the directories
         if create_output_dir:
@@ -150,22 +151,20 @@ class BuildOutputPath(CommandBase):
 
         # Handle the sequences of files
         if nb_elements > 1:
-            file_names = []
             for item in frame_set:
                 file_names.append(
                     file_name + f"_{str(item).zfill(padding)}.{extension}"
                 )
-            file_name = file_names
-            full_path = [directory / name for name in file_names]
+            full_paths = [directory / name for name in file_names]
         else:
-            file_name += f".{extension}"
-            full_path = directory / file_name
+            file_names = [file_name + f".{extension}"]
+            full_paths = [directory / file_name]
 
-        logger.info("Output path(s) built: %s", full_path)
+        logger.info("Output path(s) built: %s", full_paths)
 
         return {
             "directory": directory,
-            "file_name": file_name,
+            "file_names": file_names,
             "temp_directory": temp_directory,
-            "full_path": full_path,
+            "full_paths": full_paths,
         }
