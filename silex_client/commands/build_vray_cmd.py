@@ -13,7 +13,6 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-
 class VrayCommand(CommandBase):
     """
     Put the given file on database and to locked file system
@@ -41,50 +40,53 @@ class VrayCommand(CommandBase):
         }
     }
 
+    def _chunks(self, lst, n):
+        """Yield successive n-sized chunks from lst."""
+        for i in range(0, len(lst), n):
+            yield lst[i:i + n]
+
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-
-        # author.setEngineClientParam(debug=True)
-
         scene: pathlib.Path = parameters.get('scene_file')
-        frame_range: List[int] =  parameters.get("frame_range")
+        frame_range: List[int] = parameters.get("frame_range")
         task_size: int = parameters.get("task_size")
-        
-        # job = author.Job(title=f"vray render {scene.stem}")
 
         arg_list = [
+            # V-Ray exe path
             "C:/Maya2022/Maya2022/vray/bin/vray.exe",
+
+            # Don't show VFB (render view)
             "-display=0",
+
+            # Update frequency for logs
             "-progressUpdateFreq=2000",
+
+            # Don't format logs with colors
             "-progressUseColor=0",
+
+            # Use proper carrier returns
             "-progressUseCR=0",
+
+            # Specify the scene file
             f"-sceneFile={scene}",
-            # "-rtEngine=5", # couda
+
+            # "-rtEngine=5", # CUDA or CPU?
             # f"-imgFile={scene.parents[0] / 'render' / scene.stem}.png"
         ]
 
-        chunks = list()
+        chunks = list(self._chunks(
+            range(frame_range[0], frame_range[1] + 1), task_size))
         cmd_dict = dict()
 
-        if frame_range[1] - task_size <= 0:
-            chunks.append((frame_range[0], frame_range[1]))
-        else:
-            for frame in range(frame_range[0], frame_range[1] - task_size, task_size):
-                end_frame = frame + task_size - 1
-                chunks.append((frame, end_frame))
-
-            rest = frame_range[1] % task_size
-            if rest:
-                chunks.append((frame_range[1] - rest, frame_range[1]))
-
-
-        for start, end in chunks:
+        for chunk in chunks:
+            start, end = chunk[0], chunk[-1]
             logger.info(f"Creating a new task with frames: {start} {end}")
-            cmd_dict[f"frames={start}-{end}"] = arg_list + [f"-frames={start}-{end}"]
-        
+            cmd_dict[f"frames={start}-{end}"] = arg_list + \
+                [f"-frames={start}-{end}"]
+
         return {
-                "commands": cmd_dict,
-                "file_name": scene.stem
-                }
+            "commands": cmd_dict,
+            "file_name": scene.stem
+        }

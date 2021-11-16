@@ -7,11 +7,9 @@ submit_vray:
       commands:
         build_vray_cmd:
           path: "silex_client.commands.build_vray_cmd.VrayCommand"
+          label: "Job parameters"
           ask_user: true
 
-    submit_to_tractor:
-      index: 30
-      commands:
         submit_to_tractor:
           path: "silex_client.commands.submit_to_tractor.TractorSubmitter"
           ask_user: true
