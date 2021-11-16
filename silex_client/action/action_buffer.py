@@ -9,6 +9,7 @@ from __future__ import annotations
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
+import re
 
 import dacite.config as dacite_config
 import dacite.core as dacite
@@ -59,6 +60,13 @@ class ActionBuffer:
     variables: Dict[str, Any] = field(compare=False, default_factory=dict)
     #: Snapshot of the context's metadata when this buffer is created
     context_metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        slugify_pattern = re.compile("[^A-Za-z0-9]")
+        # Set the command label
+        if self.label is None:
+            self.label = slugify_pattern.sub(" ", self.name)
+            self.label = self.label.title()
 
     def serialize(self) -> Dict[str, Any]:
         """
