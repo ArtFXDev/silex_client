@@ -55,9 +55,11 @@ class FileStructure(CommandBase):
                     # create sequences folder
                     if decompo[3] == "shots":
                         sequ_path: str = f'{os.path.join(*decompo[:3])}{os.path.sep}sequences{os.path.sep}{decompo[4]}{os.path.sep}{decompo[6]}{os.path.sep}work'
+                        os.makedirs(sequ_path, exist_ok=True)
 
                     # create rushes folder
-                    rushes: str = f'{os.path.join(*decompo[:3])}{os.path.sep}editing'
+                    editing: str = f'{os.path.join(*decompo[:3])}{os.path.sep}editing'
+                    os.makedirs(editing, exist_ok=True)
                 logger.info('{} was created !'.format(project['name']))
 
             else:
