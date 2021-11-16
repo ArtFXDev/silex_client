@@ -59,11 +59,12 @@ class WebsocketActionNamespace(WebsocketNamespace):
 
         self.update_futures.clear()
 
-    async def on_clearAction(self, data):
+    async def on_clear(self, data):
         """
         Clear an executing action
         """
-        logger.debug("Action cancel request received: %s from %s", data, self.url)
+        logger.debug("Action cancel request received: %s from %s",
+                     data, self.url)
         action = self.context.actions.get(data.get("uuid"))
         if action is None:
             logger.error(
@@ -78,7 +79,8 @@ class WebsocketActionNamespace(WebsocketNamespace):
         """
         Undo an executing action
         """
-        logger.debug("Action undo request received: %s from %s", data, self.url)
+        logger.debug("Action undo request received: %s from %s",
+                     data, self.url)
         action = self.context.actions.get(data.get("uuid"))
         if action is None:
             logger.error(
@@ -93,7 +95,8 @@ class WebsocketActionNamespace(WebsocketNamespace):
         """
         Redo an executing action
         """
-        logger.debug("Action redo request received: %s from %s", data, self.url)
+        logger.debug("Action redo request received: %s from %s",
+                     data, self.url)
         action = self.context.actions.get(data.get("uuid"))
         if action is None:
             logger.error(
