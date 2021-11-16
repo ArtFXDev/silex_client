@@ -1,6 +1,8 @@
 submit_vray:
+  label: "Submit V-Ray job"
   steps:
     build_vray_cmd:
+      label: "Setup render parameters"
       index: 20
       commands:
         build_vray_cmd:

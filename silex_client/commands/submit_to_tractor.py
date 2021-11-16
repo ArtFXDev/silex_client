@@ -32,7 +32,7 @@ class TractorSubmitter(CommandBase):
             "value": [],
         },
         "service": {
-            "label": "Service",
+            "label": "Pool",
             "type": str,
             "value": "TD_TEST_107",
         },
