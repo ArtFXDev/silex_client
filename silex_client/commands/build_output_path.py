@@ -157,8 +157,8 @@ class BuildOutputPath(CommandBase):
                 )
             full_paths = [directory / name for name in file_names]
         else:
-            file_names = [file_name + f".{extension}"]
-            full_paths = [directory / file_name]
+            file_names = file_name + f".{extension}"
+            full_paths = directory / file_name
 
         logger.info("Output path(s) built: %s", full_paths)
 
