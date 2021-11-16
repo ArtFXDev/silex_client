@@ -12,7 +12,6 @@ from silex_client.utils.log import logger
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import tractor.api.author as author
 
 
 class VrayCommand(CommandBase):
@@ -30,10 +29,10 @@ class VrayCommand(CommandBase):
             "type": IntArrayParameterMeta(2),
             "value": [0, 100]
         },
-        "frame_padding": {
-            "label": "Frame split",
+        "task_size": {
+            "label": "Task size",
             "type": int,
-            "value": 10
+            "value": 10,
         },
         "skip_existing": {
             "label": "Skip existing frames",
@@ -51,7 +50,7 @@ class VrayCommand(CommandBase):
 
         scene: pathlib.Path = parameters.get('scene_file')
         frame_range: List[int] =  parameters.get("frame_range")
-        frame_padding: int = parameters.get("frame_padding")
+        frame_step: int = parameters.get("frame_step")
         
         # job = author.Job(title=f"vray render {scene.stem}")
 
@@ -62,21 +61,21 @@ class VrayCommand(CommandBase):
             "-progressUseColor=0",
             "-progressUseCR=0",
             f"-sceneFile={scene}",
-            "-rtEngine=5",
-            f"-imgFile={scene.parents[0] / 'render' / scene.stem}.png"
+            # "-rtEngine=5", # couda
+            # f"-imgFile={scene.parents[0] / 'render' / scene.stem}.png"
         ]
 
         chunks = list()
         cmd_dict = dict()
 
-        if frame_range[1] - frame_padding <= 0:
+        if frame_range[1] - frame_step <= 0:
             chunks.append((frame_range[0], frame_range[1]))
         else:
-            for frame in range(frame_range[0], frame_range[1] - frame_padding, frame_padding):
-                end_frame = frame + frame_padding - 1
+            for frame in range(frame_range[0], frame_range[1] - frame_step, frame_step):
+                end_frame = frame + frame_step - 1
                 chunks.append((frame, end_frame))
 
-            rest = frame_range[1] % frame_padding
+            rest = frame_range[1] % frame_step
             if rest:
                 chunks.append((frame_range[1] - rest, frame_range[1]))
 
@@ -85,4 +84,7 @@ class VrayCommand(CommandBase):
             logger.info(f"Creating a new task with frames: {start} {end}")
             cmd_dict[f"frames={start}-{end}"] = arg_list + [f"-frames={start}-{end}"]
         
-        return cmd_dict
+        return {
+                "commands": cmd_dict,
+                "file_name": scene.stem
+                }

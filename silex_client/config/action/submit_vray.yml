@@ -12,5 +12,7 @@ submit_vray:
       commands:
         submit_to_tractor:
           path: "silex_client.commands.submit_to_tractor.TractorSubmitter"
+          ask_user: true
           parameters:
-            cmd_list: !command-output "build_vray_cmd:build_vray_cmd"
+            cmd_list: !command-output "build_vray_cmd:build_vray_cmd:commands"
+            job_title: !command-output "build_vray_cmd:build_vray_cmd:file_name"
