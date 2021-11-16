@@ -2,7 +2,8 @@ import pathlib
 
 
 class AnyParameter(object):
-    pass
+    def __new__(cls, value):
+        return value
 
 
 class CommandParameterMeta(type):

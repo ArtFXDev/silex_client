@@ -147,7 +147,7 @@ class SelectConform(CommandBase):
         for index, sequence in enumerate(sequences):
             if not sequence:
                 continue
-            file_path = sequence[0]
+            file_path = sequence if not isinstance(sequence, list) else sequence[0]
             for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
                 # Find the file sequence that correspond the to file we are looking for
                 sequence_list = [pathlib.Path(str(file)) for file in file_sequence]

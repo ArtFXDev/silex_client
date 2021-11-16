@@ -63,10 +63,6 @@ class CommandBase:
                 )
                 return False
 
-            # The AnyParameter type allow any type of parameters
-            if parameter_buffer.type is AnyParameter:
-                continue
-
             # Check if the parameter is the right type
             try:
                 parameters[parameter_name] = parameter_buffer.type(
