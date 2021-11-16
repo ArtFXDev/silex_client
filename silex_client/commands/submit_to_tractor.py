@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 from concurrent.futures import Future
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import SelectParameterMeta
+from silex_client.utils.parameter_types import MultipleSelectParameterMeta
 from silex_client.core.context import Context
 
 from silex_client.utils.log import logger
@@ -19,14 +19,6 @@ if typing.TYPE_CHECKING:
 import tractor.api.author as author
 import gazu.project
 
-def get_projects() -> List[Dict[Any]]:
-    project_list: List[str] =  ["3d4"]
-
-    if Context.get().event_loop.register_task(gazu.project.all_open_projects()) is not None:
-        projects_future: Future = Context.get().event_loop.register_task(gazu.project.all_open_projects())
-        project_list = [project["name"] for project in projects_future.result(None)] + ["3d4"]
-
-    return project_list
 
 class TractorSubmitter(CommandBase):
     """
@@ -49,9 +41,15 @@ class TractorSubmitter(CommandBase):
             "type": str,
             "value": "No Title"
         },
-        "project_name": {
-            "label": "Project name",
-            "type": SelectParameterMeta(*get_projects()),
+        "owner": {
+            "label": "Owner",
+            "type": str,
+            "value": "3d4",
+            "hide": True
+        },
+        "projects": {
+            "label": "Project",
+            "type": MultipleSelectParameterMeta(*["WS_Environment", "WS_Lighting"]),
         },
     }
 
@@ -65,17 +63,18 @@ class TractorSubmitter(CommandBase):
 
         cmds: Dict[str] = parameters.get('cmd_list')
         service: str = parameters.get('service')
-        # owner: str = parameters.get('owner')
-        project_name: List[str] = [parameters.get('project_name')]
+        
+        owner: str = parameters.get('owner')
+        projects: List[str] = parameters.get('projects')
         job_title: str = parameters.get('job_title')
         
-        job = author.Job(title=f"vray render - {job_title}", projects=project_name, service=service)
+        job = author.Job(title=f"vray render - {job_title}", projects=projects, service=service)
 
         for cmd in cmds:
             logger.info(f"command --> {cmds.get(cmd)}")
             job.newTask(title=str(cmd), argv = cmds.get(cmd))
         
 
-        jid = job.spool(owner=project_name)
+        jid = job.spool(owner=owner)
         logger.info(job.asTcl)
         logger.info(f"Created job --> {jid}")
