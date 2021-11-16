@@ -41,6 +41,8 @@ class ActionBuffer:
     name: str = field()
     #: A Unique ID to help differentiate multiple actions
     uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
+    #: The name of the command, meant to be displayed
+    label: Optional[str] = field(compare=False, repr=False, default=None)
     #: Specify if the action must be displayed by the UI or not
     hide: bool = field(compare=False, repr=False, default=False)
     #: Specify if the action must be displayed by the shelf or not
@@ -111,7 +113,8 @@ class ActionBuffer:
         """
         Place the steps in the right order accoring to the index value
         """
-        self.steps = dict(sorted(self.steps.items(), key=lambda item: item[1].index))
+        self.steps = dict(
+            sorted(self.steps.items(), key=lambda item: item[1].index))
 
     @property  # type: ignore
     def status(self) -> Status:

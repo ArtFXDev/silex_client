@@ -17,7 +17,6 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import tractor.api.author as author
-import gazu.project
 
 
 class TractorSubmitter(CommandBase):
@@ -53,7 +52,6 @@ class TractorSubmitter(CommandBase):
         },
     }
 
-
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
@@ -63,18 +61,18 @@ class TractorSubmitter(CommandBase):
 
         cmds: Dict[str] = parameters.get('cmd_list')
         service: str = parameters.get('service')
-        
+
         owner: str = parameters.get('owner')
         projects: List[str] = parameters.get('projects')
         job_title: str = parameters.get('job_title')
-        
-        job = author.Job(title=f"vray render - {job_title}", projects=projects, service=service)
+
+        job = author.Job(
+            title=f"vray render - {job_title}", projects=projects, service=service)
 
         for cmd in cmds:
             logger.info(f"command --> {cmds.get(cmd)}")
-            job.newTask(title=str(cmd), argv = cmds.get(cmd))
-        
+            job.newTask(title=str(cmd), argv=cmds.get(cmd))
 
         jid = job.spool(owner=owner)
-        logger.info(job.asTcl)
-        logger.info(f"Created job --> {jid}")
+        logger.info(job.asTcl())
+        logger.info(f"Created job: {jid} (jid)")
