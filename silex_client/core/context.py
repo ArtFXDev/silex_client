@@ -53,8 +53,9 @@ class Context:
         self._actions: Dict[str, ActionQuery] = {}
 
     def start_services(self):
-        authentificate_gazu()
-        self.compute_metadata()
+        authentifcated = authentificate_gazu()
+        if authentifcated:
+            self.compute_metadata()
         self.event_loop.start()
         self.ws_connection.start()
 
