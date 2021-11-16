@@ -1,5 +1,7 @@
 from __future__ import annotations
 import copy
+
+import fileseq
 from silex_client.utils.parameter_types import AnyParameter
 import uuid
 
@@ -112,11 +114,14 @@ class InsertAction(CommandBase):
             # Set the step label before applying it on the action query
             action_steps[step_name].setdefault("label", step_name.title())
             if value:
+                # Add to the label the value to help differenciate it from others
                 splitted_key = label_key.split(":") if label_key else []
                 value_copy = copy.deepcopy(value)
                 while isinstance(value_copy, dict) and splitted_key:
                     value_copy = value_copy.get(splitted_key[0])
                     splitted_key.pop(0)
+                if isinstance(value_copy, list):
+                    value_copy = fileseq.findSequencesInList(value_copy)[0]
                 action_steps[step_name]["label"] = (
                     action_steps[step_name]["label"] + " : " + str(value_copy)
                 )
