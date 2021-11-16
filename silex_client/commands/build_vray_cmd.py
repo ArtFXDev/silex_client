@@ -50,7 +50,7 @@ class VrayCommand(CommandBase):
 
         scene: pathlib.Path = parameters.get('scene_file')
         frame_range: List[int] =  parameters.get("frame_range")
-        frame_step: int = parameters.get("frame_step")
+        task_size: int = parameters.get("task_size")
         
         # job = author.Job(title=f"vray render {scene.stem}")
 
@@ -68,14 +68,14 @@ class VrayCommand(CommandBase):
         chunks = list()
         cmd_dict = dict()
 
-        if frame_range[1] - frame_step <= 0:
+        if frame_range[1] - task_size <= 0:
             chunks.append((frame_range[0], frame_range[1]))
         else:
-            for frame in range(frame_range[0], frame_range[1] - frame_step, frame_step):
-                end_frame = frame + frame_step - 1
+            for frame in range(frame_range[0], frame_range[1] - task_size, task_size):
+                end_frame = frame + task_size - 1
                 chunks.append((frame, end_frame))
 
-            rest = frame_range[1] % frame_step
+            rest = frame_range[1] % task_size
             if rest:
                 chunks.append((frame_range[1] - rest, frame_range[1]))
 
