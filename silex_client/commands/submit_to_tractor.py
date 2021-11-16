@@ -20,9 +20,13 @@ import tractor.api.author as author
 import gazu.project
 
 def get_projects() -> List[Dict[Any]]:
-    projects_future: Future = Context.get().event_loop.register_task(gazu.project.all_open_projects())
-    return [project["name"] for project in [projects_future.result(None)]] + ["3d4"]
+    project_list: List[str] =  ["3d4"]
 
+    if Context.get().event_loop.register_task(gazu.project.all_open_projects()) is not None:
+        projects_future: Future = Context.get().event_loop.register_task(gazu.project.all_open_projects())
+        project_list = [project["name"] for project in projects_future.result(None)] + ["3d4"]
+
+    return project_list
 
 class TractorSubmitter(CommandBase):
     """
