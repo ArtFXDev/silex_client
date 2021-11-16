@@ -11,7 +11,7 @@ from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import (
     SelectParameterMeta,
-    PathListParameterMeta,
+    PathParameterMeta,
 )
 from silex_client.resolve.config import Config
 from silex_client.utils.log import logger
@@ -29,7 +29,7 @@ class SelectConform(CommandBase):
     parameters = {
         "file_paths": {
             "label": "Insert the file to conform",
-            "type": PathListParameterMeta(),
+            "type": PathParameterMeta(multiple=True),
             "value": None,
             "tooltip": "Insert the path to the file you want to conform",
         },
