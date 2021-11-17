@@ -9,6 +9,7 @@ conform:
           path: "silex_client.commands.select_conform.SelectConform"
           tooltip: "Select the type of conform you want to make"
           parameters:
+            find_sequence: false
             auto_select_type: true
 
         append_conform_actions:
