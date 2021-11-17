@@ -30,7 +30,7 @@ class TractorSubmitter(CommandBase):
             "type": dict,
             "value": [],
         },
-        "service": {
+        "pools": {
             "label": "Pool",
             "type": MultipleSelectParameterMeta(*["TD_TEST_107", "G_212"]),
         },
@@ -59,14 +59,21 @@ class TractorSubmitter(CommandBase):
         author.setEngineClientParam(debug=True)
 
         cmds: Dict[str] = parameters.get('cmd_list')
-        service: str = parameters.get('service')
+        pools: List[str] = parameters.get('pools')
 
         owner: str = parameters.get('owner')
         projects: List[str] = parameters.get('projects')
         job_title: str = parameters.get('job_title')
 
+        if len(pools) == 1:
+            services = pools[0]
+        else:
+            services = "(" + " || ".join(pools) + ")"
+
+        logger.info(f"Rendering on pools: {services}")
+
         job = author.Job(
-            title=f"vray render - {job_title}", projects=projects, service=service)
+            title=f"vray render - {job_title}", projects=projects, service=services)
 
         for cmd in cmds:
             logger.info(f"command: {cmds.get(cmd)}")
