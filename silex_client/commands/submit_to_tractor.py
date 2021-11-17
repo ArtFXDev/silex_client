@@ -32,7 +32,7 @@ class TractorSubmitter(CommandBase):
         },
         "pools": {
             "label": "Pool",
-            "type": MultipleSelectParameterMeta(*["TD_TEST_107", "G_212"]),
+            "type": MultipleSelectParameterMeta(*["G_212", "TD_TEST_107"]),
         },
         "job_title": {
             "label": "Job title",
