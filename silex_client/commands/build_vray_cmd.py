@@ -80,6 +80,7 @@ class VrayCommand(CommandBase):
             range(frame_range[0], frame_range[1] + 1), task_size))
         cmd_dict = dict()
 
+
         for chunk in chunks:
             start, end = chunk[0], chunk[-1]
             logger.info(f"Creating a new task with frames: {start} {end}")

@@ -32,8 +32,7 @@ class TractorSubmitter(CommandBase):
         },
         "service": {
             "label": "Pool",
-            "type": str,
-            "value": "TD_TEST_107",
+            "type": MultipleSelectParameterMeta(*["TD_TEST_107", "G_212"]),
         },
         "job_title": {
             "label": "Job title",
@@ -72,7 +71,7 @@ class TractorSubmitter(CommandBase):
         for cmd in cmds:
             logger.info(f"command: {cmds.get(cmd)}")
             pre_cmd = author.Task(title="Mount marvin", argv=[
-                                  "net", "use", "\\\\marvin", "/user:etudiant", "artfx2020"])
+                "net", "use", "\\\\marvin", "/user:etudiant", "artfx2020"])
 
             task = author.Task(title=str(cmd), argv=cmds.get(cmd))
             task.addChild(pre_cmd)
