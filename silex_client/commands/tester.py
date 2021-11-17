@@ -12,7 +12,7 @@ from silex_client.utils.parameter_types import (
     SelectParameterMeta,
     MultipleSelectParameterMeta,
     IntArrayParameterMeta,
-    entity,
+    TaskParameterMeta,
 )
 
 # Forward references
@@ -332,13 +332,13 @@ class EntityTester(CommandBase):
     parameters = {
         "entity_tester": {
             "label": "Entity Tester",
-            "type": entity,
+            "type": TaskParameterMeta(),
             "value": None,
             "tooltip": "Testing the entity parameters",
         },
         "entity_tester_2": {
             "label": "Entity Tester 2",
-            "type": entity,
+            "type": TaskParameterMeta(),
             "value": None,
             "tooltip": "Testing the entity parameters",
         },

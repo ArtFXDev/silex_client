@@ -65,28 +65,29 @@ class Config:
 
         return found_actions
 
-    @property
-    def actions(self) -> List[Dict[str, str]]:
+    def get_actions(self, category: str = "action") -> List[Dict[str, str]]:
         """
-        List of all the available actions config found
+        List of all the available actions config found in the given category
         """
         return self.find_config(
-            [os.path.join(path, "action") for path in self.action_search_path]
+            [os.path.join(path, category) for path in self.action_search_path]
         )
 
     @property
+    def actions(self) -> List[Dict[str, str]]:
+        return self.get_actions("action")
+
+    @property
     def publishes(self) -> List[Dict[str, str]]:
-        """
-        List of all the available actions config found
-        """
-        return self.find_config(
-            [os.path.join(path, "publish") for path in self.action_search_path]
-        )
+        return self.get_actions("publish")
+
+    @property
+    def conforms(self) -> List[Dict[str, str]]:
+        return self.get_actions("conform")
 
     def resolve_config(
         self,
         action_name: str,
-        context_metadata: Dict[str, Any],
         configs: List[Dict[str, str]],
     ) -> Optional[dict]:
         """
@@ -117,20 +118,15 @@ class Config:
         return action_config
 
     def resolve_action(
-        self, action_name: str, context_metadata: Dict[str, Any] = None
+        self, action_name: str, category: str = "action"
     ) -> Optional[dict]:
-        if context_metadata is None:
-            context_metadata = {}
+        return self.resolve_config(action_name, self.get_actions(category))
 
-        return self.resolve_config(action_name, context_metadata, self.actions)
+    def resolve_publish(self, action_name: str) -> Optional[dict]:
+        return self.resolve_action(action_name, "publish")
 
-    def resolve_publish(
-        self, action_name: str, context_metadata: Dict[str, Any] = None
-    ) -> Optional[dict]:
-        if context_metadata is None:
-            context_metadata = {}
-
-        return self.resolve_config(action_name, context_metadata, self.publishes)
+    def resolve_conform(self, action_name: str) -> Optional[dict]:
+        return self.resolve_action(action_name, "conform")
 
     def _load_config(self, config_path: str) -> Any:
         # Load the config

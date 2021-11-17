@@ -33,10 +33,11 @@ class ActionQuery:
     Initialize and execute a given action
     """
 
-    def __init__(self, name: str, search_path: Optional[List[str]] = None):
+    def __init__(self, name: str, resolved_config: Optional[dict] = None):
         context = Context.get()
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(context.metadata))
-        resolved_config = Config(search_path).resolve_action(name)
+        if resolved_config is None:
+            resolved_config = Config().resolve_action(name)
 
         if resolved_config is None:
             return
@@ -83,19 +84,8 @@ class ActionQuery:
                     break
 
                 # If the command requires an input from user, wait for the response
-                if command.ask_user:
-                    commands_left = self.commands[index:]
-                    for command_left in commands_left:
-                        if command_left.ask_user:
-                            command_left.status = Status.WAITING_FOR_RESPONSE
-                    if self.ws_connection.is_running:
-                        logger.info("Waiting for UI response")
-                        await asyncio.wait_for(
-                            await self.async_update_websocket(apply_response=True), None
-                        )
-                    # Put the commands back to initialized
-                    for command_left in self.commands[index:]:
-                        command_left.status = Status.INITIALIZED
+                if command.require_prompt():
+                    await self.prompt_commands(index)
 
                 # Execution of the command
                 await command.execute(self, self.execution_type)
@@ -111,6 +101,27 @@ class ActionQuery:
 
         # Execute the commands in the event loop
         return self.event_loop.register_task(create_task())
+
+    async def prompt_commands(self, start: Optional[int] = None, end: Optional[int] = None):
+        # Get the range of commands
+        commands_prompt = self.commands[start:end]
+        # Set the commands to WAITING_FOR_RESPONSE
+        for index, command_left in enumerate(commands_prompt):
+            if not command_left.require_prompt():
+                end = start + index if start is not None else index
+                break
+            command_left.status = Status.WAITING_FOR_RESPONSE
+        # Send the update to the UI and wait for its response
+        if self.ws_connection.is_running:
+            logger.info("Waiting for UI response")
+            await asyncio.wait_for(
+                await self.async_update_websocket(apply_response=True), None
+            )
+        # Put the commands back to initialized
+        for command_left in self.commands[start:end]:
+            command_left.ask_user = False
+            command_left.status = Status.INITIALIZED
+
 
     def cancel(self):
         """
@@ -195,7 +206,8 @@ class ActionQuery:
             logger.debug("Applying update: %s", response.result())
             patch = jsondiff.patch(self.buffer.serialize(), response.result())
             self.buffer.deserialize(patch)
-            self._buffer_diff = copy.deepcopy(self.buffer)
+            # The front is not updating its own data, we must update him about the data he sends us
+            # self._buffer_diff = copy.deepcopy(self.buffer)
 
         if apply_response:
             return await self.ws_connection.action_namespace.register_update_callback(
@@ -265,7 +277,7 @@ class ActionQuery:
         """
         return CommandIterator(self.buffer)
 
-    def set_parameter(self, parameter_name: str, value: Any) -> None:
+    def set_parameter(self, parameter_name: str, value: Any, **kwargs) -> None:
         """
         Shortcut to set variables on the buffer easly
 
@@ -284,7 +296,7 @@ class ActionQuery:
         elif len(parameter_split) == 2:
             command = parameter_split[0]
         elif len(parameter_split) != 1:
-            logger.warning("Invalid parameter path: The given parameter path %s has too many separators")
+            logger.warning("Invalid parameter path: The given parameter path %s has too many separators", parameter_name)
 
         # Guess the info that were not provided by taking the first match
         index = None
@@ -318,7 +330,7 @@ class ActionQuery:
             )
             return
 
-        self.buffer.set_parameter(step, index, name, value)
+        self.buffer.set_parameter(step, index, name, value, **kwargs)
 
     def get_command(self, command_path: str) -> Optional[CommandBuffer]:
         """

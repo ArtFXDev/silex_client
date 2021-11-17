@@ -1,0 +1,47 @@
+vdb:
+  steps:
+    input:
+      hide: true
+      index: 10
+      commands:
+        input:
+          path: "silex_client.commands.pass.Pass"
+
+    conform:
+      label: "Conform"
+      index: 20
+      commands:
+        build_output_path:
+          label: "Build output path"
+          path: "silex_client.commands.build_output_path.BuildOutputPath"
+          tooltip: "Build the complete output path"
+          parameters:
+            use_current_context: false
+            create_temp_dir: false
+            frame_set: !command-output "input:input:frame_set"
+            output_type:
+              value: "vdb"
+              hide: true
+          ask_user: true
+        copy:
+          label: "Copy file to pipeline"
+          path: "silex_client.commands.copy.Copy"
+          ask_user: True
+          parameters:
+            source_paths: !command-output "input:input:file_paths"
+            destination_dirs: !command-output "conform:build_output_path:directory"
+        rename:
+          label: "Rename the copied files"
+          path: "silex_client.commands.rename.Rename"
+          parameters:
+            source_paths: !command-output "conform:copy:destination_paths"
+            new_names: !command-output "conform:build_output_path:full_name"
+
+    output:
+      index: 30
+      hide: true
+      commands:
+        output:
+          path: "silex_client.commands.pass.Pass"
+          parameters:
+            input: !command-output "conform:rename:new_paths"

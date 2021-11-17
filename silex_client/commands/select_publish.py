@@ -33,7 +33,7 @@ class SelectPublish(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        publish_action = Config().resolve_publish(parameters["publish_type"])
+        publish_action = Config().resolve_publish(parameters["publish_type"].lower())
 
         if publish_action is None:
             raise Exception("Could not resolve the action %s")

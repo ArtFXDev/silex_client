@@ -1,11 +1,26 @@
 conform:
   steps:
-    conform:
-      label: "Conform"
-      index: 20
+    setup:
+      lavel: "Setup"
+      index: 50
       commands:
-        conform:
-          ask_user: true
-          path: "silex_client.commands.conform.Conform"
+        get_conform_output:
+          label: "Select conform type"
+          path: "silex_client.commands.select_conform.SelectConform"
+          tooltip: "Select the type of conform you want to make"
           parameters:
-            filename: ""
+            find_sequence: false
+            auto_select_type: true
+
+        append_conform_actions:
+          label: "Append conform actions"
+          path: "silex_client.commands.iterate_action.IterateAction"
+          tooltip: "Append the selected conforms to the list of commands to execute"
+          parameters:
+            values: !command-output "setup:get_conform_output:files"
+            categories: 
+              - "conform"
+            actions: !command-output "setup:get_conform_output:types"
+            parameter: "input:input:input"
+            output: "output:output"
+            label_key: "file_paths"

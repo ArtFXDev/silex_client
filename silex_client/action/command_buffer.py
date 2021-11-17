@@ -166,12 +166,12 @@ class CommandBuffer:
         parameter.deserialize(parameter_data)
         return parameter
 
-    def deserialize(self, serialized_data: Dict[str, Any]) -> None:
+    def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
         """
         Convert back the action's data from json into this object
         """
         # Don't take the modifications of the hidden commands
-        if self.hide:
+        if self.hide and not force:
             return
 
         # Format the parameters corectly
@@ -211,9 +211,14 @@ class CommandBuffer:
         if "parameters" in serialized_data:
             filtered_data = copy.deepcopy(serialized_data)
             del filtered_data["parameters"]
-            parameter = dacite.from_dict(CommandBuffer, filtered_data, config)
+            command = dacite.from_dict(CommandBuffer, filtered_data, config)
         else:
-            parameter = dacite.from_dict(CommandBuffer, serialized_data, config)
+            command = dacite.from_dict(CommandBuffer, serialized_data, config)
 
-        parameter.deserialize(serialized_data)
-        return parameter
+        command.deserialize(serialized_data, force=True)
+        return command
+
+    def require_prompt(self) -> bool:
+        return self.ask_user or not all(
+            parameter.value is not None for parameter in self.parameters.values()
+        )

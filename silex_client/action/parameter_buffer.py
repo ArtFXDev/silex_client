@@ -16,7 +16,7 @@ import dacite.core as dacite
 
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
-from silex_client.utils.parameter_types import CommandParameterMeta
+from silex_client.utils.parameter_types import CommandParameterMeta, AnyParameter
 
 # Forward references
 if TYPE_CHECKING:
@@ -66,24 +66,18 @@ class ParameterBuffer:
             self.command_output = True
             self.hide = True
 
+        # The AnyParameter type does not have any widget in the frontend
+        if self.type is AnyParameter:
+            self.hide = True
+
         # Get the default value from to the type
         if self.value is None and isinstance(self.type, CommandParameterMeta):
             self.value = self.type.get_default()
 
     def get_value(self, action_query: ActionQuery) -> Any:
         # If the value is the output of an other command, get is
-        if self.command_output:
-            splited_path = self.value.split(":")
-
-            command_path = splited_path[0]
-            if len(splited_path) > 1:
-                command_path = ":".join(splited_path[:2])
-            command = action_query.get_command(command_path)
-
-            value = command.output_result if command is not None else None
-            if len(splited_path) > 2 and isinstance(value, dict):
-                value = value.get(splited_path[2])
-            return value
+        if isinstance(self.value, CommandOutput):
+            return self.value.get_value(action_query)
 
         # If the value is a callable, call it (for mutable default values)
         if callable(self.value):
@@ -105,12 +99,12 @@ class ParameterBuffer:
 
         return dict(result)
 
-    def deserialize(self, serialized_data: Dict[str, Any]) -> None:
+    def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
         """
         Convert back the action's data from json into this object
         """
         # Don't take the modifications of the hidden parameters
-        if self.hide:
+        if self.hide and not force:
             return
 
         for private_field in self.PRIVATE_FIELDS + self.READONLY_FIELDS:
@@ -129,5 +123,5 @@ class ParameterBuffer:
         config = dacite_config.Config(cast=[Status, CommandOutput])
         parameter = dacite.from_dict(ParameterBuffer, serialized_data, config)
 
-        parameter.deserialize(serialized_data)
+        parameter.deserialize(serialized_data, force=True)
         return parameter
