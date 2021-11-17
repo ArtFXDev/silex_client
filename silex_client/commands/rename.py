@@ -19,13 +19,13 @@ class Rename(CommandBase):
     """
 
     parameters = {
-        "source_paths": {
+        "src": {
             "label": "Source path",
             "type": PathParameterMeta(multiple=True),
             "value": None,
             "tooltip": "Select the file or the directory you want to rename",
         },
-        "new_names": {
+        "name": {
             "label": "New name",
             "type": ListParameterMeta(str),
             "value": None,
@@ -37,8 +37,8 @@ class Rename(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        source_paths: List[pathlib.Path] = parameters["source_paths"]
-        new_names: List[str] = parameters["new_names"]
+        source_paths: List[pathlib.Path] = parameters["src"]
+        new_names: List[str] = parameters["name"]
 
         new_paths = []
         # Loop over all the files to copy

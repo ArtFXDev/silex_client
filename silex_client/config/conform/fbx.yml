@@ -28,14 +28,14 @@ fbx:
           path: "silex_client.commands.copy.Copy"
           ask_user: True
           parameters:
-            source_paths: !command-output "input:input:file_paths"
-            destination_dirs: !command-output "conform:build_output_path:directory"
+            src: !command-output "input:input:file_paths"
+            dst: !command-output "conform:build_output_path:directory"
         rename:
           label: "Rename the copied files"
           path: "silex_client.commands.rename.Rename"
           parameters:
-            source_paths: !command-output "conform:copy:destination_paths"
-            new_names: !command-output "conform:build_output_path:full_name"
+            src: !command-output "conform:copy:destination_paths"
+            name: !command-output "conform:build_output_path:full_name"
 
     output:
       index: 30

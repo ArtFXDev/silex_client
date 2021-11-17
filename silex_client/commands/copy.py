@@ -21,13 +21,13 @@ class Copy(CommandBase):
     """
 
     parameters = {
-        "source_paths": {
+        "src": {
             "label": "Source path",
             "type": PathParameterMeta(multiple=True),
             "value": None,
             "tooltip": "Select the file or the directory you want to copy",
         },
-        "destination_dirs": {
+        "dst": {
             "label": "Destination directory",
             "type": PathParameterMeta(multiple=True),
             "value": None,
@@ -39,8 +39,8 @@ class Copy(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        source_paths: List[pathlib.Path] = parameters["source_paths"]
-        destination_dirs: List[pathlib.Path] = parameters["destination_dirs"]
+        source_paths: List[pathlib.Path] = parameters["src"]
+        destination_dirs: List[pathlib.Path] = parameters["dst"]
 
         destination_paths = []
         # Loop over all the files to copy
