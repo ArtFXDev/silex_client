@@ -7,6 +7,7 @@ Helpers to encode or decode the json stream
 import uuid
 
 import jsondiff
+import fileseq
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.action.command_buffer import CommandBuffer
@@ -29,9 +30,13 @@ def silex_encoder(obj):
     if isinstance(obj, CommandBuffer):
         return obj.serialize()
 
-    # Convert types into string
+    # Use the serialize method for command parameters
     if isinstance(obj, CommandParameterMeta):
         return obj.serialize()
+
+    # Convert frameset to string
+    if isinstance(obj, fileseq.FrameSet):
+        return str(obj)
 
     # Convert types into string
     if isinstance(obj, type):

@@ -35,7 +35,7 @@ hdr:
           path: "silex_client.commands.rename.Rename"
           parameters:
             source_paths: !command-output "conform:copy:destination_paths"
-            new_names: !command-output "conform:build_output_path:file_names"
+            new_names: !command-output "conform:build_output_path:full_name"
 
     output:
       index: 30
