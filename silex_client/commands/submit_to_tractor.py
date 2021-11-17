@@ -70,9 +70,14 @@ class TractorSubmitter(CommandBase):
             title=f"vray render - {job_title}", projects=projects, service=service)
 
         for cmd in cmds:
-            logger.info(f"command --> {cmds.get(cmd)}")
-            job.newTask(title=str(cmd), argv=cmds.get(cmd))
+            logger.info(f"command: {cmds.get(cmd)}")
+            pre_cmd = author.Task(title="Mount marvin", argv=[
+                                  "net", "use", "\\\\marvin", "/user:etudiant", "artfx2020"])
+
+            task = author.Task(title=str(cmd), argv=cmds.get(cmd))
+            task.addChild(pre_cmd)
+
+            job.addChild(task)
 
         jid = job.spool(owner=owner)
-        logger.info(job.asTcl())
         logger.info(f"Created job: {jid} (jid)")
