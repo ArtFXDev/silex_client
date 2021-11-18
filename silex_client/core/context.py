@@ -107,11 +107,11 @@ class Context:
         """
         Compute all the metadata info
         """
-        # Test if the zou API is reachable
-        if not asyncio.run(gazu.client.host_is_valid()):
-            return
         # Authentificate to gazu, stop if authentification failed
         if not authentificate_gazu():
+            return
+        # Test if the zou API is reachable
+        if not asyncio.run(gazu.client.host_is_valid()):
             return
 
         self.is_outdated = False

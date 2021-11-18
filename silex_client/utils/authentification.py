@@ -9,7 +9,7 @@ import aiohttp
 from silex_client.utils.log import logger
 
 
-def authentificate_gazu():
+def authentificate_gazu() -> bool:
     gazu.set_host(os.getenv("SILEX_ZOU_HOST"))
 
     async def get_authentification_token():
@@ -27,7 +27,8 @@ def authentificate_gazu():
     gazu.client.set_tokens(authentification_token)
     try:
         asyncio.run(gazu.client.host_is_valid())
-        return True
     except (ClientConnectionError):
         logger.error("Connection with the zou api could not be established")
         return False
+
+    return True
