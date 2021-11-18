@@ -12,8 +12,6 @@ import os
 import traceback
 from typing import List, TYPE_CHECKING, Any, Callable, Dict
 
-from silex_client.network.websocket_log import RedirectWebsocketLogs
-from silex_client.utils.parameter_types import AnyParameter
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
 
@@ -110,27 +108,21 @@ class CommandBase:
                 action_query: ActionQuery = kwargs.get("action_query", args[2])
 
                 # Make sure the given parameters are valid
-                with RedirectWebsocketLogs(
-                    logger, action_query, command.command_buffer
+                if not command.check_parameters(parameters):
+                    command.command_buffer.status = Status.INVALID
+                    return
+                # Make sure all the required metatada is here
+                if not command.check_context_metadata(
+                    action_query.context_metadata
                 ):
-                    if not command.check_parameters(parameters):
-                        command.command_buffer.status = Status.INVALID
-                        return
-                    # Make sure all the required metatada is here
-                    if not command.check_context_metadata(
-                        action_query.context_metadata
-                    ):
-                        command.command_buffer.status = Status.INVALID
-                        return
+                    command.command_buffer.status = Status.INVALID
+                    return
 
                 command.command_buffer.status = Status.PROCESSING
                 await action_query.async_update_websocket()
 
                 try:
-                    with RedirectWebsocketLogs(
-                        logger, action_query, command.command_buffer
-                    ):
-                        output = await func(command, *args, **kwargs)
+                    output = await func(command, *args, **kwargs)
                     command.command_buffer.output_result = output
                     execution_type = action_query.execution_type
                     if execution_type == Execution.FORWARD:
