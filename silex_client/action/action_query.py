@@ -55,7 +55,7 @@ class ActionQuery:
             action.cancel()
         context.register_action(self)
 
-    def execute(self) -> futures.Future:
+    def execute(self, batch=False) -> futures.Future:
         """
         Register a task that will execute the action's commands in order
 
@@ -68,6 +68,10 @@ class ActionQuery:
             future: futures.Future = futures.Future()
             future.set_result(None)
             return future
+
+        # The batch mode just set the action to hidden
+        if batch:
+            self.buffer.hide = True
 
         # Initialize the communication with the websocket server
         self.initialize_websocket()
