@@ -1,0 +1,18 @@
+submit_vray:
+  label: "Submit V-Ray job"
+  steps:
+    build_vray_cmd:
+      label: "Setup render parameters"
+      index: 20
+      commands:
+        build_vray_cmd:
+          path: "silex_client.commands.build_vray_cmd.VrayCommand"
+          label: "Job parameters"
+          ask_user: true
+
+        submit_to_tractor:
+          path: "silex_client.commands.submit_to_tractor.TractorSubmitter"
+          ask_user: true
+          parameters:
+            cmd_list: !command-output "build_vray_cmd:build_vray_cmd:commands"
+            job_title: !command-output "build_vray_cmd:build_vray_cmd:file_name"

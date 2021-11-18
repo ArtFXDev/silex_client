@@ -53,7 +53,6 @@ class Context:
         self._actions: Dict[str, ActionQuery] = {}
 
     def start_services(self):
-        authentificate_gazu()
         self.compute_metadata()
         self.event_loop.start()
         self.ws_connection.start()
@@ -108,7 +107,11 @@ class Context:
         """
         Compute all the metadata info
         """
+        # Test if the zou API is reachable
         if not asyncio.run(gazu.client.host_is_valid()):
+            return
+        # Authentificate to gazu, stop if authentification failed
+        if not authentificate_gazu():
             return
 
         self.is_outdated = False
