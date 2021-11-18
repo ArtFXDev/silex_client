@@ -112,23 +112,15 @@ class CommandBase:
                     command.command_buffer.status = Status.INVALID
                     return
                 # Make sure all the required metatada is here
-                if not command.check_context_metadata(
-                    action_query.context_metadata
-                ):
+                if not command.check_context_metadata(action_query.context_metadata):
                     command.command_buffer.status = Status.INVALID
                     return
 
-                command.command_buffer.status = Status.PROCESSING
                 await action_query.async_update_websocket()
 
                 try:
                     output = await func(command, *args, **kwargs)
                     command.command_buffer.output_result = output
-                    execution_type = action_query.execution_type
-                    if execution_type == Execution.FORWARD:
-                        command.command_buffer.status = Status.COMPLETED
-                    elif execution_type == Execution.BACKWARD:
-                        command.command_buffer.status = Status.INITIALIZED
                 except Exception as exception:
                     logger.error(
                         "An error occured while executing the command %s: %s",
@@ -140,6 +132,7 @@ class CommandBase:
                     command.command_buffer.status = Status.ERROR
 
                 await action_query.async_update_websocket()
+                return command.command_buffer.output_result
 
             return wrapper_conform_command
 
