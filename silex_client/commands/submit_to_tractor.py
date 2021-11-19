@@ -1,14 +1,10 @@
 from __future__ import annotations
-from concurrent import futures
 
-import pathlib
 import typing
 from typing import Any, Dict, List
-from concurrent.futures import Future
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import MultipleSelectParameterMeta
-from silex_client.core.context import Context
 
 from silex_client.utils.log import logger
 
@@ -32,7 +28,7 @@ class TractorSubmiter(CommandBase):
         },
         "pools": {
             "label": "Pool",
-            "type": MultipleSelectParameterMeta(*["G_212", "TD_TEST_107"]),
+            "type": MultipleSelectParameterMeta(*["G_212", "G_201", "TD_TEST_107"]),
         },
         "job_title": {
             "label": "Job title",
