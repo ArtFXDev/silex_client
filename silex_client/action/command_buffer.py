@@ -19,6 +19,7 @@ import dacite.config as dacite_config
 import dacite.core as dacite
 import jsondiff
 
+from silex_client.network.websocket_log import RedirectWebsocketLogs
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.datatypes import CommandOutput
@@ -128,12 +129,28 @@ class CommandBuffer:
         # Run the executor and copy the parameters
         # to prevent them from being modified during execution
         logger.debug("Executing command %s", self.name)
-        if execution_type == Execution.FORWARD:
-            await self.executor(input_value, copy.deepcopy(parameters), action_query)
-        elif execution_type == Execution.BACKWARD:
-            await self.executor.undo(
-                input_value, copy.deepcopy(parameters), action_query
-            )
+        with RedirectWebsocketLogs(logger, action_query, self):
+            # Set the status to processing
+            self.status = Status.PROCESSING
+
+            # Call the actual command
+            if execution_type == Execution.FORWARD:
+                await self.executor(
+                    input_value, copy.deepcopy(parameters), action_query
+                )
+            elif execution_type == Execution.BACKWARD:
+                await self.executor.undo(
+                    input_value, copy.deepcopy(parameters), action_query
+                )
+
+            # Keep the error statuses
+            if self.status in [Status.INVALID, Status.ERROR]:
+                return
+            # Set the status to completed or initialized according to the execution
+            if execution_type == Execution.FORWARD:
+                self.status = Status.COMPLETED
+            elif execution_type == Execution.BACKWARD:
+                self.status = Status.INITIALIZED
 
     def serialize(self) -> Dict[str, Any]:
         """

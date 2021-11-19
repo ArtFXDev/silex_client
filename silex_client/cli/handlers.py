@@ -64,7 +64,7 @@ def action_handler(action_name: str, **kwargs) -> None:
         action.set_parameter(parameter_path, parameter_value)
 
     try:
-        action_future = action.execute()
+        action_future = action.execute(batch=kwargs.get("batch", False))
         while not action_future.done():
             futures.wait([action_future], timeout=0.1)
     except KeyboardInterrupt:

@@ -19,7 +19,6 @@ requires = [
     "aiohttp",
     "jsondiff",
     "dacite",
-    "Qt.py",
     "python_dotenv",
     "setuptools",
     "tractor",

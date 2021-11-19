@@ -175,6 +175,4 @@ class InsertAction(CommandBase):
         if parameter_path:
             action_query.set_parameter(parameter_path.rebuild(), value, hide=True)
 
-        # TODO: Figure out why tf i can't get the returned value in the IterateAction command
-        self._transfer_data = output_path.rebuild()
         return output_path.rebuild()

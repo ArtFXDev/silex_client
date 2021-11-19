@@ -82,6 +82,14 @@ def main():
         action="append",
         default=[],
     )
+    action_parser.add_argument(
+        "--batch",
+        "-b",
+        help="The action will run without prompting input from user",
+        default=False,
+        action="store_true",
+        dest="batch",
+    )
 
     command_parser.add_argument(
         "command_name",
