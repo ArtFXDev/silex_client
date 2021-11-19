@@ -1,0 +1,19 @@
+nuke:
+  label: "Submit nuke script"
+  steps:
+    submit_job:
+      label: "Setup render parameters"
+      index: 20
+      commands:
+        build_nuke_cmd:
+          path: "silex_client.commands.build_nuke_cmd.BuildNukeCommand"
+          label: "Nuke Job parameters"
+          ask_user: true
+
+        submit_to_tractor:
+          path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
+          ask_user: true
+          parameters:
+            cmd_list: !command-output "submit_job:build_nuke_cmd:commands"
+            job_title: !command-output "submit_job:build_nuke_cmd:file_name"
+

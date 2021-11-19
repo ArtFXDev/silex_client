@@ -13,7 +13,7 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class VrayCommand(CommandBase):
+class BuildNukeCommand(CommandBase):
     """
     Put the given file on database and to locked file system
     """
@@ -33,11 +33,6 @@ class VrayCommand(CommandBase):
             "type": int,
             "value": 10,
         },
-        "skip_existing": {
-            "label": "Skip existing frames",
-            "type": bool,
-            "value": True
-        }
     }
 
     def _chunks(self, lst, n):
@@ -52,32 +47,17 @@ class VrayCommand(CommandBase):
         scene: pathlib.Path = parameters['scene_file']
         frame_range: List[int] = parameters["frame_range"]
         task_size: int = parameters["task_size"]
-        skip_existing: int =  int(parameters["skip_existing"])
 
         arg_list = [
             # V-Ray exe path
-            "C:/Maya2022/Maya2022/vray/bin/vray.exe",
+            "C:/Nuke13.0v3/Nuke13.0.exe",
 
-            # Don't show VFB (render view)
-            "-display=0",
-
-            # Update frequency for logs
-            "-progressUpdateFreq=2000",
-
-            # Don't format logs with colors
-            "-progressUseColor=0",
-
-            # Use proper carrier returns
-            "-progressUseCR=0",
+            # Execute in interactive mode
+            "-i",
 
             # Specify the scene file
-            f"-sceneFile={scene}",
-
-            # Render already existing frames or not
-            f"-skipExistingFrames={skip_existing}",
-
-            # "-rtEngine=5", # CUDA or CPU?
-            # f"-imgFile={scene.parents[0] / 'render' / scene.stem}.png"
+            "-x",
+            f"{scene}",
         ]
 
         chunks = list(self._chunks(
@@ -89,9 +69,10 @@ class VrayCommand(CommandBase):
             start, end = chunk[0], chunk[-1]
             logger.info(f"Creating a new task with frames: {start} {end}")
             cmd_dict[f"frames={start}-{end}"] = arg_list + \
-                [f"-frames={start}-{end}"]
+                ["-F", f"{start}-{end}"]
 
         return {
             "commands": cmd_dict,
             "file_name": scene.stem
         }
+

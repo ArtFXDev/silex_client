@@ -19,7 +19,7 @@ if typing.TYPE_CHECKING:
 import tractor.api.author as author
 
 
-class TractorSubmitter(CommandBase):
+class TractorSubmiter(CommandBase):
     """
     Put the given file on database and to locked file system
     """
@@ -58,12 +58,12 @@ class TractorSubmitter(CommandBase):
 
         author.setEngineClientParam(debug=True)
 
-        cmds: Dict[str] = parameters.get('cmd_list')
-        pools: List[str] = parameters.get('pools')
+        cmds: Dict[str, str] = parameters['cmd_list']
+        pools: List[str] = parameters['pools']
 
-        owner: str = parameters.get('owner')
-        projects: List[str] = parameters.get('projects')
-        job_title: str = parameters.get('job_title')
+        owner: str = parameters['owner']
+        projects: List[str] = parameters['projects']
+        job_title: str = parameters['job_title']
 
         if len(pools) == 1:
             services = pools[0]
