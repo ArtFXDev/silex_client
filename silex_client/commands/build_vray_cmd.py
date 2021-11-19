@@ -52,6 +52,7 @@ class VrayCommand(CommandBase):
         scene: pathlib.Path = parameters.get('scene_file')
         frame_range: List[int] = parameters.get("frame_range")
         task_size: int = parameters.get("task_size")
+        skip_existing: int =  int(parameters.get("skip_existing"))
 
         arg_list = [
             # V-Ray exe path
@@ -68,6 +69,9 @@ class VrayCommand(CommandBase):
 
             # Use proper carrier returns
             "-progressUseCR=0",
+
+            # Render already existing frames or not
+            f"-skipExistingFrames={skip_existing}",
 
             # Specify the scene file
             f"-sceneFile={scene}",
