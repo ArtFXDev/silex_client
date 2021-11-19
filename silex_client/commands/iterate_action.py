@@ -75,7 +75,9 @@ class IterateAction(InsertAction):
             self.command_buffer.parameters.setdefault(key, ParameterBuffer(**value))
 
         outputs = []
+        label = self.command_buffer.label
         for index, value in enumerate(values):
+            self.command_buffer.label = f"{label} ({index+1}/{len(values)})"
             action = actions[index % len(actions)]
             category = categories[index % len(categories)]
 
@@ -83,8 +85,7 @@ class IterateAction(InsertAction):
 
             # Set the new values to the command
             parameters.update({"action": action, "value": value, "category": category})
-            await super().__call__(upstream, parameters, action_query)
-            # TODO: Figure out why tf the returned value is always None
-            outputs.append(self._transfer_data)
+            output = await super().__call__(upstream, parameters, action_query)
+            outputs.append(output)
 
         return outputs
