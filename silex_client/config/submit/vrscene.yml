@@ -1,5 +1,5 @@
-submit_vray:
-  label: "Submit V-Ray job"
+vrscene:
+  label: "Submit V-Ray scene"
   steps:
     build_vray_cmd:
       label: "Setup render parameters"
@@ -16,3 +16,4 @@ submit_vray:
           parameters:
             cmd_list: !command-output "build_vray_cmd:build_vray_cmd:commands"
             job_title: !command-output "build_vray_cmd:build_vray_cmd:file_name"
+

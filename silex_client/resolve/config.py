@@ -85,6 +85,10 @@ class Config:
     def conforms(self) -> List[Dict[str, str]]:
         return self.get_actions("conform")
 
+    @property
+    def submits(self) -> List[Dict[str, str]]:
+        return self.get_actions("submit")
+
     def resolve_config(
         self,
         action_name: str,
@@ -127,6 +131,9 @@ class Config:
 
     def resolve_conform(self, action_name: str) -> Optional[dict]:
         return self.resolve_action(action_name, "conform")
+
+    def resolve_submit(self, action_name: str) -> Optional[dict]:
+        return self.resolve_action(action_name, "submit")
 
     def _load_config(self, config_path: str) -> Any:
         # Load the config
