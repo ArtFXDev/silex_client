@@ -33,11 +33,6 @@ class BuildNukeCommand(CommandBase):
             "type": int,
             "value": 10,
         },
-        "skip_existing": {
-            "label": "Skip existing frames",
-            "type": bool,
-            "value": True
-        }
     }
 
     def _chunks(self, lst, n):
