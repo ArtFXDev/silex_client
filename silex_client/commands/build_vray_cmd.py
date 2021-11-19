@@ -52,6 +52,7 @@ class VrayCommand(CommandBase):
         scene: pathlib.Path = parameters['scene_file']
         frame_range: List[int] = parameters["frame_range"]
         task_size: int = parameters["task_size"]
+        skip_existing: int =  int(parameters["skip_existing"])
 
         arg_list = [
             # V-Ray exe path
@@ -71,6 +72,9 @@ class VrayCommand(CommandBase):
 
             # Specify the scene file
             f"-sceneFile={scene}",
+
+            # Render already existing frames or not
+            f"-skipExistingFrames={skip_existing}",
 
             # "-rtEngine=5", # CUDA or CPU?
             # f"-imgFile={scene.parents[0] / 'render' / scene.stem}.png"

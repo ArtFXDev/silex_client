@@ -55,25 +55,14 @@ class BuildNukeCommand(CommandBase):
 
         arg_list = [
             # V-Ray exe path
-            "C:/Maya2022/Maya2022/vray/bin/vray.exe",
+            "C:/Nuke13.0v3/Nuke13.0.exe",
 
-            # Don't show VFB (render view)
-            "-display=0",
-
-            # Update frequency for logs
-            "-progressUpdateFreq=2000",
-
-            # Don't format logs with colors
-            "-progressUseColor=0",
-
-            # Use proper carrier returns
-            "-progressUseCR=0",
+            # Execute in interactive mode
+            "-i",
 
             # Specify the scene file
-            f"-sceneFile={scene}",
-
-            # "-rtEngine=5", # CUDA or CPU?
-            # f"-imgFile={scene.parents[0] / 'render' / scene.stem}.png"
+            "-x",
+            f"{scene}",
         ]
 
         chunks = list(self._chunks(
@@ -85,7 +74,7 @@ class BuildNukeCommand(CommandBase):
             start, end = chunk[0], chunk[-1]
             logger.info(f"Creating a new task with frames: {start} {end}")
             cmd_dict[f"frames={start}-{end}"] = arg_list + \
-                [f"-frames={start}-{end}"]
+                ["-F", f"{start}-{end}"]
 
         return {
             "commands": cmd_dict,
