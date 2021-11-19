@@ -17,6 +17,4 @@ submit:
           parameters:
             category: "submit"
             action: !command-output "setup:get_submiter:action"
-            parameter: "input:input:input"
-            output: "output:output"
 
