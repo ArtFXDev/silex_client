@@ -13,7 +13,7 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class VrayCommand(CommandBase):
+class BuildNukeCommand(CommandBase):
     """
     Put the given file on database and to locked file system
     """
@@ -91,3 +91,4 @@ class VrayCommand(CommandBase):
             "commands": cmd_dict,
             "file_name": scene.stem
         }
+

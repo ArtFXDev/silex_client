@@ -15,7 +15,6 @@ submit:
           path: "silex_client.commands.insert_action.InsertAction"
           tooltip: "Append the selected submit to the list of commands to execute"
           parameters:
-            value: !command-output "setup:get_submiter:file_path"
             category: "submit"
             action: !command-output "setup:get_submiter:action"
             parameter: "input:input:input"

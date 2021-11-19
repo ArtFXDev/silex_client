@@ -7,7 +7,7 @@ vrscene:
       commands:
         build_vray_cmd:
           path: "silex_client.commands.build_vray_cmd.VrayCommand"
-          label: "Job parameters"
+          label: "V-Ray Job parameters"
           ask_user: true
 
         submit_to_tractor:
