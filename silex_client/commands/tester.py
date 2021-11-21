@@ -35,7 +35,7 @@ class StringTester(CommandBase):
         "string_tester_2": {
             "label": "String Tester 2",
             "type": str,
-            "value": None,
+            "value": "John Doe",
             "tooltip": "Testing the string parameters",
         },
     }
@@ -72,7 +72,7 @@ class IntegerTester(CommandBase):
         "int_tester_2": {
             "label": "Integer Tester 2",
             "type": int,
-            "value": None,
+            "value": 39,
             "tooltip": "Testing the int parameters",
         },
     }

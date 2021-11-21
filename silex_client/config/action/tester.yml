@@ -79,4 +79,6 @@ tester:
           ask_user: True
         traceback:
           path: "silex_client.commands.tester.TracebackTester"
+          parameters:
+            raise_exception: false
           ask_user: True
