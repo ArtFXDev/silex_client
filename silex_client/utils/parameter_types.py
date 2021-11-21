@@ -204,7 +204,15 @@ class ListParameterMeta(CommandParameterMeta):
             self.extend(value)
 
         def serialize():
-            return {"name": "list"}
+            item_type = None
+
+            if isinstance(parameter_type, CommandParameterMeta):
+                return parameter_type.serialize()
+
+            elif isinstance(parameter_type, type):
+                item_type = {"name": parameter_type.__name__}
+
+            return {"name": "list", "itemtype": item_type}
 
         def get_default():
             return None
