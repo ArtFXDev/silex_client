@@ -54,7 +54,7 @@ class WebsocketConnection:
         try:
             await asyncio.wait_for(self.socketio.connect(self.url), 2)
         except (asyncio.TimeoutError, ConnectionError):
-            logger.error(
+            logger.warning(
                 "Connection with the websocket server could not be established"
             )
 

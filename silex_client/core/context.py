@@ -107,6 +107,8 @@ class Context:
         """
         Compute all the metadata info
         """
+        self.is_outdated = False
+
         # Authentificate to gazu, stop if authentification failed
         if not authentificate_gazu():
             return
@@ -114,7 +116,6 @@ class Context:
         if not asyncio.run(gazu.client.host_is_valid()):
             return
 
-        self.is_outdated = False
         self.update_dcc()
         self.update_user()
         self.update_entities()
