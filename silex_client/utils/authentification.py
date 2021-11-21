@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from aiohttp.client_exceptions import ClientConnectionError, ContentTypeError
+from aiohttp.client_exceptions import ClientConnectionError, ContentTypeError, InvalidURL
 import gazu
 import gazu.client
 import aiohttp
@@ -21,7 +21,7 @@ def authentificate_gazu() -> bool:
     # Get the authentification token
     try:
         authentification_token = asyncio.run(get_authentification_token())
-    except (ClientConnectionError, ContentTypeError):
+    except (ClientConnectionError, ContentTypeError, InvalidURL):
         logger.error("Connection with the silex service could not be established")
         return False
 
