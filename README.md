@@ -3,7 +3,8 @@ Python library to execute actions on DCCs and interface with the silex socket se
 
 ![python](https://img.shields.io/badge/PYTHON-blue?style=for-the-badge&logo=Python&logoColor=white)
 ![code formatter](https://img.shields.io/badge/Formatter-BLACK-black?style=for-the-badge)
-![gitHub release (latest by date)](https://img.shields.io/github/v/release/ArtFXDev/silex_client)
+![gitHub release](https://img.shields.io/github/v/release/ArtFXDev/silex_client?style=for-the-badge&color=orange)
+<br>
 ![unit test](https://github.com/ArtFXDev/silex_client/actions/workflows/unittest.yml/badge.svg)
 ![conform code](https://github.com/ArtFXDev/silex_client/actions/workflows/conform.yml/badge.svg)
 
