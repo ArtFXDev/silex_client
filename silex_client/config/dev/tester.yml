@@ -76,6 +76,11 @@ tester:
               - 80
               - 400
           ask_user: True
+        text_tester:
+          path: "silex_client.commands.tester.TextTester"
+          parameters:
+            text_tester: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed magna ex, condimentum at placerat ac, pellentesque quis lorem. Praesent vitae tellus sit amet nibh aliquam aliquet. Sed feugiat metus tempus, facilisis neque rutrum, lobortis nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Nulla cursus, erat nec mollis pellentesque, eros velit tincidunt augue, vitae accumsan est quam id est. Suspendisse potenti. Sed odio nulla, rutrum ut lacus quis, mattis hendrerit augue. Donec aliquam id turpis in consectetur. Curabitur at metus at velit mollis tristique nec vitae magna. Proin quis pharetra velit. Vestibulum auctor suscipit accumsan. Nulla efficitur et dolor id sollicitudin. Integer ultricies posuere elit eu ultrices. Integer id ante mauris. Aenean at risus sit amet diam molestie facilisis at et purus. Quisque facilisis turpis mattis ante sollicitudin, at egestas leo vestibulum"
+          ask_user: True
         traceback:
           path: "silex_client.commands.tester.TracebackTester"
           parameters:

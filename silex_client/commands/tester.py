@@ -13,6 +13,7 @@ from silex_client.utils.parameter_types import (
     MultipleSelectParameterMeta,
     IntArrayParameterMeta,
     TaskParameterMeta,
+    TextParameterMeta
 )
 
 # Forward references
@@ -513,6 +514,44 @@ class IntArrayTesterHigh(CommandBase):
             type(parameters["int_array_tester_2"]),
         )
 
+        return parameters["int_array_tester"]
+
+
+class TextTester(CommandBase):
+    """
+    Testing the text parameters
+    """
+
+    parameters = {
+        "text_tester": {
+            "label": "Text Tester",
+            "type": TextParameterMeta(),
+            "value": None,
+            "tooltip": "Testing the text parameters",
+        },
+        "text_tester_2": {
+            "label": "Text Tester 2",
+            "type": TextParameterMeta(),
+            "value": "Lorem ipsum dolor sit amet",
+            "tooltip": "Testing the text parameters",
+        },
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+    ):
+        logger.info(
+            "Text parameter tester: %s, %s",
+            parameters["text_tester"],
+            type(parameters["text_tester"]),
+        )
+        logger.info(
+            "Text parameter tester: %s, %s",
+            parameters["text_tester_2"],
+            type(parameters["text_tester_2"]),
+        )
+        
         return parameters["int_array_tester"]
 
 
