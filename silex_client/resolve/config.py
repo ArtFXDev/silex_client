@@ -6,6 +6,7 @@ SILEX_ACTION_CONFIG: For the actions
 """
 
 import copy
+import contextlib
 import os
 import pkg_resources
 from typing import Any, Dict, List, Optional
@@ -44,7 +45,8 @@ class Config:
 
         # Look for config search path in silex_config entry_point
         for entry_point in pkg_resources.iter_entry_points("silex_action_config"):
-            self.action_search_path += entry_point.load()
+            with contextlib.suppress(pkg_resources.DistributionNotFound):
+                self.action_search_path += entry_point.load()
 
     def find_config(self, search_path: List[str]) -> List[Dict[str, str]]:
         """
