@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import typing
-import pathlib
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
@@ -13,7 +12,8 @@ from silex_client.utils.parameter_types import (
     MultipleSelectParameterMeta,
     IntArrayParameterMeta,
     TaskParameterMeta,
-    TextParameterMeta
+    TextParameterMeta,
+    PathParameterMeta
 )
 
 # Forward references
@@ -149,13 +149,13 @@ class PathTester(CommandBase):
     parameters = {
         "path_tester": {
             "label": "Path Tester",
-            "type": pathlib.Path,
+            "type": PathParameterMeta(extensions=["*.abc", "*.obj", "*.fbx"]),
             "value": None,
             "tooltip": "Testing the path parameters",
         },
         "path_tester_2": {
             "label": "Path Tester 2",
-            "type": pathlib.Path,
+            "type": PathParameterMeta(multiple=True),
             "value": None,
             "tooltip": "Testing the path parameters",
         },
@@ -552,7 +552,7 @@ class TextTester(CommandBase):
             type(parameters["text_tester_2"]),
         )
         
-        return parameters["int_array_tester"]
+        return parameters["text_tester"]
 
 
 class TracebackTester(CommandBase):
