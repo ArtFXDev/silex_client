@@ -47,7 +47,7 @@ class ActionQuery:
 
         self.buffer: ActionBuffer = ActionBuffer(name, context_metadata=metadata_snapshot)
         self._initialize_buffer(resolved_config, {"context_metadata": metadata_snapshot})
-        self._buffer_diff = copy.deepcopy(self.buffer)
+        self._buffer_diff = copy.deepcopy(self.buffer.serialize())
         self._task: Optional[asyncio.Task] = None
 
         # This is temporary until full support of multiple actions at the same time
@@ -178,7 +178,7 @@ class ActionQuery:
         """
         if not self.ws_connection.is_running or self.buffer.hide:
             return
-        self._buffer_diff = copy.deepcopy(self.buffer)
+        self._buffer_diff = copy.deepcopy(self.buffer.serialize())
         self.ws_connection.send("/dcc/action", "query", self._buffer_diff)
 
     def update_websocket(self, apply_response=False) -> futures.Future:
@@ -198,8 +198,8 @@ class ActionQuery:
             future.set_result(None)
             return future
 
-        diff = silex_diff(self._buffer_diff.serialize(), self.buffer.serialize())
-        self._buffer_diff = copy.deepcopy(self.buffer)
+        diff = silex_diff(self._buffer_diff, self.buffer.serialize())
+        self._buffer_diff = jsondiff.patch(self._buffer_diff, diff)
         diff["uuid"] = self.buffer.uuid
 
         confirm = await self.ws_connection.async_send("/dcc/action", "update", diff)
@@ -211,7 +211,7 @@ class ActionQuery:
             logger.debug("Applying update: %s", response.result())
             self.buffer.deserialize(response.result())
             # The front is not updating its own data, we must update him about the data he sends us
-            # self._buffer_diff = copy.deepcopy(self.buffer)
+            # self._buffer_diff = copy.deepcopy(self.buffer.serialize())
 
         if apply_response:
             return await self.ws_connection.action_namespace.register_update_callback(

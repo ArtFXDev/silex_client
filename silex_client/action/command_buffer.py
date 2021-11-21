@@ -68,7 +68,7 @@ class CommandBuffer:
     input_path: CommandOutput = field(default=CommandOutput(""))
     #: The callable that will be used when the command is executed
     executor: CommandBase = field(init=False)
-    #: Name of the command, must have no space or special characters
+    #: List of all the logs during the execution of that command
     logs: List[Dict[str, str]] = field(default_factory=list)
 
     def __post_init__(self):

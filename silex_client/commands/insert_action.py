@@ -5,7 +5,6 @@ import fileseq
 from silex_client.utils.parameter_types import AnyParameter
 import uuid
 
-import jsondiff
 import typing
 from typing import Any, Dict
 
