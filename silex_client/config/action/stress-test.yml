@@ -1,4 +1,4 @@
-performance:
+stress-test:
   steps:
     iterate_action:
       index: 50
