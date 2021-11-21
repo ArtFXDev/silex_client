@@ -4,6 +4,8 @@ import asyncio
 import typing
 from typing import Any, Dict
 
+from fileseq import FrameSet
+
 from silex_client.action.command_base import CommandBase
 import logging
 from silex_client.utils.parameter_types import (
@@ -553,6 +555,44 @@ class TextTester(CommandBase):
         )
         
         return parameters["text_tester"]
+
+
+class FrameSetTester(CommandBase):
+    """
+    Testing the frame set parameters
+    """
+
+    parameters = {
+        "frameset_tester": {
+            "label": "FrameSet Tester",
+            "type": FrameSet,
+            "value": None,
+            "tooltip": "Testing the frameset parameters",
+        },
+        "frameset_tester_2": {
+            "label": "FrameSet Tester 2",
+            "type": FrameSet,
+            "value": "1-50x5",
+            "tooltip": "Testing the frameset parameters",
+        },
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+    ):
+        logger.info(
+            "FramseSet parameter tester: %s, %s",
+            parameters["frameset_tester"],
+            type(parameters["frameset_tester"]),
+        )
+        logger.info(
+            "FramseSet parameter tester: %s, %s",
+            parameters["frameset_tester_2"],
+            type(parameters["frameset_tester_2"]),
+        )
+        
+        return parameters["frameset_tester"]
 
 
 class TracebackTester(CommandBase):
