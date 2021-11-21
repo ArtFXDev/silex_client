@@ -1,0 +1,15 @@
+performance:
+  steps:
+    iterate_action:
+      index: 50
+      label: "Action iteration"
+      commands:
+        create_list:
+          path: "silex_client.commands.execute_python.ExecutePython"
+          parameters:
+            inline_code: "list(range(40))"
+        iterate_list:
+          path: "silex_client.commands.iterate_action.IterateAction"
+          parameters:
+            values: !command-output "iterate_action:create_list:inline_result"
+            actions: "tester"

@@ -7,6 +7,7 @@ from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import logger
 from silex_client.commands.insert_action import InsertAction
 from silex_client.action.parameter_buffer import ParameterBuffer
+from silex_client.utils.parameter_types import ListParameterMeta, AnyParameter
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -21,19 +22,19 @@ class IterateAction(InsertAction):
     parameters = {
         "actions": {
             "label": "Action to execute",
-            "type": list,
+            "type": ListParameterMeta(str),
             "value": None,
             "tooltip": "This action will be executed for each items in the given list",
         },
         "categories": {
             "label": "Action category",
-            "type": list,
+            "type": ListParameterMeta(str),
             "value": "action",
             "tooltip": "Set the category of the action you want to execute",
         },
         "values": {
             "label": "List to iterate over",
-            "type": list,
+            "type": ListParameterMeta(AnyParameter),
             "value": None,
             "tooltip": "A new action will be appended for each items in this list",
             "hide": True,
