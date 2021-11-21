@@ -11,6 +11,7 @@ from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import re
 
+import jsondiff
 import dacite.config as dacite_config
 import dacite.core as dacite
 
@@ -68,21 +69,24 @@ class ActionBuffer:
             self.label = slugify_pattern.sub(" ", self.name)
             self.label = self.label.title()
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
         Convert the action's data into json so it can be sent to the UI
         """
+        if ignore_fields is None:
+            ignore_fields = self.PRIVATE_FIELDS
+
         result = []
 
         for f in fields(self):
-            if f.name == "steps":
+            if f.name in ignore_fields:
+                continue
+            elif f.name == "steps":
                 steps = getattr(self, f.name)
                 step_value = {}
                 for step_name, step in steps.items():
                     step_value[step_name] = step.serialize()
                 result.append((f.name, step_value))
-            elif f.name in self.PRIVATE_FIELDS:
-                continue
             else:
                 result.append((f.name, getattr(self, f.name)))
 
@@ -101,6 +105,10 @@ class ActionBuffer:
         """
         Convert back the action's data from json into this object
         """
+        # Patch the current command data
+        current_action_data = self.serialize(self.PRIVATE_FIELDS + ["steps"])
+        serialized_data = jsondiff.patch(current_action_data, serialized_data)
+
         # Format the steps corectly
         for step_name, step in serialized_data.get("steps", {}).items():
             step["name"] = step_name
@@ -114,7 +122,9 @@ class ActionBuffer:
         for private_field in self.PRIVATE_FIELDS:
             setattr(new_data, private_field, getattr(self, private_field))
 
-        self.__dict__.update(new_data.__dict__)
+        self.steps.update(new_data.steps)
+        self.__dict__.update({key: value for key, value in new_data.__dict__.items() if key != "steps"})
+
         self.reorder_steps()
 
     def reorder_steps(self):

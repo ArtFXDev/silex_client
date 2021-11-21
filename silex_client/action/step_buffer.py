@@ -10,8 +10,9 @@ import copy
 import re
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
+import jsondiff
 import dacite.config as dacite_config
 import dacite.core as dacite
 
@@ -53,21 +54,24 @@ class StepBuffer:
             self.label = slugify_pattern.sub(" ", self.name)
             self.label = self.label.title()
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
-        Convert the command's data into json so it can be sent to the UI
+        Convert the step's data into json so it can be sent to the UI
         """
+        if ignore_fields is None:
+            ignore_fields = self.PRIVATE_FIELDS
+
         result = []
 
         for f in fields(self):
-            if f.name == "commands":
+            if f.name in ignore_fields:
+                continue
+            elif f.name == "commands":
                 commands = getattr(self, f.name)
                 command_value = {}
                 for command_name, command in commands.items():
                     command_value[command_name] = command.serialize()
                 result.append((f.name, command_value))
-            elif f.name in self.PRIVATE_FIELDS:
-                continue
             else:
                 result.append((f.name, getattr(self, f.name)))
 
@@ -90,6 +94,10 @@ class StepBuffer:
         if self.hide and not force:
             return
 
+        # Patch the current step data
+        current_step_data = self.serialize(self.PRIVATE_FIELDS + ["commands"])
+        serialized_data = jsondiff.patch(current_step_data, serialized_data)
+
         # Format the commands corectly
         for command_name, command in serialized_data.get("commands", {}).items():
             command["name"] = command_name
@@ -103,7 +111,8 @@ class StepBuffer:
         for private_field in self.PRIVATE_FIELDS:
             setattr(new_data, private_field, getattr(self, private_field))
 
-        self.__dict__.update(new_data.__dict__)
+        self.commands.update(new_data.commands)
+        self.__dict__.update({key: value for key, value in new_data.__dict__.items() if key != "commands"})
 
     @classmethod
     def construct(cls, serialized_data: Dict[str, Any]) -> StepBuffer:

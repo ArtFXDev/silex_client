@@ -128,13 +128,13 @@ class InsertAction(CommandBase):
             # Rename the step
             action_steps[new_name] = action_steps.pop(step_name)
 
-        # Remove all the action's infor that are not about the steps
+        # Remove all the action's infos that are not about the steps
         for key in list(action_definition.keys()):
             if key != "steps":
                 del action_definition[key]
         # Apply the new action to the current action
-        patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
-        action_query.buffer.deserialize(patch)
+        # patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
+        action_query.buffer.deserialize(action_definition)
 
         # Adapt the indexes, the parameter paths on the newly added steps
         last_index = current_step.index

@@ -152,21 +152,24 @@ class CommandBuffer:
             elif execution_type == Execution.BACKWARD:
                 self.status = Status.INITIALIZED
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
         Convert the command's data into json so it can be sent to the UI
         """
+        if ignore_fields is None:
+            ignore_fields = self.PRIVATE_FIELDS
+
         result = []
 
         for f in fields(self):
-            if f.name == "parameters":
+            if f.name in ignore_fields:
+                continue
+            elif f.name == "parameters":
                 parameters = getattr(self, f.name)
                 parameters_value = {}
                 for parameter_name, parameter in parameters.items():
                     parameters_value[parameter_name] = parameter.serialize()
                 result.append((f.name, parameters_value))
-                continue
-            elif f.name in self.PRIVATE_FIELDS:
                 continue
 
             result.append((f.name, getattr(self, f.name)))
@@ -190,6 +193,10 @@ class CommandBuffer:
         # Don't take the modifications of the hidden commands
         if self.hide and not force:
             return
+
+        # Patch the current command data
+        current_command_data = self.serialize(self.PRIVATE_FIELDS + ["parameters"])
+        serialized_data = jsondiff.patch(current_command_data, serialized_data)
 
         # Format the parameters corectly
         executor_parameters = copy.deepcopy(self.executor.parameters)
@@ -217,7 +224,8 @@ class CommandBuffer:
         for private_field in self.PRIVATE_FIELDS + self.READONLY_FIELDS:
             setattr(new_data, private_field, getattr(self, private_field))
 
-        self.__dict__.update(new_data.__dict__)
+        self.parameters.update(new_data.parameters)
+        self.__dict__.update({key: value for key, value in new_data.__dict__.items() if key != "parameters"})
 
     @classmethod
     def construct(cls, serialized_data: Dict[str, Any]) -> CommandBuffer:

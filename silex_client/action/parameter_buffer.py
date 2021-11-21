@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
-from typing import Any, Dict, Optional, Type, TYPE_CHECKING
+from typing import Any, Dict, Optional, Type, TYPE_CHECKING, List
 
 import dacite.config as dacite_config
 import dacite.core as dacite
@@ -85,14 +85,17 @@ class ParameterBuffer:
 
         return self.value
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
-        Convert the command's data into json so it can be sent to the UI
+        Convert the step's data into json so it can be sent to the UI
         """
+        if ignore_fields is None:
+            ignore_fields = self.PRIVATE_FIELDS
+
         result = []
 
         for f in fields(self):
-            if f.name in self.PRIVATE_FIELDS:
+            if f.name in ignore_fields:
                 continue
 
             result.append((f.name, getattr(self, f.name)))
