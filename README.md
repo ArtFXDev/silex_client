@@ -7,6 +7,7 @@ Python library to execute actions on DCCs and interface with the silex socket se
 ![type checker](https://img.shields.io/badge/Type%20checker-MYPY-dodgerblue?style=for-the-badge&labelColor=abcdef)
 ![gitHub release](https://img.shields.io/github/v/release/ArtFXDev/silex_client?style=for-the-badge&color=orange&labelColor=sandybrown)
 <br>
+<br>
 ![unit test](https://github.com/ArtFXDev/silex_client/actions/workflows/unittest.yml/badge.svg)
 ![conform code](https://github.com/ArtFXDev/silex_client/actions/workflows/conform.yml/badge.svg)
 
