@@ -1,4 +1,5 @@
 import pathlib
+from silex_client.utils.log import logger
 
 
 class AnyParameter(object):
@@ -145,6 +146,7 @@ class MultipleSelectParameterMeta(CommandParameterMeta):
 # TODO: Replace this parameter with ListParameterMeta
 class ListParameter(list):
     def __init__(self, value):
+        logger.warning("Deprecation warning: The parameter type ListParameter is deprecated in favor if ListParameterMeta()")
         data = value
 
         if not isinstance(value, list):
@@ -214,3 +216,22 @@ class ListParameterMeta(CommandParameterMeta):
         }
 
         return super().__new__(cls, "ListParameter", (list,), attributes)
+
+
+class TextParameterMeta(CommandParameterMeta):
+    def __init__(self):
+        pass
+
+    def __new__(cls):
+        def serialize():
+            return {"name": "text"}
+
+        def get_default():
+            return ""
+
+        attributes = {
+            "serialize": serialize,
+            "get_default": get_default,
+        }
+
+        return super().__new__(cls, "ListParameter", (str,), attributes)
