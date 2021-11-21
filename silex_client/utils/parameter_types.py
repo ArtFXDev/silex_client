@@ -215,7 +215,7 @@ class ListParameterMeta(CommandParameterMeta):
             return {"name": "list", "itemtype": item_type}
 
         def get_default():
-            return None
+            return []
 
         attributes = {
             "__init__": __init__,
