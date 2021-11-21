@@ -186,7 +186,7 @@ class PathParameterMeta(CommandParameterMeta):
             attributes["__init__"] = __init_list__
             return super().__new__(cls, "PathParameter", (list,), attributes)
 
-        return super().__new__(cls, "PathParameter", (pathlib.Path,), attributes)
+        return super().__new__(cls, "PathParameter", (type(pathlib.Path()),), attributes)
 
 
 class ListParameterMeta(CommandParameterMeta):
