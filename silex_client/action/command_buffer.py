@@ -38,7 +38,7 @@ class CommandBuffer:
     """
 
     #: The list of fields that should be ignored when serializing this buffer to json
-    PRIVATE_FIELDS = ["output_result", "executor", "input_path"]
+    PRIVATE_FIELDS = ["output_result", "executor", "input_path", "outdated_cache", "serialize_cache"]
     #: The list of fields that should be ignored when deserializing this buffer to json
     READONLY_FIELDS = ["logs"]
 
@@ -70,6 +70,14 @@ class CommandBuffer:
     executor: CommandBase = field(init=False)
     #: List of all the logs during the execution of that command
     logs: List[Dict[str, str]] = field(default_factory=list)
+    #: Marquer to know if the serialize cache is outdated or not
+    outdated_cache: bool = field(compare=False, repr=False, default=True)
+    #: Cache the serialize output
+    serialize_cache: dict = field(compare=False, repr=False, default_factory=dict)
+
+    def __setattr__(self, name, value):
+        super().__setattr__("outdated_cache", True)
+        super().__setattr__(name, value)
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")
@@ -152,10 +160,17 @@ class CommandBuffer:
             elif execution_type == Execution.BACKWARD:
                 self.status = Status.INITIALIZED
 
+    @property
+    def outdated_caches(self):
+        return self.outdated_cache or not all(not parameter.outdated_cache for parameter in self.parameters.values())
+
     def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
         Convert the command's data into json so it can be sent to the UI
         """
+        if not self.outdated_caches:
+            return self.serialize_cache
+
         if ignore_fields is None:
             ignore_fields = self.PRIVATE_FIELDS
 
@@ -174,7 +189,9 @@ class CommandBuffer:
 
             result.append((f.name, getattr(self, f.name)))
 
-        return dict(result)
+        self.serialize_cache = dict(result)
+        self.outdated_cache = False
+        return self.serialize_cache
 
     def _deserialize_parameters(self, parameter_data: Any) -> Any:
         parameter_name = parameter_data.get("name")
@@ -226,6 +243,7 @@ class CommandBuffer:
 
         self.parameters.update(new_data.parameters)
         self.__dict__.update({key: value for key, value in new_data.__dict__.items() if key != "parameters"})
+        self.outdated_cache = True
 
     @classmethod
     def construct(cls, serialized_data: Dict[str, Any]) -> CommandBuffer:

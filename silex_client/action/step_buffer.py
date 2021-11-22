@@ -28,7 +28,7 @@ class StepBuffer:
     """
 
     #: The list of fields that should be ignored when serializing this buffer to json
-    PRIVATE_FIELDS = []
+    PRIVATE_FIELDS = ["outdated_cache", "serialize_cache"]
 
     #: Name of the step, must have no space or special characters
     name: str
@@ -46,6 +46,14 @@ class StepBuffer:
     commands: Dict[str, CommandBuffer] = field(default_factory=dict)
     #: A Unique ID to help differentiate multiple actions
     uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
+    #: Marquer to know if the serialize cache is outdated or not
+    outdated_cache: bool = field(compare=False, repr=False, default=True)
+    #: Cache the serialize output
+    serialize_cache: dict = field(compare=False, repr=False, default_factory=dict)
+
+    def __setattr__(self, name, value):
+        super().__setattr__("outdated_cache", True)
+        super().__setattr__(name, value)
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")
@@ -54,10 +62,17 @@ class StepBuffer:
             self.label = slugify_pattern.sub(" ", self.name)
             self.label = self.label.title()
 
+    @property
+    def outdated_caches(self):
+        return self.outdated_cache or not all(not command.outdated_caches for command in self.commands.values())
+
     def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
         Convert the step's data into json so it can be sent to the UI
         """
+        if not self.outdated_caches:
+            return self.serialize_cache
+
         if ignore_fields is None:
             ignore_fields = self.PRIVATE_FIELDS
 
@@ -75,7 +90,9 @@ class StepBuffer:
             else:
                 result.append((f.name, getattr(self, f.name)))
 
-        return dict(result)
+        self.serialize_cache = dict(result)
+        self.outdated_cache = False
+        return self.serialize_cache
 
     def _deserialize_commands(self, command_data: Any) -> Any:
         command_name = command_data.get("name")
@@ -113,6 +130,7 @@ class StepBuffer:
 
         self.commands.update(new_data.commands)
         self.__dict__.update({key: value for key, value in new_data.__dict__.items() if key != "commands"})
+        self.outdated_cache = True
 
     @classmethod
     def construct(cls, serialized_data: Dict[str, Any]) -> StepBuffer:

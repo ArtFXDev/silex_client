@@ -33,7 +33,7 @@ class ParameterBuffer:
     """
 
     #: The list of fields that should be ignored when serializing and deserializing this buffer to json
-    PRIVATE_FIELDS = []
+    PRIVATE_FIELDS = ["outdated_cache", "serialize_cache"]
     #: The list of fields that should be ignored when deserializing this buffer to json
     READONLY_FIELDS = ["type"]
 
@@ -53,6 +53,14 @@ class ParameterBuffer:
     tooltip: str = field(compare=False, repr=False, default="")
     #: A Unique ID to help differentiate multiple actions
     uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
+    #: Marquer to know if the serialize cache is outdated or not
+    outdated_cache: bool = field(compare=False, repr=False, default=True)
+    #: Cache the serialize output
+    serialize_cache: dict = field(compare=False, repr=False, default_factory=dict)
+
+    def __setattr__(self, name, value):
+        super().__setattr__("outdated_cache", True)
+        super().__setattr__(name, value)
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")
@@ -89,6 +97,9 @@ class ParameterBuffer:
         """
         Convert the step's data into json so it can be sent to the UI
         """
+        if not self.outdated_cache:
+            return self.serialize_cache
+
         if ignore_fields is None:
             ignore_fields = self.PRIVATE_FIELDS
 
@@ -100,7 +111,9 @@ class ParameterBuffer:
 
             result.append((f.name, getattr(self, f.name)))
 
-        return dict(result)
+        self.serialize_cache = dict(result)
+        self.outdated_cache = False
+        return self.serialize_cache
 
     def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
         """
@@ -117,6 +130,7 @@ class ParameterBuffer:
         new_data = dacite.from_dict(ParameterBuffer, serialized_data, config)
 
         self.__dict__.update(new_data.__dict__)
+        self.outdated_cache = True
 
     @classmethod
     def construct(cls, serialized_data: Dict[str, Any]) -> ParameterBuffer:
