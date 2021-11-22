@@ -200,6 +200,7 @@ class ActionQuery:
 
         diff = silex_diff(self._buffer_diff.serialize(), self.buffer.serialize())
         self._buffer_diff = copy.deepcopy(self.buffer)
+        diff["uuid"] = self.buffer.uuid
 
         confirm = await self.ws_connection.async_send("/dcc/action", "update", diff)
 
