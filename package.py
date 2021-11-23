@@ -1,6 +1,7 @@
 # pylint: skip-file
 name = "silex_client"
 timestamp = 0
+version = "0.3.0"
 
 authors = ["ArtFx TD gang"]
 
@@ -46,18 +47,6 @@ tests = {
 
 build_command = "python {root}/script/build.py {install}"
 
-
-@early()
-def version():
-    from distutils.util import convert_path
-
-    # Get version without sourcing silex module
-    main_ns = {}
-    with open(convert_path("silex_client/__version__.py")) as version_file:
-        exec(version_file.read(), main_ns)
-
-    return main_ns["__version__"]
-
 def commands():
     """
     Set the environment variables for silex_client
@@ -75,4 +64,4 @@ def commands():
     env.SILEX_ACTION_CONFIG.prepend("{root}/silex_client/config")
 
     parser_module = ".".join(["silex_client", "cli", "parser"])
-    alias("silex", "python -m {parser_module}")
+    alias("silex", f"python -m {parser_module}")
