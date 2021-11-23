@@ -106,7 +106,8 @@ class ActionBuffer:
         Convert back the action's data from json into this object
         """
         # Patch the current command data
-        current_action_data = self.serialize(self.PRIVATE_FIELDS + ["steps"])
+        current_action_data = self.serialize()
+        current_action_data = {key: value for key, value in current_action_data.items() if key != "steps"}
         serialized_data = jsondiff.patch(current_action_data, serialized_data)
 
         # Format the steps corectly

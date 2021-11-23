@@ -112,7 +112,8 @@ class StepBuffer:
             return
 
         # Patch the current step data
-        current_step_data = self.serialize(self.PRIVATE_FIELDS + ["commands"])
+        current_step_data = self.serialize()
+        current_step_data = {key: value for key, value in current_step_data.items() if key != "commands"}
         serialized_data = jsondiff.patch(current_step_data, serialized_data)
 
         # Format the commands corectly

@@ -212,7 +212,8 @@ class CommandBuffer:
             return
 
         # Patch the current command data
-        current_command_data = self.serialize(self.PRIVATE_FIELDS + ["parameters"])
+        current_command_data = self.serialize()
+        current_command_data = {key: value for key, value in current_command_data.items() if key != "parameters"}
         serialized_data = jsondiff.patch(current_command_data, serialized_data)
 
         # Format the parameters corectly
