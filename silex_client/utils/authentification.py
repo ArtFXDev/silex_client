@@ -22,7 +22,7 @@ def authentificate_gazu() -> bool:
     try:
         authentification_token = asyncio.run(get_authentification_token())
     except (ClientConnectionError, ContentTypeError, InvalidURL):
-        logger.warning("Connection with the silex service could not be established")
+        logger.warning("Could not get the cgwire authentification token from the silex socket service")
         return False
 
     # Set the authentification token
