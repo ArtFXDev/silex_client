@@ -136,8 +136,8 @@ class BuildOutputPath(CommandBase):
         output_path = pathlib.Path(output_path)
         directory = output_path.parent
         temp_directory = directory / str(uuid.uuid4())
-        file_name = output_path.name
-        full_name = output_path.name + f"_{name}" if name else output_path.name
+        file_name = output_path.name + f"_{name}" if name else output_path.name
+        full_name = file_name
         full_names = []
         full_paths = [directory / full_name]
 
