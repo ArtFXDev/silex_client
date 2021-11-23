@@ -11,9 +11,9 @@ vrscene:
           ask_user: true
 
         submit_to_tractor:
+          label: "Submit"
           path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
           ask_user: true
           parameters:
             cmd_list: !command-output "build_vray_cmd:build_vray_cmd:commands"
             job_title: !command-output "build_vray_cmd:build_vray_cmd:file_name"
-
