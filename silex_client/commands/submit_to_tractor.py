@@ -73,7 +73,7 @@ class TractorSubmiter(CommandBase):
         logger.info(f"Rendering on pools: {services}")
 
         job = author.Job(
-            title=f"vray render - {job_title}", projects=projects, service=services)
+            title=f"render - {job_title}", projects=projects, service=services)
 
         for cmd in cmds:
             logger.info(f"command: {cmds.get(cmd)}")

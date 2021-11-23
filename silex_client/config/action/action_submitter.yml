@@ -1,8 +1,0 @@
-action_submitter:
-  steps:
-    action_submitter:
-      label: "action_submitter"
-      index: 20
-      commands:
-        action_submitter:
-          path: "silex_client.commands.action_submitter.ActionSubmitter"
