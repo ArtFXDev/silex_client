@@ -46,7 +46,7 @@ class BuildOutputPath(CommandBase):
             "hide": True,
         },
         "use_current_context": {
-            "label": "Conform the given file to the current context",
+            "label": "output the given file to the current context",
             "type": bool,
             "value": True,
             "tooltip": "This parameter will overrite the select conform location",
