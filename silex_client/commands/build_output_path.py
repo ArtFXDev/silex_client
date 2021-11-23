@@ -169,4 +169,5 @@ class BuildOutputPath(CommandBase):
             "full_name": full_names,
             "temp_directory": temp_directory,
             "full_path": full_paths,
+            "frame_set": frame_set,
         }
