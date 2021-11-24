@@ -193,7 +193,10 @@ class ActionQuery:
         """
         Send a diff between the current state of the buffer and the last saved state of the buffer
         """
-        if not self.ws_connection.is_running or self.buffer.hide:
+        serialized_buffer = self.buffer.serialize()
+        diff = silex_diff(self._buffer_diff, serialized_buffer)
+
+        if not self.ws_connection.is_running or self.buffer.hide or not diff:
             future = self.event_loop.loop.create_future()
             future.set_result(None)
             return future
