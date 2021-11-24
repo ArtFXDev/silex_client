@@ -31,7 +31,7 @@ class WebsocketLogHandler(logging.Handler):
 
         log = {"level": record.levelname, "message": formatter.format(record)}
         self.silex_command.logs.append(log)
-        self.silex_command.command.outdated_cache = True
+        self.silex_command.outdated_cache = True
         self.action_query.update_websocket()
 
 

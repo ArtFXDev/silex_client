@@ -217,7 +217,7 @@ class ActionQuery:
 
         if apply_response:
             return await self.ws_connection.action_namespace.register_update_callback(
-                apply_update
+                self.buffer.uuid, apply_update
             )
         else:
             return confirm
