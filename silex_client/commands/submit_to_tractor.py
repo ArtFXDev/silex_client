@@ -64,6 +64,7 @@ class TractorSubmiter(CommandBase):
             response: Dict[Any] =  await self.prompt_user(action_query, {"project":ParameterBuffer(name = "project", type = SelectParameterMeta(*["WS_Environment", "WS_Lighting"]), label = "Project", value = "WS_Environment")})
             projects = [response.get("project")]
 
+
         # Set service
         if len(pools) == 1:
             services = pools[0]

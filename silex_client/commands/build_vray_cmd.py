@@ -48,6 +48,7 @@ class VrayCommand(CommandBase):
             "label": "File name",
             "type": pathlib.Path,
             "value": "",
+
         },
          "extension": {
             "label": "File extension",
@@ -86,6 +87,7 @@ class VrayCommand(CommandBase):
             export_file: pathlib.Path = os.path.join(directory,f"{exoprt_name}.{extension}")
 
 
+
         arg_list = [
             # V-Ray exe path
             "C:/Maya2022/Maya2022/vray/bin/vray.exe",
@@ -118,6 +120,7 @@ class VrayCommand(CommandBase):
         # Create frame_lists with pading
         frame_chunks: List[Any] = list(self._list_from_padding(
             list(range(frame_range[0], frame_range[1] + 1)),  frame_range[2]))
+
 
         # Cut frames by task
         task_chunks = list(self._chunks(
