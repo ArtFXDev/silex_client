@@ -42,12 +42,12 @@ class VrayCommand(CommandBase):
          "export_dir": {
             "label": "File directory",
             "type": str,
-            "value": None,
+            "value": "",
         },
          "exoprt_name": {
             "label": "File name",
             "type": pathlib.Path,
-            "value": None,
+            "value": "",
         },
          "extension": {
             "label": "File extension",
@@ -79,10 +79,11 @@ class VrayCommand(CommandBase):
         
         ### TEMP ###
         ##############
-        directory = directory.replace( "D:", r"\\marvin\TEMP_5RN" )
+        if directory is not None:
+            directory = directory.replace( "D:", r"\\marvin\TEMP_5RN" )
         ##############
     
-        export_file: pathlib.Path = os.path.join(directory,f"{exoprt_name}.{extension}")
+            export_file: pathlib.Path = os.path.join(directory,f"{exoprt_name}.{extension}")
 
 
         arg_list = [
@@ -111,13 +112,12 @@ class VrayCommand(CommandBase):
         ]
 
         # Check if context
-        if owner == "3D4":
+        if action_query.context_metadata.get("user_email") is not None:
            arg_list.append(f"-imgFile={export_file}")
 
         # Create frame_lists with pading
-        if frame_range[2] > 1:
-            frame_chunks: List[Any] = list(self._list_from_padding(
-                list(range(frame_range[0], frame_range[1] + 1)),  frame_range[2]))
+        frame_chunks: List[Any] = list(self._list_from_padding(
+            list(range(frame_range[0], frame_range[1] + 1)),  frame_range[2]))
 
         # Cut frames by task
         task_chunks = list(self._chunks(

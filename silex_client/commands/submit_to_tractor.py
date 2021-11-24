@@ -4,7 +4,8 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import MultipleSelectParameterMeta
+from silex_client.action.parameter_buffer import ParameterBuffer
+from silex_client.utils.parameter_types import MultipleSelectParameterMeta, SelectParameterMeta
 
 import logging
 
@@ -60,8 +61,8 @@ class TractorSubmiter(CommandBase):
         # Check if 4rth year render
         if owner is None:
             owner = "3D4"
-            response: Dict[Any] =  await self.prompt_user(action_query, {"project":ParameterBuffer(name = "project", type = MultipleSelectParameterMeta(*["WS_Environment", "WS_Lighting"]), label = "Project")})
-            projects = response.get("project")
+            response: Dict[Any] =  await self.prompt_user(action_query, {"project":ParameterBuffer(name = "project", type = SelectParameterMeta(*["WS_Environment", "WS_Lighting"]), label = "Project", value = "WS_Environment")})
+            projects = [response.get("project")]
 
         # Set service
         if len(pools) == 1:

@@ -24,6 +24,10 @@ vrscene_3D4:
           label: "V-Ray Job parameters"
           ask_user: true
           parameters:
+            export_dir:
+              hide: true
+            exoprt_name:
+              hide: true
             extension: !command-output "build_output_path:select_list"
 
         submit_to_tractor:
