@@ -1,5 +1,4 @@
 tester:
-  shelf: false
   steps:
     parameter_tester:
       index: 50
@@ -79,4 +78,6 @@ tester:
           ask_user: True
         traceback:
           path: "silex_client.commands.tester.TracebackTester"
+          parameters:
+            raise_exception: false
           ask_user: True

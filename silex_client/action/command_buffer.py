@@ -12,6 +12,7 @@ import os
 import re
 import traceback
 import uuid as unique_id
+import copy
 from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Dict, Optional, List
 
@@ -38,7 +39,7 @@ class CommandBuffer:
     """
 
     #: The list of fields that should be ignored when serializing this buffer to json
-    PRIVATE_FIELDS = ["output_result", "executor", "input_path"]
+    PRIVATE_FIELDS = ["output_result", "executor", "input_path", "outdated_cache", "serialize_cache"]
     #: The list of fields that should be ignored when deserializing this buffer to json
     READONLY_FIELDS = ["logs"]
 
@@ -68,8 +69,16 @@ class CommandBuffer:
     input_path: CommandOutput = field(default=CommandOutput(""))
     #: The callable that will be used when the command is executed
     executor: CommandBase = field(init=False)
-    #: Name of the command, must have no space or special characters
+    #: List of all the logs during the execution of that command
     logs: List[Dict[str, str]] = field(default_factory=list)
+    #: Marquer to know if the serialize cache is outdated or not
+    outdated_cache: bool = field(compare=False, repr=False, default=True)
+    #: Cache the serialize output
+    serialize_cache: dict = field(compare=False, repr=False, default_factory=dict)
+
+    def __setattr__(self, name, value):
+        super().__setattr__("outdated_cache", True)
+        super().__setattr__(name, value)
 
     def __post_init__(self):
         slugify_pattern = re.compile("[^A-Za-z0-9]")
@@ -118,29 +127,21 @@ class CommandBuffer:
             key: value.get_value(action_query) for key, value in self.parameters.items()
         }
 
-        # Get the input result
-        input_value = None
-        if self.input_path:
-            input_command = action_query.get_command(self.input_path)
-            input_value = (
-                input_command.output_result if input_command is not None else None
-            )
-
         # Run the executor and copy the parameters
         # to prevent them from being modified during execution
         logger.debug("Executing command %s", self.name)
-        with RedirectWebsocketLogs(logger, action_query, self):
+        with RedirectWebsocketLogs(action_query, self) as log:
             # Set the status to processing
             self.status = Status.PROCESSING
 
             # Call the actual command
             if execution_type == Execution.FORWARD:
                 await self.executor(
-                    input_value, copy.deepcopy(parameters), action_query
+                    copy.deepcopy(parameters), action_query, log
                 )
             elif execution_type == Execution.BACKWARD:
                 await self.executor.undo(
-                    input_value, copy.deepcopy(parameters), action_query
+                    copy.deepcopy(parameters), action_query, log
                 )
 
             # Keep the error statuses
@@ -152,26 +153,38 @@ class CommandBuffer:
             elif execution_type == Execution.BACKWARD:
                 self.status = Status.INITIALIZED
 
-    def serialize(self) -> Dict[str, Any]:
+    @property
+    def outdated_caches(self):
+        return self.outdated_cache or not all(not parameter.outdated_cache for parameter in self.parameters.values())
+
+    def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
         Convert the command's data into json so it can be sent to the UI
         """
+        if not self.outdated_caches:
+            return self.serialize_cache
+
+        if ignore_fields is None:
+            ignore_fields = self.PRIVATE_FIELDS
+
         result = []
 
         for f in fields(self):
-            if f.name == "parameters":
+            if f.name in ignore_fields:
+                continue
+            elif f.name == "parameters":
                 parameters = getattr(self, f.name)
                 parameters_value = {}
                 for parameter_name, parameter in parameters.items():
                     parameters_value[parameter_name] = parameter.serialize()
                 result.append((f.name, parameters_value))
                 continue
-            elif f.name in self.PRIVATE_FIELDS:
-                continue
 
             result.append((f.name, getattr(self, f.name)))
 
-        return dict(result)
+        self.serialize_cache = copy.deepcopy(dict(result))
+        self.outdated_cache = False
+        return self.serialize_cache
 
     def _deserialize_parameters(self, parameter_data: Any) -> Any:
         parameter_name = parameter_data.get("name")
@@ -191,8 +204,43 @@ class CommandBuffer:
         if self.hide and not force:
             return
 
+        # Patch the current command data
+        current_command_data = self.serialize()
+        current_command_data = {key: value for key, value in current_command_data.items() if key != "parameters"}
+        serialized_data = jsondiff.patch(current_command_data, serialized_data)
+
         # Format the parameters corectly
-        executor_parameters = copy.deepcopy(self.executor.parameters)
+        for parameter_name, parameter in serialized_data.get("parameters", {}).items():
+            parameter["name"] = parameter_name
+
+        config = dacite_config.Config(
+            cast=[Status, CommandOutput],
+            type_hooks={ParameterBuffer: self._deserialize_parameters},
+        )
+        new_data = dacite.from_dict(CommandBuffer, serialized_data, config)
+
+        for private_field in self.PRIVATE_FIELDS + self.READONLY_FIELDS:
+            setattr(new_data, private_field, getattr(self, private_field))
+
+        self.parameters.update(new_data.parameters)
+        self.__dict__.update({key: value for key, value in new_data.__dict__.items() if key != "parameters"})
+        self.outdated_cache = True
+
+    @classmethod
+    def construct(cls, serialized_data: Dict[str, Any]) -> CommandBuffer:
+        """
+        Create an command buffer from serialized data
+        """
+        config = dacite_config.Config(cast=[Status, CommandOutput])
+        if "parameters" in serialized_data:
+            filtered_data = copy.deepcopy(serialized_data)
+            del filtered_data["parameters"]
+            command = dacite.from_dict(CommandBuffer, filtered_data, config)
+        else:
+            command = dacite.from_dict(CommandBuffer, serialized_data, config)
+
+        # Get the default data from the executor and patch it with the serialized data
+        executor_parameters = copy.deepcopy(command.executor.parameters)
         serialized_parameters = serialized_data.get("parameters", {})
         for parameter_name, parameter in executor_parameters.items():
             parameter["name"] = parameter_name
@@ -207,30 +255,6 @@ class CommandBuffer:
             serialized_data["parameters"] = jsondiff.patch(
                 executor_parameters, serialized_parameters
             )
-
-        config = dacite_config.Config(
-            cast=[Status, CommandOutput],
-            type_hooks={ParameterBuffer: self._deserialize_parameters},
-        )
-        new_data = dacite.from_dict(CommandBuffer, serialized_data, config)
-
-        for private_field in self.PRIVATE_FIELDS + self.READONLY_FIELDS:
-            setattr(new_data, private_field, getattr(self, private_field))
-
-        self.__dict__.update(new_data.__dict__)
-
-    @classmethod
-    def construct(cls, serialized_data: Dict[str, Any]) -> CommandBuffer:
-        """
-        Create an command buffer from serialized data
-        """
-        config = dacite_config.Config(cast=[Status, CommandOutput])
-        if "parameters" in serialized_data:
-            filtered_data = copy.deepcopy(serialized_data)
-            del filtered_data["parameters"]
-            command = dacite.from_dict(CommandBuffer, filtered_data, config)
-        else:
-            command = dacite.from_dict(CommandBuffer, serialized_data, config)
 
         command.deserialize(serialized_data, force=True)
         return command

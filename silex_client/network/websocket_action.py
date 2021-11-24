@@ -8,7 +8,7 @@ This namespace is used to reveive and send updates of the action execution
 from __future__ import annotations
 
 import asyncio
-from typing import Any, List, TYPE_CHECKING, Callable
+from typing import Any, List, TYPE_CHECKING, Callable, Dict
 
 from silex_client.network.websocket_namespace import WebsocketNamespace
 from silex_client.utils.log import logger
@@ -32,8 +32,17 @@ class WebsocketActionNamespace(WebsocketNamespace):
     ):
         super().__init__(namespace, context, ws_connection)
 
-        self.update_futures: List[asyncio.Future] = []
+        self.update_futures: Dict[str, asyncio.Future] = {}
         self.query_futures: List[asyncio.Future] = []
+
+    async def on_connect(self):
+        """
+        Register the dcc on the silex service on connection
+        """
+        await super().on_connect()
+        await self.ws_connection.async_send(
+            self.namespace, "initialization", self.context.metadata
+        )
 
     async def on_query(self, data):
         """
@@ -53,11 +62,15 @@ class WebsocketActionNamespace(WebsocketNamespace):
         """
         logger.debug("Action update received: %s from %s", data, self.url)
 
-        for future in self.update_futures:
-            if not future.cancelled():
-                future.set_result(data)
+        uuid = data.get("uuid")
+        future = self.update_futures.get(uuid)
+        if uuid is None or future is None:
+            logger.warning("Could not apply the update %s no actions at this ID is waiting for updates", uuid)
+            return
 
-        self.update_futures.clear()
+        if not future.cancelled():
+            future.set_result(data)
+            del self.update_futures[uuid]
 
     async def on_clear(self, data):
         """
@@ -73,7 +86,7 @@ class WebsocketActionNamespace(WebsocketNamespace):
             )
             return
 
-        action.cancel()
+        action.cancel(emit_clear=False)
 
     async def on_undo(self, data):
         """
@@ -120,7 +133,7 @@ class WebsocketActionNamespace(WebsocketNamespace):
         return future
 
     async def register_update_callback(
-        self, coroutine: Callable[[asyncio.Future], Any]
+            self, uuid: str, coroutine: Callable[[asyncio.Future], Any]
     ) -> asyncio.Future:
         """
         Add a callback that is called at the next update query
@@ -128,5 +141,5 @@ class WebsocketActionNamespace(WebsocketNamespace):
         event_loop = self.ws_connection.event_loop
         future = event_loop.loop.create_future()
         future.add_done_callback(coroutine)
-        self.update_futures.append(future)
+        self.update_futures[uuid] = future
         return future

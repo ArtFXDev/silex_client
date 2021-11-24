@@ -47,7 +47,6 @@ tests = {
 
 build_command = "python {root}/script/build.py {install}"
 
-
 def commands():
     """
     Set the environment variables for silex_client
@@ -65,4 +64,4 @@ def commands():
     env.SILEX_ACTION_CONFIG.prepend("{root}/silex_client/config")
 
     parser_module = ".".join(["silex_client", "cli", "parser"])
-    alias("silex", "python -m {parser_module}")
+    alias("silex", f"python -m {parser_module}")

@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import IntArrayParameterMeta
-from silex_client.utils.log import logger
+import logging
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -42,7 +42,7 @@ class BuildNukeCommand(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+            self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         scene: pathlib.Path = parameters['scene_file']
         frame_range: List[int] = parameters["frame_range"]

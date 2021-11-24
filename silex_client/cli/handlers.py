@@ -34,12 +34,11 @@ def action_handler(action_name: str, **kwargs) -> None:
         logger.error("No action name provided")
         return
 
-    silex_context = Context.get()
-    silex_context.start_services()
-
     if kwargs.get("task_id") is not None:
         os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
-        silex_context.is_outdated = True
+
+    silex_context = Context.get()
+    silex_context.start_services()
 
     action = ActionQuery(action_name)
     if not action.commands:

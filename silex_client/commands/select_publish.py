@@ -4,6 +4,7 @@ import jsondiff
 import typing
 from typing import Any, Dict
 
+import logging
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import SelectParameterMeta
 from silex_client.resolve.config import Config
@@ -31,7 +32,7 @@ class SelectPublish(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         publish_action = Config().resolve_publish(parameters["publish_type"].lower())
 

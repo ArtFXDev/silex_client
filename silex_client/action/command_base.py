@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import logging
 import os
 import traceback
 from typing import List, TYPE_CHECKING, Any, Callable, Dict
 
-from silex_client.utils.enums import Execution, Status
-from silex_client.utils.log import logger
+from silex_client.utils.enums import Status
 
 # Forward references
 if TYPE_CHECKING:
@@ -46,7 +46,7 @@ class CommandBase:
         """
         return self.__class__.__name__
 
-    def check_parameters(self, parameters: CommandParameters) -> bool:
+    def check_parameters(self, parameters: CommandParameters, logger: logging.Logger) -> bool:
         """
         Check the if the input kwargs are valid accoring to the parameters list
         and conform it if nessesary
@@ -77,7 +77,7 @@ class CommandBase:
 
         return True
 
-    def check_context_metadata(self, context_metadata: Dict[str, Any]):
+    def check_context_metadata(self, context_metadata: Dict[str, Any], logger: logging.Logger):
         """
         Check if the context snapshot stored in the buffer contains all the required
         data for the command
@@ -104,15 +104,16 @@ class CommandBase:
             async def wrapper_conform_command(
                 command: CommandBase, *args, **kwargs
             ) -> None:
-                parameters: CommandParameters = kwargs.get("parameters", args[1])
-                action_query: ActionQuery = kwargs.get("action_query", args[2])
+                parameters: CommandParameters = kwargs.get("parameters", args[0])
+                action_query: ActionQuery = kwargs.get("action_query", args[1])
+                logger: logging.Logger = kwargs.get("logger", args[2])
 
                 # Make sure the given parameters are valid
-                if not command.check_parameters(parameters):
+                if not command.check_parameters(parameters, logger):
                     command.command_buffer.status = Status.INVALID
                     return
                 # Make sure all the required metatada is here
-                if not command.check_context_metadata(action_query.context_metadata):
+                if not command.check_context_metadata(action_query.context_metadata, logger):
                     command.command_buffer.status = Status.INVALID
                     return
 
@@ -157,7 +158,6 @@ class CommandBase:
         self.command_buffer.ask_user = True
 
         # Send the update to the user and wait for its response
-        logger.info("Waiting for UI response")
         await asyncio.wait_for(
             await action_query.async_update_websocket(apply_response=True), None
         )
@@ -172,7 +172,7 @@ class CommandBase:
         }
 
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ) -> Any:
         def default(upstream, parameters, action_query):
             raise NotImplementedError(
@@ -182,7 +182,7 @@ class CommandBase:
         self.conform_command()(default)
 
     async def undo(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ) -> Any:
         def default(upstream, parameters, action_query):
             raise NotImplementedError(
