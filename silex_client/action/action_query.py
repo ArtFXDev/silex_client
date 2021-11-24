@@ -124,7 +124,7 @@ class ActionQuery:
             command_left.status = Status.INITIALIZED
 
 
-    def cancel(self):
+    def cancel(self, emit_clear: bool = True):
         """
         Cancel the execution of the action
         """
@@ -132,7 +132,8 @@ class ActionQuery:
             return
 
         self._task.cancel()
-        self.ws_connection.send("/dcc/action", "clearAction", {"uuid": self.buffer.uuid})
+        if emit_clear:
+            self.ws_connection.send("/dcc/action", "clearAction", {"uuid": self.buffer.uuid})
 
     def undo(self):
         self.execution_type = Execution.BACKWARD
