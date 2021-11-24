@@ -86,7 +86,7 @@ class IterateAction(InsertAction):
 
             # Set the new values to the command
             parameters.update({"action": action, "value": value, "category": category})
-            output = await super().__call__(upstream, parameters, action_query)
+            output = await super().__call__(parameters, action_query, logger)
             outputs.append(output)
 
         return outputs
