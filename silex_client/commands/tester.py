@@ -109,7 +109,7 @@ class BooleanTester(CommandBase):
         "bool_tester_2": {
             "label": "Boolean Tester 2",
             "type": bool,
-            "value": None,
+            "value": False,
             "tooltip": "Testing the bool parameters",
         },
     }
