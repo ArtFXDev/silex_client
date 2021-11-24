@@ -13,7 +13,7 @@ import gazu.files
 import gazu.task
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.log import logger
+import logging
 from silex_client.utils.parameter_types import TaskParameterMeta
 
 # Forward references
@@ -81,7 +81,7 @@ class BuildOutputPath(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         create_output_dir: bool = parameters["create_output_dir"]
         create_temp_dir: bool = parameters["create_temp_dir"]

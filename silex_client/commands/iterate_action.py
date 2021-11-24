@@ -4,7 +4,7 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.log import logger
+import logging
 from silex_client.commands.insert_action import InsertAction
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import ListParameterMeta, AnyParameter
@@ -64,7 +64,7 @@ class IterateAction(InsertAction):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         actions = parameters["actions"]
         values = parameters["values"]

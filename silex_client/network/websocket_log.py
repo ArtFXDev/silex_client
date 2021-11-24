@@ -1,15 +1,17 @@
 import logging
 
+import copy
+import os
 import logzero
 import traceback
 
 from silex_client.utils.log import formatter
 
 # Formatting of the output log to look like
-__LOG_FORMAT = "[SILEX]\
+__LOG_FORMAT__ = "[SILEX]\
     [%(asctime)s] %(levelname)-10s|\
     [%(module)s.%(funcName)s] %(message)-50s (%(lineno)d)"
-formatter = logzero.LogFormatter(fmt=__LOG_FORMAT)
+websocket_formatter = logzero.LogFormatter(fmt=__LOG_FORMAT__)
 
 
 class WebsocketLogHandler(logging.Handler):
@@ -29,21 +31,22 @@ class WebsocketLogHandler(logging.Handler):
         if record.levelname == "DEBUG":
             return
 
-        log = {"level": record.levelname, "message": formatter.format(record)}
+        log = {"level": record.levelname, "message": websocket_formatter.format(record)}
         self.silex_command.logs.append(log)
         self.silex_command.outdated_cache = True
         self.action_query.update_websocket()
 
 
 class RedirectWebsocketLogs(object):
-    def __init__(self, logger: logging.Logger, action_query, command):
+    def __init__(self, action_query, command):
         self.action_query = action_query
         self.silex_command = command
-        self.logger = logger
+        self.logger = logzero.setup_logger(name=command.uuid, level=os.getenv("SILEX_LOG_LEVEL", "DEBUG"), formatter=formatter)
         self.handler = WebsocketLogHandler(action_query, command)
 
-    def __enter__(self):
+    def __enter__(self) -> logging.Logger:
         self.logger.addHandler(self.handler)
+        return self.logger
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         if exc_type:

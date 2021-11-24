@@ -14,7 +14,7 @@ from silex_client.utils.parameter_types import (
     PathParameterMeta,
 )
 from silex_client.resolve.config import Config
-from silex_client.utils.log import logger
+import logging
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -76,7 +76,7 @@ class SelectConform(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         file_paths: List[pathlib.Path] = parameters["file_paths"]
         find_sequence: bool = parameters["find_sequence"]

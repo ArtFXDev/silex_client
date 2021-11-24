@@ -3,7 +3,7 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.log import logger
+import logging
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -21,7 +21,7 @@ class FileStructure(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
 
         # get all project for the user

@@ -5,6 +5,7 @@ import fileseq
 from silex_client.utils.parameter_types import AnyParameter
 import uuid
 
+import logging
 import typing
 from typing import Any, Dict
 
@@ -67,7 +68,7 @@ class InsertAction(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         action_type = parameters["action"]
         label_key = parameters["label_key"]

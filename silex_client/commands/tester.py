@@ -6,7 +6,7 @@ import pathlib
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.log import logger
+import logging
 from silex_client.utils.parameter_types import (
     RangeParameterMeta,
     SelectParameterMeta,
@@ -79,7 +79,7 @@ class IntegerTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         logger.info(
             "Integer parameter tester: %s, %s",
@@ -116,7 +116,7 @@ class BooleanTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         logger.info(
             "Boolean parameter tester: %s, %s",
@@ -153,7 +153,7 @@ class PathTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         logger.info(
             "Path parameter tester: %s, %s",
@@ -190,7 +190,7 @@ class SelectTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         logger.info(
             "Select parameter tester: %s, %s",
@@ -227,7 +227,7 @@ class RangeTesterLow(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         logger.info(
             "Range parameter tester: %s, %s",
@@ -264,7 +264,7 @@ class RangeTesterMid(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         logger.info(
             "Range parameter tester: %s, %s",

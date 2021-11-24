@@ -127,29 +127,21 @@ class CommandBuffer:
             key: value.get_value(action_query) for key, value in self.parameters.items()
         }
 
-        # Get the input result
-        input_value = None
-        if self.input_path:
-            input_command = action_query.get_command(self.input_path)
-            input_value = (
-                input_command.output_result if input_command is not None else None
-            )
-
         # Run the executor and copy the parameters
         # to prevent them from being modified during execution
         logger.debug("Executing command %s", self.name)
-        with RedirectWebsocketLogs(logger, action_query, self):
+        with RedirectWebsocketLogs(action_query, self) as log:
             # Set the status to processing
             self.status = Status.PROCESSING
 
             # Call the actual command
             if execution_type == Execution.FORWARD:
                 await self.executor(
-                    input_value, copy.deepcopy(parameters), action_query
+                    copy.deepcopy(parameters), action_query, log
                 )
             elif execution_type == Execution.BACKWARD:
                 await self.executor.undo(
-                    input_value, copy.deepcopy(parameters), action_query
+                    copy.deepcopy(parameters), action_query, log
                 )
 
             # Keep the error statuses
