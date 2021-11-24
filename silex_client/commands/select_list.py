@@ -34,13 +34,9 @@ class SelectList(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        logger.info("select list launch")
         parameters_list: List[Any] = parameters.get("parameters_list")
         param_name: List[Any] = parameters.get("param_name")
-        logger.info(parameters_list)
-        logger.info(param_name)
 
         response: Dict[Any] =  await self.prompt_user(action_query, {"selected_param":ParameterBuffer(name = "selected_param", type = SelectParameterMeta(*parameters_list), label = param_name)})
-        logger.info( response )
         return response.get('selected_param')
 
