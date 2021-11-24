@@ -15,7 +15,7 @@ def authentificate_gazu() -> bool:
     async def get_authentification_token():
         async with aiohttp.ClientSession() as session:
             silex_service_host = os.getenv("SILEX_SERVICE_HOST", "")
-            async with session.get(f"{silex_service_host}/auth/refresh-token") as response:
+            async with session.get(f"{silex_service_host}/auth/token") as response:
                 return await response.json()
 
     # Get the authentification token
