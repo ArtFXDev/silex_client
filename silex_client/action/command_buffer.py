@@ -210,21 +210,8 @@ class CommandBuffer:
         serialized_data = jsondiff.patch(current_command_data, serialized_data)
 
         # Format the parameters corectly
-        executor_parameters = copy.deepcopy(self.executor.parameters)
-        serialized_parameters = serialized_data.get("parameters", {})
-        for parameter_name, parameter in executor_parameters.items():
+        for parameter_name, parameter in serialized_data.get("parameters", {}).items():
             parameter["name"] = parameter_name
-
-            # The parameters can be defined with <key>=<value> as a shortcut
-            if not isinstance(serialized_parameters.get(parameter_name, {}), dict):
-                serialized_parameters[parameter_name] = {
-                    "value": serialized_parameters[parameter_name]
-                }
-
-            # Apply the parameters to the default parameters
-            serialized_data["parameters"] = jsondiff.patch(
-                executor_parameters, serialized_parameters
-            )
 
         config = dacite_config.Config(
             cast=[Status, CommandOutput],
@@ -251,6 +238,23 @@ class CommandBuffer:
             command = dacite.from_dict(CommandBuffer, filtered_data, config)
         else:
             command = dacite.from_dict(CommandBuffer, serialized_data, config)
+
+        # Get the default data from the executor and patch it with the serialized data
+        executor_parameters = copy.deepcopy(command.executor.parameters)
+        serialized_parameters = serialized_data.get("parameters", {})
+        for parameter_name, parameter in executor_parameters.items():
+            parameter["name"] = parameter_name
+
+            # The parameters can be defined with <key>=<value> as a shortcut
+            if not isinstance(serialized_parameters.get(parameter_name, {}), dict):
+                serialized_parameters[parameter_name] = {
+                    "value": serialized_parameters[parameter_name]
+                }
+
+            # Apply the parameters to the default parameters
+            serialized_data["parameters"] = jsondiff.patch(
+                executor_parameters, serialized_parameters
+            )
 
         command.deserialize(serialized_data, force=True)
         return command
