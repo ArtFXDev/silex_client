@@ -42,7 +42,7 @@ class StringTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         logger.info(
             "String parameter tester: %s, %s",
@@ -309,7 +309,7 @@ class RangeTesterHigh(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         logger.info(
             "Range parameter tester: %s, %s",
@@ -346,7 +346,7 @@ class EntityTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         logger.info(
             "Entity parameter tester: %s, %s",
@@ -383,7 +383,7 @@ class MultipleSelectTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         logger.info(
             "MultipleSelect parameter tester: %s, %s",
@@ -420,7 +420,7 @@ class IntArrayTesterLow(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         logger.info(
             "IntArray parameter tester: %s, %s",
@@ -457,7 +457,7 @@ class IntArrayTesterHigh(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         logger.info(
             "IntArray parameter tester: %s, %s",
@@ -489,7 +489,7 @@ class TracebackTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         logger.info(
             "Traceback tester: %s, %s",

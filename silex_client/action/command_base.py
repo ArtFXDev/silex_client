@@ -158,7 +158,6 @@ class CommandBase:
         self.command_buffer.ask_user = True
 
         # Send the update to the user and wait for its response
-        logger.info("Waiting for UI response")
         await asyncio.wait_for(
             await action_query.async_update_websocket(apply_response=True), None
         )
