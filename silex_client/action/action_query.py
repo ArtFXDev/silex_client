@@ -198,8 +198,9 @@ class ActionQuery:
             future.set_result(None)
             return future
 
-        diff = silex_diff(self._buffer_diff, self.buffer.serialize())
-        self._buffer_diff = jsondiff.patch(self._buffer_diff, diff)
+        serialized_buffer = self.buffer.serialize()
+        diff = silex_diff(self._buffer_diff, serialized_buffer)
+        self._buffer_diff = serialized_buffer
         diff["uuid"] = self.buffer.uuid
 
         confirm = await self.ws_connection.async_send("/dcc/action", "update", diff)
@@ -210,8 +211,6 @@ class ActionQuery:
 
             logger.debug("Applying update: %s", response.result())
             self.buffer.deserialize(response.result())
-            # The front is not updating its own data, we must update him about the data he sends us
-            # self._buffer_diff = copy.deepcopy(self.buffer.serialize())
 
         if apply_response:
             return await self.ws_connection.action_namespace.register_update_callback(

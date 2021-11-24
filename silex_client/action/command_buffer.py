@@ -12,6 +12,7 @@ import os
 import re
 import traceback
 import uuid as unique_id
+import copy
 from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Dict, Optional, List
 
@@ -189,7 +190,7 @@ class CommandBuffer:
 
             result.append((f.name, getattr(self, f.name)))
 
-        self.serialize_cache = dict(result)
+        self.serialize_cache = copy.deepcopy(dict(result))
         self.outdated_cache = False
         return self.serialize_cache
 
