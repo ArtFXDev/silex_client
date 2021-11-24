@@ -35,6 +35,15 @@ class WebsocketActionNamespace(WebsocketNamespace):
         self.update_futures: Dict[str, asyncio.Future] = {}
         self.query_futures: List[asyncio.Future] = []
 
+    async def on_connect(self):
+        """
+        Register the dcc on the silex service on connection
+        """
+        await super().on_connect()
+        await self.ws_connection.async_send(
+            self.namespace, "initialization", self.context.metadata
+        )
+
     async def on_query(self, data):
         """
         Create an new action query
