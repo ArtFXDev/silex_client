@@ -15,22 +15,6 @@ vrscene:
               - "tiff"
             param_name: "Render type"
 
-        build_output_path:
-          label: "Build output path"
-          path: "silex_client.commands.build_output_path.BuildOutputPath"
-          tooltip: "Build the complete output path"
-          ask_user: true
-          parameters:
-            output_type: !command-output "build_output_path:select_list"
-
-            task:
-              hide: true
-            use_current_context:
-              value: true
-              hide: true
-            frame_set:
-              hide: true
-
     send_vray_render:
       label: "Setup render parameters"
       index: 20
@@ -40,8 +24,6 @@ vrscene:
           label: "V-Ray Job parameters"
           ask_user: true
           parameters:
-            export_dir: !command-output "build_output_path:build_output_path:directory"
-            exoprt_name: !command-output "build_output_path:build_output_path:file_name"
             extension: !command-output "build_output_path:select_list"
 
         submit_to_tractor:

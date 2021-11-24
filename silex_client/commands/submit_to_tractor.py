@@ -35,16 +35,10 @@ class TractorSubmiter(CommandBase):
             "type": str,
             "value": "No Title"
         },
-        "owner": {
-            "label": "Owner",
-            "type": str,
-            "value": "3d4",
-            "hide": True
-        },
-        "projects": {
-            "label": "Project",
-            "type": MultipleSelectParameterMeta(*["WS_Environment", "WS_Lighting"]),
-        },
+        # "projects": {
+        #     "label": "Project",
+        #     "type": MultipleSelectParameterMeta(*["WS_Environment", "WS_Lighting"]),
+        # },
     }
 
     @CommandBase.conform_command()
@@ -56,11 +50,20 @@ class TractorSubmiter(CommandBase):
 
         cmds: Dict[str, str] = parameters['cmd_list']
         pools: List[str] = parameters['pools']
-
-        owner: str = parameters['owner']
-        projects: List[str] = parameters['projects']
+        # projects: List[str] = parameters['projects']
+        projects: List[str] = [action_query.context_metadata.get("project")]
         job_title: str = parameters['job_title']
 
+        # Get owner from context
+        owner: str = action_query.context_metadata.get("user_email")
+
+        # Check if 4rth year render
+        if owner is None:
+            owner = "3D4"
+            response: Dict[Any] =  await self.prompt_user(action_query, {"project":ParameterBuffer(name = "project", type = MultipleSelectParameterMeta(*["WS_Environment", "WS_Lighting"]), label = "Project")})
+            projects = response.get("project")
+
+        # Set service
         if len(pools) == 1:
             services = pools[0]
         else:
@@ -71,6 +74,8 @@ class TractorSubmiter(CommandBase):
         job = author.Job(
             title=f"render - {job_title}", projects=projects, service=services)
 
+        
+        # Create job
         for cmd in cmds:
             logger.info(f"command: {cmds.get(cmd)}")
             pre_cmd = author.Task(title="Mount marvin", argv=[
@@ -80,6 +85,7 @@ class TractorSubmiter(CommandBase):
             task.addChild(pre_cmd)
 
             job.addChild(task)
+
 
         jid = job.spool(owner=owner)
         logger.info(f"Created job: {jid} (jid)")
