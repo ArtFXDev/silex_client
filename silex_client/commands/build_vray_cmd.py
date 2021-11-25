@@ -25,7 +25,7 @@ class VrayCommand(CommandBase):
             "type": pathlib.Path
         },
         "frame_range": {
-            "label": "Frame range (stat, end, pad)",
+            "label": "Frame range (start, end, pad)",
             "type": IntArrayParameterMeta(3),
             "value": [0, 100, 1]
         },
@@ -84,7 +84,7 @@ class VrayCommand(CommandBase):
             directory = directory.replace( "D:", r"\\marvin\TEMP_5RN" )
         ##############
     
-            export_file: pathlib.Path = os.path.join(directory,f"{exoprt_name}.{extension}")
+        export_file: pathlib.Path = os.path.join(directory,f"{exoprt_name}.{extension}")
 
 
 
@@ -117,6 +117,9 @@ class VrayCommand(CommandBase):
         if action_query.context_metadata.get("user_email") is not None:
            arg_list.append(f"-imgFile={export_file}")
 
+        if frame_range is None:
+            raise Exception('No frame range found')
+
         # Create frame_lists with pading
         frame_chunks: List[Any] = list(self._list_from_padding(
             list(range(frame_range[0], frame_range[1] + 1)),  frame_range[2]))
@@ -132,7 +135,7 @@ class VrayCommand(CommandBase):
             start, end = chunk[0], chunk[-1]
             frames: str = ";".join(map(str, chunk))
             logger.info(f"Creating a new task with frames: {start} {end}")
-            cmd_dict[f"frames={start}-{end} (pading:{frame_range[2]})"] = arg_list + \
+            cmd_dict[f"frames={start}-{end} (padding:{frame_range[2]})"] = arg_list + \
                 [f"-frames=\"{frames}\""]
 
         return {
