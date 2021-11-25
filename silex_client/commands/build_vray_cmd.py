@@ -84,7 +84,7 @@ class VrayCommand(CommandBase):
             directory = directory.replace( "D:", r"\\marvin\TEMP_5RN" )
         ##############
     
-            export_file: pathlib.Path = os.path.join(directory,f"{exoprt_name}.{extension}")
+        export_file: pathlib.Path = os.path.join(directory,f"{exoprt_name}.{extension}")
 
 
 
@@ -116,6 +116,9 @@ class VrayCommand(CommandBase):
         # Check if context
         if action_query.context_metadata.get("user_email") is not None:
            arg_list.append(f"-imgFile={export_file}")
+
+        if frame_range is None:
+            raise Exception('No frame range found')
 
         # Create frame_lists with pading
         frame_chunks: List[Any] = list(self._list_from_padding(
