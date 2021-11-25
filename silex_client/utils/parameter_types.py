@@ -64,7 +64,7 @@ class IntArrayParameterMeta(CommandParameterMeta):
             "serialize": serialize,
             "get_default": get_default,
         }
-        return super().__new__(cls, "IntArrayParameter", (list,), attributes)
+        return super().__new__(cls, "IntArrayParameter", (AnyParameter,), attributes)
 
 
 class RangeParameterMeta(CommandParameterMeta):
