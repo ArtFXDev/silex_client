@@ -1,11 +1,11 @@
 import logging
 
-import copy
 import os
 import logzero
 import traceback
 
 from silex_client.utils.log import formatter
+from silex_client.utils.enums import Status
 
 # Formatting of the output log to look like
 __LOG_FORMAT__ = "[SILEX]\
@@ -44,15 +44,25 @@ class RedirectWebsocketLogs(object):
         self.logger = logzero.setup_logger(name=command.uuid, level=os.getenv("SILEX_LOG_LEVEL", "DEBUG"), formatter=formatter)
         self.handler = WebsocketLogHandler(action_query, command)
 
-    def __enter__(self) -> logging.Logger:
+    async def __aenter__(self) -> logging.Logger:
         self.logger.addHandler(self.handler)
         return self.logger
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
+    async def __aexit__(self, exc_type, exc_value, exc_traceback):
         if exc_type:
+            self.logger.error(
+                "An error occured while executing the command %s: %s",
+                self.silex_command.name,
+                exc_value,
+            )
+            self.silex_command.status = Status.ERROR
+
+            traceback.print_tb(exc_traceback)
             exception = traceback.format_exception(exc_type, exc_value, exc_traceback)
             exception = "\n".join(exception)
             log = {"level": "TRACEBACK", "message": str(exception)}
             self.silex_command.logs.append(log)
-            self.action_query.update_websocket()
+            self.silex_command.outdated_cache = True
+            await self.action_query.async_update_websocket()
+
         self.logger.handlers.remove(self.handler)

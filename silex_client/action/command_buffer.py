@@ -5,6 +5,7 @@ Dataclass used to store the data related to a command
 """
 
 from __future__ import annotations
+import asyncio
 
 import copy
 import importlib
@@ -130,7 +131,7 @@ class CommandBuffer:
         # Run the executor and copy the parameters
         # to prevent them from being modified during execution
         logger.debug("Executing command %s", self.name)
-        with RedirectWebsocketLogs(action_query, self) as log:
+        async with RedirectWebsocketLogs(action_query, self) as log:
             # Set the status to processing
             self.status = Status.PROCESSING
 
