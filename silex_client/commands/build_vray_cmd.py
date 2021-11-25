@@ -25,7 +25,7 @@ class VrayCommand(CommandBase):
             "type": pathlib.Path
         },
         "frame_range": {
-            "label": "Frame range (stat, end, pad)",
+            "label": "Frame range (start, end, pad)",
             "type": IntArrayParameterMeta(3),
             "value": [0, 100, 1]
         },
@@ -135,7 +135,7 @@ class VrayCommand(CommandBase):
             start, end = chunk[0], chunk[-1]
             frames: str = ";".join(map(str, chunk))
             logger.info(f"Creating a new task with frames: {start} {end}")
-            cmd_dict[f"frames={start}-{end} (pading:{frame_range[2]})"] = arg_list + \
+            cmd_dict[f"frames={start}-{end} (padding:{frame_range[2]})"] = arg_list + \
                 [f"-frames=\"{frames}\""]
 
         return {
