@@ -119,18 +119,8 @@ class CommandBase:
 
                 await action_query.async_update_websocket()
 
-                try:
-                    output = await func(command, *args, **kwargs)
-                    command.command_buffer.output_result = output
-                except Exception as exception:
-                    logger.error(
-                        "An error occured while executing the command %s: %s",
-                        command.command_buffer.name,
-                        exception,
-                    )
-                    if os.getenv("SILEX_LOG_LEVEL") == "DEBUG":
-                        traceback.print_tb(exception.__traceback__)
-                    command.command_buffer.status = Status.ERROR
+                output = await func(command, *args, **kwargs)
+                command.command_buffer.output_result = output
 
                 await action_query.async_update_websocket()
                 return command.command_buffer.output_result
