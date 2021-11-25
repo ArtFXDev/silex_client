@@ -1,20 +1,6 @@
 vrscene_3D4:
   label: "Submit V-Ray scene"
   steps:
-    build_output_path:
-      index: 10
-      commands:
-        select_list:
-          label: "Enter extension"
-          path: "silex_client.commands.select_list.SelectList"
-          parameters:
-            parameters_list:
-              - "exr"
-              - "png"
-              - "jpg"
-              - "tiff"
-            param_name: "Render type"
-
     send_vray_render:
       label: "Setup render parameters"
       index: 20
@@ -28,7 +14,8 @@ vrscene_3D4:
               hide: true
             exoprt_name:
               hide: true
-            extension: !command-output "build_output_path:select_list"
+            extension:
+              hide: true
 
         submit_to_tractor:
           label: "Submit"
