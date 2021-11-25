@@ -120,7 +120,7 @@ class VrayCommand(CommandBase):
             raise Exception('No frame range found')
 
         # Create frame_lists with pading
-        frame_chunks: List[Any] = list(self._list_from_padding(
+        frame_chunks: List[str] = list(self._list_from_padding(
             list(range(frame_range[0], frame_range[1] + 1)),  frame_range[2]))
 
 
