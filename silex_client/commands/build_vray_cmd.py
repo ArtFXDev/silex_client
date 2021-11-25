@@ -63,7 +63,7 @@ class VrayCommand(CommandBase):
         for i in range(0, len(lst), n):
             yield lst[i:i + n]
     
-    def _list_from_padding(self, lst: List[str], pad: int) -> List[int]:
+    def _list_from_padding(self, lst: List[int], pad: int) -> List[int]:
 
         return [i for i in range(0, len(lst), pad)]
 
