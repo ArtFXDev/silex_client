@@ -51,6 +51,15 @@ class IntArrayParameterMeta(CommandParameterMeta):
         pass
 
     def __new__(cls, size: int):
+        def __init__(self, value):
+            if not isinstance(value, list):
+                value = [value]
+
+            for index, item in enumerate(value):
+                value[index] = int(item)
+
+            self.extend(value)
+
         def serialize():
             return {
                 "name": "int_array",
@@ -61,6 +70,7 @@ class IntArrayParameterMeta(CommandParameterMeta):
             return [0 for i in range(size)]
 
         attributes = {
+            "__init__": __init__,
             "serialize": serialize,
             "get_default": get_default,
         }
