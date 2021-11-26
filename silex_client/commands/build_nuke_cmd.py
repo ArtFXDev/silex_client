@@ -48,6 +48,14 @@ class BuildNukeCommand(CommandBase):
         frame_range: List[int] = parameters["frame_range"]
         task_size: int = parameters["task_size"]
 
+        # Temporary hack to apply the diff sent from the UI
+        default_frame_range = self.parameters["frame_range"]["value"]
+        if isinstance(frame_range, dict):
+            for index, item in frame_range.items():
+                default_frame_range[int(index)] = item
+
+            frame_range = default_frame_range
+
         arg_list = [
             # V-Ray exe path
             "C:/Nuke13.0v3/Nuke13.0.exe",

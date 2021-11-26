@@ -36,6 +36,12 @@ class TractorSubmiter(CommandBase):
             "type": str,
             "value": "No Title"
         },
+        "envkey": {
+            "label": "Environment key",
+            "type": str,
+            "value": "",
+            "hide": True
+        },
         # "projects": {
         #     "label": "Project",
         #     "type": MultipleSelectParameterMeta(*["WS_Environment", "WS_Lighting"]),
