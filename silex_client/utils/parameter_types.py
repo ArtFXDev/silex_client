@@ -129,7 +129,7 @@ class MultipleSelectParameterMeta(CommandParameterMeta):
             "serialize": serialize,
             "get_default": get_default,
         }
-        return super().__new__(cls, "SelectParameter", (list,), attributes)
+        return super().__new__(cls, "SelectParameter", (AnyParameter,), attributes)
 
 # TODO: Replace this parameter with ListParameterMeta
 class ListParameter(list):

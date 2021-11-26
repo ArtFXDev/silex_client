@@ -55,6 +55,17 @@ class TractorSubmiter(CommandBase):
         projects: List[str] = [action_query.context_metadata.get("project")]
         job_title: str = parameters['job_title']
 
+        # Temporary hack to apply the diff sent from the UI
+        default_pools = self.parameters["pools"]["type"].get_default()
+        if isinstance(pools, dict):
+            for index, item in pools.items():
+                try:
+                    default_pools[int(index)] = item
+                except IndexError:
+                    default_pools.append(item)
+
+            pools = default_pools
+
         # Get owner from context
         owner: str = action_query.context_metadata.get("user_email")
 
