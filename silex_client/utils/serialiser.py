@@ -45,7 +45,7 @@ def silex_encoder(obj):
 
 class CustomDiffSyntax(jsondiff.CompactJsonDiffSyntax):
     def emit_list_diff(self, a, b, s, inserted, changed, deleted):
-        return [data[1] for data in inserted]
+        return b
 
     def emit_dict_diff(self, a, b, s, added, changed, removed):
         if s == 0.0 or removed:

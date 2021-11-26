@@ -131,9 +131,10 @@ class ActionQuery:
         if self._task is None or self._task.done():
             return
 
-        self._task.cancel()
-        if emit_clear:
+        if emit_clear and self.ws_connection.is_running:
             self.ws_connection.send("/dcc/action", "clearAction", {"uuid": self.buffer.uuid})
+
+        self._task.cancel()
 
     def undo(self):
         self.execution_type = Execution.BACKWARD
