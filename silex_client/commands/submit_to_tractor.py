@@ -106,17 +106,23 @@ class TractorSubmiter(CommandBase):
         job = author.Job(
             title=job_title, projects=projects, service=services)
         
-        # Create job
+        # Create the commands
         for cmd in cmds:
-            logger.info(f"command: {cmds.get(cmd)}")
-            pre_cmd = author.Task(title="Mount marvin", argv=[
-                "net", "use", "\\\\marvin", "/user:etudiant", "artfx2020"])
+            logger.info(f"Command: {cmds.get(cmd)}")
 
-            task = author.Task(title=str(cmd), argv=cmds.get(cmd))
-            task.addChild(pre_cmd)
+            # Create the task
+            task = author.Task(title=str(cmd))
 
+            # Create a command that will mount the marvin
+            pre_command = author.Command(argv=["net", "use", "\\\\marvin", "/user:etudiant", "artfx2020"])
+            task.addCommand(pre_command)
+
+            # Create the main command
+            command = author.Command(argv=cmds.get(cmd))
+            task.addCommand(command)
             job.addChild(task)
 
 
+        # Spool the job
         jid = job.spool(owner=owner)
         logger.info(f"Created job: {jid} (jid)")
