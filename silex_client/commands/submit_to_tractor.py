@@ -7,6 +7,7 @@ import aiohttp
 import asyncio
 from aiohttp.client_exceptions import ClientConnectionError, ContentTypeError, InvalidURL
 
+from silex_client.core.context import Context
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import MultipleSelectParameterMeta, SelectParameterMeta
@@ -20,22 +21,38 @@ if typing.TYPE_CHECKING:
 
 import tractor.api.author as author
 
-def get_tractor_pools() -> List[str]:
+def get_pools() -> list[str]:
+    """
+    Get the pools from the tractor configuration
+    """
     async def query_tractor_pools():
-        async with aiohttp.ClientSession() as session:
-            tractor_host = os.getenv("SILEX_TRACTOR_HOST", "")
-            async with session.get(f"{tractor_host}/Tractor/config?q=get&file=blade.config") as response:
+        async with aiohttp.clientsession() as session:
+            tractor_host = os.getenv("silex_tractor_host", "")
+            async with session.get(f"{tractor_host}/tractor/config?q=get&file=blade.config") as response:
                 return await response.json()
 
-    # Get the authentification token
+    # Execute the http requiests
     try:
         tractor_pools = asyncio.run(query_tractor_pools())
     except (ClientConnectionError, ContentTypeError, InvalidURL):
-        logger.warning("Could not get the cgwire authentification token from the silex socket service")
+        logger.warning("Could not query the tractor pool list, the config is unreachable")
         return []
 
-    PROFILE_IGNORE = [None, "DEV", "Windows10", "Linux64", "Linux32"]
-    return [profile["ProfileName"] for profile in tractor_pools["BladeProfiles"] if profile.get("ProfileName") not in PROFILE_IGNORE]
+    # Build the list of profile names from the config
+    profile_ignore = [None, "DEV", "Windows10", "Linux64", "Linux32"]
+    return [profile["profilename"] for profile in tractor_pools["bladeprofiles"] if profile.get("profilename") not in profile_ignore]
+
+def get_projects() -> list[str]:
+    """
+    Get the list of available projects
+    """
+    if "project" in Context.get().metadata:
+        return [Context.get().metadata["project"]]
+    
+    # If there is no project in the current context
+    # Return a hard coded list of project for 4th years
+    return ["WS_Environment", "WS_Lighting"]
+    
 
 class TractorSubmiter(CommandBase):
     """
@@ -50,17 +67,17 @@ class TractorSubmiter(CommandBase):
         },
         "pools": {
             "label": "Pool",
-            "type": MultipleSelectParameterMeta(*get_tractor_pools()),
+            "type": MultipleSelectParameterMeta(*get_pools()),
         },
         "job_title": {
             "label": "Job title",
             "type": str,
             "value": "No Title"
         },
-        # "projects": {
-        #     "label": "Project",
-        #     "type": MultipleSelectParameterMeta(*["WS_Environment", "WS_Lighting"]),
-        # },
+        "projects": {
+            "label": "Project",
+            "type": MultipleSelectParameterMeta(*get_projects()),
+        },
     }
 
     @CommandBase.conform_command()
@@ -72,31 +89,22 @@ class TractorSubmiter(CommandBase):
 
         cmds: Dict[str, str] = parameters['cmd_list']
         pools: List[str] = parameters['pools']
-        # projects: List[str] = parameters['projects']
-        projects: List[str] = [action_query.context_metadata.get("project")]
+        projects: List[str] = parameters['projects']
         job_title: str = parameters['job_title']
 
         # Get owner from context
-        owner: str = action_query.context_metadata.get("user_email")
-
-        # Check if 4rth year render
-        if owner is None:
-            owner = "3D4"
-            response: Dict[Any] =  await self.prompt_user(action_query, {"project":ParameterBuffer(name = "project", type = SelectParameterMeta(*["WS_Environment", "WS_Lighting"]), label = "Project", value = "WS_Environment")})
-            projects = [response.get("project")]
-
+        owner: str = action_query.context_metadata.get("user_email", "3d4")
 
         # Set service
         if len(pools) == 1:
             services = pools[0]
         else:
             services = "(" + " || ".join(pools) + ")"
-
         logger.info(f"Rendering on pools: {services}")
 
+        # Creating the job
         job = author.Job(
-            title=f"render - {job_title}", projects=projects, service=services)
-
+            title=job_title, projects=projects, service=services)
         
         # Create job
         for cmd in cmds:
