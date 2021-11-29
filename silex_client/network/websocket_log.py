@@ -1,8 +1,10 @@
 import logging
 
+import asyncio
 import os
 import logzero
 import traceback
+from concurrent import futures
 
 from silex_client.utils.log import formatter
 from silex_client.utils.enums import Status
@@ -49,7 +51,7 @@ class RedirectWebsocketLogs(object):
         return self.logger
 
     async def __aexit__(self, exc_type, exc_value, exc_traceback):
-        if exc_type:
+        if exc_type and not (exc_type == futures.CancelledError or exc_type == asyncio.CancelledError):
             self.logger.error(
                 "An error occured while executing the command %s: %s",
                 self.silex_command.name,
@@ -66,3 +68,4 @@ class RedirectWebsocketLogs(object):
             await self.action_query.async_update_websocket()
 
         self.logger.handlers.remove(self.handler)
+        return True 

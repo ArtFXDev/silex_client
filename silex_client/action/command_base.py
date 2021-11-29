@@ -9,8 +9,6 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
-import os
-import traceback
 from typing import List, TYPE_CHECKING, Any, Callable, Dict
 
 from silex_client.utils.enums import Status
@@ -74,7 +72,6 @@ class CommandBase:
                     parameters[parameter_name],
                 )
                 return False
-
         return True
 
     def check_context_metadata(self, context_metadata: Dict[str, Any], logger: logging.Logger):
