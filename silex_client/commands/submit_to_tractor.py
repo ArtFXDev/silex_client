@@ -105,8 +105,8 @@ class TractorSubmiter(CommandBase):
             tractor_pools = {"BladeProfiles": []}
 
         # Build the list of profile names from the config
-        profile_ignore = [None, "DEV", "Windows10", "Linux64", "Linux32"]
-        pools = [profile["ProfileName"] for profile in tractor_pools["BladeProfiles"] if profile.get("ProfileName") not in profile_ignore]
+        PROFILE_IGNORE = [None, "DEV", "Windows10", "Linux64", "Linux32", "Windows8.1", "Windows8", "Windows7", "Windows7_32bit", "WindowsVista64", "WindowsVista32", "WindowsXP", "Windows", "MacOSX"]
+        pools = [profile["ProfileName"] for profile in tractor_pools["BladeProfiles"] if profile.get("ProfileName") not in PROFILE_IGNORE]
         self.command_buffer.parameters["pools"].type = MultipleSelectParameterMeta(*pools)
         self.command_buffer.parameters["pools"].value = self.command_buffer.parameters["pools"].type.get_default()
 
