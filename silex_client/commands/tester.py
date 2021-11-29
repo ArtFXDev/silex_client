@@ -15,7 +15,7 @@ from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
     TaskParameterMeta,
     TextParameterMeta,
-    PathParameterMeta
+    PathParameterMeta,
 )
 
 # Forward references
@@ -537,6 +537,26 @@ class TextTester(CommandBase):
             "value": "Lorem ipsum dolor sit amet",
             "tooltip": "Testing the text parameters",
         },
+        "text_tester_info": {
+            "label": "Text Tester Info",
+            "type": TextParameterMeta(color="info"),
+            "value": "You are doing well! ℹ️",
+        },
+        "text_tester_success": {
+            "label": "Text Tester Success",
+            "type": TextParameterMeta(color="success"),
+            "value": "You are doing well! ✅",
+        },
+        "text_tester_warning": {
+            "label": "Text Tester Warning",
+            "type": TextParameterMeta(color="warning"),
+            "value": "Be careful... ⚠️",
+        },
+        "text_tester_error": {
+            "label": "Text Tester Error",
+            "type": TextParameterMeta(color="error"),
+            "value": "Something went wrong! 🚫",
+        },
     }
 
     @CommandBase.conform_command()
@@ -553,7 +573,7 @@ class TextTester(CommandBase):
             parameters["text_tester_2"],
             type(parameters["text_tester_2"]),
         )
-        
+
         return parameters["text_tester"]
 
 
@@ -591,7 +611,7 @@ class FrameSetTester(CommandBase):
             parameters["frameset_tester_2"],
             type(parameters["frameset_tester_2"]),
         )
-        
+
         return parameters["frameset_tester"]
 
 
