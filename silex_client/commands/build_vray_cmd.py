@@ -63,17 +63,17 @@ class VrayCommand(CommandBase):
         for i in range(0, len(lst), n):
             yield lst[i:i + n]
     
-    def _list_from_padding(self, lst: List[str], pad: int) -> List[str]:
-
+    def _list_from_padding(self, lst: List[int], pad: int) -> List[int]:
+        """Split a list from the given padding"""
         return [i for i in range(0, len(lst), pad)]
 
     @CommandBase.conform_command()
     async def __call__(
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
-        directory: str = parameters.get("export_dir")
-        exoprt_name: str = str(parameters.get("exoprt_name"))
-        extension: str = parameters.get("extension")
+        directory: str = parameters["export_dir"]
+        exoprt_name: str = str(parameters["exoprt_name"])
+        extension: str = parameters["extension"]
         scene: pathlib.Path = parameters['scene_file']
         frame_range: List[int] = parameters["frame_range"]
         task_size: int = parameters["task_size"]
@@ -113,7 +113,7 @@ class VrayCommand(CommandBase):
 
         # Check if context
         if action_query.context_metadata.get("user_email") is not None:
-            export_file: pathlib.Path = os.path.join(directory,f"{exoprt_name}.{extension}")
+            export_file = os.path.join(directory,f"{exoprt_name}.{extension}")
             arg_list.append(f"-imgFile={export_file}")
 
         if frame_range is None:

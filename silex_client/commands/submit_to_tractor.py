@@ -74,7 +74,7 @@ class TractorSubmiter(CommandBase):
         
         # Create the commands
         for cmd in cmds:
-            logger.info(f"Command: {cmds.get(cmd)}")
+            logger.info(f"Creating task: {cmds.get(cmd)}")
 
             # Create the task
             task = author.Task(title=str(cmd))
