@@ -22,6 +22,7 @@ obj:
             output_type:
               value: "obj"
               hide: true
+            name: !command-output "input:input:file_paths"
           ask_user: true
         copy:
           label: "Copy file to pipeline"

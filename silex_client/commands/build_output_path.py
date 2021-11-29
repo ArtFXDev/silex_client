@@ -4,6 +4,7 @@ import os
 import uuid
 import typing
 import pathlib
+import re
 from typing import Any, Dict
 
 import fileseq
@@ -171,3 +172,22 @@ class BuildOutputPath(CommandBase):
             "full_path": full_paths,
             "frame_set": frame_set,
         }
+
+    async def setup(
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+    ):
+        # Handle the case where a file sequence is given
+        name_value = self.command_buffer.parameters["name"].get_value(action_query) 
+        sequences = []
+        new_value = name_value
+        if isinstance(name_value, list):
+            sequences = fileseq.findSequencesInList(name_value)
+            new_value = sequences[0].basename()
+        elif name_value:
+            new_value = pathlib.Path(str(name_value)).stem
+
+        new_value = re.sub(r"^\W+|\W+$", "", new_value).strip("_")
+        self.command_buffer.parameters["name"].value = new_value
+
+        # Force the name to be visible
+        self.command_buffer.parameters["name"].hide = False
