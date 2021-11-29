@@ -146,7 +146,9 @@ class MultipleSelectParameterMeta(CommandParameterMeta):
 # TODO: Replace this parameter with ListParameterMeta
 class ListParameter(list):
     def __init__(self, value):
-        logger.warning("Deprecation warning: The parameter type ListParameter is deprecated in favor if ListParameterMeta()")
+        logger.warning(
+            "Deprecation warning: The parameter type ListParameter is deprecated in favor if ListParameterMeta()"
+        )
         data = value
 
         if not isinstance(value, list):
@@ -186,7 +188,9 @@ class PathParameterMeta(CommandParameterMeta):
             attributes["__init__"] = __init_list__
             return super().__new__(cls, "PathParameter", (list,), attributes)
 
-        return super().__new__(cls, "PathParameter", (type(pathlib.Path()),), attributes)
+        return super().__new__(
+            cls, "PathParameter", (type(pathlib.Path()),), attributes
+        )
 
 
 class ListParameterMeta(CommandParameterMeta):
@@ -227,12 +231,12 @@ class ListParameterMeta(CommandParameterMeta):
 
 
 class TextParameterMeta(CommandParameterMeta):
-    def __init__(self):
+    def __init__(self, color=None):
         pass
 
-    def __new__(cls):
+    def __new__(cls, color=None):
         def serialize():
-            return {"name": "text"}
+            return {"name": "text", "color": color}
 
         def get_default():
             return ""
