@@ -9,9 +9,7 @@ from aiohttp.client_exceptions import ClientConnectionError, ContentTypeError, I
 
 from silex_client.core.context import Context
 from silex_client.action.command_base import CommandBase
-from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import MultipleSelectParameterMeta, SelectParameterMeta
-from silex_client.utils.log import logger
+from silex_client.utils.parameter_types import MultipleSelectParameterMeta
 
 import logging
 
@@ -20,38 +18,6 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import tractor.api.author as author
-
-def get_pools() -> list[str]:
-    """
-    Get the pools from the tractor configuration
-    """
-    async def query_tractor_pools():
-        async with aiohttp.clientsession() as session:
-            tractor_host = os.getenv("silex_tractor_host", "")
-            async with session.get(f"{tractor_host}/tractor/config?q=get&file=blade.config") as response:
-                return await response.json()
-
-    # Execute the http requiests
-    try:
-        tractor_pools = asyncio.run(query_tractor_pools())
-    except (ClientConnectionError, ContentTypeError, InvalidURL):
-        logger.warning("Could not query the tractor pool list, the config is unreachable")
-        return []
-
-    # Build the list of profile names from the config
-    profile_ignore = [None, "DEV", "Windows10", "Linux64", "Linux32"]
-    return [profile["profilename"] for profile in tractor_pools["bladeprofiles"] if profile.get("profilename") not in profile_ignore]
-
-def get_projects() -> list[str]:
-    """
-    Get the list of available projects
-    """
-    if "project" in Context.get().metadata:
-        return [Context.get().metadata["project"]]
-    
-    # If there is no project in the current context
-    # Return a hard coded list of project for 4th years
-    return ["WS_Environment", "WS_Lighting"]
     
 
 class TractorSubmiter(CommandBase):
@@ -67,7 +33,7 @@ class TractorSubmiter(CommandBase):
         },
         "pools": {
             "label": "Pool",
-            "type": MultipleSelectParameterMeta(*get_pools()),
+            "type": MultipleSelectParameterMeta(),
         },
         "job_title": {
             "label": "Job title",
@@ -76,7 +42,7 @@ class TractorSubmiter(CommandBase):
         },
         "projects": {
             "label": "Project",
-            "type": MultipleSelectParameterMeta(*get_projects()),
+            "type": MultipleSelectParameterMeta(),
         },
     }
 
@@ -126,3 +92,34 @@ class TractorSubmiter(CommandBase):
         # Spool the job
         jid = job.spool(owner=owner)
         logger.info(f"Created job: {jid} (jid)")
+
+    
+    async def setup(
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+    ):
+        # Execute the http requiests
+        try:
+            async with aiohttp.ClientSession() as session:
+                tractor_host = os.getenv("silex_tractor_host", "")
+                async with session.get(f"{tractor_host}/Tractor/config?q=get&file=blade.config") as response:
+                    tractor_pools = await response.json()
+        except (ClientConnectionError, ContentTypeError, InvalidURL):
+            logger.warning("Could not query the tractor pool list, the config is unreachable")
+            tractor_pools = {"BladeProfiles": []}
+
+        # Build the list of profile names from the config
+        profile_ignore = [None, "DEV", "Windows10", "Linux64", "Linux32"]
+        pools = [profile["ProfileName"] for profile in tractor_pools["BladeProfiles"] if profile.get("ProfileName") not in profile_ignore]
+        self.command_buffer.parameters["pools"].type = MultipleSelectParameterMeta(*pools)
+        self.command_buffer.parameters["pools"].value = self.command_buffer.parameters["pools"].type.get_default()
+
+
+        # Get the list of available projects
+        if "project" in action_query.context_metadata:
+            self.command_buffer.parameters["projects"].type = MultipleSelectParameterMeta(action_query.context_metadata["project"])
+        else:
+            # If there is no project in the current context return a hard coded list of project for 4th years
+            self.command_buffer.parameters["projects"].type = MultipleSelectParameterMeta("WS_Environment", "WS_Lighting")
+
+        self.command_buffer.parameters["projects"].value = self.command_buffer.parameters["projects"].type.get_default()
+

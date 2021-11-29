@@ -111,6 +111,7 @@ class ActionQuery:
             if not command_left.require_prompt():
                 end = start + index if start is not None else index
                 break
+            await command_left.setup(self)
             command_left.status = Status.WAITING_FOR_RESPONSE
         # Send the update to the UI and wait for its response
         if self.ws_connection.is_running:
