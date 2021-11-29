@@ -2,10 +2,15 @@ from __future__ import annotations
 
 import typing
 from typing import Any, Dict, List
+import os
+import aiohttp
+import asyncio
+from aiohttp.client_exceptions import ClientConnectionError, ContentTypeError, InvalidURL
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import MultipleSelectParameterMeta, SelectParameterMeta
+from silex_client.utils.log import logger
 
 import logging
 
@@ -15,6 +20,22 @@ if typing.TYPE_CHECKING:
 
 import tractor.api.author as author
 
+def get_tractor_pools() -> List[str]:
+    async def query_tractor_pools():
+        async with aiohttp.ClientSession() as session:
+            tractor_host = os.getenv("SILEX_TRACTOR_HOST", "")
+            async with session.get(f"{tractor_host}/Tractor/config?q=get&file=blade.config") as response:
+                return await response.json()
+
+    # Get the authentification token
+    try:
+        tractor_pools = asyncio.run(query_tractor_pools())
+    except (ClientConnectionError, ContentTypeError, InvalidURL):
+        logger.warning("Could not get the cgwire authentification token from the silex socket service")
+        return []
+
+    PROFILE_IGNORE = [None, "DEV", "Windows10", "Linux64", "Linux32"]
+    return [profile["ProfileName"] for profile in tractor_pools["BladeProfiles"] if profile.get("ProfileName") not in PROFILE_IGNORE]
 
 class TractorSubmiter(CommandBase):
     """
@@ -29,7 +50,7 @@ class TractorSubmiter(CommandBase):
         },
         "pools": {
             "label": "Pool",
-            "type": MultipleSelectParameterMeta(*["G_212", "G_201", "TD_TEST_107"]),
+            "type": MultipleSelectParameterMeta(*get_tractor_pools()),
         },
         "job_title": {
             "label": "Job title",
@@ -46,7 +67,7 @@ class TractorSubmiter(CommandBase):
     async def __call__(
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
-
+        # Initialize the tractor agent
         author.setEngineClientParam(debug=True)
 
         cmds: Dict[str, str] = parameters['cmd_list']
