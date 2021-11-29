@@ -177,3 +177,8 @@ class CommandBase:
             )
 
         self.conform_command()(default)
+
+    async def setup(
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+    ) -> Any:
+        pass

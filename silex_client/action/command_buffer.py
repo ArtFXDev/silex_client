@@ -153,6 +153,14 @@ class CommandBuffer:
             elif execution_type == Execution.BACKWARD:
                 self.status = Status.INITIALIZED
 
+    async def setup(self, action_query: ActionQuery):
+        parameters = {
+            key: value.get_value(action_query) for key, value in self.parameters.items()
+        }
+
+        async with RedirectWebsocketLogs(action_query, self) as log:
+            await self.executor.setup(copy.deepcopy(parameters), action_query, log)
+
     @property
     def outdated_caches(self):
         return self.outdated_cache or not all(not parameter.outdated_cache for parameter in self.parameters.values())
