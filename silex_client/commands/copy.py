@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import PathParameterMeta
+from silex_client.utils.thread import execute_in_thread
 import logging
 
 if typing.TYPE_CHECKING:
@@ -54,8 +55,13 @@ class Copy(CommandBase):
             # Copy only if the files does not already exists
             os.makedirs(str(destination_dir), exist_ok=True)
             logger.info("Copying %s to %s", source_path, destination_dir)
-            with contextlib.suppress(shutil.SameFileError):
-                shutil.copy(source_path, destination_dir)
+
+            # Execute the copy in a different thread to not block the event loop
+            def copy():
+                with contextlib.suppress(shutil.SameFileError):
+                    shutil.copy(source_path, destination_dir)
+            await execute_in_thread(copy)
+
             destination_paths.append(destination_dir / source_path.name)
 
         return {
