@@ -26,7 +26,8 @@ async def execute_in_thread(function: Callable, *args, **kwargs):
         except Exception as ex:
             Context.get().event_loop.register_task(set_future_exception(ex))
 
-    threading.Thread(target=wrapped_function, daemon=True)
+    thread = threading.Thread(target=wrapped_function, daemon=True)
+    thread.start()
 
     def callback(task_result: asyncio.Future):
         if task_result.cancelled():

@@ -109,6 +109,8 @@ class SelectConform(CommandBase):
                     "hdri": "hdr",
                     "hipnc": "hip",
                     "hiplc": "hip",
+                    "hdanc": "hda",
+                    "hdalc": "hda",
                 }
                 # Find the right conform action for the given extension
                 conform_type = EXTENSION_TYPES_MAPPING.get(conform_type, "")
