@@ -79,12 +79,13 @@ class TractorSubmiter(CommandBase):
             # Create a command that will mount the marvin
             pre_command = author.Command(argv=["net", "use", "\\\\marvin", "/user:etudiant", "artfx2020"])
             task.addCommand(pre_command)
+            pre_command = author.Command(argv=["net", "use", "\\\\192.168.2.204", "/user:etudiant", "artfx2020"]) # needed for some pool
+            task.addCommand(pre_command)
 
             # Create the main command
             command = author.Command(argv=cmds.get(cmd))
             task.addCommand(command)
             job.addChild(task)
-
 
         # Spool the job
         jid = job.spool(owner=owner)
