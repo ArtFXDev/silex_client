@@ -113,7 +113,8 @@ class TractorSubmiter(CommandBase):
 
         # Get the list of available projects
         if "project" in action_query.context_metadata:
-            self.command_buffer.parameters["projects"].type = MultipleSelectParameterMeta(action_query.context_metadata["project"])
+            self.command_buffer.parameters["projects"].value = action_query.context_metadata["project"]
+            self.command_buffer.parameters["projects"].hide = True
         else:
             # If there is no project in the current context return a hard coded list of project for 4th years
             self.command_buffer.parameters["projects"].type = MultipleSelectParameterMeta("WS_Environment", "WS_Lighting")
