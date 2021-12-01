@@ -16,8 +16,9 @@ if typing.TYPE_CHECKING:
 
 class VrayCommand(CommandBase):
     """
-    Put the given file on database and to locked file system
+    build vray command
     """
+
 
     parameters = {
         "scene_file": {
@@ -28,6 +29,11 @@ class VrayCommand(CommandBase):
             "label": "Frame range (start, end, step)",
             "type": IntArrayParameterMeta(3),
             "value": [0, 100, 1]
+        },
+        "resolution": {
+            "label": "Resolution ( width, height )",
+            "type": IntArrayParameterMeta(2),
+            "value": [1920, 1080]
         },
         "task_size": {
             "label": "Task size",
@@ -76,6 +82,7 @@ class VrayCommand(CommandBase):
         extension: str = parameters["extension"]
         scene: pathlib.Path = parameters['scene_file']
         frame_range: List[int] = parameters["frame_range"]
+        resolution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
         skip_existing: int =  int(parameters["skip_existing"])
         
@@ -115,6 +122,8 @@ class VrayCommand(CommandBase):
         if action_query.context_metadata.get("user_email") is not None:
             export_file = os.path.join(directory,f"{exoprt_name}.{extension}")
             arg_list.append(f"-imgFile={export_file}")
+            arg_list. extend([f"-imgWidth={resolution[0]}", f"-imgHeight={resolution[1]}"])
+
 
         if frame_range is None:
             raise Exception('No frame range found')
@@ -129,7 +138,7 @@ class VrayCommand(CommandBase):
             frame_chunks, task_size))
         cmd_dict = dict()
 
-
+        # create commands 
         for chunk in task_chunks:
             start, end = chunk[0], chunk[-1]
             frames: str = ";".join(map(str, chunk))
@@ -141,3 +150,17 @@ class VrayCommand(CommandBase):
             "commands": cmd_dict,
             "file_name": scene.stem
         }
+    
+
+    async def setup(
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+    ):
+
+        # show resolution only if context
+        if action_query.context_metadata.get("user_email") is None:
+            self.command_buffer.parameters['resolution'].hide = True
+
+        
+
+
+        
