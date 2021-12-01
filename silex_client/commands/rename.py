@@ -49,7 +49,7 @@ class Rename(CommandBase):
             if not os.path.exists(source_path):
                 raise Exception(f"Source path {source_path} does not exists")
 
-            extension = source_path.suffix
+            extension = "".join(source_path.suffixes)
             new_name = os.path.splitext(new_name)[0] + extension
             new_path = source_path.parent / new_name
             logger.info("Renaming %s to %s", source_path, new_path)

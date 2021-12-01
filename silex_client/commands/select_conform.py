@@ -103,6 +103,7 @@ class SelectConform(CommandBase):
             ]:
                 # TODO: This mapping should be somewhere else
                 EXTENSION_TYPES_MAPPING = {
+                    "bgeo.sc": "bgeo",
                     "mb": "ma",
                     "tif": "tiff",
                     "jpeg": "jpg",
