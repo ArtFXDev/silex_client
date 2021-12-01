@@ -37,10 +37,12 @@ def action_handler(action_name: str, **kwargs) -> None:
     if kwargs.get("task_id") is not None:
         os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
 
+    category = kwargs.get("category", "action")
+
     silex_context = Context.get()
     silex_context.start_services()
 
-    action = ActionQuery(action_name)
+    action = ActionQuery(action_name, category=category)
     if not action.commands:
         logger.error("The resolved action is invalid")
         return

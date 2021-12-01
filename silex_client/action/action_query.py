@@ -33,11 +33,11 @@ class ActionQuery:
     Initialize and execute a given action
     """
 
-    def __init__(self, name: str, resolved_config: Optional[dict] = None):
+    def __init__(self, name: str, resolved_config: Optional[dict] = None, category="action"):
         context = Context.get()
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(context.metadata))
         if resolved_config is None:
-            resolved_config = Config().resolve_action(name)
+            resolved_config = Config().resolve_action(name, category)
 
         if resolved_config is None:
             return
