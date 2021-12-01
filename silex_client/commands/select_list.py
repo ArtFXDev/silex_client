@@ -35,7 +35,7 @@ class SelectList(CommandBase):
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         parameters_list: List[Any] = parameters.get("parameters_list")
-        param_name: List[Any] = parameters.get("param_name")
+        param_name: str = parameters.get("param_name")
 
         response: Dict[Any] =  await self.prompt_user(action_query, {"selected_param":ParameterBuffer(name = "selected_param", type = SelectParameterMeta(*parameters_list), label = param_name)})
         return response.get('selected_param')

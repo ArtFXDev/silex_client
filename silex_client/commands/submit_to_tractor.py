@@ -19,7 +19,7 @@ import tractor.api.author as author
 
 class TractorSubmiter(CommandBase):
     """
-    Put the given file on database and to locked file system
+    Send job to tractor
     """
 
     parameters = {
@@ -76,7 +76,7 @@ class TractorSubmiter(CommandBase):
             # Create the task
             task = author.Task(title=str(cmd))
 
-            # Create a command that will mount the marvin
+            # Create a command that will mount marvin
             pre_command = author.Command(argv=["net", "use", "\\\\marvin", "/user:etudiant", "artfx2020"])
             task.addCommand(pre_command)
             pre_command = author.Command(argv=["net", "use", "\\\\192.168.2.204", "/user:etudiant", "artfx2020"]) # needed for some pool
@@ -95,7 +95,7 @@ class TractorSubmiter(CommandBase):
     async def setup(
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
-        # Execute the http requiests
+        # Execute the http requests
         try:
             async with aiohttp.ClientSession() as session:
                 tractor_host = os.getenv("silex_tractor_host", "")
