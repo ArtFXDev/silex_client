@@ -93,7 +93,11 @@ class BuildOutputPath(CommandBase):
         nb_elements = len(frame_set)
 
         # Get the entity dict
-        entity = await gazu.shot.get_shot(action_query.context_metadata["entity_id"])
+        entity = None
+        if action_query.context_metadata["entity_type"] == "shot":
+            entity = await gazu.shot.get_shot(action_query.context_metadata["entity_id"])
+        else:
+            entity = await gazu.asset.get_asset(action_query.context_metadata["entity_id"])
 
         # Get the output type
         output_type = await gazu.files.get_output_type_by_short_name(
