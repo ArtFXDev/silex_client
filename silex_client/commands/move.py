@@ -55,16 +55,26 @@ class Move(CommandBase):
                 # remove if dst already exist
                 # item : path of existing file/dir
                 end_path = os.path.join(dst, os.path.basename(item))
-                if os.path.isdir(end_path):
-                    shutil.rmtree(end_path)
+                logger.info(f"qqq : {end_path}")
 
-                if os.path.isfile(end_path):
-                    os.remove(end_path)
+                if os.path.isdir(dst):
+                    # clean tree
+                    shutil.rmtree(dst)
+                    os.makedirs(dst)
+
+                if os.path.isfile(dst):
+                    os.remove(dst)
 
                 logger.info(f"source : {item}")
                 logger.info(f"destination : {dst}")
 
-                shutil.move(item, dst)
+                # move folder or file
+                if os.path.isdir(item):
+                    # move all file in dst folder
+                    file_names = os.listdir(item)
+                    for file_name in file_names:
+                        shutil.move(os.path.join(item, file_name), dst)
+                else:
+                    shutil.move(item, dst)
 
             await execute_in_thread(move)
-
