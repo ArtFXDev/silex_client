@@ -122,6 +122,27 @@ class SelectParameterMeta(CommandParameterMeta):
         return super().__new__(cls, "SelectParameter", (str,), attributes)
 
 
+class RadioSelectParameterMeta(CommandParameterMeta):
+    def __init__(self, *list_options, **options):
+        pass
+
+    def __new__(cls, *list_options, **options):
+        for unnamed_option in list_options:
+            options[unnamed_option] = unnamed_option
+
+        def serialize():
+            return {"name": "radio_select", "options": options}
+
+        def get_default():
+            return list(options.values())[0] if options else None
+
+        attributes = {
+            "serialize": serialize,
+            "get_default": get_default,
+        }
+        return super().__new__(cls, "RadioSelectParameter", (str,), attributes)
+
+
 class MultipleSelectParameterMeta(CommandParameterMeta):
     def __init__(self, *list_options, **options):
         pass
