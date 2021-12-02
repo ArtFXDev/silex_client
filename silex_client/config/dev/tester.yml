@@ -55,6 +55,11 @@ tester:
               - "hello"
               - "bar"
           ask_user: True
+        radio_select:
+          path: "silex_client.commands.tester.RadioSelectTester"
+          parameters:
+            radio_select_tester: "hello"
+          ask_user: True
         int_array_low:
           path: "silex_client.commands.tester.IntArrayTesterLow"
           parameters:

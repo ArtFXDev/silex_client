@@ -12,6 +12,7 @@ from silex_client.utils.parameter_types import (
     RangeParameterMeta,
     SelectParameterMeta,
     MultipleSelectParameterMeta,
+    RadioSelectParameterMeta,
     IntArrayParameterMeta,
     TaskParameterMeta,
     TextParameterMeta,
@@ -457,6 +458,46 @@ class MultipleSelectTester(CommandBase):
             type(parameters["multiple_select_tester_2"]),
         )
         return parameters["multiple_select_tester"]
+
+
+class RadioSelectTester(CommandBase):
+    """
+    Testing the radio_select parameters
+    """
+
+    parameters = {
+        "radio_select_tester": {
+            "label": "RadioSelect Tester",
+            "type": RadioSelectParameterMeta("foo", "bar", "hello", "world"),
+            "value": None,
+            "tooltip": "Testing the radio_select parameters",
+        },
+        "radio_select_tester_2": {
+            "label": "RadioSelect Tester 2",
+            "type": RadioSelectParameterMeta("foo", "bar", "hello", "world"),
+            "value": None,
+            "tooltip": "Testing the radio_select parameters",
+        },
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        logger.info(
+            "Select Radio parameter tester: %s, %s",
+            parameters["radio_select_tester"],
+            type(parameters["radio_select_tester"]),
+        )
+        logger.info(
+            "Select Radio parameter tester: %s, %s",
+            parameters["radio_select_tester_2"],
+            type(parameters["radio_select_tester_2"]),
+        )
+        return parameters["radio_select_tester"]
 
 
 class IntArrayTesterLow(CommandBase):
