@@ -19,148 +19,131 @@ class VrayCommand(CommandBase):
     build vray command
     """
 
-
     parameters = {
-        "scene_file": {
-            "label": "Scene file",
-            "type": pathlib.Path
-        },
+        "scene_file": {"label": "Scene file", "type": pathlib.Path},
         "frame_range": {
             "label": "Frame range (start, end, step)",
             "type": IntArrayParameterMeta(3),
-            "value": [0, 100, 1]
+            "value": [0, 100, 1],
         },
         "resolution": {
             "label": "Resolution ( width, height )",
             "type": IntArrayParameterMeta(2),
-            "value": [1920, 1080]
+            "value": [1920, 1080],
         },
         "task_size": {
             "label": "Task size",
             "type": int,
             "value": 10,
         },
-        "skip_existing": {
-            "label": "Skip existing frames",
-            "type": bool,
-            "value": True
-        },
-         "export_dir": {
+        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
+        "export_dir": {
             "label": "File directory",
             "type": str,
             "value": "",
         },
-         "exoprt_name": {
+        "exoprt_name": {
             "label": "File name",
             "type": pathlib.Path,
             "value": "",
-
         },
-         "extension": {
+        "extension": {
             "label": "File extension",
             "type": str,
             "value": None,
-            "hide": True
+            "hide": True,
         },
     }
 
     def _chunks(self, lst, n):
         """Yield successive n-sized chunks from lst."""
         for i in range(0, len(lst), n):
-            yield lst[i:i + n]
-    
+            yield lst[i : i + n]
+
     def _list_from_padding(self, lst: List[int], pad: int) -> List[int]:
         """Split a list from the given padding"""
         return [i for i in range(0, len(lst), pad)]
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         directory: str = parameters["export_dir"]
         exoprt_name: str = str(parameters["exoprt_name"])
         extension: str = parameters["extension"]
-        scene: pathlib.Path = parameters['scene_file']
+        scene: pathlib.Path = parameters["scene_file"]
         frame_range: List[int] = parameters["frame_range"]
         resolution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
-        skip_existing: int =  int(parameters["skip_existing"])
-        
+        skip_existing: int = int(parameters["skip_existing"])
+
         ### TEMP ###
         ##############
         if directory is not None:
-            directory = directory.replace( "D:", r"\\marvin\TEMP_5RN" )
+            directory = directory.replace("D:", r"\\marvin\TEMP_5RN")
         ##############
-
 
         arg_list = [
             # V-Ray exe path
             "C:/Maya2022/Maya2022/vray/bin/vray.exe",
-
             # Don't show VFB (render view)
             "-display=0",
-
             # Update frequency for logs
             "-progressUpdateFreq=2000",
-
             # Don't format logs with colors
             "-progressUseColor=0",
-
             # Use proper carrier returns
             "-progressUseCR=0",
-
             # Specify the scene file
             f"-sceneFile={scene}",
-
             # Render already existing frames or not
             f"-skipExistingFrames={skip_existing}",
-
             # "-rtEngine=5", # CUDA or CPU?
         ]
 
         # Check if context
         if action_query.context_metadata.get("user_email") is not None:
-            export_file = os.path.join(directory,f"{exoprt_name}.{extension}")
+            export_file = os.path.join(directory, f"{exoprt_name}.{extension}")
             arg_list.append(f"-imgFile={export_file}")
-            arg_list. extend([f"-imgWidth={resolution[0]}", f"-imgHeight={resolution[1]}"])
-
+            arg_list.extend(
+                [f"-imgWidth={resolution[0]}", f"-imgHeight={resolution[1]}"]
+            )
 
         if frame_range is None:
-            raise Exception('No frame range found')
+            raise Exception("No frame range found")
 
         # Create frame_lists with pading
-        frame_chunks: List[Any] = list(self._list_from_padding(
-            list(range(frame_range[0], frame_range[1] + 1)),  frame_range[2]))
-
+        frame_chunks: List[Any] = list(
+            self._list_from_padding(
+                list(range(frame_range[0], frame_range[1] + 1)), frame_range[2]
+            )
+        )
 
         # Cut frames by task
-        task_chunks = list(self._chunks(
-            frame_chunks, task_size))
+        task_chunks = list(self._chunks(frame_chunks, task_size))
         cmd_dict = dict()
 
-        # create commands 
+        # create commands
         for chunk in task_chunks:
             start, end = chunk[0], chunk[-1]
             frames: str = ";".join(map(str, chunk))
             logger.info(f"Creating a new task with frames: {start} {end}")
-            cmd_dict[f"frames={start}-{end} (step:{frame_range[2]})"] = arg_list + \
-                [f"-frames=\"{frames}\""]
+            cmd_dict[f"frames={start}-{end} (step:{frame_range[2]})"] = arg_list + [
+                f'-frames="{frames}"'
+            ]
 
-        return {
-            "commands": cmd_dict,
-            "file_name": scene.stem
-        }
-    
+        return {"commands": cmd_dict, "file_name": scene.stem}
 
     async def setup(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
 
         # show resolution only if context
         if action_query.context_metadata.get("user_email") is None:
-            self.command_buffer.parameters['resolution'].hide = True
-
-        
-
-
-        
+            self.command_buffer.parameters["resolution"].hide = True

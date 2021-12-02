@@ -40,7 +40,13 @@ class CommandBuffer:
     """
 
     #: The list of fields that should be ignored when serializing this buffer to json
-    PRIVATE_FIELDS = ["output_result", "executor", "input_path", "outdated_cache", "serialize_cache"]
+    PRIVATE_FIELDS = [
+        "output_result",
+        "executor",
+        "input_path",
+        "outdated_cache",
+        "serialize_cache",
+    ]
     #: The list of fields that should be ignored when deserializing this buffer to json
     READONLY_FIELDS = ["logs"]
 
@@ -162,7 +168,9 @@ class CommandBuffer:
 
     @property
     def outdated_caches(self):
-        return self.outdated_cache or not all(not parameter.outdated_cache for parameter in self.parameters.values())
+        return self.outdated_cache or not all(
+            not parameter.outdated_cache for parameter in self.parameters.values()
+        )
 
     def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
@@ -213,7 +221,11 @@ class CommandBuffer:
 
         # Patch the current command data
         current_command_data = self.serialize()
-        current_command_data = {key: value for key, value in current_command_data.items() if key != "parameters"}
+        current_command_data = {
+            key: value
+            for key, value in current_command_data.items()
+            if key != "parameters"
+        }
         serialized_data = jsondiff.patch(current_command_data, serialized_data)
 
         # Format the parameters corectly
@@ -230,7 +242,13 @@ class CommandBuffer:
             setattr(new_data, private_field, getattr(self, private_field))
 
         self.parameters.update(new_data.parameters)
-        self.__dict__.update({key: value for key, value in new_data.__dict__.items() if key != "parameters"})
+        self.__dict__.update(
+            {
+                key: value
+                for key, value in new_data.__dict__.items()
+                if key != "parameters"
+            }
+        )
         self.outdated_cache = True
 
     @classmethod

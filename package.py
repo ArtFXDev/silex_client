@@ -47,6 +47,7 @@ tests = {
 
 build_command = "python {root}/script/build.py {install}"
 
+
 def commands():
     """
     Set the environment variables for silex_client
