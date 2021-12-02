@@ -20,6 +20,9 @@ publish:
               value: true
               hide: true
             task:
-              value: null
               hide: true
-            name: "main"
+            frame_set:
+              hide: true
+            name:
+              value: "main"
+              label: "Publish name"
