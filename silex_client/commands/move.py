@@ -53,9 +53,6 @@ class Move(CommandBase):
             # Execute the move in a different thread to not block the event loop
             def move():
                 # remove if dst already exist
-                # item : path of existing file/dir
-                end_path = os.path.join(dst, os.path.basename(item))
-                logger.info(f"qqq : {end_path}")
 
                 if os.path.isdir(dst):
                     # clean tree
