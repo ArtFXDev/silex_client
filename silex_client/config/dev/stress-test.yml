@@ -9,7 +9,7 @@ stress-test:
           parameters:
             inline_code: "list(range(40))"
         iterate_list:
-          path: "silex_client.commands.iterate_action.IterateAction"
+          path: "silex_client.commands.utils.iterate_action.IterateAction"
           parameters:
             values: !command-output "iterate_action:create_list:inline_result"
             actions: "tester"

@@ -6,15 +6,14 @@ submit:
       commands:
         get_submiter:
           label: "Select submiter"
-          path: "silex_client.commands.select_submit.SelectSubmit"
+          path: "silex_client.commands.utils.select_submit.SelectSubmit"
           tooltip: "Select the type of conform you want to make"
           ask_user: true
 
         append_submit_actions:
           label: "Append selected submit action"
-          path: "silex_client.commands.insert_action.InsertAction"
+          path: "silex_client.commands.utils.insert_action.InsertAction"
           tooltip: "Append the selected submit to the list of commands to execute"
           parameters:
             category: "submit"
             action: !command-output "setup:get_submiter:action"
-
