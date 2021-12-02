@@ -135,7 +135,7 @@ class BuildOutputPath(CommandBase):
             entity, output_type, task_type, sep=os.path.sep, nb_elements=nb_elements
         )
         output_path = pathlib.Path(output_path)
-        directory = output_path.parent
+        directory = output_path.parent / name if name else output_path.parent
         temp_directory = directory / str(uuid.uuid4())
         file_name = output_path.name + f"_{name}" if name else output_path.name
         full_name = file_name
