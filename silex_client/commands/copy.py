@@ -38,7 +38,10 @@ class Copy(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         source_paths: List[pathlib.Path] = parameters["src"]
         destination_dirs: List[pathlib.Path] = parameters["dst"]
@@ -60,6 +63,7 @@ class Copy(CommandBase):
             def copy():
                 with contextlib.suppress(shutil.SameFileError):
                     shutil.copy(source_path, destination_dir)
+
             await execute_in_thread(copy)
 
             destination_paths.append(destination_dir / source_path.name)

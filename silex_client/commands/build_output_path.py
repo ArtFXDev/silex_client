@@ -78,11 +78,14 @@ class BuildOutputPath(CommandBase):
         },
     }
 
-    required_metadata = ["entity_id", "task_type_id"]
+    required_metadata = ["entity_id", "task_type_id", "entity_type"]
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         create_output_dir: bool = parameters["create_output_dir"]
         create_temp_dir: bool = parameters["create_temp_dir"]
@@ -95,9 +98,13 @@ class BuildOutputPath(CommandBase):
         # Get the entity dict
         entity = None
         if action_query.context_metadata["entity_type"] == "shot":
-            entity = await gazu.shot.get_shot(action_query.context_metadata["entity_id"])
+            entity = await gazu.shot.get_shot(
+                action_query.context_metadata["entity_id"]
+            )
         else:
-            entity = await gazu.asset.get_asset(action_query.context_metadata["entity_id"])
+            entity = await gazu.asset.get_asset(
+                action_query.context_metadata["entity_id"]
+            )
 
         # Get the output type
         output_type = await gazu.files.get_output_type_by_short_name(
@@ -178,10 +185,13 @@ class BuildOutputPath(CommandBase):
         }
 
     async def setup(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         # Handle the case where a file sequence is given
-        name_value = self.command_buffer.parameters["name"].get_value(action_query) 
+        name_value = self.command_buffer.parameters["name"].get_value(action_query)
         sequences = []
         new_value = name_value
         if isinstance(name_value, list):

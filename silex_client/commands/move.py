@@ -15,6 +15,7 @@ import shutil
 import os
 import pathlib
 
+
 class Move(CommandBase):
     """
     Copy file and override if necessary
@@ -30,12 +31,15 @@ class Move(CommandBase):
             "label": "Destination directory",
             "type": pathlib.Path,
             "value": None,
-        }
+        },
     }
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
 
         src: List[str] = [str(source) for source in parameters["src"]]
@@ -67,4 +71,3 @@ class Move(CommandBase):
                 shutil.move(item, dst)
 
             await execute_in_thread(move)
-

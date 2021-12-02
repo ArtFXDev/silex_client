@@ -28,12 +28,15 @@ if TYPE_CHECKING:
     from silex_client.core.event_loop import EventLoop
     from silex_client.network.websocket import WebsocketConnection
 
+
 class ActionQuery:
     """
     Initialize and execute a given action
     """
 
-    def __init__(self, name: str, resolved_config: Optional[dict] = None, category="action"):
+    def __init__(
+        self, name: str, resolved_config: Optional[dict] = None, category="action"
+    ):
         context = Context.get()
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(context.metadata))
         if resolved_config is None:
@@ -45,8 +48,12 @@ class ActionQuery:
         self.event_loop: EventLoop = context.event_loop
         self.ws_connection: WebsocketConnection = context.ws_connection
 
-        self.buffer: ActionBuffer = ActionBuffer(name, context_metadata=metadata_snapshot)
-        self._initialize_buffer(resolved_config, {"context_metadata": metadata_snapshot})
+        self.buffer: ActionBuffer = ActionBuffer(
+            name, context_metadata=metadata_snapshot
+        )
+        self._initialize_buffer(
+            resolved_config, {"context_metadata": metadata_snapshot}
+        )
         self._buffer_diff = copy.deepcopy(self.buffer.serialize())
         self._task: Optional[asyncio.Task] = None
 
@@ -61,7 +68,9 @@ class ActionQuery:
         """
         # If the action has no commands, don't execute it
         if not self.commands:
-            logger.warning("Could not execute %s: The action has no commands", self.name)
+            logger.warning(
+                "Could not execute %s: The action has no commands", self.name
+            )
             future: futures.Future = futures.Future()
             future.set_result(None)
             return future
@@ -94,7 +103,9 @@ class ActionQuery:
             # Inform the UI of the state of the action (either completed or sucess)
             await self.async_update_websocket()
             if self.ws_connection.is_running and not self.buffer.hide:
-                await self.ws_connection.async_send("/dcc/action", "clearAction", {"uuid": self.buffer.uuid})
+                await self.ws_connection.async_send(
+                    "/dcc/action", "clearAction", {"uuid": self.buffer.uuid}
+                )
 
         async def create_task():
             self._task = self.event_loop.loop.create_task(execute_commands())
@@ -103,7 +114,9 @@ class ActionQuery:
         # Execute the commands in the event loop
         return self.event_loop.register_task(create_task())
 
-    async def prompt_commands(self, start: Optional[int] = None, end: Optional[int] = None):
+    async def prompt_commands(
+        self, start: Optional[int] = None, end: Optional[int] = None
+    ):
         # Get the range of commands
         commands_prompt = self.commands[start:end]
         # Set the commands to WAITING_FOR_RESPONSE
@@ -124,7 +137,6 @@ class ActionQuery:
             command_left.ask_user = False
             command_left.status = Status.INITIALIZED
 
-
     def cancel(self, emit_clear: bool = True):
         """
         Cancel the execution of the action
@@ -133,7 +145,9 @@ class ActionQuery:
             return
 
         if emit_clear and self.ws_connection.is_running:
-            self.ws_connection.send("/dcc/action", "clearAction", {"uuid": self.buffer.uuid})
+            self.ws_connection.send(
+                "/dcc/action", "clearAction", {"uuid": self.buffer.uuid}
+            )
 
         self._task.cancel()
 
@@ -143,7 +157,9 @@ class ActionQuery:
     def redo(self):
         self.execution_type = Execution.FORWARD
 
-    def _initialize_buffer(self, resolved_config: dict, custom_data: Union[dict, None] = None) -> None:
+    def _initialize_buffer(
+        self, resolved_config: dict, custom_data: Union[dict, None] = None
+    ) -> None:
         """
         Initialize the buffer from the config
         """
@@ -161,8 +177,13 @@ class ActionQuery:
         # Get the config related to the current task
         action_definition = resolved_config[self.name]
         action_definition["name"] = self.name
-        if self.context_metadata.get("task_type") in action_definition.get("tasks", {}).keys():
-            task_definition = action_definition["tasks"][self.context_metadata["task_type"]]
+        if (
+            self.context_metadata.get("task_type")
+            in action_definition.get("tasks", {}).keys()
+        ):
+            task_definition = action_definition["tasks"][
+                self.context_metadata["task_type"]
+            ]
             action_definition = jsondiff.patch(action_definition, task_definition)
 
         # Apply any potential custom data
@@ -302,7 +323,10 @@ class ActionQuery:
         elif len(parameter_split) == 2:
             command = parameter_split[0]
         elif len(parameter_split) != 1:
-            logger.warning("Invalid parameter path: The given parameter path %s has too many separators", parameter_name)
+            logger.warning(
+                "Invalid parameter path: The given parameter path %s has too many separators",
+                parameter_name,
+            )
 
         # Guess the info that were not provided by taking the first match
         index = None
@@ -353,7 +377,10 @@ class ActionQuery:
         if len(command_split) == 2:
             step = command_split[0]
         elif len(command_split) != 1:
-            logger.warning("Invalid command path: The given command path %s has too many separators", command_path)
+            logger.warning(
+                "Invalid command path: The given command path %s has too many separators",
+                command_path,
+            )
             return None
 
         # If the command path is explicit, get the command directly
@@ -361,7 +388,10 @@ class ActionQuery:
             try:
                 return self.buffer.steps[step].commands[name]
             except KeyError:
-                logger.error("Could not retrieve the command %s: The command does not exists", command_path)
+                logger.error(
+                    "Could not retrieve the command %s: The command does not exists",
+                    command_path,
+                )
                 return None
 
         # If only the command is given, get the first occurence
@@ -369,9 +399,12 @@ class ActionQuery:
             if command.name == name:
                 return command
 
-        logger.error("Could not retrieve the command %s: The command does not exists", command_path)
+        logger.error(
+            "Could not retrieve the command %s: The command does not exists",
+            command_path,
+        )
         return None
-        
+
 
 class CommandIterator(Iterator):
     """
@@ -389,7 +422,9 @@ class CommandIterator(Iterator):
 
     def __next__(self) -> CommandBuffer:
         commands = self.action_buffer.commands
-        execution_type_transition = self.execution_type != self.action_buffer.execution_type
+        execution_type_transition = (
+            self.execution_type != self.action_buffer.execution_type
+        )
         self.execution_type = copy.deepcopy(self.action_buffer.execution_type)
 
         if self.action_buffer.execution_type == Execution.FORWARD:

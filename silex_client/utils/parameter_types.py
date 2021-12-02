@@ -141,6 +141,7 @@ class MultipleSelectParameterMeta(CommandParameterMeta):
         }
         return super().__new__(cls, "SelectParameter", (list,), attributes)
 
+
 # TODO: Replace this parameter with ListParameterMeta
 class ListParameter(list):
     def __init__(self, value):
@@ -149,6 +150,7 @@ class ListParameter(list):
         if not isinstance(value, list):
             data = [value]
         self.extend(data)
+
 
 class PathParameterMeta(CommandParameterMeta):
     def __init__(self, extensions=None, multiple=False):

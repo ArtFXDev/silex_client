@@ -42,7 +42,10 @@ class StringTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "String parameter tester: %s, %s",
@@ -79,7 +82,10 @@ class IntegerTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Integer parameter tester: %s, %s",
@@ -116,7 +122,10 @@ class BooleanTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Boolean parameter tester: %s, %s",
@@ -153,7 +162,10 @@ class PathTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Path parameter tester: %s, %s",
@@ -182,7 +194,14 @@ class SelectTester(CommandBase):
         },
         "select_tester_2": {
             "label": "Select Tester 2",
-            "type": SelectParameterMeta(**{"Hello Label": "hello", "World Label": "world", "Foo Label": "foo", "Bar Label": "bar"}),
+            "type": SelectParameterMeta(
+                **{
+                    "Hello Label": "hello",
+                    "World Label": "world",
+                    "Foo Label": "foo",
+                    "Bar Label": "bar",
+                }
+            ),
             "value": None,
             "tooltip": "Testing the select parameters",
         },
@@ -190,7 +209,10 @@ class SelectTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Select parameter tester: %s, %s",
@@ -227,7 +249,10 @@ class RangeTesterLow(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Range parameter tester: %s, %s",
@@ -264,7 +289,10 @@ class RangeTesterMid(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Range parameter tester: %s, %s",
@@ -309,7 +337,10 @@ class RangeTesterHigh(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Range parameter tester: %s, %s",
@@ -346,7 +377,10 @@ class EntityTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Entity parameter tester: %s, %s",
@@ -383,7 +417,10 @@ class MultipleSelectTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "MultipleSelect parameter tester: %s, %s",
@@ -420,7 +457,10 @@ class IntArrayTesterLow(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "IntArray parameter tester: %s, %s",
@@ -457,7 +497,10 @@ class IntArrayTesterHigh(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "IntArray parameter tester: %s, %s",
@@ -469,7 +512,7 @@ class IntArrayTesterHigh(CommandBase):
             parameters["int_array_tester_2"],
             type(parameters["int_array_tester_2"]),
         )
-        
+
         return parameters["int_array_tester"]
 
 
@@ -489,7 +532,10 @@ class TracebackTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Traceback tester: %s, %s",

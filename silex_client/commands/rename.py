@@ -35,7 +35,10 @@ class Rename(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         source_paths: List[pathlib.Path] = parameters["src"]
         new_names: List[str] = parameters["name"]

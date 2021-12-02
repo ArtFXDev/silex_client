@@ -19,14 +19,11 @@ class BuildNukeCommand(CommandBase):
     """
 
     parameters = {
-        "scene_file": {
-            "label": "Scene file",
-            "type": pathlib.Path
-        },
+        "scene_file": {"label": "Scene file", "type": pathlib.Path},
         "frame_range": {
             "label": "Frame range",
             "type": IntArrayParameterMeta(2),
-            "value": [0, 100]
+            "value": [0, 100],
         },
         "task_size": {
             "label": "Task size",
@@ -38,41 +35,37 @@ class BuildNukeCommand(CommandBase):
     def _chunks(self, lst, n):
         """Yield successive n-sized chunks from lst."""
         for i in range(0, len(lst), n):
-            yield lst[i:i + n]
+            yield lst[i : i + n]
 
     @CommandBase.conform_command()
     async def __call__(
-            self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
-        scene: pathlib.Path = parameters['scene_file']
+        scene: pathlib.Path = parameters["scene_file"]
         frame_range: List[int] = parameters["frame_range"]
         task_size: int = parameters["task_size"]
 
         arg_list = [
             # V-Ray exe path
             "C:/Nuke13.0v3/Nuke13.0.exe",
-
             # Execute in interactive mode
             "-i",
-
             # Specify the scene file
             "-x",
             f"{scene}",
         ]
 
-        chunks = list(self._chunks(
-            range(frame_range[0], frame_range[1] + 1), task_size))
+        chunks = list(
+            self._chunks(range(frame_range[0], frame_range[1] + 1), task_size)
+        )
         cmd_dict = dict()
-
 
         for chunk in chunks:
             start, end = chunk[0], chunk[-1]
             logger.info(f"Creating a new task with frames: {start} {end}")
-            cmd_dict[f"frames={start}-{end}"] = arg_list + \
-                ["-F", f"{start}-{end}"]
+            cmd_dict[f"frames={start}-{end}"] = arg_list + ["-F", f"{start}-{end}"]
 
-        return {
-            "commands": cmd_dict,
-            "file_name": scene.stem
-        }
-
+        return {"commands": cmd_dict, "file_name": scene.stem}

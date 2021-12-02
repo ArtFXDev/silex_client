@@ -92,7 +92,9 @@ def launch_handler(dcc: str, **kwargs) -> None:
     Run the given command in the selected context
     """
     if not authentificate_gazu():
-        raise Exception("Could not connect to the zou database, please connect to your account with silex")
+        raise Exception(
+            "Could not connect to the zou database, please connect to your account with silex"
+        )
 
     softwares = asyncio.run(gazu.files.all_softwares())
     if not dcc in [software["short_name"] for software in softwares]:

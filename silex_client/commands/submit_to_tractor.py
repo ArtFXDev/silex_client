@@ -13,9 +13,13 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import aiohttp
-from aiohttp.client_exceptions import ClientConnectionError, ContentTypeError, InvalidURL
+from aiohttp.client_exceptions import (
+    ClientConnectionError,
+    ContentTypeError,
+    InvalidURL,
+)
 import tractor.api.author as author
-    
+
 
 class TractorSubmiter(CommandBase):
     """
@@ -32,11 +36,7 @@ class TractorSubmiter(CommandBase):
             "label": "Pool",
             "type": MultipleSelectParameterMeta(),
         },
-        "job_title": {
-            "label": "Job title",
-            "type": str,
-            "value": "No Title"
-        },
+        "job_title": {"label": "Job title", "type": str, "value": "No Title"},
         "projects": {
             "label": "Project",
             "type": MultipleSelectParameterMeta(),
@@ -45,15 +45,18 @@ class TractorSubmiter(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         # Initialize the tractor agent
         author.setEngineClientParam(debug=True)
 
-        cmds: Dict[str, str] = parameters['cmd_list']
-        pools: List[str] = parameters['pools']
-        projects: List[str] = parameters['projects']
-        job_title: str = parameters['job_title']
+        cmds: Dict[str, str] = parameters["cmd_list"]
+        pools: List[str] = parameters["pools"]
+        projects: List[str] = parameters["projects"]
+        job_title: str = parameters["job_title"]
 
         # Get owner from context
         owner: str = action_query.context_metadata.get("user_email", "3d4")
@@ -66,9 +69,8 @@ class TractorSubmiter(CommandBase):
         logger.info(f"Rendering on pools: {services}")
 
         # Creating the job
-        job = author.Job(
-            title=job_title, projects=projects, service=services)
-        
+        job = author.Job(title=job_title, projects=projects, service=services)
+
         # Create the commands
         for cmd in cmds:
             logger.info(f"Creating task: {cmds.get(cmd)}")
@@ -77,9 +79,13 @@ class TractorSubmiter(CommandBase):
             task = author.Task(title=str(cmd))
 
             # Create a command that will mount marvin
-            pre_command = author.Command(argv=["net", "use", "\\\\marvin", "/user:etudiant", "artfx2020"])
+            pre_command = author.Command(
+                argv=["net", "use", "\\\\marvin", "/user:etudiant", "artfx2020"]
+            )
             task.addCommand(pre_command)
-            pre_command = author.Command(argv=["net", "use", "\\\\192.168.2.204", "/user:etudiant", "artfx2020"]) # needed for some pool
+            pre_command = author.Command(
+                argv=["net", "use", "\\\\192.168.2.204", "/user:etudiant", "artfx2020"]
+            )  # needed for some pool
             task.addCommand(pre_command)
 
             # Create the main command
@@ -91,34 +97,69 @@ class TractorSubmiter(CommandBase):
         jid = job.spool(owner=owner)
         logger.info(f"Created job: {jid} (jid)")
 
-    
     async def setup(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         # Execute the http requests
         try:
             async with aiohttp.ClientSession() as session:
                 tractor_host = os.getenv("silex_tractor_host", "")
-                async with session.get(f"{tractor_host}/Tractor/config?q=get&file=blade.config") as response:
+                async with session.get(
+                    f"{tractor_host}/Tractor/config?q=get&file=blade.config"
+                ) as response:
                     tractor_pools = await response.json()
         except (ClientConnectionError, ContentTypeError, InvalidURL):
-            logger.warning("Could not query the tractor pool list, the config is unreachable")
+            logger.warning(
+                "Could not query the tractor pool list, the config is unreachable"
+            )
             tractor_pools = {"BladeProfiles": []}
 
         # Build the list of profile names from the config
-        PROFILE_IGNORE = [None, "DEV", "Windows10", "Linux64", "Linux32", "Windows8.1", "Windows8", "Windows7", "Windows7_32bit", "WindowsVista64", "WindowsVista32", "WindowsXP", "Windows", "MacOSX"]
-        pools = [profile["ProfileName"] for profile in tractor_pools["BladeProfiles"] if profile.get("ProfileName") not in PROFILE_IGNORE]
-        self.command_buffer.parameters["pools"].type = MultipleSelectParameterMeta(*pools)
-        self.command_buffer.parameters["pools"].value = self.command_buffer.parameters["pools"].type.get_default()
-
+        PROFILE_IGNORE = [
+            None,
+            "DEV",
+            "Windows10",
+            "Linux64",
+            "Linux32",
+            "Windows8.1",
+            "Windows8",
+            "Windows7",
+            "Windows7_32bit",
+            "WindowsVista64",
+            "WindowsVista32",
+            "WindowsXP",
+            "Windows",
+            "MacOSX",
+        ]
+        pools = [
+            profile["ProfileName"]
+            for profile in tractor_pools["BladeProfiles"]
+            if profile.get("ProfileName") not in PROFILE_IGNORE
+        ]
+        self.command_buffer.parameters["pools"].type = MultipleSelectParameterMeta(
+            *pools
+        )
+        self.command_buffer.parameters["pools"].value = self.command_buffer.parameters[
+            "pools"
+        ].type.get_default()
 
         # Get the list of available projects
         if "project" in action_query.context_metadata:
-            self.command_buffer.parameters["projects"].type = MultipleSelectParameterMeta(action_query.context_metadata["project"])
+            self.command_buffer.parameters[
+                "projects"
+            ].type = MultipleSelectParameterMeta(
+                action_query.context_metadata["project"]
+            )
             self.command_buffer.parameters["projects"].hide = True
         else:
             # If there is no project in the current context return a hard coded list of project for 4th years
-            self.command_buffer.parameters["projects"].type = MultipleSelectParameterMeta("WS_Environment", "WS_Lighting")
+            self.command_buffer.parameters[
+                "projects"
+            ].type = MultipleSelectParameterMeta("WS_Environment", "WS_Lighting")
 
-        self.command_buffer.parameters["projects"].value = self.command_buffer.parameters["projects"].type.get_default()
-
+        self.command_buffer.parameters[
+            "projects"
+        ].value = self.command_buffer.parameters["projects"].type.get_default()

@@ -32,7 +32,10 @@ class SelectPublish(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         publish_action = Config().resolve_publish(parameters["publish_type"].lower())
 
