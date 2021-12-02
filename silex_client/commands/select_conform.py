@@ -76,7 +76,10 @@ class SelectConform(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         file_paths: List[pathlib.Path] = parameters["file_paths"]
         find_sequence: bool = parameters["find_sequence"]
@@ -103,12 +106,15 @@ class SelectConform(CommandBase):
             ]:
                 # TODO: This mapping should be somewhere else
                 EXTENSION_TYPES_MAPPING = {
+                    "bgeo.sc": "bgeo",
                     "mb": "ma",
                     "tif": "tiff",
                     "jpeg": "jpg",
                     "hdri": "hdr",
                     "hipnc": "hip",
                     "hiplc": "hip",
+                    "hdanc": "hda",
+                    "hdalc": "hda",
                 }
                 # Find the right conform action for the given extension
                 conform_type = EXTENSION_TYPES_MAPPING.get(conform_type, "")

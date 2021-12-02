@@ -26,7 +26,10 @@ class BuildWorkPath(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         # Get informations about the current task
         task = await gazu.task.get_task(action_query.context_metadata["task_id"])

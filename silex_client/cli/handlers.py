@@ -37,10 +37,12 @@ def action_handler(action_name: str, **kwargs) -> None:
     if kwargs.get("task_id") is not None:
         os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
 
+    category = kwargs.get("category", "action")
+
     silex_context = Context.get()
     silex_context.start_services()
 
-    action = ActionQuery(action_name)
+    action = ActionQuery(action_name, category=category)
     if not action.commands:
         logger.error("The resolved action is invalid")
         return
@@ -90,7 +92,9 @@ def launch_handler(dcc: str, **kwargs) -> None:
     Run the given command in the selected context
     """
     if not authentificate_gazu():
-        raise Exception("Could not connect to the zou database, please connect to your account with silex")
+        raise Exception(
+            "Could not connect to the zou database, please connect to your account with silex"
+        )
 
     softwares = asyncio.run(gazu.files.all_softwares())
     if not dcc in [software["short_name"] for software in softwares]:

@@ -51,6 +51,15 @@ class IntArrayParameterMeta(CommandParameterMeta):
         pass
 
     def __new__(cls, size: int):
+        def __init__(self, value):
+            if not isinstance(value, list):
+                value = [value]
+
+            for index, item in enumerate(value):
+                value[index] = int(item)
+
+            self.extend(value)
+
         def serialize():
             return {
                 "name": "int_array",
@@ -61,6 +70,7 @@ class IntArrayParameterMeta(CommandParameterMeta):
             return [0 for i in range(size)]
 
         attributes = {
+            "__init__": __init__,
             "serialize": serialize,
             "get_default": get_default,
         }
@@ -131,6 +141,7 @@ class MultipleSelectParameterMeta(CommandParameterMeta):
         }
         return super().__new__(cls, "SelectParameter", (list,), attributes)
 
+
 # TODO: Replace this parameter with ListParameterMeta
 class ListParameter(list):
     def __init__(self, value):
@@ -139,6 +150,7 @@ class ListParameter(list):
         if not isinstance(value, list):
             data = [value]
         self.extend(data)
+
 
 class PathParameterMeta(CommandParameterMeta):
     def __init__(self, extensions=None, multiple=False):
