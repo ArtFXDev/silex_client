@@ -174,7 +174,11 @@ class PathParameterMeta(CommandParameterMeta):
             self.extend(value)
 
         def serialize():
-            return {"name": "Path"}
+            return {
+                "name": "Path",
+                "extensions": extensions,
+                "multiple": multiple,
+            }
 
         def get_default():
             return None
