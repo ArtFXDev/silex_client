@@ -151,15 +151,26 @@ class PathTester(CommandBase):
     parameters = {
         "path_tester": {
             "label": "Path Tester",
-            "type": PathParameterMeta(extensions=["*.abc", "*.obj", "*.fbx"]),
+            "type": PathParameterMeta(),
             "value": None,
             "tooltip": "Testing the path parameters",
         },
-        "path_tester_2": {
-            "label": "Path Tester 2",
+        "path_tester_multiple": {
+            "label": "Path Tester Multiple",
             "type": PathParameterMeta(multiple=True),
             "value": None,
-            "tooltip": "Testing the path parameters",
+        },
+        "path_tester_extensions": {
+            "label": "Path Tester extensions .abc, .obj, .fbx",
+            "type": PathParameterMeta(extensions=[".abc", ".obj", ".fbx"]),
+            "value": None,
+        },
+        "path_tester_multiple_extensions": {
+            "label": "Path Tester multiple files and extensions (.png, .jpg, .jpeg)",
+            "type": PathParameterMeta(
+                extensions=[".png", ".jpg", ".jpeg"], multiple=True
+            ),
+            "value": None,
         },
     }
 
@@ -176,9 +187,19 @@ class PathTester(CommandBase):
             type(parameters["path_tester"]),
         )
         logger.info(
-            "Path parameter tester: %s, %s",
-            parameters["path_tester_2"],
-            type(parameters["path_tester_2"]),
+            "Path parameter multiple: %s, %s",
+            parameters["path_tester_multiple"],
+            type(parameters["path_tester_multiple"]),
+        )
+        logger.info(
+            "Path parameter extensions: %s, %s",
+            parameters["path_tester_extensions"],
+            type(parameters["path_tester_extensions"]),
+        )
+        logger.info(
+            "Path parameter multiple extensions: %s, %s",
+            parameters["path_tester_multiple_extensions"],
+            type(parameters["path_tester_multiple_extensions"]),
         )
         return parameters["path_tester"]
 
@@ -537,6 +558,11 @@ class TextTester(CommandBase):
             "value": "Lorem ipsum dolor sit amet",
             "tooltip": "Testing the text parameters",
         },
+        "text_tester_with_returns": {
+            "label": "Text Tester with returns",
+            "type": TextParameterMeta(),
+            "value": "First line\nSecond line\nThird line\n\nEnd",
+        },
         "text_tester_info": {
             "label": "Text Tester Info",
             "type": TextParameterMeta(color="info"),
@@ -561,7 +587,10 @@ class TextTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Text parameter tester: %s, %s",
@@ -599,7 +628,10 @@ class FrameSetTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "FramseSet parameter tester: %s, %s",
