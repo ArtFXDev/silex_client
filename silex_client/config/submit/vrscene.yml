@@ -6,7 +6,7 @@ vrscene:
       commands:
         select_list:
           label: "Enter extension"
-          path: "silex_client.commands.select_list.SelectList"
+          path: "silex_client.commands.utils.select_list.SelectList"
           parameters:
             parameters_list:
               - "exr"

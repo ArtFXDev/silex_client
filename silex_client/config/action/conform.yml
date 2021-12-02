@@ -6,7 +6,7 @@ conform:
       commands:
         get_conform_output:
           label: "Select conform type"
-          path: "silex_client.commands.select_conform.SelectConform"
+          path: "silex_client.commands.utils.select_conform.SelectConform"
           tooltip: "Select the type of conform you want to make"
           parameters:
             find_sequence: false
@@ -14,11 +14,11 @@ conform:
 
         append_conform_actions:
           label: "Append conform actions"
-          path: "silex_client.commands.iterate_action.IterateAction"
+          path: "silex_client.commands.utils.iterate_action.IterateAction"
           tooltip: "Append the selected conforms to the list of commands to execute"
           parameters:
             values: !command-output "setup:get_conform_output:files"
-            categories: 
+            categories:
               - "conform"
             actions: !command-output "setup:get_conform_output:types"
             parameter: "input:input:input"
