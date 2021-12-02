@@ -18,6 +18,6 @@ setup(
             "silex=silex_client.cli.parser:main",
         ],
     },
-    package_data={'': ["*.yaml", "*.yml", ".env"]},
+    package_data={"": ["*.yaml", "*.yml", ".env"]},
     include_package_data=True,
 )

@@ -1,7 +1,11 @@
 import asyncio
 import os
 
-from aiohttp.client_exceptions import ClientConnectionError, ContentTypeError, InvalidURL
+from aiohttp.client_exceptions import (
+    ClientConnectionError,
+    ContentTypeError,
+    InvalidURL,
+)
 import gazu
 import gazu.client
 import aiohttp
@@ -22,7 +26,9 @@ def authentificate_gazu() -> bool:
     try:
         authentification_token = asyncio.run(get_authentification_token())
     except (ClientConnectionError, ContentTypeError, InvalidURL):
-        logger.warning("Could not get the cgwire authentification token from the silex socket service")
+        logger.warning(
+            "Could not get the cgwire authentification token from the silex socket service"
+        )
         return False
 
     # Set the authentification token

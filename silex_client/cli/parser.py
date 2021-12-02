@@ -90,6 +90,13 @@ def main():
         action="store_true",
         dest="batch",
     )
+    action_parser.add_argument(
+        "--category",
+        "-c",
+        help="The category the action belong to",
+        default="action",
+        dest="category",
+    )
 
     command_parser.add_argument(
         "command_name",

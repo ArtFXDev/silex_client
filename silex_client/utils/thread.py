@@ -36,9 +36,7 @@ async def execute_in_thread(function: Callable, *args, **kwargs):
         exception = task_result.exception()
         if exception:
             logger.error("Exception raised in wrapped execute call: %s", exception)
-            raise Exception(
-                f"Exception raised in wrapped execute call: {exception}"
-            )
+            raise Exception(f"Exception raised in wrapped execute call: {exception}")
 
     future.add_done_callback(callback)
     return await future

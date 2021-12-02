@@ -107,7 +107,9 @@ class ActionBuffer:
         """
         # Patch the current command data
         current_action_data = self.serialize()
-        current_action_data = {key: value for key, value in current_action_data.items() if key != "steps"}
+        current_action_data = {
+            key: value for key, value in current_action_data.items() if key != "steps"
+        }
         serialized_data = jsondiff.patch(current_action_data, serialized_data)
 
         # Format the steps corectly
@@ -124,7 +126,9 @@ class ActionBuffer:
             setattr(new_data, private_field, getattr(self, private_field))
 
         self.steps.update(new_data.steps)
-        self.__dict__.update({key: value for key, value in new_data.__dict__.items() if key != "steps"})
+        self.__dict__.update(
+            {key: value for key, value in new_data.__dict__.items() if key != "steps"}
+        )
 
         self.reorder_steps()
 
@@ -132,8 +136,7 @@ class ActionBuffer:
         """
         Place the steps in the right order accoring to the index value
         """
-        self.steps = dict(
-            sorted(self.steps.items(), key=lambda item: item[1].index))
+        self.steps = dict(sorted(self.steps.items(), key=lambda item: item[1].index))
 
     @property  # type: ignore
     def status(self) -> Status:
@@ -201,7 +204,9 @@ class ActionBuffer:
             try:
                 value = parameter.type(value)
             except TypeError:
-                logger.error("Could not set parameter %s: Invalid value (%s)", name, value)
+                logger.error(
+                    "Could not set parameter %s: Invalid value (%s)", name, value
+                )
                 return
 
         parameter.value = value
