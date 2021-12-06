@@ -129,7 +129,7 @@ class ActionQuery:
             command_left.status = Status.WAITING_FOR_RESPONSE
 
         # Send the update to the UI and wait for its response
-        if self.ws_connection.is_running and self.commands[start].require_prompt():
+        while self.ws_connection.is_running and self.commands[start].require_prompt():
             # Call the setup on all the commands
             [await command.setup(self) for command in self.commands[start:end]]
             # Wait for a response from the UI
@@ -223,7 +223,7 @@ class ActionQuery:
         serialized_buffer = self.buffer.serialize()
         diff = silex_diff(self._buffer_diff, serialized_buffer)
 
-        if not self.ws_connection.is_running or self.buffer.hide or not diff:
+        if not self.ws_connection.is_running or self.buffer.hide or not (diff or apply_response):
             future = self.event_loop.loop.create_future()
             future.set_result(None)
             return future

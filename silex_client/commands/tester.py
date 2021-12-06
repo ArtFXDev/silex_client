@@ -143,6 +143,17 @@ class BooleanTester(CommandBase):
         )
         return parameters["bool_tester"]
 
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        if not parameters["bool_tester"]:
+            self.command_buffer.parameters["bool_tester_2"].hide = True
+        else:
+            self.command_buffer.parameters["bool_tester_2"].hide = False
+
 
 class PathTester(CommandBase):
     """
