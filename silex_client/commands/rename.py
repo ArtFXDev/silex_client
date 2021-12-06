@@ -1,5 +1,6 @@
 from __future__ import annotations
 import typing
+import fileseq
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
@@ -44,6 +45,11 @@ class Rename(CommandBase):
         new_names: List[str] = parameters["name"]
 
         new_paths = []
+
+        source_sequence = fileseq.findSequencesInList(source_paths)
+        name_sequence = fileseq.findSequencesInList(new_names)
+        logger.info("Renaming %s to %s", source_sequence, name_sequence)
+
         # Loop over all the files to copy
         for index, source_path in enumerate(source_paths):
             # If only one new name is given, this will still work thanks to the modulo
@@ -55,7 +61,6 @@ class Rename(CommandBase):
             extension = "".join(source_path.suffixes)
             new_name = os.path.splitext(new_name)[0] + extension
             new_path = source_path.parent / new_name
-            logger.debug("Renaming %s to %s", source_path, new_path)
             if new_path.exists():
                 os.remove(new_path)
             os.rename(source_path, new_path)
