@@ -85,7 +85,7 @@ class IterateAction(InsertAction):
             action = actions[index % len(actions)]
             category = categories[index % len(categories)]
 
-            logger.info("Adding action %s for item %s", action, value)
+            logger.debug("Adding action %s for item %s", action, value)
 
             # Set the new values to the command
             parameters.update({"action": action, "value": value, "category": category})

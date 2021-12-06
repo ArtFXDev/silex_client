@@ -55,7 +55,7 @@ class Rename(CommandBase):
             extension = "".join(source_path.suffixes)
             new_name = os.path.splitext(new_name)[0] + extension
             new_path = source_path.parent / new_name
-            logger.info("Renaming %s to %s", source_path, new_path)
+            logger.debug("Renaming %s to %s", source_path, new_path)
             if new_path.exists():
                 os.remove(new_path)
             os.rename(source_path, new_path)

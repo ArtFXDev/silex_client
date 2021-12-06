@@ -57,7 +57,7 @@ class Copy(CommandBase):
 
             # Copy only if the files does not already exists
             os.makedirs(str(destination_dir), exist_ok=True)
-            logger.info("Copying %s to %s", source_path, destination_dir)
+            logger.debug("Copying %s to %s", source_path, destination_dir)
 
             # Execute the copy in a different thread to not block the event loop
             def copy():
