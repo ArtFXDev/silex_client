@@ -114,9 +114,7 @@ class ActionQuery:
         # Execute the commands in the event loop
         return self.event_loop.register_task(create_task())
 
-    async def prompt_commands(
-        self, start: Optional[int] = None, end: Optional[int] = None
-    ):
+    async def prompt_commands(self, start: int = 0, end: Optional[int] = None):
         # Get the range of commands
         commands_prompt = self.commands[start:end]
         # Set the commands to WAITING_FOR_RESPONSE
@@ -126,12 +124,17 @@ class ActionQuery:
                 break
             await command_left.setup(self)
             command_left.status = Status.WAITING_FOR_RESPONSE
+
         # Send the update to the UI and wait for its response
-        if self.ws_connection.is_running:
+        while self.ws_connection.is_running and self.commands[start].require_prompt():
+            # Call the setup on all the commands
+            map(lambda x: await x.setup(self), self.commands[start:end])
+            # Wait for a response from the UI
             logger.info("Waiting for UI response")
             await asyncio.wait_for(
                 await self.async_update_websocket(apply_response=True), None
             )
+
         # Put the commands back to initialized
         for command_left in self.commands[start:end]:
             command_left.ask_user = False
