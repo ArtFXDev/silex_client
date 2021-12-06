@@ -97,6 +97,9 @@ class ActionQuery:
                 if command.require_prompt():
                     await self.prompt_commands(index)
 
+                # Setup the command
+                await command.setup(self)
+
                 # Execution of the command
                 await command.execute(self, self.execution_type)
 
