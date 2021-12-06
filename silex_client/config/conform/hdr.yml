@@ -23,6 +23,7 @@ hdr:
               value: "hdr"
               hide: true
             name: !command-output "input:input:file_paths"
+            padding: !command-output "input:input:padding"
           ask_user: true
         copy:
           label: "Copy file to pipeline"
@@ -36,7 +37,7 @@ hdr:
           path: "silex_client.commands.rename.Rename"
           parameters:
             src: !command-output "conform:copy:destination_paths"
-            name: !command-output "conform:build_output_path:file_name"
+            name: !command-output "conform:build_output_path:full_name"
 
     output:
       index: 30

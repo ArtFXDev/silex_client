@@ -46,9 +46,9 @@ class Rename(CommandBase):
 
         new_paths = []
 
-        source_sequence = fileseq.findSequencesInList(source_paths)
-        name_sequence = fileseq.findSequencesInList(new_names)
-        logger.info("Renaming %s to %s", source_sequence, name_sequence)
+        source_sequences = fileseq.findSequencesInList(source_paths)
+        name_sequences = fileseq.findSequencesInList(new_names)
+        logger.info("Renaming %s to %s", source_sequences, name_sequences)
 
         # Loop over all the files to copy
         for index, source_path in enumerate(source_paths):
@@ -58,7 +58,15 @@ class Rename(CommandBase):
             if not os.path.exists(source_path):
                 raise Exception(f"Source path {source_path} does not exists")
 
-            extension = "".join(source_path.suffixes)
+            # Find the sequence this file belongs to
+            sequence = next(
+                sequence
+                for sequence in source_sequences
+                if source_path in [pathlib.Path(file_path) for file_path in sequence]
+            )
+            
+            # Construct the new name
+            extension = str(sequence.extension())
             new_name = os.path.splitext(new_name)[0] + extension
             new_path = source_path.parent / new_name
             if new_path.exists():

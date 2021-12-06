@@ -49,9 +49,9 @@ class Copy(CommandBase):
 
         destination_paths = []
 
-        source_sequence = fileseq.findSequencesInList(source_paths)
-        destination_sequence = fileseq.findSequencesInList(destination_dirs)
-        logger.info("Copying %s to %s", source_sequence, destination_sequence)
+        source_sequences = fileseq.findSequencesInList(source_paths)
+        destination_sequences = fileseq.findSequencesInList(destination_dirs)
+        logger.info("Copying %s to %s", source_sequences, destination_sequences)
 
         # Loop over all the files to copy
         for index, source_path in enumerate(source_paths):
