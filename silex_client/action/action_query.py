@@ -118,6 +118,10 @@ class ActionQuery:
         return self.event_loop.register_task(create_task())
 
     async def prompt_commands(self, start: int = 0, end: Optional[int] = None):
+        """
+        Ask a user input for a given range of commands, only the commands that
+        require an input will wait for a response
+        """
         # Get the range of commands
         commands_prompt = self.commands[start:end]
         # Set the commands to WAITING_FOR_RESPONSE

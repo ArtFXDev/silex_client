@@ -83,6 +83,10 @@ class ParameterBuffer:
             self.value = self.type.get_default()
 
     def get_value(self, action_query: ActionQuery) -> Any:
+        """
+        Get the value of the parameter, always use this method to get
+        the value of a parameter, this will resolve references, callable...
+        """
         # If the value is the output of an other command, get is
         if isinstance(self.value, CommandOutput):
             return self.value.get_value(action_query)

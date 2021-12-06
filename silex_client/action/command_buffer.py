@@ -159,6 +159,10 @@ class CommandBuffer:
                 self.status = Status.INITIALIZED
 
     async def setup(self, action_query: ActionQuery):
+        """
+        Call the setup of the command, the setup method is used to edit the command attributes
+        dynamically (parameters, states...)
+        """
         # Create a dictionary that only contains the name and the value of the parameters
         # without infos like the type, label...
         parameters = {
@@ -289,6 +293,10 @@ class CommandBuffer:
         return command
 
     def require_prompt(self) -> bool:
+        """
+        Check if this command require a user input, by testing the ask_user field
+        and none values on the parameters
+        """
         return self.ask_user or not all(
             parameter.value is not None for parameter in self.parameters.values()
         )
