@@ -166,14 +166,18 @@ class BuildOutputPath(CommandBase):
         if nb_elements > 1:
             for item in frame_set:
                 full_names.append(
-                    full_name + f"_{str(item).zfill(padding)}.{extension}"
+                    full_name + f".{str(item).zfill(padding)}.{extension}"
                 )
             full_paths = [directory / name for name in full_names]
         else:
             full_names = full_name + f".{extension}"
             full_paths = directory / full_names
 
-        logger.info("Output path(s) built: %s", full_paths)
+        if isinstance(full_paths, list):
+            sequence = fileseq.findSequencesInList(full_paths)
+            logger.info("Output path(s) built: %s", sequence)
+        else:
+            logger.info("Output path(s) built: %s", full_paths)
 
         return {
             "directory": directory,

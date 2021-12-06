@@ -22,6 +22,7 @@ vdb:
             output_type:
               value: "vdb"
               hide: true
+            name: !command-output "input:input:file_paths"
           ask_user: true
         copy:
           label: "Copy file to pipeline"
@@ -35,7 +36,7 @@ vdb:
           path: "silex_client.commands.rename.Rename"
           parameters:
             src: !command-output "conform:copy:destination_paths"
-            name: !command-output "conform:build_output_path:full_name"
+            name: !command-output "conform:build_output_path:file_name"
 
     output:
       index: 30

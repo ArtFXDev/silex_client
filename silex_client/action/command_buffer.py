@@ -159,12 +159,16 @@ class CommandBuffer:
                 self.status = Status.INITIALIZED
 
     async def setup(self, action_query: ActionQuery):
+        # Create a dictionary that only contains the name and the value of the parameters
+        # without infos like the type, label...
         parameters = {
             key: value.get_value(action_query) for key, value in self.parameters.items()
         }
+        with suppress(TypeError):
+            parameters = copy.deepcopy(parameters)
 
         async with RedirectWebsocketLogs(action_query, self) as log:
-            await self.executor.setup(copy.deepcopy(parameters), action_query, log)
+            await self.executor.setup(parameters, action_query, log)
 
     @property
     def outdated_caches(self):

@@ -129,9 +129,9 @@ class ActionQuery:
             command_left.status = Status.WAITING_FOR_RESPONSE
 
         # Send the update to the UI and wait for its response
-        while self.ws_connection.is_running and self.commands[start].require_prompt():
+        if self.ws_connection.is_running and self.commands[start].require_prompt():
             # Call the setup on all the commands
-            map(lambda x: await x.setup(self), self.commands[start:end])
+            [await command.setup(self) for command in self.commands[start:end]]
             # Wait for a response from the UI
             logger.info("Waiting for UI response")
             await asyncio.wait_for(
