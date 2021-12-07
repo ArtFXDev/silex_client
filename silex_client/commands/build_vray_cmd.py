@@ -96,8 +96,7 @@ class VrayCommand(CommandBase):
             f"-sceneFile={scene}",
             # Render already existing frames or not
             f"-skipExistingFrames={skip_existing}",
-            # # remap root
-            # '-remapPath= "D:\\=\\tars"'
+ 
             # "-rtEngine=5", # CUDA or CPU?
         ]
 
