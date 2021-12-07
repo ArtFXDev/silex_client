@@ -213,3 +213,9 @@ class BuildOutputPath(CommandBase):
 
         # Force the name to be visible
         self.command_buffer.parameters["name"].hide = False
+
+        # Set the hide dynamically
+        if parameters.get("use_current_context", False):
+            self.command_buffer.parameters["task"].hide = True
+        else:
+            self.command_buffer.parameters["task"].hide = False
