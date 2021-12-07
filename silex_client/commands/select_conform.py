@@ -86,11 +86,13 @@ class SelectConform(CommandBase):
         conform_type: str = parameters["conform_type"]
         auto_select_type: bool = parameters["auto_select_type"]
 
-        sequences = fileseq.findSequencesInList(file_paths)
+        # TODO: Find out why we need to set the HASH1 padstyle to make this work
+        sequences = fileseq.findSequencesInList(file_paths, fileseq.PAD_STYLE_HASH1)
         conform_types = []
         frame_sets = [
             sequence.frameSet() or fileseq.FrameSet(0) for sequence in sequences
         ]
+        paddings = [len(sequence.padding()) for sequence in sequences]
 
         # Guess the conform type from the extension of the given file
         for sequence in sequences:
@@ -143,8 +145,8 @@ class SelectConform(CommandBase):
         if not find_sequence:
             return {
                 "files": [
-                    {"file_paths": sequence, "frame_set": frame_set}
-                    for sequence, frame_set in zip(sequences, frame_sets)
+                    {"file_paths": sequence, "frame_set": frame_set, "padding": padding}
+                    for sequence, frame_set, padding in zip(sequences, frame_sets, paddings)
                 ],
                 "types": conform_types,
             }
@@ -160,6 +162,7 @@ class SelectConform(CommandBase):
                 if file_path in sequence_list and len(sequence_list) > 1:
                     frame_sets[index] = file_sequence.frameSet()
                     sequences[index] = sequence_list
+                    paddings[index] = len(file_sequence.padding())
                     break
 
         # Finding sequences might result in duplicates
@@ -169,12 +172,13 @@ class SelectConform(CommandBase):
             if sequence in sequences[: index - offset]:
                 sequences.pop(index - offset)
                 frame_sets.pop(index - offset)
+                paddings.pop(index - offset)
                 conform_types.pop(index - offset)
 
         return {
             "files": [
-                {"file_paths": sequence, "frame_set": frame_set}
-                for sequence, frame_set in zip(sequences, frame_sets)
+                {"file_paths": sequence, "frame_set": frame_set, "padding": padding}
+                for sequence, frame_set, padding in zip(sequences, frame_sets, paddings)
             ],
             "types": conform_types,
         }

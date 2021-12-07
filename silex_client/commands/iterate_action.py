@@ -80,12 +80,12 @@ class IterateAction(InsertAction):
 
         outputs = []
         label = self.command_buffer.label
+
+        logger.info("Adding %s actions", len(values))
         for index, value in enumerate(values):
             self.command_buffer.label = f"{label} ({index+1}/{len(values)})"
             action = actions[index % len(actions)]
             category = categories[index % len(categories)]
-
-            logger.info("Adding action %s for item %s", action, value)
 
             # Set the new values to the command
             parameters.update({"action": action, "value": value, "category": category})

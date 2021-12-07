@@ -159,12 +159,20 @@ class CommandBuffer:
                 self.status = Status.INITIALIZED
 
     async def setup(self, action_query: ActionQuery):
+        """
+        Call the setup of the command, the setup method is used to edit the command attributes
+        dynamically (parameters, states...)
+        """
+        # Create a dictionary that only contains the name and the value of the parameters
+        # without infos like the type, label...
         parameters = {
             key: value.get_value(action_query) for key, value in self.parameters.items()
         }
+        with suppress(TypeError):
+            parameters = copy.deepcopy(parameters)
 
         async with RedirectWebsocketLogs(action_query, self) as log:
-            await self.executor.setup(copy.deepcopy(parameters), action_query, log)
+            await self.executor.setup(parameters, action_query, log)
 
     @property
     def outdated_caches(self):
@@ -285,6 +293,10 @@ class CommandBuffer:
         return command
 
     def require_prompt(self) -> bool:
+        """
+        Check if this command require a user input, by testing the ask_user field
+        and none values on the parameters
+        """
         return self.ask_user or not all(
             parameter.value is not None for parameter in self.parameters.values()
         )
