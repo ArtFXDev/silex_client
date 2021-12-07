@@ -90,6 +90,17 @@ class TractorSubmiter(CommandBase):
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
 
+        # get server root
+        project_dict = await gazu.project.get_project_by_name(project)
+        project_data = project_dict['data']
+
+        if project_data is None:
+            raise Exception('NO PROJECTS FOUND')
+
+        SERVER_ROOT = project_data['nas']
+
+        precommands.extend(self.mount(action_query, SERVER_ROOT))
+
         # Get owner from context
         owner: str = action_query.context_metadata.get("user_email", "3d4")
 
@@ -110,18 +121,9 @@ class TractorSubmiter(CommandBase):
 
             # Create the task
             task = author.Task(title=str(cmd))
-
-            # set server root
-            project_dict = await gazu.project.get_project_by_name(project)
-            project_data = project_dict['data']
-
-            if project_data is None:
-                raise Exception('NO PROJECTS FOUND')
-
-            SERVER_ROOT = project_data['nas']
             
             # add precommands
-            precommands.extend(self.mount(action_query, SERVER_ROOT))
+
             logger.info(precommands)
             for pre in precommands:
                 logger.info( f"Add pre-command : {pre}")
