@@ -182,3 +182,14 @@ class SelectConform(CommandBase):
             ],
             "types": conform_types,
         }
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        if parameters.get("auto_select_type", False):
+            self.command_buffer.parameters["conform_type"].hide = True
+        else:
+            self.command_buffer.parameters["conform_type"].hide = False
