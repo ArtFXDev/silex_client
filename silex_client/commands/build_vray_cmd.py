@@ -66,9 +66,6 @@ class VrayCommand(CommandBase):
         for i in range(0, len(lst), n):
             yield lst[i : i + n]
 
-    def _list_from_padding(self, lst: List[int], pad: int) -> List[int]:
-        """Split a list from the given padding"""
-        return [i for i in range(0, len(lst), pad)]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -122,12 +119,6 @@ class VrayCommand(CommandBase):
         if frame_range is None:
             raise Exception("No frame range found")
 
-        # Create frame_lists with pading
-        frame_chunks: List[Any] = list(
-            self._list_from_padding(
-                list(range(frame_range[0], frame_range[1] + 1)), frame_range[2]
-            )
-        )
 
         frame_chunks: List[str] = list(FrameSet(frame_range))
 
