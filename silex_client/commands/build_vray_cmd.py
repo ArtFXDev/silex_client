@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pathlib
 import typing
+from fileseq import FrameSet
 import os
 from typing import Any, Dict, List
 
@@ -23,9 +24,14 @@ class VrayCommand(CommandBase):
         "scene_file": {"label": "Scene file", "type": pathlib.Path},
         "frame_range": {
             "label": "Frame range (start, end, step)",
-            "type": IntArrayParameterMeta(3),
-            "value": [0, 100, 1],
+            "type":FrameSet,
+            "value": "1-50x1",
         },
+        # "frame_range": {
+        #     "label": "Frame range (start, end, step)",
+        #     "type": IntArrayParameterMeta(3),
+        #     "value": [0, 100, 1],
+        # },
         "resolution": {
             "label": "Resolution ( width, height )",
             "type": IntArrayParameterMeta(2),
@@ -75,7 +81,8 @@ class VrayCommand(CommandBase):
         exoprt_name: str = str(parameters["exoprt_name"])
         extension: str = parameters["extension"]
         scene: pathlib.Path = parameters["scene_file"]
-        frame_range: List[int] = parameters["frame_range"]
+        frame_range: FrameSet = parameters["frame_range"]
+        # frame_range: List[int] = parameters["frame_range"]
         resolution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
         skip_existing: int = int(parameters["skip_existing"])
@@ -122,6 +129,8 @@ class VrayCommand(CommandBase):
             )
         )
 
+        frame_chunks: List[str] = list(FrameSet(frame_range))
+
         # Cut frames by task
         task_chunks = list(self._chunks(frame_chunks, task_size))
         cmd_dict = dict()
@@ -131,7 +140,7 @@ class VrayCommand(CommandBase):
             start, end = chunk[0], chunk[-1]
             frames: str = ";".join(map(str, chunk))
             logger.info(f"Creating a new task with frames: {start} {end}")
-            cmd_dict[f"frames={start}-{end} (step:{frame_range[2]})"] = arg_list + [
+            cmd_dict[f"frames={start}-{end}"] = arg_list + [
                 f'-frames="{frames}"'
             ]
 
