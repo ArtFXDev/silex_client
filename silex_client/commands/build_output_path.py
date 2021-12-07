@@ -78,7 +78,7 @@ class BuildOutputPath(CommandBase):
         },
     }
 
-    required_metadata = ["entity_id", "task_type_id", "entity_type"]
+    required_metadata = ["entity_id", "task_type_id", "entity_type", "task"]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -141,11 +141,15 @@ class BuildOutputPath(CommandBase):
             entity = task.get("entity", {}).get("id")
             task_type = task.get("task_type", {}).get("id")
 
+        # Get the task name
+        task_name = action_query.context_metadata["task"]
+
         # Build the output path
         output_path = await gazu.files.build_entity_output_file_path(
-            entity, output_type, task_type, sep=os.path.sep, nb_elements=nb_elements
+            entity, output_type, task_type, sep=os.path.sep, nb_elements=nb_elements, name=task_name
         )
         output_path = pathlib.Path(output_path)
+
         directory = output_path.parent / name if name else output_path.parent
         temp_directory = output_path.parent / str(uuid.uuid4())
         file_name = output_path.name + f"_{name}" if name else output_path.name
