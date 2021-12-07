@@ -55,7 +55,6 @@ class TractorSubmiter(CommandBase):
 
         if action_query.context_metadata.get("user_email") is not None:
             # case: 5TH year student
-
             ip_dict: Dict[str, str] = {"ana": "192.168.2.214", "tars": "192.168.2.212"}
 
             precommands: List[str] = [
@@ -66,7 +65,6 @@ class TractorSubmiter(CommandBase):
 
         else:
             # case: 4TH year student
-
             precommands: List[str] = [
                 ["net", "use", "\\\\marvin /user:etudiant artfx2020"],
                 ["net", "use", "\\\\192.168.2.204 /user:etudiant artfx2020"] # needed for some pool
@@ -123,7 +121,6 @@ class TractorSubmiter(CommandBase):
             task = author.Task(title=str(cmd))
             
             # add precommands
-
             logger.info(precommands)
             for pre in precommands:
                 logger.info( f"Add pre-command : {pre}")
@@ -162,7 +159,7 @@ class TractorSubmiter(CommandBase):
             )
             tractor_pools = {"BladeProfiles": []}
 
-        # Build the list of profile names from the config
+        # Build list of profile names from the config
         PROFILE_IGNORE = [
             None,
             "DEV",

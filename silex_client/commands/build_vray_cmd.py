@@ -27,11 +27,6 @@ class VrayCommand(CommandBase):
             "type":FrameSet,
             "value": "1-50x1",
         },
-        # "frame_range": {
-        #     "label": "Frame range (start, end, step)",
-        #     "type": IntArrayParameterMeta(3),
-        #     "value": [0, 100, 1],
-        # },
         "resolution": {
             "label": "Resolution ( width, height )",
             "type": IntArrayParameterMeta(2),
@@ -79,7 +74,6 @@ class VrayCommand(CommandBase):
         extension: str = parameters["extension"]
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
-        # frame_range: List[int] = parameters["frame_range"]
         resolution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
         skip_existing: int = int(parameters["skip_existing"])
