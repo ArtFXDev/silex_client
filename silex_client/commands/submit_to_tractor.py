@@ -74,18 +74,9 @@ class TractorSubmiter(CommandBase):
             services = "(" + " || ".join(pools) + ")"
         logger.info(f"Rendering on pools: {services}")
 
-        # # set server root
-        # project_dict = await gazu.project.get_project_by_name(project)
-        # project_data = project_dict['data']
-
-        # if project_data is None:
-        #     raise Exception('NO PROJECTS FOUND')
-
-        # SERVER_ROOT = project_data['nas']
 
         # Creating the job
-        # job = author.Job(title=job_title, priority=100.0 ,tags=['render'], projects=[project], service=services)
-        job = author.Job(title=job_title, priority=100.0 ,tags=['render'], projects=[project], service='DEV')
+        job = author.Job(title=job_title, priority=100.0 ,tags=['render'], projects=[project], service=services)
 
         # Create the commands
         for cmd in cmds:
