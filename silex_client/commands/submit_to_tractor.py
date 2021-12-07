@@ -3,10 +3,11 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict, List
 import os
+import gazu
 import logging
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import MultipleSelectParameterMeta
+from silex_client.utils.parameter_types import SelectParameterMeta, MultipleSelectParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -27,19 +28,23 @@ class TractorSubmiter(CommandBase):
     """
 
     parameters = {
+        "precommands": {
+            "label": "Pre-commands list",
+            "type": list,
+            "value": [],
+        },
         "cmd_list": {
             "label": "Commands list",
             "type": dict,
-            "value": [],
         },
         "pools": {
             "label": "Pool",
-            "type": MultipleSelectParameterMeta(),
+            "type": SelectParameterMeta(),
         },
         "job_title": {"label": "Job title", "type": str, "value": "No Title"},
-        "projects": {
+        "project": {
             "label": "Project",
-            "type": MultipleSelectParameterMeta(),
+            "type": str,
         },
     }
 
@@ -53,9 +58,10 @@ class TractorSubmiter(CommandBase):
         # Initialize the tractor agent
         author.setEngineClientParam(debug=True)
 
+        precommands: List[str] = parameters["precommands"]
         cmds: Dict[str, str] = parameters["cmd_list"]
         pools: List[str] = parameters["pools"]
-        projects: List[str] = parameters["projects"]
+        project: str = parameters["project"]
         job_title: str = parameters["job_title"]
 
         # Get owner from context
@@ -68,8 +74,18 @@ class TractorSubmiter(CommandBase):
             services = "(" + " || ".join(pools) + ")"
         logger.info(f"Rendering on pools: {services}")
 
+        # # set server root
+        # project_dict = await gazu.project.get_project_by_name(project)
+        # project_data = project_dict['data']
+
+        # if project_data is None:
+        #     raise Exception('NO PROJECTS FOUND')
+
+        # SERVER_ROOT = project_data['nas']
+
         # Creating the job
-        job = author.Job(title=job_title, projects=projects, service=services)
+        # job = author.Job(title=job_title, priority=100.0 ,tags=['render'], projects=[project], service=services)
+        job = author.Job(title=job_title, priority=100.0 ,tags=['render'], projects=[project], service='DEV')
 
         # Create the commands
         for cmd in cmds:
@@ -78,20 +94,18 @@ class TractorSubmiter(CommandBase):
             # Create the task
             task = author.Task(title=str(cmd))
 
-            # Create a command that will mount marvin
-            pre_command = author.Command(
-                argv=["net", "use", "\\\\marvin", "/user:etudiant", "artfx2020"]
-            )
-            task.addCommand(pre_command)
-            pre_command = author.Command(
-                argv=["net", "use", "\\\\192.168.2.204", "/user:etudiant", "artfx2020"]
-            )  # needed for some pool
-            task.addCommand(pre_command)
+            # add precommands
+            for cmd in precommands:
+                pre_command = author.Command(
+                    argv=[cmd]
+                ) 
+                task.addCommand(pre_command)
 
             # Create the main command
             command = author.Command(argv=cmds.get(cmd))
             task.addCommand(command)
             job.addChild(task)
+
 
         # Spool the job
         jid = job.spool(owner=owner)
@@ -149,17 +163,51 @@ class TractorSubmiter(CommandBase):
         # Get the list of available projects
         if "project" in action_query.context_metadata:
             self.command_buffer.parameters[
-                "projects"
-            ].type = MultipleSelectParameterMeta(
+                "project"
+            ].type = SelectParameterMeta(
                 action_query.context_metadata["project"]
             )
-            self.command_buffer.parameters["projects"].hide = True
+            self.command_buffer.parameters["project"].hide = True
         else:
             # If there is no project in the current context return a hard coded list of project for 4th years
             self.command_buffer.parameters[
-                "projects"
-            ].type = MultipleSelectParameterMeta("WS_Environment", "WS_Lighting")
+                "project"
+            ].type = SelectParameterMeta("WS_Environment", "WS_Lighting")
 
         self.command_buffer.parameters[
-            "projects"
-        ].value = self.command_buffer.parameters["projects"].type.get_default()
+            "project"
+        ].value = self.command_buffer.parameters["project"].type.get_default()
+
+        # set server root
+        project_dict = await gazu.project.get_project_by_name(project)
+        project_data = project_dict['data']
+
+        if project_data is None:
+            raise Exception('NO PROJECTS FOUND')
+
+        SERVER_ROOT = project_data['nas']
+
+        # check context for pre commands
+        precommands: List[str] = []
+
+        if action_query.context_metadata.get("user_email") is not None:
+            # case: 5TH year student
+
+            ip_dict: Dict[str, str] = {"ana": "192.168.2.214", "tars": "192.168.2.212"}
+
+            precommands: List[str] = [
+                f"net use \\\\{SERVER_ROOT} /user:promo_td_2022 @rtfx2021",
+                f"net use \\\\{ip_dict[SERVER_ROOT]} /user:promo_td_2022 @rtfx2021",# needed for some pool
+                f'powershell.exe -ExecutionPolicy Bypass -NoProfile -File "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive.ps1" {SERVER_ROOT}'
+            ]
+
+        else:
+            # case: 4TH year student
+
+            precommands: List[str] = [
+                f"net use \\\\marvin /user:etudiant artfx2020",
+                f"net use \\\\192.168.2.204 /user:etudiant artfx2020" # needed for some pool
+            ]
+        
+        self.command_buffer.parameters["precommands"].value = precommands
+
