@@ -80,11 +80,6 @@ class VrayCommand(CommandBase):
         task_size: int = parameters["task_size"]
         skip_existing: int = int(parameters["skip_existing"])
 
-        ### TEMP ###
-        ##############
-        if directory is not None:
-            directory = directory.replace("D:", r"\\marvin\TEMP_5RN")
-        ##############
 
         arg_list = [
             # V-Ray exe path
@@ -101,6 +96,8 @@ class VrayCommand(CommandBase):
             f"-sceneFile={scene}",
             # Render already existing frames or not
             f"-skipExistingFrames={skip_existing}",
+            # # remap root
+            # '-remapPath= "D:\\=\\tars"'
             # "-rtEngine=5", # CUDA or CPU?
         ]
 
