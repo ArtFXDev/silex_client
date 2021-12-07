@@ -28,6 +28,11 @@ class BuildOutputPath(CommandBase):
     """
 
     parameters = {
+        "name": {
+            "label": "Name",
+            "type": str,
+            "value": "",
+        },
         "output_type": {
             "label": "Insert publish type",
             "type": str,
@@ -46,23 +51,6 @@ class BuildOutputPath(CommandBase):
             "value": True,
             "hide": True,
         },
-        "use_current_context": {
-            "label": "output the given file to the current context",
-            "type": bool,
-            "value": True,
-            "tooltip": "This parameter will overrite the select conform location",
-        },
-        "task": {
-            "label": "Select conform location",
-            "type": TaskParameterMeta(),
-            "value": None,
-            "tooltip": "Select the task where you can to conform your file",
-        },
-        "name": {
-            "label": "Name",
-            "type": str,
-            "value": "",
-        },
         "frame_set": {
             "label": "Insert the quantity of items if file sequence",
             "type": fileseq.FrameSet,
@@ -75,6 +63,18 @@ class BuildOutputPath(CommandBase):
             "value": 1,
             "hide": True,
             "tooltip": "A padding of 4 would return an index of 0024 for the index 24",
+        },
+        "use_current_context": {
+            "label": "output the given file to the current context",
+            "type": bool,
+            "value": True,
+            "tooltip": "This parameter will overrite the select conform location",
+        },
+        "task": {
+            "label": "Select conform location",
+            "type": TaskParameterMeta(),
+            "value": None,
+            "tooltip": "Select the task where you can to conform your file",
         },
     }
 
@@ -213,3 +213,9 @@ class BuildOutputPath(CommandBase):
 
         # Force the name to be visible
         self.command_buffer.parameters["name"].hide = False
+
+        # Set the hide dynamically
+        if parameters.get("use_current_context", False):
+            self.command_buffer.parameters["task"].hide = True
+        else:
+            self.command_buffer.parameters["task"].hide = False

@@ -39,6 +39,12 @@ class SelectConform(CommandBase):
             "value": False,
             "tooltip": "The file sequences will be automaticaly detected from the file you select",
         },
+        "auto_select_type": {
+            "label": "Auto select the conform type",
+            "type": bool,
+            "value": True,
+            "tooltip": "Guess the conform type from the extension",
+        },
         "conform_type": {
             "label": "Select a conform type",
             "type": SelectParameterMeta(
@@ -46,12 +52,6 @@ class SelectConform(CommandBase):
             ),
             "value": None,
             "tooltip": "Select a conform type in the list",
-        },
-        "auto_select_type": {
-            "label": "Auto select the conform type",
-            "type": bool,
-            "value": True,
-            "tooltip": "Guess the conform type from the extension",
         },
     }
 
@@ -182,3 +182,14 @@ class SelectConform(CommandBase):
             ],
             "types": conform_types,
         }
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        if parameters.get("auto_select_type", False):
+            self.command_buffer.parameters["conform_type"].hide = True
+        else:
+            self.command_buffer.parameters["conform_type"].hide = False

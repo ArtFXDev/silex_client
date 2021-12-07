@@ -137,7 +137,7 @@ class ActionQuery:
             # Call the setup on all the commands
             [await command.setup(self) for command in self.commands[start:end]]
             # Wait for a response from the UI
-            logger.info("Waiting for UI response")
+            logger.debug("Waiting for UI response")
             await asyncio.wait_for(
                 await self.async_update_websocket(apply_response=True), None
             )
