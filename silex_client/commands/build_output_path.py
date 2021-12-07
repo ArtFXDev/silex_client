@@ -135,14 +135,15 @@ class BuildOutputPath(CommandBase):
                 action_query.context_metadata["task_type_id"],
             )
 
+        # Get the task name
+        task_name = action_query.context_metadata["task"]
+
         # Override with the given task if specified
         if not parameters["use_current_context"]:
             task = await gazu.task.get_task(parameters["task"])
+            task_name = task["name"]
             entity = task.get("entity", {}).get("id")
             task_type = task.get("task_type", {}).get("id")
-
-        # Get the task name
-        task_name = action_query.context_metadata["task"]
 
         # Build the output path
         output_path = await gazu.files.build_entity_output_file_path(
