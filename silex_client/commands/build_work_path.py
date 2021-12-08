@@ -22,6 +22,13 @@ class BuildWorkPath(CommandBase):
     Build the path where the work files should be saved to
     """
 
+    parameters = {
+        "increment": {
+            "type": bool,
+            "value": False,
+            "tooltip": "Increment the scene name",
+        }
+    }
     required_metadata = ["task_id", "dcc"]
 
     @CommandBase.conform_command()
@@ -73,4 +80,11 @@ class BuildWorkPath(CommandBase):
             )
             full_path = f"{work_path}.{extension}"
 
+        if not parameters["increment"]:
+            version -= 1
+            work_path = await gazu.files.build_working_file_path(
+                task, software=software, revision=version, sep=os.path.sep
+            )
+            full_path = f"{work_path}.{extension}"
+            
         return full_path
