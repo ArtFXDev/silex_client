@@ -59,7 +59,7 @@ class ActionQuery:
 
         context.register_action(self)
 
-    def execute(self, batch=False) -> futures.Future:
+    def execute(self, batch=False, step_by_step=False) -> futures.Future:
         """
         Register a task that will execute the action's commands in order
 
@@ -83,8 +83,13 @@ class ActionQuery:
         self.initialize_websocket()
 
         async def execute_commands() -> None:
+            if step_by_step:
+                command_iterator = [next(enumerate(self.iter_commands()))]
+            else:
+                command_iterator = enumerate(self.iter_commands())
+
             # Execut all the commands one by one
-            for index, command in enumerate(self.iter_commands()):
+            for index, command in command_iterator:
                 # Only run the command if it is valid
                 if self.buffer.status in [Status.INVALID, Status.ERROR]:
                     logger.error(
@@ -227,7 +232,11 @@ class ActionQuery:
         serialized_buffer = self.buffer.serialize()
         diff = silex_diff(self._buffer_diff, serialized_buffer)
 
-        if not self.ws_connection.is_running or self.buffer.hide or not (diff or apply_response):
+        if (
+            not self.ws_connection.is_running
+            or self.buffer.hide
+            or not (diff or apply_response)
+        ):
             future = self.event_loop.loop.create_future()
             future.set_result(None)
             return future
@@ -427,7 +436,16 @@ class CommandIterator(Iterator):
         self.command_index = -1
 
     def __iter__(self) -> CommandIterator:
-        self.command_index = -1
+        commands = self.action_buffer.commands
+        try:
+            self.command_index = next(
+                index
+                for index, command in enumerate(commands)
+                if command.status == Status.INITIALIZED
+            )
+            self.command_index -= 1
+        except StopIteration:
+            self.command_index = -1
         return self
 
     def __next__(self) -> CommandBuffer:
