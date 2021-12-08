@@ -83,8 +83,13 @@ class ActionQuery:
         self.initialize_websocket()
 
         async def execute_commands() -> None:
+            if step_by_step:
+                command_iterator = [next(enumerate(self.iter_commands()))]
+            else:
+                command_iterator = enumerate(self.iter_commands())
+
             # Execut all the commands one by one
-            for index, command in enumerate(self.iter_commands()):
+            for index, command in command_iterator:
                 # Only run the command if it is valid
                 if self.buffer.status in [Status.INVALID, Status.ERROR]:
                     logger.error(
