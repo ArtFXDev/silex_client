@@ -36,10 +36,10 @@ def reload_recursive(parent_module: ModuleType) -> None:
 
     _reload_childs(parent_module)
 
-def is_valid_pipeline_path(file_path: pathlib.Path) -> bool:
+def is_valid_pipeline_path(file_path: pathlib.Path, path_type: str = "publish") -> bool:
     """
     Test if the given path is a valid path in the pipeline or not
     """
-    if re.search(r"^P:\\.+\\publish\\", str(file_path)) is not None:
+    if re.search(r"^P:\\.+\\" + path_type + r"\\", str(file_path)) is not None:
         return True
     return False
