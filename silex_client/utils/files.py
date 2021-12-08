@@ -7,6 +7,8 @@ Can be used for development purposes
 
 import importlib
 import os
+import pathlib
+import re
 from types import ModuleType
 
 
@@ -33,3 +35,11 @@ def reload_recursive(parent_module: ModuleType) -> None:
                         _reload_childs(module_child)
 
     _reload_childs(parent_module)
+
+def is_valid_pipeline_path(file_path: pathlib.Path) -> bool:
+    """
+    Test if the given path is a valid path in the pipeline or not
+    """
+    if re.search(r"^P:\\.+\\publish\\", str(file_path)) is not None:
+        return True
+    return False
