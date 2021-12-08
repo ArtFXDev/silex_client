@@ -51,10 +51,10 @@ def is_valid_pipeline_path(file_path: pathlib.Path, path_type: str = "publish") 
     return False
 
 def is_valid_path(pathname: str) -> bool:
-    '''
+    """
     `True` if the passed pathname is a valid pathname for the current OS;
     `False` otherwise.
-    '''
+    """
     # If this pathname is either not a string or is but is empty, this pathname
     # is invalid.
     try:
