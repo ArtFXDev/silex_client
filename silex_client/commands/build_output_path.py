@@ -78,8 +78,6 @@ class BuildOutputPath(CommandBase):
         },
     }
 
-    required_metadata = ["entity_id", "task_type_id", "entity_type", "task"]
-
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -95,16 +93,42 @@ class BuildOutputPath(CommandBase):
         padding: int = parameters["padding"]
         nb_elements = len(frame_set)
 
-        # Get the entity dict
-        entity = None
-        if action_query.context_metadata["entity_type"] == "shot":
-            entity = await gazu.shot.get_shot(
-                action_query.context_metadata["entity_id"]
-            )
+        # Override with the given task if specified
+        if not parameters["use_current_context"]:
+            task = await gazu.task.get_task(parameters["task"])
+            task_name = task["name"]
+            entity = task.get("entity", {}).get("id")
+            task_type = task.get("task_type", {}).get("id")
+
         else:
-            entity = await gazu.asset.get_asset(
-                action_query.context_metadata["entity_id"]
+            # Get the entity dict
+            entity = None
+            if action_query.context_metadata["entity_type"] == "shot":
+                entity = await gazu.shot.get_shot(
+                    action_query.context_metadata["entity_id"]
+                )
+            else:
+                entity = await gazu.asset.get_asset(
+                    action_query.context_metadata["entity_id"]
+                )
+
+            # Get the task type
+            task_type = await gazu.task.get_task_type(
+                action_query.context_metadata["task_type_id"]
             )
+
+            if task_type is None:
+                logger.error(
+                    "Could not get the task type %s: The task type does not exists",
+                    action_query.context_metadata["task_type_id"],
+                )
+                raise Exception(
+                    "Could not get the task type %s: The task type does not exists",
+                    action_query.context_metadata["task_type_id"],
+                )
+
+            # Get the task name
+            task_name = action_query.context_metadata["task"]
 
         # Get the output type
         output_type = await gazu.files.get_output_type_by_short_name(
@@ -119,31 +143,6 @@ class BuildOutputPath(CommandBase):
                 "Could not build the output type %s: The output type does not exists in the zou database",
                 parameters["output_type"],
             )
-
-        # Get the task type
-        task_type = await gazu.task.get_task_type(
-            action_query.context_metadata["task_type_id"]
-        )
-
-        if task_type is None:
-            logger.error(
-                "Could not get the task type %s: The task type does not exists",
-                action_query.context_metadata["task_type_id"],
-            )
-            raise Exception(
-                "Could not get the task type %s: The task type does not exists",
-                action_query.context_metadata["task_type_id"],
-            )
-
-        # Get the task name
-        task_name = action_query.context_metadata["task"]
-
-        # Override with the given task if specified
-        if not parameters["use_current_context"]:
-            task = await gazu.task.get_task(parameters["task"])
-            task_name = task["name"]
-            entity = task.get("entity", {}).get("id")
-            task_type = task.get("task_type", {}).get("id")
 
         # Build the output path
         output_path = await gazu.files.build_entity_output_file_path(
@@ -215,8 +214,16 @@ class BuildOutputPath(CommandBase):
         # Force the name to be visible
         self.command_buffer.parameters["name"].hide = False
 
+        # This action can be used with or without a context
+        for context_value in ["entity_id", "task_type_id", "entity_type", "task"]:
+            if context_value not in action_query.context_metadata.keys():
+                parameters["use_current_context"] = False
+                self.command_buffer.parameters["use_current_context"].value = False
+                self.command_buffer.parameters["use_current_context"].hide = True
+
         # Set the hide dynamically
         if parameters.get("use_current_context", False):
             self.command_buffer.parameters["task"].hide = True
         else:
             self.command_buffer.parameters["task"].hide = False
+
