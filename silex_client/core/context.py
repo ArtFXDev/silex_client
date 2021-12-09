@@ -229,6 +229,7 @@ class Context:
         resolved_context["task_type_id"] = task["task_type"]["id"]
         resolved_context["project"] = task["project"]["name"]
         resolved_context["project_id"] = task["project"]["id"]
+        resolved_context["project_file_tree"] = task["project"]["file_tree"]
 
         resolved_context["entity"] = task["entity"]["name"]
         resolved_context["entity_id"] = task["entity"]["id"]

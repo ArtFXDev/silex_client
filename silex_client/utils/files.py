@@ -14,6 +14,8 @@ import errno
 
 from types import ModuleType
 
+from silex_client.core.context import Context
+
 # Sadly, Python fails to provide the following magic number for us.
 ERROR_INVALID_NAME = 123
 
@@ -42,19 +44,31 @@ def reload_recursive(parent_module: ModuleType) -> None:
 
     _reload_childs(parent_module)
 
-def is_valid_pipeline_path(file_path: pathlib.Path, path_type: str = "publish") -> bool:
+def is_valid_pipeline_path(file_path: pathlib.Path, mode: str = "output") -> bool:
     """
     Test if the given path is a valid path in the pipeline or not
     """
-    if re.search(r"^P:\\.+\\" + path_type + r"\\", str(file_path)) is not None:
+    # If the use is not in the context of a project, any is correct
+    if "project_file_tree" not in Context.get().metadata:
         return True
+
+    mode_templates = Context.get()["project_file_tree"].get(mode, {})
+    if "mountpoint" in mode_templates and mode_templates.get("mountpoint") != file_path.drive:
+        return False
+
+    for path_template in mode_templates.get("folder_path", {}).values():
+        regex = re.sub(r"<[0-9a-zA-Z_]+>", "[0-9a-zA-Z_]+", str(pathlib.Path(path_template)))
+        regex = regex.replace("\\", "\\\\")
+        if re.search(regex, str(file_path)):
+            return True
+
     return False
 
 def is_valid_path(pathname: str) -> bool:
-    '''
+    """
     `True` if the passed pathname is a valid pathname for the current OS;
     `False` otherwise.
-    '''
+    """
     # If this pathname is either not a string or is but is empty, this pathname
     # is invalid.
     try:

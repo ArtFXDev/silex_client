@@ -1,4 +1,5 @@
 conform:
+  thumbnail: "$SILEX_ICONS/conform.svg"
   steps:
     setup:
       lavel: "Setup"
