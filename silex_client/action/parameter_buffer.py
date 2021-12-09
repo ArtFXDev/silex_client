@@ -35,7 +35,7 @@ class ParameterBuffer:
     #: The list of fields that should be ignored when serializing and deserializing this buffer to json
     PRIVATE_FIELDS = ["outdated_cache", "serialize_cache"]
     #: The list of fields that should be ignored when deserializing this buffer to json
-    READONLY_FIELDS = ["type"]
+    READONLY_FIELDS = ["type", "label"]
 
     #: The type of the parameter, must be a class definition or a CommandParameterMeta instance
     type: Type = field()

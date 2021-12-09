@@ -48,7 +48,7 @@ class CommandBuffer:
         "serialize_cache",
     ]
     #: The list of fields that should be ignored when deserializing this buffer to json
-    READONLY_FIELDS = ["logs"]
+    READONLY_FIELDS = ["logs", "label"]
 
     #: The path to the command's module
     path: str = field()
