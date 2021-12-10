@@ -15,7 +15,6 @@ import shutil
 import os
 import pathlib
 
-
 class Move(CommandBase):
     """
     Copy file and override if necessary
@@ -31,19 +30,42 @@ class Move(CommandBase):
             "label": "Destination directory",
             "type": pathlib.Path,
             "value": None,
-        },
+        }
     }
 
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+		parameters: Dict[str, Any],
+		action_query: ActionQuery,
+		logger: logging.Logger
     ):
 
         src: List[str] = [str(source) for source in parameters["src"]]
         dst: str = str(parameters["dst"])
+
+        def move(src, dst):
+            # remove if dst already exist
+
+            if os.path.isdir(dst):
+                # clean tree
+                shutil.rmtree(dst)
+                os.makedirs(dst)
+
+            if os.path.isfile(dst):
+                os.remove(dst)
+
+            logger.info(f"source : {src}")
+            logger.info(f"destination : {dst}")
+
+            # move folder or file
+            if os.path.isdir(src):
+                # move all file in dst folder
+                file_names = os.listdir(src)
+                for file_name in file_names:
+                    shutil.move(os.path.join(src, file_name), dst)
+            else:
+                shutil.move(src, dst)
 
         # Check for file to copy
         if not os.path.exists(dst):
@@ -55,19 +77,5 @@ class Move(CommandBase):
                 raise Exception(f"{item} doesn't exist.")
 
             # Execute the move in a different thread to not block the event loop
-            def move():
-                # remove if dst already exist
-                # item : path of existing file/dir
-                end_path = os.path.join(dst, os.path.basename(item))
-                if os.path.isdir(end_path):
-                    shutil.rmtree(end_path)
-
-                if os.path.isfile(end_path):
-                    os.remove(end_path)
-
-                logger.info(f"source : {item}")
-                logger.info(f"destination : {dst}")
-
-                shutil.move(item, dst)
-
-            await execute_in_thread(move)
+            await execute_in_thread(move, item, dst)
+        
