@@ -32,6 +32,7 @@ class TractorSubmiter(CommandBase):
             "label": "Pre-commands list",
             "type": list,
             "value": [],
+            "hide": True,
         },
         "cmd_list": {
             "label": "Commands list",
@@ -58,8 +59,8 @@ class TractorSubmiter(CommandBase):
             ip_dict: Dict[str, str] = {"ana": "192.168.2.214", "tars": "192.168.2.212"}
 
             precommands: List[str] = [
-                ["net", "use", f"\\\\{SERVER_ROOT}", f"/user:{os.environ['SERVER_USER']}", os.environ['SERVER_PASS']],
-                ["net", "use", f"\\\\{ip_dict[SERVER_ROOT]}", "/user:promo_td_2022", "@rtfx2021"],# needed for some pool
+                # ["net", "use", f"\\\\{SERVER_ROOT}","/user:%SERVER_USER%", "%SERVER_PASS%"],
+                # ["net", "use", f"\\\\{ip_dict[SERVER_ROOT]}", "/user:%SERVER_USER%", "%SERVER_PASS%"],# needed for some pool
                 ['powershell.exe', '-ExecutionPolicy', 'Bypass', '-NoProfile', '-File', "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive.ps1", SERVER_ROOT]
             ]
 
