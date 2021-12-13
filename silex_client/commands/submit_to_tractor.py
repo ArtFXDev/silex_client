@@ -4,6 +4,7 @@ import typing
 from typing import Any, Dict, List
 import os
 import gazu
+import gazu.project
 import logging
 
 from silex_client.action.command_base import CommandBase
