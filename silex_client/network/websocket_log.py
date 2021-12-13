@@ -59,7 +59,8 @@ class RedirectWebsocketLogs(object):
             exc_type == futures.CancelledError or exc_type == asyncio.CancelledError
         ):
             self.logger.error(
-                "An error occured while executing the command %s: %s",
+                "$s: An error occured while executing the command %s: %s",
+                exc_type,
                 self.silex_command.name,
                 exc_value,
             )

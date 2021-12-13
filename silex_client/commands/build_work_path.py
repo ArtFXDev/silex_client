@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 import typing
 from typing import Any, Dict
+import pathlib
+import fileseq
 
 import gazu.shot
 import gazu.asset
@@ -22,7 +24,14 @@ class BuildWorkPath(CommandBase):
     Build the path where the work files should be saved to
     """
 
-    required_metadata = ["task_id", "dcc"]
+    parameters = {
+        "increment": {
+            "type": bool,
+            "value": False,
+            "tooltip": "Increment the scene name",
+        }
+    }
+    required_metadata = ["task_id", "dcc", "project_file_tree"]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -66,11 +75,22 @@ class BuildWorkPath(CommandBase):
             task, software=software, revision=version, sep=os.path.sep
         )
         full_path = f"{work_path}.{extension}"
-        while os.path.exists(full_path):
-            version += 1
+
+        # Make sure to get the last version everytime
+        if os.path.exists(full_path):
+            # Find the last version on disk
+            sequences = fileseq.findSequencesOnDisk(os.path.dirname(full_path))
+            for sequence in sequences:
+                if pathlib.Path(full_path) in [pathlib.Path(path) for path in sequence]:
+                    version = sequence.frameSet()[-1]
+            # Check if we need to increment
+            if parameters["increment"]:
+                version += 1
+
+            # Build the file path again
             work_path = await gazu.files.build_working_file_path(
                 task, software=software, revision=version, sep=os.path.sep
             )
             full_path = f"{work_path}.{extension}"
-
+            
         return full_path

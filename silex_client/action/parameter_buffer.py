@@ -35,7 +35,7 @@ class ParameterBuffer:
     #: The list of fields that should be ignored when serializing and deserializing this buffer to json
     PRIVATE_FIELDS = ["outdated_cache", "serialize_cache"]
     #: The list of fields that should be ignored when deserializing this buffer to json
-    READONLY_FIELDS = ["type"]
+    READONLY_FIELDS = ["type", "label"]
 
     #: The type of the parameter, must be a class definition or a CommandParameterMeta instance
     type: Type = field()
@@ -83,6 +83,10 @@ class ParameterBuffer:
             self.value = self.type.get_default()
 
     def get_value(self, action_query: ActionQuery) -> Any:
+        """
+        Get the value of the parameter, always use this method to get
+        the value of a parameter, this will resolve references, callable...
+        """
         # If the value is the output of an other command, get is
         if isinstance(self.value, CommandOutput):
             return self.value.get_value(action_query)

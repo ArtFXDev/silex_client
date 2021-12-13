@@ -1,4 +1,5 @@
 publish:
+  thumbnail: "publish.svg"
   steps:
     setup:
       lavel: "Setup"

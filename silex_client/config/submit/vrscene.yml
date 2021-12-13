@@ -22,7 +22,8 @@ vrscene:
           ask_user: true
           parameters:
             output_type: !command-output "build_output_path:select_list"
-
+            create_temp_dir:
+              value: false
             task:
               hide: true
             use_current_context:

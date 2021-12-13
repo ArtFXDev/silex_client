@@ -59,7 +59,7 @@ class ActionQuery:
 
         context.register_action(self)
 
-    def execute(self, batch=False) -> futures.Future:
+    def execute(self, batch=False, step_by_step=False) -> futures.Future:
         """
         Register a task that will execute the action's commands in order
 
@@ -83,8 +83,13 @@ class ActionQuery:
         self.initialize_websocket()
 
         async def execute_commands() -> None:
+            if step_by_step:
+                command_iterator = [next(enumerate(self.iter_commands()))]
+            else:
+                command_iterator = enumerate(self.iter_commands())
+
             # Execut all the commands one by one
-            for index, command in enumerate(self.iter_commands()):
+            for index, command in command_iterator:
                 # Only run the command if it is valid
                 if self.buffer.status in [Status.INVALID, Status.ERROR]:
                     logger.error(
@@ -96,6 +101,9 @@ class ActionQuery:
                 # If the command requires an input from user, wait for the response
                 if command.require_prompt():
                     await self.prompt_commands(index)
+
+                # Setup the command
+                await command.setup(self)
 
                 # Execution of the command
                 await command.execute(self, self.execution_type)
@@ -114,9 +122,11 @@ class ActionQuery:
         # Execute the commands in the event loop
         return self.event_loop.register_task(create_task())
 
-    async def prompt_commands(
-        self, start: Optional[int] = None, end: Optional[int] = None
-    ):
+    async def prompt_commands(self, start: int = 0, end: Optional[int] = None):
+        """
+        Ask a user input for a given range of commands, only the commands that
+        require an input will wait for a response
+        """
         # Get the range of commands
         commands_prompt = self.commands[start:end]
         # Set the commands to WAITING_FOR_RESPONSE
@@ -124,14 +134,20 @@ class ActionQuery:
             if not command_left.require_prompt():
                 end = start + index if start is not None else index
                 break
+            command_left.ask_user = True
             await command_left.setup(self)
             command_left.status = Status.WAITING_FOR_RESPONSE
+
         # Send the update to the UI and wait for its response
-        if self.ws_connection.is_running:
-            logger.info("Waiting for UI response")
+        while self.ws_connection.is_running and self.commands[start].require_prompt():
+            # Call the setup on all the commands
+            [await command.setup(self) for command in self.commands[start:end]]
+            # Wait for a response from the UI
+            logger.debug("Waiting for UI response")
             await asyncio.wait_for(
                 await self.async_update_websocket(apply_response=True), None
             )
+
         # Put the commands back to initialized
         for command_left in self.commands[start:end]:
             command_left.ask_user = False
@@ -217,7 +233,11 @@ class ActionQuery:
         serialized_buffer = self.buffer.serialize()
         diff = silex_diff(self._buffer_diff, serialized_buffer)
 
-        if not self.ws_connection.is_running or self.buffer.hide or not diff:
+        if (
+            not self.ws_connection.is_running
+            or self.buffer.hide
+            or not (diff or apply_response)
+        ):
             future = self.event_loop.loop.create_future()
             future.set_result(None)
             return future
@@ -417,7 +437,16 @@ class CommandIterator(Iterator):
         self.command_index = -1
 
     def __iter__(self) -> CommandIterator:
-        self.command_index = -1
+        commands = self.action_buffer.commands
+        try:
+            self.command_index = next(
+                index
+                for index, command in enumerate(commands)
+                if command.status == Status.INITIALIZED
+            )
+            self.command_index -= 1
+        except StopIteration:
+            self.command_index = -1
         return self
 
     def __next__(self) -> CommandBuffer:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pathlib
 import typing
+from fileseq import FrameSet
 import os
 from typing import Any, Dict, List
 
@@ -23,8 +24,8 @@ class VrayCommand(CommandBase):
         "scene_file": {"label": "Scene file", "type": pathlib.Path},
         "frame_range": {
             "label": "Frame range (start, end, step)",
-            "type": IntArrayParameterMeta(3),
-            "value": [0, 100, 1],
+            "type":FrameSet,
+            "value": "1-50x1",
         },
         "resolution": {
             "label": "Resolution ( width, height )",
@@ -60,9 +61,6 @@ class VrayCommand(CommandBase):
         for i in range(0, len(lst), n):
             yield lst[i : i + n]
 
-    def _list_from_padding(self, lst: List[int], pad: int) -> List[int]:
-        """Split a list from the given padding"""
-        return [i for i in range(0, len(lst), pad)]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -75,7 +73,7 @@ class VrayCommand(CommandBase):
         exoprt_name: str = str(parameters["exoprt_name"])
         extension: str = parameters["extension"]
         scene: pathlib.Path = parameters["scene_file"]
-        frame_range: List[int] = parameters["frame_range"]
+        frame_range: FrameSet = parameters["frame_range"]
         resolution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
         skip_existing: int = int(parameters["skip_existing"])
@@ -96,8 +94,7 @@ class VrayCommand(CommandBase):
             f"-sceneFile={scene}",
             # Render already existing frames or not
             f"-skipExistingFrames={skip_existing}",
-            # # remap root
-            # '-remapPath= "D:\\=\\tars"'
+ 
             # "-rtEngine=5", # CUDA or CPU?
         ]
 
@@ -112,12 +109,8 @@ class VrayCommand(CommandBase):
         if frame_range is None:
             raise Exception("No frame range found")
 
-        # Create frame_lists with pading
-        frame_chunks: List[Any] = list(
-            self._list_from_padding(
-                list(range(frame_range[0], frame_range[1] + 1)), frame_range[2]
-            )
-        )
+
+        frame_chunks: List[str] = list(FrameSet(frame_range))
 
         # Cut frames by task
         task_chunks = list(self._chunks(frame_chunks, task_size))
@@ -128,7 +121,7 @@ class VrayCommand(CommandBase):
             start, end = chunk[0], chunk[-1]
             frames: str = ";".join(map(str, chunk))
             logger.info(f"Creating a new task with frames: {start} {end}")
-            cmd_dict[f"frames={start}-{end} (step:{frame_range[2]})"] = arg_list + [
+            cmd_dict[f"frames={start}-{end}"] = arg_list + [
                 f'-frames="{frames}"'
             ]
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 import contextlib
 import typing
 from typing import Any, Dict, List
+import fileseq
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import PathParameterMeta
@@ -47,6 +48,11 @@ class Copy(CommandBase):
         destination_dirs: List[pathlib.Path] = parameters["dst"]
 
         destination_paths = []
+
+        source_sequences = fileseq.findSequencesInList(source_paths)
+        destination_sequences = fileseq.findSequencesInList(destination_dirs)
+        logger.info("Copying %s to %s", source_sequences, destination_sequences)
+
         # Loop over all the files to copy
         for index, source_path in enumerate(source_paths):
             # If only one directory is given, this will still work thanks to the modulo
@@ -57,7 +63,6 @@ class Copy(CommandBase):
 
             # Copy only if the files does not already exists
             os.makedirs(str(destination_dir), exist_ok=True)
-            logger.info("Copying %s to %s", source_path, destination_dir)
 
             # Execute the copy in a different thread to not block the event loop
             def copy():

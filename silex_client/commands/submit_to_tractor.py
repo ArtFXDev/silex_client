@@ -32,6 +32,7 @@ class TractorSubmiter(CommandBase):
             "label": "Pre-commands list",
             "type": list,
             "value": [],
+            "hide": True,
         },
         "cmd_list": {
             "label": "Commands list",
@@ -47,6 +48,30 @@ class TractorSubmiter(CommandBase):
             "type": str,
         },
     }
+
+    def mount(self, action_query: ActionQuery, SERVER_ROOT: str) -> List[List[str]]:
+
+        # check context for pre commands
+        precommands: List[List[str]] = []
+
+        if action_query.context_metadata.get("user_email") is not None:
+            # case: 5TH year student
+            ip_dict: Dict[str, str] = {"ana": "192.168.2.214", "tars": "192.168.2.212"}
+
+            precommands: List[str] = [
+                # ["net", "use", f"\\\\{SERVER_ROOT}","/user:%SERVER_USER%", "%SERVER_PASS%"],
+                # ["net", "use", f"\\\\{ip_dict[SERVER_ROOT]}", "/user:%SERVER_USER%", "%SERVER_PASS%"],# needed for some pool
+                ['powershell.exe', '-ExecutionPolicy', 'Bypass', '-NoProfile', '-File', "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive.ps1", SERVER_ROOT]
+            ]
+
+        else:
+            # case: 4TH year student
+            precommands: List[str] = [
+                ["net", "use", "\\\\marvin /user:etudiant artfx2020"],
+                ["net", "use", "\\\\192.168.2.204 /user:etudiant artfx2020"] # needed for some pool
+            ]
+        
+        return precommands
 
     @CommandBase.conform_command()
     async def __call__(
@@ -64,8 +89,19 @@ class TractorSubmiter(CommandBase):
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
 
+        # get server root
+        project_dict = await gazu.project.get_project_by_name(project)
+        project_data = project_dict['data']
+
+        if project_data is None:
+            raise Exception('NO PROJECTS FOUND')
+
+        SERVER_ROOT = project_data['nas']
+
+        precommands.extend(self.mount(action_query, SERVER_ROOT))
+
         # Get owner from context
-        owner: str = action_query.context_metadata.get("user_email", "3d4")
+        owner: str = action_query.context_metadata.get("user_email", "3d4").split('@')[0] # get name only
 
         # Set service
         if len(pools) == 1:
@@ -84,11 +120,13 @@ class TractorSubmiter(CommandBase):
 
             # Create the task
             task = author.Task(title=str(cmd))
-
+            
             # add precommands
-            for cmd in precommands:
+            logger.info(precommands)
+            for pre in precommands:
+                logger.info( f"Add pre-command : {pre}")
                 pre_command = author.Command(
-                    argv=[cmd]
+                    argv=pre
                 ) 
                 task.addCommand(pre_command)
 
@@ -122,7 +160,7 @@ class TractorSubmiter(CommandBase):
             )
             tractor_pools = {"BladeProfiles": []}
 
-        # Build the list of profile names from the config
+        # Build list of profile names from the config
         PROFILE_IGNORE = [
             None,
             "DEV",
@@ -169,36 +207,5 @@ class TractorSubmiter(CommandBase):
             "project"
         ].value = self.command_buffer.parameters["project"].type.get_default()
 
-        # set server root
-        project_dict = await gazu.project.get_project_by_name(project)
-        project_data = project_dict['data']
-
-        if project_data is None:
-            raise Exception('NO PROJECTS FOUND')
-
-        SERVER_ROOT = project_data['nas']
-
-        # check context for pre commands
-        precommands: List[str] = []
-
-        if action_query.context_metadata.get("user_email") is not None:
-            # case: 5TH year student
-
-            ip_dict: Dict[str, str] = {"ana": "192.168.2.214", "tars": "192.168.2.212"}
-
-            precommands: List[str] = [
-                f"net use \\\\{SERVER_ROOT} /user:promo_td_2022 @rtfx2021",
-                f"net use \\\\{ip_dict[SERVER_ROOT]} /user:promo_td_2022 @rtfx2021",# needed for some pool
-                f'powershell.exe -ExecutionPolicy Bypass -NoProfile -File "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive.ps1" {SERVER_ROOT}'
-            ]
-
-        else:
-            # case: 4TH year student
-
-            precommands: List[str] = [
-                f"net use \\\\marvin /user:etudiant artfx2020",
-                f"net use \\\\192.168.2.204 /user:etudiant artfx2020" # needed for some pool
-            ]
-        
-        self.command_buffer.parameters["precommands"].value = precommands
+      
 
