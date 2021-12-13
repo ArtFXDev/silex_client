@@ -5,7 +5,6 @@ Dataclass used to store the data related to a command
 """
 
 from __future__ import annotations
-import asyncio
 
 import copy
 import importlib
@@ -16,6 +15,7 @@ import uuid as unique_id
 import copy
 from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Dict, Optional, List
+from contextlib import suppress
 
 import dacite.config as dacite_config
 import dacite.core as dacite
@@ -40,9 +40,15 @@ class CommandBuffer:
     """
 
     #: The list of fields that should be ignored when serializing this buffer to json
-    PRIVATE_FIELDS = ["output_result", "executor", "input_path", "outdated_cache", "serialize_cache"]
+    PRIVATE_FIELDS = [
+        "output_result",
+        "executor",
+        "input_path",
+        "outdated_cache",
+        "serialize_cache",
+    ]
     #: The list of fields that should be ignored when deserializing this buffer to json
-    READONLY_FIELDS = ["logs"]
+    READONLY_FIELDS = ["logs", "label"]
 
     #: The path to the command's module
     path: str = field()
@@ -127,6 +133,8 @@ class CommandBuffer:
         parameters = {
             key: value.get_value(action_query) for key, value in self.parameters.items()
         }
+        with suppress(TypeError):
+            parameters = copy.deepcopy(parameters)
 
         # Run the executor and copy the parameters
         # to prevent them from being modified during execution
@@ -137,13 +145,9 @@ class CommandBuffer:
 
             # Call the actual command
             if execution_type == Execution.FORWARD:
-                await self.executor(
-                    copy.deepcopy(parameters), action_query, log
-                )
+                await self.executor(parameters, action_query, log)
             elif execution_type == Execution.BACKWARD:
-                await self.executor.undo(
-                    copy.deepcopy(parameters), action_query, log
-                )
+                await self.executor.undo(parameters, action_query, log)
 
             # Keep the error statuses
             if self.status in [Status.INVALID, Status.ERROR]:
@@ -154,9 +158,27 @@ class CommandBuffer:
             elif execution_type == Execution.BACKWARD:
                 self.status = Status.INITIALIZED
 
+    async def setup(self, action_query: ActionQuery):
+        """
+        Call the setup of the command, the setup method is used to edit the command attributes
+        dynamically (parameters, states...)
+        """
+        # Create a dictionary that only contains the name and the value of the parameters
+        # without infos like the type, label...
+        parameters = {
+            key: value.get_value(action_query) for key, value in self.parameters.items()
+        }
+        with suppress(TypeError):
+            parameters = copy.deepcopy(parameters)
+
+        async with RedirectWebsocketLogs(action_query, self) as log:
+            await self.executor.setup(parameters, action_query, log)
+
     @property
     def outdated_caches(self):
-        return self.outdated_cache or not all(not parameter.outdated_cache for parameter in self.parameters.values())
+        return self.outdated_cache or not all(
+            not parameter.outdated_cache for parameter in self.parameters.values()
+        )
 
     def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
@@ -207,7 +229,11 @@ class CommandBuffer:
 
         # Patch the current command data
         current_command_data = self.serialize()
-        current_command_data = {key: value for key, value in current_command_data.items() if key != "parameters"}
+        current_command_data = {
+            key: value
+            for key, value in current_command_data.items()
+            if key != "parameters"
+        }
         serialized_data = jsondiff.patch(current_command_data, serialized_data)
 
         # Format the parameters corectly
@@ -224,7 +250,13 @@ class CommandBuffer:
             setattr(new_data, private_field, getattr(self, private_field))
 
         self.parameters.update(new_data.parameters)
-        self.__dict__.update({key: value for key, value in new_data.__dict__.items() if key != "parameters"})
+        self.__dict__.update(
+            {
+                key: value
+                for key, value in new_data.__dict__.items()
+                if key != "parameters"
+            }
+        )
         self.outdated_cache = True
 
     @classmethod
@@ -261,6 +293,11 @@ class CommandBuffer:
         return command
 
     def require_prompt(self) -> bool:
+        """
+        Check if this command require a user input, by testing the ask_user field
+        and none values on the parameters
+        """
         return self.ask_user or not all(
-            parameter.value is not None for parameter in self.parameters.values()
+            parameter.value is not None or parameter.hide
+            for parameter in self.parameters.values()
         )

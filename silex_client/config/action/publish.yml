@@ -1,4 +1,5 @@
 publish:
+  thumbnail: "publish.svg"
   steps:
     setup:
       lavel: "Setup"
@@ -13,6 +14,16 @@ publish:
           label: "Build output path"
           path: "silex_client.commands.build_output_path.BuildOutputPath"
           tooltip: "Build the complete output path"
+          ask_user: True
           parameters:
             output_type: !command-output "setup:get_publish_output"
-            use_current_context: true
+            use_current_context:
+              value: true
+              hide: true
+            task:
+              hide: true
+            frame_set:
+              hide: true
+            name:
+              value: "main"
+              label: "Publish name"

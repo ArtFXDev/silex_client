@@ -1,4 +1,5 @@
 import pathlib
+from silex_client.utils.log import logger
 
 
 class AnyParameter(object):
@@ -51,6 +52,15 @@ class IntArrayParameterMeta(CommandParameterMeta):
         pass
 
     def __new__(cls, size: int):
+        def __init__(self, value):
+            if not isinstance(value, list):
+                value = [value]
+
+            for index, item in enumerate(value):
+                value[index] = int(item)
+
+            self.extend(value)
+
         def serialize():
             return {
                 "name": "int_array",
@@ -61,6 +71,7 @@ class IntArrayParameterMeta(CommandParameterMeta):
             return [0 for i in range(size)]
 
         attributes = {
+            "__init__": __init__,
             "serialize": serialize,
             "get_default": get_default,
         }
@@ -111,6 +122,27 @@ class SelectParameterMeta(CommandParameterMeta):
         return super().__new__(cls, "SelectParameter", (str,), attributes)
 
 
+class RadioSelectParameterMeta(CommandParameterMeta):
+    def __init__(self, *list_options, **options):
+        pass
+
+    def __new__(cls, *list_options, **options):
+        for unnamed_option in list_options:
+            options[unnamed_option] = unnamed_option
+
+        def serialize():
+            return {"name": "radio_select", "options": options}
+
+        def get_default():
+            return list(options.values())[0] if options else None
+
+        attributes = {
+            "serialize": serialize,
+            "get_default": get_default,
+        }
+        return super().__new__(cls, "RadioSelectParameter", (str,), attributes)
+
+
 class MultipleSelectParameterMeta(CommandParameterMeta):
     def __init__(self, *list_options, **options):
         pass
@@ -131,14 +163,19 @@ class MultipleSelectParameterMeta(CommandParameterMeta):
         }
         return super().__new__(cls, "SelectParameter", (list,), attributes)
 
+
 # TODO: Replace this parameter with ListParameterMeta
 class ListParameter(list):
     def __init__(self, value):
+        logger.warning(
+            "Deprecation warning: The parameter type ListParameter is deprecated in favor if ListParameterMeta()"
+        )
         data = value
 
         if not isinstance(value, list):
             data = [value]
         self.extend(data)
+
 
 class PathParameterMeta(CommandParameterMeta):
     def __init__(self, extensions=None, multiple=False):
@@ -158,7 +195,11 @@ class PathParameterMeta(CommandParameterMeta):
             self.extend(value)
 
         def serialize():
-            return {"name": "Path"}
+            return {
+                "name": "Path",
+                "extensions": extensions,
+                "multiple": multiple,
+            }
 
         def get_default():
             return None
@@ -172,7 +213,9 @@ class PathParameterMeta(CommandParameterMeta):
             attributes["__init__"] = __init_list__
             return super().__new__(cls, "PathParameter", (list,), attributes)
 
-        return super().__new__(cls, "PathParameter", (pathlib.Path,), attributes)
+        return super().__new__(
+            cls, "PathParameter", (type(pathlib.Path()),), attributes
+        )
 
 
 class ListParameterMeta(CommandParameterMeta):
@@ -190,10 +233,18 @@ class ListParameterMeta(CommandParameterMeta):
             self.extend(value)
 
         def serialize():
-            return {"name": "list"}
+            item_type = None
+
+            if isinstance(parameter_type, CommandParameterMeta):
+                return parameter_type.serialize()
+
+            elif isinstance(parameter_type, type):
+                item_type = {"name": parameter_type.__name__}
+
+            return {"name": "list", "itemtype": item_type}
 
         def get_default():
-            return None
+            return []
 
         attributes = {
             "__init__": __init__,
@@ -202,3 +253,22 @@ class ListParameterMeta(CommandParameterMeta):
         }
 
         return super().__new__(cls, "ListParameter", (list,), attributes)
+
+
+class TextParameterMeta(CommandParameterMeta):
+    def __init__(self, color=None):
+        pass
+
+    def __new__(cls, color=None):
+        def serialize():
+            return {"name": "text", "color": color}
+
+        def get_default():
+            return ""
+
+        attributes = {
+            "serialize": serialize,
+            "get_default": get_default,
+        }
+
+        return super().__new__(cls, "ListParameter", (str,), attributes)

@@ -39,6 +39,12 @@ class SelectConform(CommandBase):
             "value": False,
             "tooltip": "The file sequences will be automaticaly detected from the file you select",
         },
+        "auto_select_type": {
+            "label": "Auto select the conform type",
+            "type": bool,
+            "value": True,
+            "tooltip": "Guess the conform type from the extension",
+        },
         "conform_type": {
             "label": "Select a conform type",
             "type": SelectParameterMeta(
@@ -46,12 +52,6 @@ class SelectConform(CommandBase):
             ),
             "value": None,
             "tooltip": "Select a conform type in the list",
-        },
-        "auto_select_type": {
-            "label": "Auto select the conform type",
-            "type": bool,
-            "value": True,
-            "tooltip": "Guess the conform type from the extension",
         },
     }
 
@@ -76,7 +76,10 @@ class SelectConform(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         file_paths: List[pathlib.Path] = parameters["file_paths"]
         find_sequence: bool = parameters["find_sequence"]
@@ -88,6 +91,7 @@ class SelectConform(CommandBase):
         frame_sets = [
             sequence.frameSet() or fileseq.FrameSet(0) for sequence in sequences
         ]
+        paddings = [len(sequence.padding()) for sequence in sequences]
 
         # Guess the conform type from the extension of the given file
         for sequence in sequences:
@@ -103,12 +107,15 @@ class SelectConform(CommandBase):
             ]:
                 # TODO: This mapping should be somewhere else
                 EXTENSION_TYPES_MAPPING = {
+                    "bgeo.sc": "bgeo",
                     "mb": "ma",
                     "tif": "tiff",
                     "jpeg": "jpg",
                     "hdri": "hdr",
                     "hipnc": "hip",
                     "hiplc": "hip",
+                    "hdanc": "hda",
+                    "hdalc": "hda",
                 }
                 # Find the right conform action for the given extension
                 conform_type = EXTENSION_TYPES_MAPPING.get(conform_type, "")
@@ -137,8 +144,10 @@ class SelectConform(CommandBase):
         if not find_sequence:
             return {
                 "files": [
-                    {"file_paths": sequence, "frame_set": frame_set}
-                    for sequence, frame_set in zip(sequences, frame_sets)
+                    {"file_paths": sequence, "frame_set": frame_set, "padding": padding}
+                    for sequence, frame_set, padding in zip(
+                        sequences, frame_sets, paddings
+                    )
                 ],
                 "types": conform_types,
             }
@@ -154,6 +163,7 @@ class SelectConform(CommandBase):
                 if file_path in sequence_list and len(sequence_list) > 1:
                     frame_sets[index] = file_sequence.frameSet()
                     sequences[index] = sequence_list
+                    paddings[index] = len(file_sequence.padding())
                     break
 
         # Finding sequences might result in duplicates
@@ -163,12 +173,24 @@ class SelectConform(CommandBase):
             if sequence in sequences[: index - offset]:
                 sequences.pop(index - offset)
                 frame_sets.pop(index - offset)
+                paddings.pop(index - offset)
                 conform_types.pop(index - offset)
 
         return {
             "files": [
-                {"file_paths": sequence, "frame_set": frame_set}
-                for sequence, frame_set in zip(sequences, frame_sets)
+                {"file_paths": sequence, "frame_set": frame_set, "padding": padding}
+                for sequence, frame_set, padding in zip(sequences, frame_sets, paddings)
             ],
             "types": conform_types,
         }
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        if parameters.get("auto_select_type", False):
+            self.command_buffer.parameters["conform_type"].hide = True
+        else:
+            self.command_buffer.parameters["conform_type"].hide = False

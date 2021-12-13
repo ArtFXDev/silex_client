@@ -2,9 +2,11 @@ from __future__ import annotations
 import contextlib
 import typing
 from typing import Any, Dict, List
+import fileseq
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import PathParameterMeta
+from silex_client.utils.thread import execute_in_thread
 import logging
 
 if typing.TYPE_CHECKING:
@@ -37,12 +39,20 @@ class Copy(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         source_paths: List[pathlib.Path] = parameters["src"]
         destination_dirs: List[pathlib.Path] = parameters["dst"]
 
         destination_paths = []
+
+        source_sequences = fileseq.findSequencesInList(source_paths)
+        destination_sequences = fileseq.findSequencesInList(destination_dirs)
+        logger.info("Copying %s to %s", source_sequences, destination_sequences)
+
         # Loop over all the files to copy
         for index, source_path in enumerate(source_paths):
             # If only one directory is given, this will still work thanks to the modulo
@@ -53,9 +63,14 @@ class Copy(CommandBase):
 
             # Copy only if the files does not already exists
             os.makedirs(str(destination_dir), exist_ok=True)
-            logger.info("Copying %s to %s", source_path, destination_dir)
-            with contextlib.suppress(shutil.SameFileError):
-                shutil.copy(source_path, destination_dir)
+
+            # Execute the copy in a different thread to not block the event loop
+            def copy():
+                with contextlib.suppress(shutil.SameFileError):
+                    shutil.copy(source_path, destination_dir)
+
+            await execute_in_thread(copy)
+
             destination_paths.append(destination_dir / source_path.name)
 
         return {

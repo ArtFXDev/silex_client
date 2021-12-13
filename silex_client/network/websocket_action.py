@@ -65,7 +65,10 @@ class WebsocketActionNamespace(WebsocketNamespace):
         uuid = data.get("uuid")
         future = self.update_futures.get(uuid)
         if uuid is None or future is None:
-            logger.warning("Could not apply the update %s no actions at this ID is waiting for updates", uuid)
+            logger.warning(
+                "Could not apply the update %s no actions at this ID is waiting for updates",
+                uuid,
+            )
             return
 
         if not future.cancelled():
@@ -76,8 +79,7 @@ class WebsocketActionNamespace(WebsocketNamespace):
         """
         Clear an executing action
         """
-        logger.debug("Action cancel request received: %s from %s",
-                     data, self.url)
+        logger.debug("Action cancel request received: %s from %s", data, self.url)
         action = self.context.actions.get(data.get("uuid"))
         if action is None:
             logger.error(
@@ -92,8 +94,7 @@ class WebsocketActionNamespace(WebsocketNamespace):
         """
         Undo an executing action
         """
-        logger.debug("Action undo request received: %s from %s",
-                     data, self.url)
+        logger.debug("Action undo request received: %s from %s", data, self.url)
         action = self.context.actions.get(data.get("uuid"))
         if action is None:
             logger.error(
@@ -108,8 +109,7 @@ class WebsocketActionNamespace(WebsocketNamespace):
         """
         Redo an executing action
         """
-        logger.debug("Action redo request received: %s from %s",
-                     data, self.url)
+        logger.debug("Action redo request received: %s from %s", data, self.url)
         action = self.context.actions.get(data.get("uuid"))
         if action is None:
             logger.error(
@@ -133,7 +133,7 @@ class WebsocketActionNamespace(WebsocketNamespace):
         return future
 
     async def register_update_callback(
-            self, uuid: str, coroutine: Callable[[asyncio.Future], Any]
+        self, uuid: str, coroutine: Callable[[asyncio.Future], Any]
     ) -> asyncio.Future:
         """
         Add a callback that is called at the next update query

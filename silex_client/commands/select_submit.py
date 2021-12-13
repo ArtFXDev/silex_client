@@ -53,14 +53,18 @@ class SelectSubmit(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         submiter: str = parameters["submiter"]
 
-        while submiter not in [submit_action["name"] for submit_action in Config().submits]:
+        while submiter not in [
+            submit_action["name"] for submit_action in Config().submits
+        ]:
             submiter = await self._prompt_new_submit(action_query)
 
         return {
             "action": submiter,
         }
-

@@ -22,7 +22,8 @@ vrscene:
           ask_user: true
           parameters:
             output_type: !command-output "build_output_path:select_list"
-
+            create_temp_dir:
+              value: false
             task:
               hide: true
             use_current_context:
@@ -49,5 +50,7 @@ vrscene:
           path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
           ask_user: true
           parameters:
+            precommands:
+              hide: true
             cmd_list: !command-output "send_vray_render:build_vray_cmd:commands"
             job_title: !command-output "send_vray_render:build_vray_cmd:file_name"

@@ -9,8 +9,6 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
-import os
-import traceback
 from typing import List, TYPE_CHECKING, Any, Callable, Dict
 
 from silex_client.utils.enums import Status
@@ -46,7 +44,9 @@ class CommandBase:
         """
         return self.__class__.__name__
 
-    def check_parameters(self, parameters: CommandParameters, logger: logging.Logger) -> bool:
+    def check_parameters(
+        self, parameters: CommandParameters, logger: logging.Logger
+    ) -> bool:
         """
         Check the if the input kwargs are valid accoring to the parameters list
         and conform it if nessesary
@@ -74,10 +74,11 @@ class CommandBase:
                     parameters[parameter_name],
                 )
                 return False
-
         return True
 
-    def check_context_metadata(self, context_metadata: Dict[str, Any], logger: logging.Logger):
+    def check_context_metadata(
+        self, context_metadata: Dict[str, Any], logger: logging.Logger
+    ):
         """
         Check if the context snapshot stored in the buffer contains all the required
         data for the command
@@ -113,7 +114,9 @@ class CommandBase:
                     command.command_buffer.status = Status.INVALID
                     return
                 # Make sure all the required metatada is here
-                if not command.check_context_metadata(action_query.context_metadata, logger):
+                if not command.check_context_metadata(
+                    action_query.context_metadata, logger
+                ):
                     command.command_buffer.status = Status.INVALID
                     return
 
@@ -147,10 +150,14 @@ class CommandBase:
         self.command_buffer.status = Status.WAITING_FOR_RESPONSE
         self.command_buffer.ask_user = True
 
-        # Send the update to the user and wait for its response
-        await asyncio.wait_for(
-            await action_query.async_update_websocket(apply_response=True), None
-        )
+        # Send the update to the UI and wait for its response
+        while action_query.ws_connection.is_running and self.command_buffer.require_prompt():
+            # Call the setup on all the commands
+            await self.command_buffer.setup(action_query)
+            # Wait for a response from the UI
+            await asyncio.wait_for(
+                await action_query.async_update_websocket(apply_response=True), None
+            )
 
         # Put the commands back to processing
         self.command_buffer.ask_user = False
@@ -162,7 +169,10 @@ class CommandBase:
         }
 
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ) -> Any:
         def default(upstream, parameters, action_query):
             raise NotImplementedError(
@@ -172,7 +182,10 @@ class CommandBase:
         self.conform_command()(default)
 
     async def undo(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ) -> Any:
         def default(upstream, parameters, action_query):
             raise NotImplementedError(
@@ -180,3 +193,11 @@ class CommandBase:
             )
 
         self.conform_command()(default)
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ) -> Any:
+        pass

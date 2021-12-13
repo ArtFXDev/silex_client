@@ -22,11 +22,12 @@ obj:
             output_type:
               value: "obj"
               hide: true
+            name: !command-output "input:input:file_paths"
+            padding: !command-output "input:input:padding"
           ask_user: true
         copy:
           label: "Copy file to pipeline"
           path: "silex_client.commands.copy.Copy"
-          ask_user: True
           parameters:
             src: !command-output "input:input:file_paths"
             dst: !command-output "conform:build_output_path:directory"

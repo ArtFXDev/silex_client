@@ -64,7 +64,9 @@ class StepBuffer:
 
     @property
     def outdated_caches(self):
-        return self.outdated_cache or not all(not command.outdated_caches for command in self.commands.values())
+        return self.outdated_cache or not all(
+            not command.outdated_caches for command in self.commands.values()
+        )
 
     def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
@@ -113,7 +115,9 @@ class StepBuffer:
 
         # Patch the current step data
         current_step_data = self.serialize()
-        current_step_data = {key: value for key, value in current_step_data.items() if key != "commands"}
+        current_step_data = {
+            key: value for key, value in current_step_data.items() if key != "commands"
+        }
         serialized_data = jsondiff.patch(current_step_data, serialized_data)
 
         # Format the commands corectly
@@ -130,7 +134,13 @@ class StepBuffer:
             setattr(new_data, private_field, getattr(self, private_field))
 
         self.commands.update(new_data.commands)
-        self.__dict__.update({key: value for key, value in new_data.__dict__.items() if key != "commands"})
+        self.__dict__.update(
+            {
+                key: value
+                for key, value in new_data.__dict__.items()
+                if key != "commands"
+            }
+        )
         self.outdated_cache = True
 
     @classmethod

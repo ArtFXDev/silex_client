@@ -7,7 +7,6 @@ register_task() with a coroutine as a parameter
 
 import asyncio
 import gc
-import os
 from concurrent import futures
 from contextlib import suppress
 from threading import Thread
@@ -116,8 +115,7 @@ class EventLoop:
                 logger.error(
                     "Exception raised in the task %s: %s", coroutine, exception
                 )
-                if os.getenv("SILEX_LOG_LEVEL") == "DEBUG":
-                    traceback.print_tb(exception.__traceback__)
+                traceback.print_tb(exception.__traceback__)
 
         future.add_done_callback(callback)
         return future

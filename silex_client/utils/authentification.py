@@ -1,12 +1,32 @@
 import asyncio
 import os
 
-from aiohttp.client_exceptions import ClientConnectionError, ContentTypeError, InvalidURL
+from aiohttp.client_exceptions import (
+    ClientConnectionError,
+    ContentTypeError,
+    InvalidURL,
+)
 import gazu
 import gazu.client
 import aiohttp
 
 from silex_client.utils.log import logger
+
+
+def is_authentificated() -> bool:
+    async def test_authentification():
+        headers = gazu.client.default_client.headers
+        async with aiohttp.ClientSession(headers=headers) as session:
+            silex_service_host = os.getenv("SILEX_ZOU_HOST", "")
+            query_url = f"{silex_service_host}/auth/authenticated"
+            async with session.get(query_url) as response:
+                return await response.json()
+
+    try:
+        return asyncio.run(test_authentification()).get("authenticated", False)
+    except (ClientConnectionError, ContentTypeError, InvalidURL):
+        logger.warning("Authentification failed, could not reach the ZOU API")
+        return False
 
 
 def authentificate_gazu() -> bool:
@@ -19,14 +39,17 @@ def authentificate_gazu() -> bool:
                 return await response.json()
 
     # Get the authentification token
-    try:
-        authentification_token = asyncio.run(get_authentification_token())
-    except (ClientConnectionError, ContentTypeError, InvalidURL):
-        logger.warning("Could not get the cgwire authentification token from the silex socket service")
-        return False
+    if not is_authentificated():
+        try:
+            authentification_token = asyncio.run(get_authentification_token())
+        except (ClientConnectionError, ContentTypeError, InvalidURL):
+            logger.warning(
+                "Could not get the cgwire authentification token from the silex socket service"
+            )
+            return False
 
-    # Set the authentification token
-    gazu.client.set_tokens(authentification_token)
+        # Set the authentification token
+        gazu.client.set_tokens(authentification_token)
 
     # Make sure the authentification worked
     try:

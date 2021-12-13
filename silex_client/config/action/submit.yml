@@ -1,4 +1,5 @@
 submit:
+  thumbnail: "submit.svg"
   steps:
     setup:
       lavel: "Setup"

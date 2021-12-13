@@ -29,7 +29,10 @@ class Remove(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
 
         file_path: pathlib.Path = parameters.get("file_path")
@@ -37,8 +40,7 @@ class Remove(CommandBase):
         for item in file_path:
             # Check for file to copy
             if not os.path.exists(item):
-                raise Exception(
-                    f"{item} doesn't exist.")
+                raise Exception(f"{item} doesn't exist.")
 
             if os.path.isfile(item):
                 os.remove(item)

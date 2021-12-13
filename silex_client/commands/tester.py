@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import typing
-import pathlib
 from typing import Any, Dict
+
+from fileseq import FrameSet
 
 from silex_client.action.command_base import CommandBase
 import logging
@@ -11,8 +12,11 @@ from silex_client.utils.parameter_types import (
     RangeParameterMeta,
     SelectParameterMeta,
     MultipleSelectParameterMeta,
+    RadioSelectParameterMeta,
     IntArrayParameterMeta,
     TaskParameterMeta,
+    TextParameterMeta,
+    PathParameterMeta,
 )
 
 # Forward references
@@ -42,7 +46,10 @@ class StringTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "String parameter tester: %s, %s",
@@ -79,7 +86,10 @@ class IntegerTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Integer parameter tester: %s, %s",
@@ -116,7 +126,10 @@ class BooleanTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Boolean parameter tester: %s, %s",
@@ -130,6 +143,17 @@ class BooleanTester(CommandBase):
         )
         return parameters["bool_tester"]
 
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        if not parameters["bool_tester"]:
+            self.command_buffer.parameters["bool_tester_2"].hide = True
+        else:
+            self.command_buffer.parameters["bool_tester_2"].hide = False
+
 
 class PathTester(CommandBase):
     """
@@ -139,21 +163,35 @@ class PathTester(CommandBase):
     parameters = {
         "path_tester": {
             "label": "Path Tester",
-            "type": pathlib.Path,
+            "type": PathParameterMeta(),
             "value": None,
             "tooltip": "Testing the path parameters",
         },
-        "path_tester_2": {
-            "label": "Path Tester 2",
-            "type": pathlib.Path,
+        "path_tester_multiple": {
+            "label": "Path Tester Multiple",
+            "type": PathParameterMeta(multiple=True),
             "value": None,
-            "tooltip": "Testing the path parameters",
+        },
+        "path_tester_extensions": {
+            "label": "Path Tester extensions .abc, .obj, .fbx",
+            "type": PathParameterMeta(extensions=[".abc", ".obj", ".fbx"]),
+            "value": None,
+        },
+        "path_tester_multiple_extensions": {
+            "label": "Path Tester multiple files and extensions (.png, .jpg, .jpeg)",
+            "type": PathParameterMeta(
+                extensions=[".png", ".jpg", ".jpeg"], multiple=True
+            ),
+            "value": None,
         },
     }
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Path parameter tester: %s, %s",
@@ -161,9 +199,19 @@ class PathTester(CommandBase):
             type(parameters["path_tester"]),
         )
         logger.info(
-            "Path parameter tester: %s, %s",
-            parameters["path_tester_2"],
-            type(parameters["path_tester_2"]),
+            "Path parameter multiple: %s, %s",
+            parameters["path_tester_multiple"],
+            type(parameters["path_tester_multiple"]),
+        )
+        logger.info(
+            "Path parameter extensions: %s, %s",
+            parameters["path_tester_extensions"],
+            type(parameters["path_tester_extensions"]),
+        )
+        logger.info(
+            "Path parameter multiple extensions: %s, %s",
+            parameters["path_tester_multiple_extensions"],
+            type(parameters["path_tester_multiple_extensions"]),
         )
         return parameters["path_tester"]
 
@@ -182,7 +230,14 @@ class SelectTester(CommandBase):
         },
         "select_tester_2": {
             "label": "Select Tester 2",
-            "type": SelectParameterMeta(**{"Hello Label": "hello", "World Label": "world", "Foo Label": "foo", "Bar Label": "bar"}),
+            "type": SelectParameterMeta(
+                **{
+                    "Hello Label": "hello",
+                    "World Label": "world",
+                    "Foo Label": "foo",
+                    "Bar Label": "bar",
+                }
+            ),
             "value": None,
             "tooltip": "Testing the select parameters",
         },
@@ -190,7 +245,10 @@ class SelectTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Select parameter tester: %s, %s",
@@ -227,7 +285,10 @@ class RangeTesterLow(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Range parameter tester: %s, %s",
@@ -264,7 +325,10 @@ class RangeTesterMid(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Range parameter tester: %s, %s",
@@ -309,7 +373,10 @@ class RangeTesterHigh(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Range parameter tester: %s, %s",
@@ -346,7 +413,10 @@ class EntityTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Entity parameter tester: %s, %s",
@@ -383,7 +453,10 @@ class MultipleSelectTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "MultipleSelect parameter tester: %s, %s",
@@ -396,6 +469,46 @@ class MultipleSelectTester(CommandBase):
             type(parameters["multiple_select_tester_2"]),
         )
         return parameters["multiple_select_tester"]
+
+
+class RadioSelectTester(CommandBase):
+    """
+    Testing the radio_select parameters
+    """
+
+    parameters = {
+        "radio_select_tester": {
+            "label": "RadioSelect Tester",
+            "type": RadioSelectParameterMeta("foo", "bar", "hello", "world"),
+            "value": None,
+            "tooltip": "Testing the radio_select parameters",
+        },
+        "radio_select_tester_2": {
+            "label": "RadioSelect Tester 2",
+            "type": RadioSelectParameterMeta("foo", "bar", "hello", "world"),
+            "value": None,
+            "tooltip": "Testing the radio_select parameters",
+        },
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        logger.info(
+            "Select Radio parameter tester: %s, %s",
+            parameters["radio_select_tester"],
+            type(parameters["radio_select_tester"]),
+        )
+        logger.info(
+            "Select Radio parameter tester: %s, %s",
+            parameters["radio_select_tester_2"],
+            type(parameters["radio_select_tester_2"]),
+        )
+        return parameters["radio_select_tester"]
 
 
 class IntArrayTesterLow(CommandBase):
@@ -420,7 +533,10 @@ class IntArrayTesterLow(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "IntArray parameter tester: %s, %s",
@@ -457,7 +573,10 @@ class IntArrayTesterHigh(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "IntArray parameter tester: %s, %s",
@@ -469,8 +588,115 @@ class IntArrayTesterHigh(CommandBase):
             parameters["int_array_tester_2"],
             type(parameters["int_array_tester_2"]),
         )
-        
+
         return parameters["int_array_tester"]
+
+
+class TextTester(CommandBase):
+    """
+    Testing the text parameters
+    """
+
+    parameters = {
+        "text_tester": {
+            "label": "Text Tester",
+            "type": TextParameterMeta(),
+            "value": None,
+            "tooltip": "Testing the text parameters",
+        },
+        "text_tester_2": {
+            "label": "Text Tester 2",
+            "type": TextParameterMeta(),
+            "value": "Lorem ipsum dolor sit amet",
+            "tooltip": "Testing the text parameters",
+        },
+        "text_tester_with_returns": {
+            "label": "Text Tester with returns",
+            "type": TextParameterMeta(),
+            "value": "First line\nSecond line\nThird line\n\nEnd",
+        },
+        "text_tester_info": {
+            "label": "Text Tester Info",
+            "type": TextParameterMeta(color="info"),
+            "value": "You are doing well! ℹ️",
+        },
+        "text_tester_success": {
+            "label": "Text Tester Success",
+            "type": TextParameterMeta(color="success"),
+            "value": "You are doing well! ✅",
+        },
+        "text_tester_warning": {
+            "label": "Text Tester Warning",
+            "type": TextParameterMeta(color="warning"),
+            "value": "Be careful... ⚠️",
+        },
+        "text_tester_error": {
+            "label": "Text Tester Error",
+            "type": TextParameterMeta(color="error"),
+            "value": "Something went wrong! 🚫",
+        },
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        logger.info(
+            "Text parameter tester: %s, %s",
+            parameters["text_tester"],
+            type(parameters["text_tester"]),
+        )
+        logger.info(
+            "Text parameter tester: %s, %s",
+            parameters["text_tester_2"],
+            type(parameters["text_tester_2"]),
+        )
+
+        return parameters["text_tester"]
+
+
+class FrameSetTester(CommandBase):
+    """
+    Testing the frame set parameters
+    """
+
+    parameters = {
+        "frameset_tester": {
+            "label": "FrameSet Tester",
+            "type": FrameSet,
+            "value": None,
+            "tooltip": "Testing the frameset parameters",
+        },
+        "frameset_tester_2": {
+            "label": "FrameSet Tester 2",
+            "type": FrameSet,
+            "value": "1-50x5",
+            "tooltip": "Testing the frameset parameters",
+        },
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        logger.info(
+            "FramseSet parameter tester: %s, %s",
+            parameters["frameset_tester"],
+            type(parameters["frameset_tester"]),
+        )
+        logger.info(
+            "FramseSet parameter tester: %s, %s",
+            parameters["frameset_tester_2"],
+            type(parameters["frameset_tester_2"]),
+        )
+
+        return parameters["frameset_tester"]
 
 
 class TracebackTester(CommandBase):
@@ -489,7 +715,10 @@ class TracebackTester(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         logger.info(
             "Traceback tester: %s, %s",
