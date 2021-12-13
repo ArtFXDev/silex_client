@@ -5,6 +5,7 @@ import typing
 from typing import Any, Dict
 import pathlib
 import fileseq
+import glob
 
 import gazu.shot
 import gazu.asset
@@ -76,21 +77,19 @@ class BuildWorkPath(CommandBase):
         )
         full_path = f"{work_path}.{extension}"
 
-        # Make sure to get the last version everytime
-        if os.path.exists(full_path):
-            # Find the last version on disk
-            sequences = fileseq.findSequencesOnDisk(os.path.dirname(full_path))
-            for sequence in sequences:
-                if pathlib.Path(full_path) in [pathlib.Path(path) for path in sequence]:
-                    version = sequence.frameSet()[-1]
-            # Check if we need to increment
-            if parameters["increment"]:
-                version += 1
+        # Find the last version on disk
+        sequences = fileseq.findSequencesOnDisk(os.path.dirname(full_path))
+        for sequence in sequences:
+            if pathlib.Path(full_path).stem in [pathlib.Path(path).stem for path in sequence]:
+                version = sequence.frameSet()[-1]
+        # Check if we need to increment
+        if parameters["increment"]:
+            version += 1
 
-            # Build the file path again
-            work_path = await gazu.files.build_working_file_path(
-                task, software=software, revision=version, sep=os.path.sep
-            )
-            full_path = f"{work_path}.{extension}"
+        # Build the file path again
+        work_path = await gazu.files.build_working_file_path(
+            task, software=software, revision=version, sep=os.path.sep
+        )
+        full_path = f"{work_path}.{extension}"
             
         return full_path
