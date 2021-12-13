@@ -1,5 +1,5 @@
 submit:
-  thumbnail: "$SILEX_ICONS/submit.svg"
+  thumbnail: "submit.svg"
   steps:
     setup:
       lavel: "Setup"

@@ -1,5 +1,5 @@
 publish:
-  thumbnail: "$SILEX_ICONS/publish.svg"
+  thumbnail: "publish.svg"
   steps:
     setup:
       lavel: "Setup"

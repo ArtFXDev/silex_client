@@ -86,8 +86,7 @@ class SelectConform(CommandBase):
         conform_type: str = parameters["conform_type"]
         auto_select_type: bool = parameters["auto_select_type"]
 
-        # TODO: Find out why we need to set the HASH1 padstyle to make this work
-        sequences = fileseq.findSequencesInList(file_paths, fileseq.PAD_STYLE_HASH1)
+        sequences = fileseq.findSequencesInList(file_paths)
         conform_types = []
         frame_sets = [
             sequence.frameSet() or fileseq.FrameSet(0) for sequence in sequences
@@ -146,7 +145,9 @@ class SelectConform(CommandBase):
             return {
                 "files": [
                     {"file_paths": sequence, "frame_set": frame_set, "padding": padding}
-                    for sequence, frame_set, padding in zip(sequences, frame_sets, paddings)
+                    for sequence, frame_set, padding in zip(
+                        sequences, frame_sets, paddings
+                    )
                 ],
                 "types": conform_types,
             }

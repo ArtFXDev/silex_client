@@ -1,5 +1,5 @@
 conform:
-  thumbnail: "$SILEX_ICONS/conform.svg"
+  thumbnail: "conform.svg"
   steps:
     setup:
       lavel: "Setup"
@@ -19,7 +19,7 @@ conform:
           tooltip: "Append the selected conforms to the list of commands to execute"
           parameters:
             values: !command-output "setup:get_conform_output:files"
-            categories: 
+            categories:
               - "conform"
             actions: !command-output "setup:get_conform_output:types"
             parameter: "input:input:input"

@@ -61,7 +61,7 @@ def commands():
         "SILEX_ZOU_HOST", "http://kitsu.prod.silex.artfx.fr/api"
     )
     env.SILEX_SERVICE_HOST = os.getenv("SILEX_SERVICE_HOST", "http://localhost:5118")
-    env.SILEX_LOG_LEVEL = os.getenv("SILEX_LOG_LEVEL", "INFO")
+    env.SILEX_LOG_LEVEL = os.getenv("SILEX_LOG_LEVEL", "WARNING")
     env.SILEX_ACTION_CONFIG.prepend("{root}/silex_client/config")
     env.SILEX_TRACTOR_HOST = os.getenv("SILEX_TRACTOR_HOST", "http://tractor:80")
 
