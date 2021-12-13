@@ -298,5 +298,6 @@ class CommandBuffer:
         and none values on the parameters
         """
         return self.ask_user or not all(
-            parameter.value is not None for parameter in self.parameters.values()
+            parameter.value is not None or parameter.hide
+            for parameter in self.parameters.values()
         )
