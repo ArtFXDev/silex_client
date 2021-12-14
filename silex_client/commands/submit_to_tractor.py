@@ -51,30 +51,6 @@ class TractorSubmiter(CommandBase):
         },
     }
 
-    def mount(self, action_query: ActionQuery, SERVER_ROOT: str) -> List[List[str]]:
-
-        # check context for pre commands
-        precommands: List[List[str]] = []
-
-        if action_query.context_metadata.get("user_email") is not None:
-            # case: 5TH year student
-            ip_dict: Dict[str, str] = {"ana": "192.168.2.214", "tars": "192.168.2.212"}
-
-            precommands: List[str] = [
-                # ["net", "use", f"\\\\{SERVER_ROOT}","/user:%SERVER_USER%", "%SERVER_PASS%"],
-                # ["net", "use", f"\\\\{ip_dict[SERVER_ROOT]}", "/user:%SERVER_USER%", "%SERVER_PASS%"],# needed for some pool
-                ['powershell.exe', '-ExecutionPolicy', 'Bypass', '-NoProfile', '-File', "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive.ps1", SERVER_ROOT]
-            ]
-
-        else:
-            # case: 4TH year student
-            precommands: List[str] = [
-                ["net", "use", "\\\\marvin /user:etudiant artfx2020"],
-                ["net", "use", "\\\\192.168.2.204 /user:etudiant artfx2020"] # needed for some pool
-            ]
-        
-        return precommands
-
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -90,7 +66,8 @@ class TractorSubmiter(CommandBase):
         pools: List[str] = parameters["pools"]
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
-
+        owner: str = ''
+        
         # get server root and mount tars / ana
         if action_query.context_metadata.get("user_email") is not None:
             project_dict = await gazu.project.get_project_by_name(project)
@@ -101,10 +78,24 @@ class TractorSubmiter(CommandBase):
 
             SERVER_ROOT = project_data['nas']
 
-            precommands.extend(self.mount(action_query, SERVER_ROOT))
+            precommands: List[str] = [
+                ['powershell.exe', '-ExecutionPolicy', 'Bypass', '-NoProfile', '-File', "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive.ps1", SERVER_ROOT]
+            ]
 
-        # Get owner from context
-        owner: str = action_query.context_metadata.get("user_email", "3d4").split('@')[0] # get name only
+            precommands.extend(precommands)
+
+            # Get owner from context
+            owner: str = action_query.context_metadata.get("user_email", None).split('@')[0] # get name only
+        else:
+            
+            mount: List[str] = [
+                ['powershell.exe', '-ExecutionPolicy', 'Bypass', '-NoProfile', '-File', "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive.ps1", "marvin"]
+            ]
+
+            precommands.extend(mount)
+            
+            # Get owner from context
+            owner: str = "3d4"
 
         # Set service
         if len(pools) == 1:
