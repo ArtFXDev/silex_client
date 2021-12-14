@@ -255,6 +255,7 @@ class ActionQuery:
 
             logger.debug("Applying update: %s", response.result())
             self.buffer.deserialize(response.result())
+            self._buffer_diff = self.buffer.serialize()
 
         if apply_response:
             return await self.ws_connection.action_namespace.register_update_callback(

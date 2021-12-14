@@ -162,6 +162,7 @@ class CommandBase:
         # Put the commands back to processing
         self.command_buffer.ask_user = False
         self.command_buffer.status = Status.PROCESSING
+        await asyncio.wait_for(await action_query.async_update_websocket(), None)
 
         return {
             key: value.get_value(action_query)

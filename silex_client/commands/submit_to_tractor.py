@@ -3,7 +3,9 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict, List
 import os
-import gazu
+
+import gazu.project
+import gazu.client
 import logging
 
 from silex_client.action.command_base import CommandBase
@@ -89,16 +91,17 @@ class TractorSubmiter(CommandBase):
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
 
-        # get server root
-        project_dict = await gazu.project.get_project_by_name(project)
-        project_data = project_dict['data']
+        # get server root and mount tars / ana
+        if action_query.context_metadata.get("user_email") is not None:
+            project_dict = await gazu.project.get_project_by_name(project)
+            project_data = project_dict['data']
 
-        if project_data is None:
-            raise Exception('NO PROJECTS FOUND')
+            if project_data is None:
+                raise Exception('NO PROJECTS FOUND')
 
-        SERVER_ROOT = project_data['nas']
+            SERVER_ROOT = project_data['nas']
 
-        precommands.extend(self.mount(action_query, SERVER_ROOT))
+            precommands.extend(self.mount(action_query, SERVER_ROOT))
 
         # Get owner from context
         owner: str = action_query.context_metadata.get("user_email", "3d4").split('@')[0] # get name only
@@ -122,7 +125,6 @@ class TractorSubmiter(CommandBase):
             task = author.Task(title=str(cmd))
             
             # add precommands
-            logger.info(precommands)
             for pre in precommands:
                 logger.info( f"Add pre-command : {pre}")
                 pre_command = author.Command(
