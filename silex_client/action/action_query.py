@@ -140,7 +140,6 @@ class ActionQuery:
         """
         # Get the range of commands
         commands_prompt = self.commands[start:end]
-        hide_history: List[bool] = []
         # Set the commands to WAITING_FOR_RESPONSE
         for index, command_left in enumerate(commands_prompt):
             if not command_left.require_prompt():
@@ -149,7 +148,6 @@ class ActionQuery:
             command_left.ask_user = True
             await command_left.setup(self)
             command_left.status = Status.WAITING_FOR_RESPONSE
-            hide_history.append(command_left.hide)
             command_left.hide = False
 
         # Send the update to the UI and wait for its response
@@ -166,10 +164,6 @@ class ActionQuery:
         for index, command_left in enumerate(self.commands[start:end]):
             command_left.ask_user = False
             command_left.status = Status.INITIALIZED
-            if self.buffer.simplify:
-                command_left.hide = True
-            else:
-                command_left.hide = hide_history[index]
 
         await asyncio.wait_for(await self.async_update_websocket(), None)
 
