@@ -91,7 +91,7 @@ class IterateAction(InsertAction):
 
         hide_commands = len(values) > hide_threshold
         if hide_commands:
-            label = f"{label} [optimised]"
+            label = f"{label} [optimized]"
 
         logger.info("Adding %s actions", len(values))
         for index, value in enumerate(values):
