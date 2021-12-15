@@ -150,6 +150,8 @@ class CommandBase:
         self.command_buffer.status = Status.WAITING_FOR_RESPONSE
         self.command_buffer.ask_user = True
 
+        hide_history = self.command_buffer.hide
+        self.command_buffer.hide = False
         # Send the update to the UI and wait for its response
         while action_query.ws_connection.is_running and self.command_buffer.require_prompt():
             # Call the setup on all the commands
@@ -162,6 +164,7 @@ class CommandBase:
         # Put the commands back to processing
         self.command_buffer.ask_user = False
         self.command_buffer.status = Status.PROCESSING
+        self.command_buffer.hide = hide_history
         await asyncio.wait_for(await action_query.async_update_websocket(), None)
 
         return {

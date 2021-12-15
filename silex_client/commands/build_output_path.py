@@ -220,7 +220,6 @@ class BuildOutputPath(CommandBase):
         self.command_buffer.parameters["name"].hide = False
 
         # This action can be used with or without a context
-        print(action_query.context_metadata.keys())
         for context_value in ["entity_id", "task_type_id", "entity_type", "task"]:
             if context_value not in action_query.context_metadata.keys():
                 parameters["use_current_context"] = False
