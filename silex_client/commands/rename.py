@@ -64,7 +64,7 @@ class Rename(CommandBase):
                 for sequence in source_sequences
                 if source_path in [pathlib.Path(file_path) for file_path in sequence]
             )
-            
+
             # Construct the new name
             extension = str(sequence.extension())
             new_name = os.path.splitext(new_name)[0] + extension
