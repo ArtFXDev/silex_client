@@ -91,6 +91,14 @@ def main():
         dest="batch",
     )
     action_parser.add_argument(
+        "--simplify",
+        "-s",
+        help="Execute the action in simplify mode",
+        default=False,
+        action="store_true",
+        dest="simplify",
+    )
+    action_parser.add_argument(
         "--category",
         "-c",
         help="The category the action belong to",

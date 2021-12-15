@@ -37,7 +37,7 @@ class ActionBuffer:
     STEP_TEMPLATE = {"index": int, "commands": list}
     COMMAND_TEMPLATE = {"path": str}
     #: The list of fields that should be ignored when serializing this buffer to json
-    PRIVATE_FIELDS = ["variables"]
+    PRIVATE_FIELDS = ["store"]
 
     #: The name of the action (usualy the same as the config file)
     name: str = field()
@@ -47,8 +47,8 @@ class ActionBuffer:
     label: Optional[str] = field(compare=False, repr=False, default=None)
     #: Specify if the action must be displayed by the UI or not
     hide: bool = field(compare=False, repr=False, default=False)
-    #: Specify if the action must be displayed by the shelf or not
-    shelf: bool = field(compare=False, repr=False, default=True)
+    #: Specify if the action must be simplified in the UI or not
+    simplify: bool = field(compare=False, repr=False, default=False)
     #: The status of the action, this value is readonly, it is computed from the commands's status
     status: Status = field(init=False)  # type: ignore
     #: The way this action is executed (backward, forward, paused...)
@@ -58,7 +58,7 @@ class ActionBuffer:
     #: A dict of steps that will contain the commands
     steps: Dict[str, StepBuffer] = field(default_factory=dict)
     #: Dict of variables that are global to all the commands of this action
-    variables: Dict[str, Any] = field(compare=False, default_factory=dict)
+    store: Dict[str, Any] = field(compare=False, default_factory=dict)
     #: Snapshot of the context's metadata when this buffer is created
     context_metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -85,6 +85,8 @@ class ActionBuffer:
                 steps = getattr(self, f.name)
                 step_value = {}
                 for step_name, step in steps.items():
+                    if step.hide:
+                        continue
                     step_value[step_name] = step.serialize()
                 result.append((f.name, step_value))
             else:

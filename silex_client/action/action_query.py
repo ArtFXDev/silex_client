@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import copy
 from concurrent import futures
+import os
 from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
 
 import jsondiff
@@ -35,7 +36,11 @@ class ActionQuery:
     """
 
     def __init__(
-        self, name: str, resolved_config: Optional[dict] = None, category="action"
+        self,
+        name: str,
+        resolved_config: Optional[dict] = None,
+        category="action",
+        simplify=False,
     ):
         context = Context.get()
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(context.metadata))
@@ -54,6 +59,12 @@ class ActionQuery:
         self._initialize_buffer(
             resolved_config, {"context_metadata": metadata_snapshot}
         )
+
+        if simplify or os.getenv("SILEX_SIMPLE_MODE"):
+            self.buffer.simplify = True
+            for commands in self.commands:
+                commands.hide = True
+
         self._buffer_diff = copy.deepcopy(self.buffer.serialize())
         self._task: Optional[asyncio.Task] = None
 

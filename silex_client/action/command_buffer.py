@@ -199,6 +199,8 @@ class CommandBuffer:
                 parameters = getattr(self, f.name)
                 parameters_value = {}
                 for parameter_name, parameter in parameters.items():
+                    if parameter.hide:
+                        continue
                     parameters_value[parameter_name] = parameter.serialize()
                 result.append((f.name, parameters_value))
                 continue
