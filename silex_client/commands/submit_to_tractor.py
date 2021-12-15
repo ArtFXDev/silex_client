@@ -89,7 +89,7 @@ class TractorSubmiter(CommandBase):
         else:
             
             mount: List[str] = [
-                ['powershell.exe', '-ExecutionPolicy', 'Bypass', '-NoProfile', '-File', "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive_3d4.ps1", "marvin"]
+                ['powershell.exe', '-ExecutionPolicy', 'Bypass', '-NoProfile', '-File', "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive.ps1", "marvin"]
             ]
 
             precommands.extend(mount)
