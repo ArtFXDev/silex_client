@@ -114,11 +114,10 @@ def main():
     )
 
     launcher_parser.add_argument(
-        "--dcc",
-        "-d",
+        "dcc",
         help="The dcc to start",
-        type=str,
-        required=True,
+        default=None,
+        nargs="?",
     )
 
     launcher_parser.add_argument(
