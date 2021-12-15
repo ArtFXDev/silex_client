@@ -60,6 +60,13 @@ class IterateAction(InsertAction):
             "tooltip": "The output of the given command will be returned",
             "hide": True,
         },
+        "hide_threshold": {
+            "label": "Hide command threshold",
+            "type": int,
+            "value": 40,
+            "tooltip": "If the number actions to add is superior to this threshold, the commands will be hidden",
+            "hide": True,
+        },
     }
 
     @CommandBase.conform_command()
@@ -72,6 +79,7 @@ class IterateAction(InsertAction):
         actions = parameters["actions"]
         values = parameters["values"]
         categories = parameters["categories"]
+        hide_threshold = parameters["hide_threshold"]
 
         # Inherit from the parameters of the InsertAction command
         for key, value in super().parameters.items():
@@ -81,6 +89,10 @@ class IterateAction(InsertAction):
         outputs = []
         label = self.command_buffer.label
 
+        hide_commands = len(values) > hide_threshold
+        if hide_commands:
+            label = f"{label} [optimised]"
+
         logger.info("Adding %s actions", len(values))
         for index, value in enumerate(values):
             self.command_buffer.label = f"{label} ({index+1}/{len(values)})"
@@ -88,7 +100,7 @@ class IterateAction(InsertAction):
             category = categories[index % len(categories)]
 
             # Set the new values to the command
-            parameters.update({"action": action, "value": value, "category": category})
+            parameters.update({"action": action, "value": value, "category": category, "hide_commands": hide_commands})
             output = await super().__call__(parameters, action_query, logger)
             outputs.append(output)
 
