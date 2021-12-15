@@ -42,7 +42,7 @@ class TractorSubmiter(CommandBase):
         },
         "pools": {
             "label": "Pool",
-            "type": SelectParameterMeta(),
+            "type": MultipleSelectParameterMeta(),
         },
         "job_title": {"label": "Job title", "type": str, "value": "No Title"},
         "project": {
@@ -68,7 +68,7 @@ class TractorSubmiter(CommandBase):
         job_title: str = parameters["job_title"]
         owner: str = ''
         
-        # get server root and mount tars / ana
+        # MOUNt SERVER
         if action_query.context_metadata.get("user_email") is not None:
             project_dict = await gazu.project.get_project_by_name(project)
             project_data = project_dict['data']
@@ -178,9 +178,9 @@ class TractorSubmiter(CommandBase):
         self.command_buffer.parameters["pools"].type = MultipleSelectParameterMeta(
             *pools
         )
-        self.command_buffer.parameters["pools"].value = self.command_buffer.parameters[
-            "pools"
-        ].type.get_default()
+        pool_parameter = self.command_buffer.parameters["pools"]
+        if pool_parameter.value is None:
+            pool_parameter.value = pool_parameter.type.get_default()
 
         # Get the list of available projects
         if "project" in action_query.context_metadata:

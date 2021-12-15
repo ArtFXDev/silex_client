@@ -146,7 +146,12 @@ class BuildOutputPath(CommandBase):
 
         # Build the output path
         output_path = await gazu.files.build_entity_output_file_path(
-            entity, output_type, task_type, sep=os.path.sep, nb_elements=nb_elements, name=task_name
+            entity,
+            output_type,
+            task_type,
+            sep=os.path.sep,
+            nb_elements=nb_elements,
+            name=task_name,
         )
         output_path = pathlib.Path(output_path)
 
@@ -226,4 +231,3 @@ class BuildOutputPath(CommandBase):
             self.command_buffer.parameters["task"].hide = True
         else:
             self.command_buffer.parameters["task"].hide = False
-

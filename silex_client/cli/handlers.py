@@ -42,7 +42,9 @@ def action_handler(action_name: str, **kwargs) -> None:
     silex_context = Context.get()
     silex_context.start_services()
 
-    action = ActionQuery(action_name, category=category)
+    action = ActionQuery(
+        action_name, category=category, simplify=kwargs.get("simplify", False)
+    )
     if not action.commands:
         logger.error("The resolved action is invalid")
         return
