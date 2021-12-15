@@ -152,7 +152,10 @@ class CommandBase:
 
         self.command_buffer.hide = False
         # Send the update to the UI and wait for its response
-        while action_query.ws_connection.is_running and self.command_buffer.require_prompt():
+        while (
+            action_query.ws_connection.is_running
+            and self.command_buffer.require_prompt()
+        ):
             # Call the setup on all the commands
             await self.command_buffer.setup(action_query)
             # Wait for a response from the UI

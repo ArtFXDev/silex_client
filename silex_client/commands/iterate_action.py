@@ -100,7 +100,14 @@ class IterateAction(InsertAction):
             category = categories[index % len(categories)]
 
             # Set the new values to the command
-            parameters.update({"action": action, "value": value, "category": category, "hide_commands": hide_commands})
+            parameters.update(
+                {
+                    "action": action,
+                    "value": value,
+                    "category": category,
+                    "hide_commands": hide_commands,
+                }
+            )
             output = await super().__call__(parameters, action_query, logger)
             outputs.append(output)
 

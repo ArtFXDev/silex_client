@@ -163,7 +163,11 @@ class InsertAction(CommandBase):
                 output_path.step = step_name
 
             # Loop over all the commands of the step
-            if action_query.buffer.simplify or hide_commands or self.command_buffer.hide:
+            if (
+                action_query.buffer.simplify
+                or hide_commands
+                or self.command_buffer.hide
+            ):
                 for command in step.commands.values():
                     command.hide = True
 
