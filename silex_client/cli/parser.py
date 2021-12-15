@@ -91,6 +91,14 @@ def main():
         dest="batch",
     )
     action_parser.add_argument(
+        "--simplify",
+        "-s",
+        help="Execute the action in simplify mode",
+        default=False,
+        action="store_true",
+        dest="simplify",
+    )
+    action_parser.add_argument(
         "--category",
         "-c",
         help="The category the action belong to",
@@ -106,11 +114,10 @@ def main():
     )
 
     launcher_parser.add_argument(
-        "--dcc",
-        "-d",
+        "dcc",
         help="The dcc to start",
-        type=str,
-        required=True,
+        default=None,
+        nargs="?",
     )
 
     launcher_parser.add_argument(

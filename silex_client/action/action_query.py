@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import copy
 from concurrent import futures
+import os
 from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
 
 import jsondiff
@@ -35,7 +36,11 @@ class ActionQuery:
     """
 
     def __init__(
-        self, name: str, resolved_config: Optional[dict] = None, category="action"
+        self,
+        name: str,
+        resolved_config: Optional[dict] = None,
+        category="action",
+        simplify=False,
     ):
         context = Context.get()
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(context.metadata))
@@ -54,6 +59,12 @@ class ActionQuery:
         self._initialize_buffer(
             resolved_config, {"context_metadata": metadata_snapshot}
         )
+
+        if simplify or os.getenv("SILEX_SIMPLE_MODE"):
+            self.buffer.simplify = True
+            for commands in self.commands:
+                commands.hide = True
+
         self._buffer_diff = copy.deepcopy(self.buffer.serialize())
         self._task: Optional[asyncio.Task] = None
 
@@ -129,6 +140,7 @@ class ActionQuery:
         """
         # Get the range of commands
         commands_prompt = self.commands[start:end]
+        hide_history: List[bool] = []
         # Set the commands to WAITING_FOR_RESPONSE
         for index, command_left in enumerate(commands_prompt):
             if not command_left.require_prompt():
@@ -137,6 +149,8 @@ class ActionQuery:
             command_left.ask_user = True
             await command_left.setup(self)
             command_left.status = Status.WAITING_FOR_RESPONSE
+            hide_history.append(command_left.hide)
+            command_left.hide = False
 
         # Send the update to the UI and wait for its response
         while self.ws_connection.is_running and self.commands[start].require_prompt():
@@ -149,9 +163,12 @@ class ActionQuery:
             )
 
         # Put the commands back to initialized
-        for command_left in self.commands[start:end]:
+        for index, command_left in enumerate(self.commands[start:end]):
             command_left.ask_user = False
             command_left.status = Status.INITIALIZED
+            command_left.hide = hide_history[index]
+
+        await asyncio.wait_for(await self.async_update_websocket(), None)
 
     def cancel(self, emit_clear: bool = True):
         """

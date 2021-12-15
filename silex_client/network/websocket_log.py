@@ -30,7 +30,7 @@ class WebsocketLogHandler(logging.Handler):
         """
         Capture the record and append it to the action logs
         """
-        if record.levelname == "DEBUG":
+        if record.levelname == "DEBUG" or self.action_query.simplify:
             return
 
         log = {"level": record.levelname, "message": websocket_formatter.format(record)}
@@ -65,6 +65,7 @@ class RedirectWebsocketLogs(object):
                 exc_value,
             )
             self.silex_command.status = Status.ERROR
+            self.silex_command.hide = False
 
             traceback.print_tb(exc_traceback)
             exception = traceback.format_exception(exc_type, exc_value, exc_traceback)
