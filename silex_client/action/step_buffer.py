@@ -87,6 +87,9 @@ class StepBuffer:
                 commands = getattr(self, f.name)
                 command_value = {}
                 for command_name, command in commands.items():
+                    # If the command is hidden and was previously hidden
+                    if command.hide and command.serialize_cache.get("hide", False):
+                        continue
                     command_value[command_name] = command.serialize()
                 result.append((f.name, command_value))
             else:
