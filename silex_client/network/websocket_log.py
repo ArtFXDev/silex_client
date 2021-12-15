@@ -30,7 +30,7 @@ class WebsocketLogHandler(logging.Handler):
         """
         Capture the record and append it to the action logs
         """
-        if record.levelname == "DEBUG" or self.action_query.simplify:
+        if record.levelname == "DEBUG" or self.action_query.buffer.simplify:
             return
 
         log = {"level": record.levelname, "message": websocket_formatter.format(record)}

@@ -166,7 +166,10 @@ class ActionQuery:
         for index, command_left in enumerate(self.commands[start:end]):
             command_left.ask_user = False
             command_left.status = Status.INITIALIZED
-            command_left.hide = hide_history[index]
+            if self.buffer.simplify:
+                command_left.hide = True
+            else:
+                command_left.hide = hide_history[index]
 
         await asyncio.wait_for(await self.async_update_websocket(), None)
 

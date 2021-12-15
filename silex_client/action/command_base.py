@@ -164,7 +164,10 @@ class CommandBase:
         # Put the commands back to processing
         self.command_buffer.ask_user = False
         self.command_buffer.status = Status.PROCESSING
-        self.command_buffer.hide = hide_history
+        if action_query.buffer.simplify:
+            self.command_buffer.hide = True
+        else:
+            self.command_buffer.hide = hide_history
         await asyncio.wait_for(await action_query.async_update_websocket(), None)
 
         return {
