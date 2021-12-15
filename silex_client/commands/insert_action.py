@@ -154,6 +154,11 @@ class InsertAction(CommandBase):
             if output_path.step == old_step_name:
                 output_path.step = step_name
 
+            # Loop over all the commands of the step
+            if action_query.buffer.simplify:
+                for command in step.commands.values():
+                    command.hide = True
+
             # Loop over all the parameters of the step
             step_parameters = [
                 parameter
