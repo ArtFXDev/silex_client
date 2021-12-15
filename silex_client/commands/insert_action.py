@@ -64,6 +64,13 @@ class InsertAction(CommandBase):
             "tooltip": "The output of the given command will be returned",
             "hide": True,
         },
+        "hide_commands": {
+            "label": "Hide the insterted commands",
+            "type": bool,
+            "value": False,
+            "tooltip": "This option is for performance purpose",
+            "hide": True,
+        },
     }
 
     @CommandBase.conform_command()
@@ -76,6 +83,7 @@ class InsertAction(CommandBase):
         action_type = parameters["action"]
         label_key = parameters["label_key"]
         value = parameters["value"]
+        hide_commands = parameters["hide_commands"]
         action = Config().resolve_action(action_type, parameters["category"])
 
         if action is None:
@@ -155,7 +163,11 @@ class InsertAction(CommandBase):
                 output_path.step = step_name
 
             # Loop over all the commands of the step
-            if action_query.buffer.simplify:
+            if (
+                action_query.buffer.simplify
+                or hide_commands
+                or self.command_buffer.hide
+            ):
                 for command in step.commands.values():
                     command.hide = True
 
