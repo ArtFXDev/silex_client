@@ -44,4 +44,4 @@ class WebsocketNamespace(socketio.AsyncClientNamespace):
         """
         Simply inform the user that the silex service is disconnected
         """
-        logger.info("Disconected from %s on %s", self.url, self.namespace)
+        logger.info("Disconnected from %s on %s", self.url, self.namespace)

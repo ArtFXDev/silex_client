@@ -15,6 +15,7 @@ import gazu.task
 
 from silex_client.action.command_base import CommandBase
 import logging
+from silex_client.utils.files import slugify
 from silex_client.utils.parameter_types import TaskParameterMeta
 
 # Forward references
@@ -213,8 +214,8 @@ class BuildOutputPath(CommandBase):
         elif name_value:
             new_value = pathlib.Path(str(name_value)).stem
 
-        new_value = re.sub(r"^\W+|\W+$", "", new_value).strip("_")
-        self.command_buffer.parameters["name"].value = new_value
+        # Slugify the name
+        self.command_buffer.parameters["name"].value = slugify(new_value)
 
         # Force the name to be visible
         self.command_buffer.parameters["name"].hide = False
