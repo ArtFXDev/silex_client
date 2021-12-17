@@ -1,20 +1,20 @@
 from __future__ import annotations
 
+import logging
 import os
-import uuid
-import typing
 import pathlib
 import re
+import typing
+import uuid
 from typing import Any, Dict
 
 import fileseq
-import gazu.shot
 import gazu.asset
 import gazu.files
+import gazu.shot
 import gazu.task
 
 from silex_client.action.command_base import CommandBase
-import logging
 from silex_client.utils.files import slugify
 from silex_client.utils.parameter_types import TaskParameterMeta
 
@@ -191,6 +191,9 @@ class BuildOutputPath(CommandBase):
         else:
             logger.info("Output path(s) built: %s", full_paths)
 
+        # Store the selected task to preselect for the next BuildOutputPath
+        action_query.buffer.store["build_output_path_task_id"] = task_id
+
         return {
             "directory": directory,
             "task": task_id,
@@ -209,8 +212,8 @@ class BuildOutputPath(CommandBase):
     ):
         # Handle the case where a file sequence is given
         name_value = self.command_buffer.parameters["name"].get_value(action_query)
-        sequences = []
         new_value = name_value
+        sequences = []
         if isinstance(name_value, list):
             sequences = fileseq.findSequencesInList(name_value)
             new_value = sequences[0].basename()
