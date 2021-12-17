@@ -79,4 +79,4 @@ class SetStoredValue(CommandBase):
             key_suffix = pathlib.Path(str(key_suffix)).parent
 
         self.command_buffer.parameters["key_suffix"].command_output = False
-        self.command_buffer.parameters["key_suffix"].value = 
+        self.command_buffer.parameters["key_suffix"].value = key_suffix
