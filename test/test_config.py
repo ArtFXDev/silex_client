@@ -17,8 +17,8 @@ def dummy_config():
     Return a config initialized in the test folder to work the configuration
     files that has been created only for test purpose
     """
-    config_root = os.path.join(os.path.dirname(__file__), "config", "action")
-    return Config(config_root)
+    config_root = os.path.join(os.path.dirname(__file__), "config")
+    return Config([config_root])
 
 
 def test_resolve_action(dummy_config: Config):
@@ -26,15 +26,15 @@ def test_resolve_action(dummy_config: Config):
     Test the resolving of a configuration for the action 'foo' and the task 'task_a'
     with a dummy config file
     """
-    resolved_action = dummy_config.resolve_action("publish")
+    resolved_action = dummy_config.resolve_action("test")
 
     # Make sure the inheritance has been resolved corectly
-    assert isinstance(resolved_action, dict) == True
-    assert "publish" in resolved_action.keys()
-    assert set(resolved_action["publish"]["steps"].keys()) == set(
+    assert resolved_action is not None
+    assert "test" in resolved_action.keys()
+    assert set(resolved_action["test"]["steps"].keys()) == set(
         ["pre_action", "action", "post_action"]
     )
-    assert len(resolved_action["publish"]["steps"]["pre_action"]) == 3
+    assert len(resolved_action["test"]["steps"]["pre_action"]) == 3
 
 
 def test_resolve_non_existing_action(dummy_config):

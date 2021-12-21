@@ -1,6 +1,6 @@
-publish: !inherit
-  parent: "./default.yml"
-  key: "publish"
+test: !inherit
+  parent: "./action/default.yml"
+  key: "test"
 
   steps:
     action:
@@ -11,4 +11,4 @@ publish: !inherit
           parameters:
             message: "Publishing files"
             level: "info"
-          hide: true
+            hide: true

@@ -5,9 +5,11 @@ Utility class that will find the configurations according to the environment var
 SILEX_ACTION_CONFIG: For the actions
 """
 
+from __future__ import annotations
 import copy
 import contextlib
 import os
+import sys
 import pkg_resources
 from typing import Any, Dict, List, Optional
 
@@ -47,6 +49,14 @@ class Config:
         for entry_point in pkg_resources.iter_entry_points("silex_action_config"):
             with contextlib.suppress(pkg_resources.DistributionNotFound):
                 self.action_search_path += entry_point.load()
+
+    @staticmethod
+    def get() -> Config:
+        """
+        Return a globaly instanciated config. This static method is just for conveniance
+        """
+        # Get the instance of Context created in this same module
+        return getattr(sys.modules[__name__], "config")
 
     def find_config(self, search_path: List[str]) -> List[Dict[str, str]]:
         """
@@ -146,3 +156,6 @@ class Config:
                 return loader.get_single_data()
             finally:
                 loader.dispose()
+
+
+config = Config()

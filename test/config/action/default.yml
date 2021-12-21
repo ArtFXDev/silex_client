@@ -1,4 +1,4 @@
-publish:
+test:
   steps:
     pre_action:
       index: 10
