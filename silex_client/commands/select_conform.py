@@ -103,7 +103,7 @@ class SelectConform(CommandBase):
             conform_type = extension.lower()
             # Some extensions are not the exact same as their conform type
             if conform_type not in [
-                publish_action["name"] for publish_action in Config().conforms
+                publish_action["name"] for publish_action in Config.get().conforms
             ]:
                 # TODO: This mapping should be somewhere else
                 EXTENSION_TYPES_MAPPING = {
@@ -122,7 +122,7 @@ class SelectConform(CommandBase):
 
             # Some extensions are just not handled at all
             if conform_type not in [
-                publish_action["name"] for publish_action in Config().conforms
+                publish_action["name"] for publish_action in Config.get().conforms
             ]:
                 logger.warning("Could not guess the conform type of %s", sequence)
                 conform_type = await self._prompt_new_type(action_query)

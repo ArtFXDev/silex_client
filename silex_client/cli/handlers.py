@@ -25,7 +25,7 @@ def action_handler(action_name: str, **kwargs) -> None:
     """
     if kwargs.get("list", False):
         # Just print the available actions
-        action_names = [action["name"] for action in Config().actions]
+        action_names = [action["name"] for action in Config.get().actions]
         print("Available actions :")
         pprint.pprint(action_names)
         return
