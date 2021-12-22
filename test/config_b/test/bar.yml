@@ -1,14 +1,14 @@
-test:
+bar:
   steps:
     pre_action:
       index: 10
       label: "Pre action"
       commands:
-        initalize_action:
+        initalize_action_b:
           label: "Initialize Action"
           path: "silex_client.commands.utils.Log"
           parameters:
-            message: "Starting action query"
+            message: "BAR action config from path config_b"
             level: "debug"
           hide: true
 
@@ -20,10 +20,10 @@ test:
       index: 30
       label: "Post action"
       commands:
-        close_action:
+        close_action_b:
           label: "Close Action"
           path: "silex_client.commands.utils.Log"
           parameters:
-            message: "Closing action query"
+            message: "BAR action config from path config_b"
             level: "debug"
           hide: true

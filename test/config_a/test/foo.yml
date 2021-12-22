@@ -1,0 +1,22 @@
+foo: !inherit
+  name: ".bar"
+  key: "bar"
+  category: "test"
+
+  steps:
+    action:
+      commands:
+        first_a:
+          label: "Publish"
+          path: "silex_client.commands.utils.Log"
+          parameters:
+            message: "FOO action config from path config_a"
+            level: "info"
+            hide: true
+        second_a:
+          label: "Publish"
+          path: "silex_client.commands.utils.Log"
+          parameters:
+            message: "FOO action config from path config_a"
+            level: "info"
+            hide: true

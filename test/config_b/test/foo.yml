@@ -1,14 +1,15 @@
-test: !inherit
-  parent: "./action/default.yml"
-  key: "test"
+foo: !inherit
+  name: ".bar"
+  key: "bar"
+  category: "test"
 
   steps:
     action:
       commands:
-        publish:
+        first_b:
           label: "Publish"
           path: "silex_client.commands.utils.Log"
           parameters:
-            message: "Publishing files"
+            message: "FOO action config from path config_b"
             level: "info"
             hide: true
