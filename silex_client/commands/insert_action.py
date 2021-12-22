@@ -84,7 +84,7 @@ class InsertAction(CommandBase):
         label_key = parameters["label_key"]
         value = parameters["value"]
         hide_commands = parameters["hide_commands"]
-        action = Config().resolve_action(action_type, parameters["category"])
+        action = Config.get().resolve_action(action_type, parameters["category"])
 
         if action is None:
             raise Exception("Could not resolve the action %s", action_type)

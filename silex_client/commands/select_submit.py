@@ -25,7 +25,7 @@ class SelectSubmit(CommandBase):
         "submiter": {
             "label": "Select a submiter",
             "type": SelectParameterMeta(
-                *[submit_action["name"] for submit_action in Config().submits]
+                *[submit_action["name"] for submit_action in Config.get().submits]
             ),
             "value": None,
             "tooltip": "Select a submiter in the list",
@@ -39,7 +39,7 @@ class SelectSubmit(CommandBase):
         # Create a new parameter to prompt for the new file path
         new_parameter = ParameterBuffer(
             type=SelectParameterMeta(
-                *[submit_action["name"] for submit_action in Config().submits]
+                *[submit_action["name"] for submit_action in Config.get().submits]
             ),
             name="new_submit",
             label=f"Submiter",
@@ -61,7 +61,7 @@ class SelectSubmit(CommandBase):
         submiter: str = parameters["submiter"]
 
         while submiter not in [
-            submit_action["name"] for submit_action in Config().submits
+            submit_action["name"] for submit_action in Config.get().submits
         ]:
             submiter = await self._prompt_new_submit(action_query)
 

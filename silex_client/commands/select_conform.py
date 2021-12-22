@@ -48,7 +48,7 @@ class SelectConform(CommandBase):
         "conform_type": {
             "label": "Select a conform type",
             "type": SelectParameterMeta(
-                *[publish_action["name"] for publish_action in Config().conforms]
+                *[publish_action["name"] for publish_action in Config.get().conforms]
             ),
             "value": None,
             "tooltip": "Select a conform type in the list",
@@ -62,7 +62,7 @@ class SelectConform(CommandBase):
         # Create a new parameter to prompt for the new file path
         new_parameter = ParameterBuffer(
             type=SelectParameterMeta(
-                *[publish_action["name"] for publish_action in Config().conforms]
+                *[publish_action["name"] for publish_action in Config.get().conforms]
             ),
             name="new_type",
             label=f"Conform type",

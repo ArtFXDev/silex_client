@@ -45,7 +45,7 @@ class ActionQuery:
         context = Context.get()
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(context.metadata))
         if resolved_config is None:
-            resolved_config = Config().resolve_action(name, category)
+            resolved_config = Config.get().resolve_action(name, category)
 
         if resolved_config is None:
             return
