@@ -37,9 +37,6 @@ class Loader(yaml.SafeLoader):
             path_index = paths.index(parent.parent)
             self.search_paths = paths[path_index:]
 
-        import pprint
-        pprint.pprint(paths)
-        pprint.pprint(self.search_paths)
         super().__init__(stream)
 
     def _get_node_data(self, node: yaml.Node) -> Any:

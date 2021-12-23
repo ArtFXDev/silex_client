@@ -48,6 +48,7 @@ class ActionQuery:
             resolved_config = Config.get().resolve_action(name, category)
 
         if resolved_config is None:
+            self.buffer = ActionBuffer("none")
             return
 
         self.event_loop: EventLoop = context.event_loop
