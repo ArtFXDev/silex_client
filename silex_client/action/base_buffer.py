@@ -1,7 +1,7 @@
 """
 @author: TD gang
 
-Dataclass used to store the data related to a command
+Dataclass that all the buffers of a command must inherit from
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ import re
 import uuid as unique_id
 import copy
 from dataclasses import dataclass, field, fields
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, List, Type, TypeVar
 
 import dacite.config as dacite_config
 import dacite.core as dacite
@@ -20,6 +20,7 @@ import jsondiff
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
 
+T = TypeVar('T', bound='BaseBuffer')
 
 @dataclass()
 class BaseBuffer:
@@ -29,26 +30,22 @@ class BaseBuffer:
 
     #: The list of fields that should be ignored when serializing this buffer to json
     PRIVATE_FIELDS = [
-        "output_result",
-        "executor",
-        "input_path",
+        "parent",
         "outdated_cache",
         "serialize_cache",
     ]
     #: The list of fields that should be ignored when deserializing this buffer to json
-    READONLY_FIELDS = ["logs", "label"]
+    READONLY_FIELDS = ["label"]
 
-    #: The name of the child
-    CHILD_NAME = ""
-    #: The name of the parent
-    PARENT_NAME = ""
+    #: The name of the child, it can be parameters, commands...
+    CHILD_NAME = "none"
 
     #: Name of the buffer, must have no space or special characters
     name: str = field(default="unnamed")
     #: The name of the buffer, meant to be displayed
     label: Optional[str] = field(compare=False, repr=False, default=None)
     #: Parents in the buffer hierarchy of buffer of the action
-    parent: Dict[str, BaseBuffer] = field(default_factory=dict)
+    parent: Optional[BaseBuffer] = field(repr=False, default=None)
     #: Childs in the buffer hierarchy of buffer of the action
     childs: Dict[str, BaseBuffer] = field(default_factory=dict)
     #: Specify if the buffer must be displayed by the UI or not
@@ -74,15 +71,11 @@ class BaseBuffer:
             self.label = self.label.title()
 
     @property
-    def child_type(self):
+    def child_type(self) -> type:
         return BaseBuffer
 
     @property
-    def parent_type(self):
-        return BaseBuffer
-
-    @property
-    def outdated_caches(self):
+    def outdated_caches(self) -> bool:
         """
         Check if the cache need to be recomputed by looking at the current cache
         and the childs caches
@@ -111,7 +104,7 @@ class BaseBuffer:
                 childs_value = {}
                 for child_name, child in childs.items():
                     childs_value[child_name] = child.serialize()
-                result.append((f.name, childs_value))
+                result.append((self.CHILD_NAME, childs_value))
                 continue
 
             result.append((f.name, getattr(self, f.name)))
@@ -146,7 +139,7 @@ class BaseBuffer:
         # Patch the current buffer's data, except the chils data
         current_buffer_data = self.serialize()
         current_buffer_data = copy.copy(current_buffer_data)
-        del current_buffer_data["childs"]
+        del current_buffer_data[self.CHILD_NAME]
         serialized_data = jsondiff.patch(current_buffer_data, serialized_data)
 
         # Format the childs corectly, the name is defined in the key only
@@ -156,8 +149,9 @@ class BaseBuffer:
         # Create a new buffer with the patched serialized data
         config = dacite_config.Config(
             cast=[Status, CommandOutput],
-            type_hooks={self.child_type: self._deserialize_childs},
+            type_hooks={"childs": self._deserialize_childs},
         )
+        serialized_data["childs"] = serialized_data.pop(self.CHILD_NAME)
         new_buffer = dacite.from_dict(type(self), serialized_data, config)
 
         # Keep the current value for the private and readonly fields
@@ -167,13 +161,13 @@ class BaseBuffer:
         # Update the current fields value with the new buffer's values
         self.childs.update(new_buffer.childs)
         new_buffer_data = new_buffer.__dict__
-        del new_buffer_data.__dict__["childs"]
+        del new_buffer_data["childs"]
         self.__dict__.update(new_buffer_data)
 
         self.outdated_cache = True
 
     @classmethod
-    def construct(cls, serialized_data: Dict[str, Any]) -> BaseBuffer:
+    def construct(cls: Type[T], serialized_data: Dict[str, Any], parent: BaseBuffer=None) -> T:
         """
         Create an command buffer from serialized data
 
@@ -184,11 +178,12 @@ class BaseBuffer:
 
         # Initialize the buffer without the childs, since the childs needs special treatment
         filtered_data = serialized_data
+        filtered_data["parent"] = parent
         if cls.CHILD_NAME in serialized_data:
             filtered_data = copy.copy(serialized_data)
             del filtered_data[cls.CHILD_NAME]
-        command = dacite.from_dict(cls, filtered_data, config)
+        buffer = dacite.from_dict(cls, filtered_data, config)
 
         # Deserialize the newly created buffer to apply the childs
-        command.deserialize(serialized_data, force=True)
-        return command
+        buffer.deserialize(serialized_data, force=True)
+        return buffer
