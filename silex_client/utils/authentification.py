@@ -14,6 +14,9 @@ from silex_client.utils.log import logger
 
 
 def is_authentificated() -> bool:
+    """
+    Test if the gazu client has already valid authentification tokens
+    """
     async def test_authentification():
         headers = gazu.client.default_client.headers
         async with aiohttp.ClientSession(headers=headers) as session:
@@ -30,6 +33,9 @@ def is_authentificated() -> bool:
 
 
 def authentificate_gazu() -> bool:
+    """
+    Get the zou authentificate_gazu token from the socket service
+    """
     gazu.set_host(os.getenv("SILEX_ZOU_HOST"))
 
     async def get_authentification_token():
