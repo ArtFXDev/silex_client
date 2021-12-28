@@ -34,7 +34,7 @@ def is_authentificated() -> bool:
 
 def authentificate_gazu() -> bool:
     """
-    Get the zou authentificate_gazu token from the socket service
+    Get the zou authentification token from the socket service
     """
     gazu.set_host(os.getenv("SILEX_ZOU_HOST"))
 
