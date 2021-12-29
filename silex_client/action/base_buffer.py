@@ -71,7 +71,7 @@ class BaseBuffer:
             self.label = self.label.title()
 
     @property
-    def child_type(self) -> type:
+    def child_type(self) -> Type[BaseBuffer]:
         return BaseBuffer
 
     @property
@@ -103,6 +103,8 @@ class BaseBuffer:
                 childs = getattr(self, f.name)
                 childs_value = {}
                 for child_name, child in childs.items():
+                    if child.hide:
+                        continue
                     childs_value[child_name] = child.serialize()
                 result.append((self.CHILD_NAME, childs_value))
                 continue
@@ -113,9 +115,9 @@ class BaseBuffer:
         self.outdated_cache = False
         return self.serialize_cache
 
-    def _deserialize_childs(self, child_data: Any) -> Any:
+    def _deserialize_child(self, child_data: Any) -> BaseBuffer:
         """
-        Called bu deserialize to deserialize the childs of this buffer
+        Called bu deserialize to deserialize a given child of this buffer
         """
         child_name = child_data.get("name")
         child = self.childs.get(child_name)
@@ -130,7 +132,7 @@ class BaseBuffer:
 
     def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
         """
-        Convert back the buffer's data from json into this object
+        Reconstruct this buffer from the given serialized data
         """
         # Don't take the modifications of the hidden commands
         if self.hide and not force:
@@ -149,7 +151,7 @@ class BaseBuffer:
         # Create a new buffer with the patched serialized data
         config = dacite_config.Config(
             cast=[Status, CommandOutput],
-            type_hooks={"childs": self._deserialize_childs},
+            type_hooks={"childs": self._deserialize_child},
         )
         serialized_data["childs"] = serialized_data.pop(self.CHILD_NAME)
         new_buffer = dacite.from_dict(type(self), serialized_data, config)

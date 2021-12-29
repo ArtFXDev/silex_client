@@ -9,12 +9,10 @@ from __future__ import annotations
 import copy
 import importlib
 import os
-import re
 import traceback
-import uuid as unique_id
 import copy
-from dataclasses import dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Dict, Optional, List
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Dict, List
 from contextlib import suppress
 
 import dacite.config as dacite_config
@@ -74,7 +72,7 @@ class CommandBuffer(BaseBuffer):
         self.executor = self._get_executor(self.path)
 
     @property
-    def child_type(self) -> type:
+    def child_type(self):
         return ParameterBuffer
 
     @property
