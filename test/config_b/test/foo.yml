@@ -8,8 +8,8 @@ foo: !inherit
       commands:
         first_b:
           label: "Publish"
-          path: "silex_client.commands.utils.Log"
+          path: "silex_client.commands.log.Log"
           parameters:
             message: "FOO action config from path config_b"
             level: "info"
-            hide: true
+          hide: true

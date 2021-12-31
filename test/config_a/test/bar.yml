@@ -9,7 +9,7 @@ bar: !inherit
       commands:
         initalize_action_a:
           label: "Initialize Action"
-          path: "silex_client.commands.utils.Log"
+          path: "silex_client.commands.log.Log"
           parameters:
             message: "BAR action config from path config_a"
             level: "debug"
@@ -25,7 +25,7 @@ bar: !inherit
       commands:
         close_action_a:
           label: "Close Action"
-          path: "silex_client.commands.utils.Log"
+          path: "silex_client.commands.log.Log"
           parameters:
             message: "BAR action config from path config_a"
             level: "debug"

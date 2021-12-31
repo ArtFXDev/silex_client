@@ -5,7 +5,6 @@ import typing
 from typing import Any, Dict
 import pathlib
 import fileseq
-import glob
 
 import gazu.shot
 import gazu.asset

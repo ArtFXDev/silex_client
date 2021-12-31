@@ -6,7 +6,7 @@ bar:
       commands:
         initalize_action_b:
           label: "Initialize Action"
-          path: "silex_client.commands.utils.Log"
+          path: "silex_client.commands.log.Log"
           parameters:
             message: "BAR action config from path config_b"
             level: "debug"
@@ -22,7 +22,7 @@ bar:
       commands:
         close_action_b:
           label: "Close Action"
-          path: "silex_client.commands.utils.Log"
+          path: "silex_client.commands.log.Log"
           parameters:
             message: "BAR action config from path config_b"
             level: "debug"

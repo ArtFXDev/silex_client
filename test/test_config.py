@@ -19,7 +19,9 @@ def dummy_config():
     """
     config_root_a = os.path.join(os.path.dirname(__file__), "config_a")
     config_root_b = os.path.join(os.path.dirname(__file__), "config_b")
-    return Config([config_root_a, config_root_b])
+    config = Config.get()
+    config.action_search_path += [config_root_a, config_root_b]
+    return config
 
 
 def test_resolve_action(dummy_config: Config):
