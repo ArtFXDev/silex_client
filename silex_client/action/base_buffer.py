@@ -124,7 +124,7 @@ class BaseBuffer:
 
         # If the given child is a new child we construct it
         if child is None:
-            return self.child_type.construct(child_data)
+            return self.child_type.construct(child_data, self)
 
         # Otherwise, we update the already existing one
         child.deserialize(child_data)
@@ -149,11 +149,14 @@ class BaseBuffer:
             child["name"] = child_name
 
         # Create a new buffer with the patched serialized data
-        config = dacite_config.Config(
-            cast=[Status, CommandOutput],
-            type_hooks={"childs": self._deserialize_child},
-        )
-        serialized_data["childs"] = serialized_data.pop(self.CHILD_NAME)
+        config_data = {"cast": [Status, CommandOutput]}
+        if self.child_type is not BaseBuffer:
+            config_data["type_hooks"] = {self.child_type: self._deserialize_child}
+        config = dacite_config.Config(**config_data)
+
+        if self.CHILD_NAME in serialized_data:
+            serialized_data["childs"] = serialized_data.pop(self.CHILD_NAME)
+
         new_buffer = dacite.from_dict(type(self), serialized_data, config)
 
         # Keep the current value for the private and readonly fields
@@ -178,7 +181,8 @@ class BaseBuffer:
         """
         config = dacite_config.Config(cast=[Status, CommandOutput])
 
-        # Initialize the buffer without the childs, since the childs needs special treatment
+        # Initialize the buffer without the childs,
+        # because the childs needs special treatment
         filtered_data = serialized_data
         filtered_data["parent"] = parent
         if cls.CHILD_NAME in serialized_data:
