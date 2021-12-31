@@ -164,7 +164,9 @@ class CommandBuffer(BaseBuffer):
             await self.executor.setup(parameters, action_query, log)
 
     @classmethod
-    def construct(cls, serialized_data: Dict[str, Any], parent: BaseBuffer=None) -> CommandBuffer:
+    def construct(
+        cls, serialized_data: Dict[str, Any], parent: BaseBuffer = None
+    ) -> CommandBuffer:
         """
         Create an command buffer from serialized data
         """

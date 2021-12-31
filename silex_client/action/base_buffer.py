@@ -20,7 +20,8 @@ import jsondiff
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
 
-T = TypeVar('T', bound='BaseBuffer')
+T = TypeVar("T", bound="BaseBuffer")
+
 
 @dataclass()
 class BaseBuffer:
@@ -172,7 +173,9 @@ class BaseBuffer:
         self.outdated_cache = True
 
     @classmethod
-    def construct(cls: Type[T], serialized_data: Dict[str, Any], parent: BaseBuffer=None) -> T:
+    def construct(
+        cls: Type[T], serialized_data: Dict[str, Any], parent: BaseBuffer = None
+    ) -> T:
         """
         Create an command buffer from serialized data
 

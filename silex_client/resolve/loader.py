@@ -108,6 +108,7 @@ class Loader(yaml.SafeLoader):
             self.search_paths = self.search_paths[1:]
         # Find the file in the list of search path
         from silex_client.resolve.config import Config
+
         config = Config([str(path) for path in self.search_paths])
         return config.resolve_action(file, category)
 
@@ -132,7 +133,9 @@ class Loader(yaml.SafeLoader):
         if "name" not in inherit_kwargs:
             logger.error("No file given for !inherit statement in yaml config")
             return None
-        inherit_data = self._import_file(inherit_kwargs["name"], inherit_kwargs.get("category"))
+        inherit_data = self._import_file(
+            inherit_kwargs["name"], inherit_kwargs.get("category")
+        )
 
         # If the file is a yaml or json and a key has been specified,
         # return the content of that key in the file

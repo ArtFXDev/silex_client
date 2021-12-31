@@ -147,6 +147,7 @@ class Config:
             finally:
                 loader.dispose()
 
+
 def get_action_search_path():
     """
     Get a list of search path from environment variables and entry points
@@ -165,5 +166,6 @@ def get_action_search_path():
             action_search_path += entry_point.load()
 
     return action_search_path
+
 
 config = Config(get_action_search_path())

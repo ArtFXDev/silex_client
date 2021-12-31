@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from silex_client.action.base_buffer import BaseBuffer 
+from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.action.step_buffer import StepBuffer
 from silex_client.utils.parameter_types import AnyParameter
@@ -58,7 +58,7 @@ class ActionBuffer(BaseBuffer):
     @property
     def steps(self) -> Dict[str, StepBuffer]:
         return self.childs
-        
+
     def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
         super().deserialize(serialized_data, force)
         self.reorder_steps()

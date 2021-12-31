@@ -17,6 +17,7 @@ def is_authentificated() -> bool:
     """
     Test if the gazu client has already valid authentification tokens
     """
+
     async def test_authentification():
         headers = gazu.client.default_client.headers
         async with aiohttp.ClientSession(headers=headers) as session:

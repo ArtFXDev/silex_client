@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Type, TYPE_CHECKING
 
-from silex_client.action.base_buffer import BaseBuffer 
+from silex_client.action.base_buffer import BaseBuffer
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.parameter_types import CommandParameterMeta, AnyParameter
 

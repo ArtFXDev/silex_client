@@ -37,7 +37,9 @@ class SelectPublish(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        publish_action = Config.get().resolve_publish(parameters["publish_type"].lower())
+        publish_action = Config.get().resolve_publish(
+            parameters["publish_type"].lower()
+        )
 
         if publish_action is None:
             raise Exception("Could not resolve the action %s")
