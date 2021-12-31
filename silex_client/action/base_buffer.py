@@ -11,7 +11,7 @@ import re
 import uuid as unique_id
 import copy
 from dataclasses import dataclass, field, fields
-from typing import Any, Dict, Optional, List, Type, TypeVar
+from typing import Any, Dict, Optional, List, Type, TypeVar, Union
 
 import dacite.config as dacite_config
 import dacite.core as dacite
@@ -149,7 +149,7 @@ class BaseBuffer:
             child["name"] = child_name
 
         # Create a new buffer with the patched serialized data
-        config_data = {"cast": [Status, CommandOutput]}
+        config_data: Dict[str, Union[list, dict]] = {"cast": [Status, CommandOutput]}
         if self.child_type is not BaseBuffer:
             config_data["type_hooks"] = {self.child_type: self._deserialize_child}
         config = dacite_config.Config(**config_data)
