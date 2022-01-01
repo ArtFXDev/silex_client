@@ -11,6 +11,7 @@ from silex_client.core.context import Context
 from silex_client.action.action_query import ActionQuery
 from silex_client.utils.enums import Status
 from silex_client.resolve.config import Config
+
 from .test_config import dummy_config
 
 
@@ -23,7 +24,8 @@ def dummy_context() -> Context:
     context = Context.get()
     context.update_metadata({"project": "TEST_PIPE"})
     context.is_outdated = False
-    context.start_services()
+    if not context.event_loop.is_running:
+        context.start_services()
     return context
 
 
