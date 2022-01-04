@@ -7,7 +7,7 @@ import os
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import IntArrayParameterMeta
+from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta
 import logging
 
 # Forward references
@@ -21,7 +21,10 @@ class VrayCommand(CommandBase):
     """
 
     parameters = {
-        "scene_file": {"label": "Scene file", "type": pathlib.Path},
+        "scene_file": {
+            "label": "Scene file", 
+            "type": PathParameterMeta(extensions=[".vrscene"]),
+        },
         "frame_range": {
             "label": "Frame range (start, end, step)",
             "type": FrameSet,
