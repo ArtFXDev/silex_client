@@ -137,6 +137,9 @@ class Loader(yaml.SafeLoader):
             inherit_kwargs["name"], inherit_kwargs.get("category")
         )
 
+        if "key" not in inherit_kwargs:
+            inherit_kwargs["key"] = inherit_kwargs["name"].lstrip(".")
+
         # If the file is a yaml or json and a key has been specified,
         # return the content of that key in the file
         if isinstance(inherit_data, dict) and "key" in inherit_kwargs:
