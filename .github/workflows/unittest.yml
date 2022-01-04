@@ -50,6 +50,7 @@ jobs:
 
       - name: Install silex_client
         run: pip install -e .[dev]
+        if: steps.cache-pip.outputs.cache-hit != 'true'
 
       - name: Run unit tests
         run: python -m pytest .
