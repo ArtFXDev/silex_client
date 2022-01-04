@@ -5,7 +5,6 @@ Override of the default loader to be able to create custom tags in YAML files,
 like !include or !inherit
 """
 
-import json
 import os
 from pathlib import Path
 from typing import Dict, IO, Any, Union, Callable, List
@@ -118,7 +117,7 @@ class Loader(yaml.SafeLoader):
         The result will be the merged data between the inherited data and the node's data
         """
         # Handle any type of node
-        inherit_kwargs = self._construct_kwargs(node, ("name", "key", "category"))
+        inherit_kwargs = self._construct_kwargs(node, ("parent", "key", "category"))
 
         # Get node data
         node_data = self._get_node_data(node)
@@ -130,15 +129,15 @@ class Loader(yaml.SafeLoader):
                 del node_data[0]
 
         # Get the inherited file data
-        if "name" not in inherit_kwargs:
-            logger.error("No file given for !inherit statement in yaml config")
+        if "parent" not in inherit_kwargs:
+            logger.error("No parent given for !inherit statement in yaml config")
             return None
         inherit_data = self._import_file(
-            inherit_kwargs["name"], inherit_kwargs.get("category")
+            inherit_kwargs["parent"], inherit_kwargs.get("category")
         )
 
         if "key" not in inherit_kwargs:
-            inherit_kwargs["key"] = inherit_kwargs["name"].lstrip(".")
+            inherit_kwargs["key"] = inherit_kwargs["parent"].lstrip(".")
 
         # If the file is a yaml or json and a key has been specified,
         # return the content of that key in the file
@@ -158,7 +157,7 @@ class Loader(yaml.SafeLoader):
         if type(inherit_data) is not type(node_data):
             logger.warning(
                 "The node and the inherited node are not the same time, skipping inheritance for yaml config %s",
-                inherit_kwargs["name"],
+                inherit_kwargs["parent"],
             )
             return node_data
 

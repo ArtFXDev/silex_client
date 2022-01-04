@@ -1,6 +1,5 @@
 bar: !inherit
-  name: "foo"
-  key: "foo"
+  parent: "foo"
 
   steps:
     pre_action:

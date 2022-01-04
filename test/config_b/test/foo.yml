@@ -1,6 +1,5 @@
 foo: !inherit
-  name: ".bar"
-  key: "bar"
+  parent: ".bar"
   category: "test"
 
   steps:
