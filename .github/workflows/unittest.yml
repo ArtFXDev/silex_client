@@ -42,14 +42,14 @@ jobs:
           path: ${{ matrix.path }}
           key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.cfg') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
+            ${{ runner.os }}-pip
 
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
         if: steps.cache-pip.outputs.cache-hit != 'true'
 
       - name: Install silex_client
-        run: pip install .[dev]
+        run: pip install -e .[dev]
 
       - name: Run unit tests
         run: python -m pytest .
