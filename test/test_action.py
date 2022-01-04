@@ -5,12 +5,9 @@ Unit testing functions for the module core.context
 """
 
 import pytest
-import os
 import pathlib
 import shutil
-from pytest_mock import MockFixture, MockerFixture
-from concurrent import futures
-from unittest.mock import Mock
+from pytest_mock import MockFixture
 
 from silex_client.core.context import Context
 from silex_client.action.action_query import ActionQuery
@@ -68,7 +65,11 @@ def test_execute_tester_action(dummy_context: Context):
 
     assert action.status is Status.COMPLETED
 
-def test_execute_conform_action(mocker: MockFixture, dummy_context: Context):
+# Run the conform test for each conform types
+conform_types = [i["name"] for i in Config.get().get_actions("conform") if i["name"] != "default"]
+
+@pytest.mark.parametrize("conform_type", conform_types)
+def test_execute_conform_action(mocker: MockFixture, tmp_path: pathlib.Path, conform_type: str):
     """
     Test the execution of all the commands in the 'conform' action
     """
@@ -78,9 +79,9 @@ def test_execute_conform_action(mocker: MockFixture, dummy_context: Context):
     mock = mocker.MagicMock()
     mock.__getitem__.side_effect = lambda x: getattr(mock, x)
 
-    output_path = pathlib.Path(__file__).parent / "tmp" / "conform"
-    input_path = pathlib.Path(__file__).parent / "tmp" / "unittest_conform.obj"
-    final_path = pathlib.Path(__file__).parent / "tmp" / "unittest_conform" / "conform_unittest_conform.obj"
+    output_path = tmp_path / "conform"
+    input_path = tmp_path / f"unittest_conform.{conform_type}"
+    final_path = tmp_path / "unittest_conform" / f"conform_unittest_conform.{conform_type}"
 
     # Patch the gazu functions
     mocker.patch(
@@ -97,8 +98,8 @@ def test_execute_conform_action(mocker: MockFixture, dummy_context: Context):
     )
 
     # Set the parameter that are required for the execution
-    os.makedirs(input_path.parent)
-    input_path.touch()
+    input_path.parent.mkdir(exist_ok=True)
+    input_path.touch(exist_ok=True)
     action.set_parameter("setup:get_conform_output:file_paths", input_path)
     future = action.execute()
 
@@ -107,4 +108,3 @@ def test_execute_conform_action(mocker: MockFixture, dummy_context: Context):
 
     assert action.status is Status.COMPLETED
     assert final_path.exists()
-    shutil.rmtree(pathlib.Path(__file__).parent / "tmp")
