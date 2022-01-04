@@ -326,7 +326,7 @@ class ActionQuery:
     @property
     def is_running(self): 
         """Check if the action is currently running"""
-        return self._task is None or self._task.done():
+        return not (self._task is None or self._task.done())
 
     @property
     def execution_type(self) -> Execution:
