@@ -324,6 +324,11 @@ class ActionQuery:
         return self.commands[self.current_command_index]
 
     @property
+    def is_running(self): 
+        """Check if the action is currently running"""
+        return self._task is None or self._task.done():
+
+    @property
     def execution_type(self) -> Execution:
         """Shortcut to get the status of the action stored in the buffer"""
         return self.buffer.execution_type

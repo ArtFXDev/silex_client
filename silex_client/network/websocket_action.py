@@ -112,6 +112,15 @@ class WebsocketActionNamespace(WebsocketNamespace):
 
         await action.async_undo(all_commands=data.get("full", False))
 
+    async def on_get_running_actions(self, data):
+        """
+        Return a json with all the actions that are currently running
+        """
+        running_actions = self.context.running_actions
+        running_actions = {key: value.buffer.serialize() for key, value in running_actions.items()}
+        
+        return running_actions
+
     async def register_query_callback(
         self, coroutine: Callable[[asyncio.Future], Any]
     ) -> asyncio.Future:

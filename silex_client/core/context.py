@@ -45,7 +45,6 @@ class Context:
     def __init__(self):
         self._metadata: Dict[str, Any] = {"name": None, "uuid": str(uuid.uuid4())}
         self.is_outdated: bool = True
-        self.running_actions: Dict[str, ActionQuery] = {}
 
         self.event_loop = EventLoop()
         self.ws_connection = WebsocketConnection("ws://127.0.0.1:5118", self)
@@ -64,6 +63,10 @@ class Context:
     @property
     def actions(self) -> Dict[str, ActionQuery]:
         return self._actions
+
+    @property
+    def running_actions(self):
+        return {key: action for key, action in self.actions.items() if action.is_running}
 
     def register_action(self, action: ActionQuery):
         if action.buffer.uuid in self.actions.keys():
