@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Dict, IO, Any, Union, Callable, List
 
 import yaml
+import jsondiff
 
-from silex_client.resolve.merge import merge_data
 from silex_client.utils.log import logger
 from silex_client.utils.datatypes import CommandOutput
 
@@ -161,7 +161,7 @@ class Loader(yaml.SafeLoader):
             )
             return node_data
 
-        return merge_data(node_data, inherit_data)
+        return jsondiff.patch(node_data, inherit_data)
 
     def command_output(self, node: yaml.Node) -> CommandOutput:
         """
