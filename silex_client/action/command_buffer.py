@@ -49,7 +49,7 @@ class CommandBuffer(BaseBuffer):
     CHILD_NAME = "parameters"
 
     #: Childs in the buffer hierarchy of buffer of the action
-    childs: Dict[str, ParameterBuffer] = field(default_factory=dict)
+    children: Dict[str, ParameterBuffer] = field(default_factory=dict)
     #: The path to the command's module
     path: str = field(default="")
     #: Specify if the parameters must be displayed by the UI or not
@@ -77,7 +77,7 @@ class CommandBuffer(BaseBuffer):
 
     @property
     def parameters(self) -> Dict[str, ParameterBuffer]:
-        return self.childs
+        return self.children
 
     def _get_executor(self, path: str) -> CommandBase:
         """
@@ -110,7 +110,7 @@ class CommandBuffer(BaseBuffer):
         # Create a dictionary that only contains the name and the value of the parameters
         # without infos like the type, label...
         parameters = {
-            key: value.get_value(action_query) for key, value in self.childs.items()
+            key: value.get_value(action_query) for key, value in self.children.items()
         }
         with suppress(TypeError):
             parameters = copy.deepcopy(parameters)
@@ -144,7 +144,7 @@ class CommandBuffer(BaseBuffer):
         """
         return self.ask_user or not all(
             parameter.value is not None or parameter.hide
-            for parameter in self.childs.values()
+            for parameter in self.children.values()
         )
 
     async def setup(self, action_query: ActionQuery):
@@ -155,7 +155,7 @@ class CommandBuffer(BaseBuffer):
         # Create a dictionary that only contains the name and the value of the parameters
         # without infos like the type, label...
         parameters = {
-            key: value.get_value(action_query) for key, value in self.childs.items()
+            key: value.get_value(action_query) for key, value in self.children.items()
         }
         with suppress(TypeError):
             parameters = copy.deepcopy(parameters)
@@ -172,7 +172,7 @@ class CommandBuffer(BaseBuffer):
         """
         config = dacite_config.Config(cast=[Status, CommandOutput])
 
-        # Initialize the buffer without the childs, since the childs needs special treatment
+        # Initialize the buffer without the children, since the children needs special treatment
         filtered_data = serialized_data
         filtered_data["parent"] = parent
         if cls.CHILD_NAME in serialized_data:

@@ -44,7 +44,7 @@ def test_execute_foo_action(dummy_config: Config, dummy_context: Context):
     future = action.execute()
 
     # Let the execution of the action happen in the event loop thread
-    futures.wait([future])
+    future.result()
 
     assert action.status is Status.COMPLETED
 
@@ -64,7 +64,7 @@ def test_execute_tester_action(dummy_context: Context):
     future = action.execute()
 
     # Let the execution of the action happen in the event loop thread
-    futures.wait([future])
+    future.result()
 
     assert action.status is Status.COMPLETED
 
@@ -103,7 +103,7 @@ def test_execute_conform_action(mocker: MockFixture, dummy_context: Context):
     future = action.execute()
 
     # Let the execution of the action happen in the event loop thread
-    futures.wait([future])
+    future.result()
 
     assert action.status is Status.COMPLETED
     assert final_path.exists()

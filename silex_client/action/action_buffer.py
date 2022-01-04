@@ -45,7 +45,7 @@ class ActionBuffer(BaseBuffer):
     #: The status of the action, this value is readonly, it is computed from the commands's status
     thumbnail: Optional[str] = field(default=None)
     #: A dict of steps that will contain the commands
-    childs: Dict[str, StepBuffer] = field(default_factory=dict)
+    children: Dict[str, StepBuffer] = field(default_factory=dict)
     #: Dict of variables that are global to all the commands of this action
     store: Dict[str, Any] = field(compare=False, default_factory=dict)
     #: Snapshot of the context's metadata when this buffer is created
@@ -57,7 +57,7 @@ class ActionBuffer(BaseBuffer):
 
     @property
     def steps(self) -> Dict[str, StepBuffer]:
-        return self.childs
+        return self.children
 
     def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
         super().deserialize(serialized_data, force)
@@ -67,7 +67,7 @@ class ActionBuffer(BaseBuffer):
         """
         Place the steps in the right order accoring to the index value
         """
-        self.childs = dict(sorted(self.steps.items(), key=lambda item: item[1].index))
+        self.children = dict(sorted(self.steps.items(), key=lambda item: item[1].index))
 
     @property  # type: ignore
     def status(self) -> Status:

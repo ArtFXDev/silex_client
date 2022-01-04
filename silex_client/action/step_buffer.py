@@ -30,7 +30,7 @@ class StepBuffer(BaseBuffer):
     #: The status is readonly, it is computed from the commands's status
     status: Status = field(init=False)  # type: ignore
     #: Dict that represent the parameters of the command, their type, value, name...
-    childs: Dict[str, CommandBuffer] = field(default_factory=dict)
+    children: Dict[str, CommandBuffer] = field(default_factory=dict)
 
     @property
     def child_type(self):
@@ -38,7 +38,7 @@ class StepBuffer(BaseBuffer):
 
     @property
     def commands(self) -> Dict[str, CommandBuffer]:
-        return self.childs
+        return self.children
 
     @property  # type: ignore
     def status(self) -> Status:

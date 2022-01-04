@@ -48,7 +48,7 @@ class BaseBuffer:
     #: Parents in the buffer hierarchy of buffer of the action
     parent: Optional[BaseBuffer] = field(repr=False, default=None)
     #: Childs in the buffer hierarchy of buffer of the action
-    childs: Dict[str, BaseBuffer] = field(default_factory=dict)
+    children: Dict[str, BaseBuffer] = field(default_factory=dict)
     #: Specify if the buffer must be displayed by the UI or not
     hide: bool = field(compare=False, repr=False, default=False)
     #: Small explanation for the UI
@@ -79,10 +79,10 @@ class BaseBuffer:
     def outdated_caches(self) -> bool:
         """
         Check if the cache need to be recomputed by looking at the current cache
-        and the childs caches
+        and the children caches
         """
         return self.outdated_cache or not all(
-            not child.outdated_cache for child in self.childs.values()
+            not child.outdated_cache for child in self.children.values()
         )
 
     def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
@@ -100,14 +100,14 @@ class BaseBuffer:
         for f in fields(self):
             if f.name in ignore_fields:
                 continue
-            elif f.name == "childs":
-                childs = getattr(self, f.name)
-                childs_value = {}
-                for child_name, child in childs.items():
+            elif f.name == "children":
+                children = getattr(self, f.name)
+                children_value = {}
+                for child_name, child in children.items():
                     if child.hide:
                         continue
-                    childs_value[child_name] = child.serialize()
-                result.append((self.CHILD_NAME, childs_value))
+                    children_value[child_name] = child.serialize()
+                result.append((self.CHILD_NAME, children_value))
                 continue
 
             result.append((f.name, getattr(self, f.name)))
@@ -121,7 +121,7 @@ class BaseBuffer:
         Called bu deserialize to deserialize a given child of this buffer
         """
         child_name = child_data.get("name")
-        child = self.childs.get(child_name)
+        child = self.children.get(child_name)
 
         # If the given child is a new child we construct it
         if child is None:
@@ -145,7 +145,7 @@ class BaseBuffer:
         del current_buffer_data[self.CHILD_NAME]
         serialized_data = jsondiff.patch(current_buffer_data, serialized_data)
 
-        # Format the childs corectly, the name is defined in the key only
+        # Format the children corectly, the name is defined in the key only
         for child_name, child in serialized_data.get(self.CHILD_NAME, {}).items():
             child["name"] = child_name
 
@@ -156,7 +156,7 @@ class BaseBuffer:
         config = dacite_config.Config(**config_data)
 
         if self.CHILD_NAME in serialized_data:
-            serialized_data["childs"] = serialized_data.pop(self.CHILD_NAME)
+            serialized_data["children"] = serialized_data.pop(self.CHILD_NAME)
 
         new_buffer = dacite.from_dict(type(self), serialized_data, config)
 
@@ -165,9 +165,9 @@ class BaseBuffer:
             setattr(new_buffer, private_field, getattr(self, private_field))
 
         # Update the current fields value with the new buffer's values
-        self.childs.update(new_buffer.childs)
+        self.children.update(new_buffer.children)
         new_buffer_data = new_buffer.__dict__
-        del new_buffer_data["childs"]
+        del new_buffer_data["children"]
         self.__dict__.update(new_buffer_data)
 
         self.outdated_cache = True
@@ -184,8 +184,8 @@ class BaseBuffer:
         """
         config = dacite_config.Config(cast=[Status, CommandOutput])
 
-        # Initialize the buffer without the childs,
-        # because the childs needs special treatment
+        # Initialize the buffer without the children,
+        # because the children needs special treatment
         filtered_data = serialized_data
         filtered_data["parent"] = parent
         if cls.CHILD_NAME in serialized_data:
@@ -193,6 +193,6 @@ class BaseBuffer:
             del filtered_data[cls.CHILD_NAME]
         buffer = dacite.from_dict(cls, filtered_data, config)
 
-        # Deserialize the newly created buffer to apply the childs
+        # Deserialize the newly created buffer to apply the children
         buffer.deserialize(serialized_data, force=True)
         return buffer
