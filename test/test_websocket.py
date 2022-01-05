@@ -44,6 +44,7 @@ def dummy_server() -> threading.Thread:
     return threading.Thread(target=start_server, daemon=True, args=(runner,))
 
 
+@pytest.mark.skip(reason="The dummy_server implementation does not work on python 3.7")
 def test_connection_initialization(
     dummy_context: Context, dummy_server: threading.Thread
 ):

@@ -2,6 +2,18 @@ name: Unit Test
 
 on:
   workflow_dispatch:
+    inputs:
+      log_level:
+        description: 'Log level'
+        required: false
+        default: 'warning'
+        type: choice
+        options:
+          - error
+          - warning
+          - info
+          - debug
+
   push:
     branches:
       - dev
@@ -12,7 +24,7 @@ on:
       - dev
       - beta
       - prod
-  
+
 jobs:
   unittest:
     runs-on: ${{ matrix.os }}
@@ -20,12 +32,12 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
         include:
-        - os: ubuntu-latest
-          path: ~/.cache/pip
-        - os: macos-latest
-          path: ~/Library/Caches/pip
-        - os: windows-latest
-          path: ~\AppData\Local
+          - os: ubuntu-latest
+            path: ~/.cache/pip
+          - os: macos-latest
+            path: ~/Library/Caches/pip
+          - os: windows-latest
+            path: ~\AppData\Local
 
     steps:
       - name: Checkout
@@ -34,6 +46,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2.2.2
         with:
+          python-version: 3.7
           architecture: x64
 
       - uses: actions/cache@v2
@@ -49,11 +62,9 @@ jobs:
 
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
-        if: steps.cache-pip.outputs.cache-hit != 'true'
 
       - name: Install silex_client
         run: pip install -e .[dev]
-        if: steps.cache-pip.outputs.cache-hit != 'true'
 
       - name: Run unit tests
         run: python -m pytest .

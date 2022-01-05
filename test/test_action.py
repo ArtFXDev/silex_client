@@ -4,9 +4,11 @@
 Unit testing functions for the module core.context
 """
 
+from aiohttp.client_reqrep import ContentDisposition
 import pytest
 import pathlib
 from pytest_mock import MockFixture
+from silex_client.core import event_loop
 
 from silex_client.core.context import Context
 from silex_client.action.action_query import ActionQuery
@@ -92,17 +94,24 @@ def test_execute_conform_action(
         tmp_path / "unittest_conform" / f"conform_unittest_conform.{conform_type}"
     )
 
+    event_loop = Context.get().event_loop.loop
+    mock_future = event_loop.create_future()
+    mock_future.set_result(mock)
+    output_path_future = event_loop.create_future()
+    output_path_future.set_result(output_path)
+
     # Patch the gazu functions
     mocker.patch(
-        "silex_client.commands.build_output_path.gazu.task.get_task", return_value=mock
+        "silex_client.commands.build_output_path.gazu.task.get_task",
+        return_value=mock_future,
     )
     mocker.patch(
         "silex_client.commands.build_output_path.gazu.files.get_output_type_by_short_name",
-        return_value=mock,
+        return_value=mock_future,
     )
     mocker.patch(
         "silex_client.commands.build_output_path.gazu.files.build_entity_output_file_path",
-        return_value=output_path,
+        return_value=output_path_future,
     )
 
     # Set the parameter that are required for the execution
