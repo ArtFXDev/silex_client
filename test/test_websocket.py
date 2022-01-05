@@ -1,23 +1,22 @@
 """
 @author: TD gang
 
-Unit testing functions for the module networK.websocket
+Unit testing functions for the module network.websocket
 """
 
 import asyncio
 import threading
-import aiohttp
 
 import pytest
 import socketio
-from aiohttp import web, test_utils
+from aiohttp import test_utils, web
 
 from silex_client.core.context import Context
 from silex_client.network.websocket import WebsocketConnection
 
-from .mocks.websocket import DCCNamespace, ActionNamespace
-from .test_config import dummy_config
+from .mocks.websocket import ActionNamespace, DCCNamespace
 from .test_action import dummy_context
+from .test_config import dummy_config
 
 # Get an unused port
 TEST_PORT = test_utils.get_unused_port_socket("127.0.0.1").getsockname()[-1]
