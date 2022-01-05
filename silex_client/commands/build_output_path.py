@@ -218,7 +218,7 @@ class BuildOutputPath(CommandBase):
             new_value = pathlib.Path(str(name_value)).stem
 
         # Slugify the name
-        self.command_buffer.parameters["name"].value = slugify(new_value)
+        self.command_buffer.parameters["name"].value = slugify(str(new_value))
 
         # Force the name to be visible
         self.command_buffer.parameters["name"].hide = False
@@ -231,7 +231,6 @@ class BuildOutputPath(CommandBase):
                 self.command_buffer.parameters["use_current_context"].hide = True
 
         # Set the hide dynamically
-        if parameters.get("use_current_context", False):
-            self.command_buffer.parameters["task"].hide = True
-        else:
-            self.command_buffer.parameters["task"].hide = False
+        task = self.command_buffer.parameters["task"]
+        task.hide = parameters.get("use_current_context", False)
+        task.value = task.get_value(action_query)

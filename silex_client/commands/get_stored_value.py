@@ -39,7 +39,7 @@ class GetStoredValue(CommandBase):
         logger: logging.Logger,
     ):
         key: str = parameters["key"]
-        key_suffix: str = parameters["key"]
+        key_suffix: str = parameters["key_suffix"]
 
         if key_suffix:
             key = f"{key}:{key_suffix}"
@@ -63,8 +63,9 @@ class GetStoredValue(CommandBase):
         # Handle file_paths in key suffix
         if isinstance(key_suffix, list):
             sequences = fileseq.findSequencesInList(key_suffix)
-            key_suffix = str(sequences[0].dirname())
+            key_suffix = sequences[0].dirname()
         elif pathlib.Path(str(key_suffix)).is_file():
-            key_suffix = str(pathlib.Path(str(key_suffix)).parent)
+            key_suffix = pathlib.Path(str(key_suffix)).parent
 
+        self.command_buffer.parameters["key_suffix"].command_output = False
         self.command_buffer.parameters["key_suffix"].value = key_suffix
