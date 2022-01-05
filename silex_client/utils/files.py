@@ -11,6 +11,8 @@ import pathlib
 import re
 import sys
 import errno
+import unicodedata
+import re
 
 from types import ModuleType
 
@@ -44,6 +46,7 @@ def reload_recursive(parent_module: ModuleType) -> None:
 
     _reload_childs(parent_module)
 
+
 def is_valid_pipeline_path(file_path: pathlib.Path, mode: str = "output") -> bool:
     """
     Test if the given path is a valid path in the pipeline or not
@@ -53,16 +56,22 @@ def is_valid_pipeline_path(file_path: pathlib.Path, mode: str = "output") -> boo
         return True
 
     mode_templates = Context.get()["project_file_tree"].get(mode, {})
-    if "mountpoint" in mode_templates and mode_templates.get("mountpoint") != file_path.drive:
+    if (
+        "mountpoint" in mode_templates
+        and mode_templates.get("mountpoint") != file_path.drive
+    ):
         return False
 
     for path_template in mode_templates.get("folder_path", {}).values():
-        regex = re.sub(r"<[0-9a-zA-Z_]+>", "[0-9a-zA-Z_]+", str(pathlib.Path(path_template)))
+        regex = re.sub(
+            r"<[0-9a-zA-Z_]+>", "[0-9a-zA-Z_]+", str(pathlib.Path(path_template))
+        )
         regex = regex.replace("\\", "\\\\")
         if re.search(regex, str(file_path)):
             return True
 
     return False
+
 
 def is_valid_path(pathname: str) -> bool:
     """
@@ -77,9 +86,12 @@ def is_valid_path(pathname: str) -> bool:
 
         _, pathname = os.path.splitdrive(pathname)
 
-        root_dirname = os.environ.get('HOMEDRIVE', 'C:') \
-            if sys.platform == 'win32' else os.path.sep
-        assert os.path.isdir(root_dirname)   # ...Murphy and her ironclad Law
+        root_dirname = (
+            os.environ.get("HOMEDRIVE", "C:")
+            if sys.platform == "win32"
+            else os.path.sep
+        )
+        assert os.path.isdir(root_dirname)  # ...Murphy and her ironclad Law
 
         # Append a path separator to this directory if needed.
         root_dirname = root_dirname.rstrip(os.path.sep) + os.path.sep
@@ -90,7 +102,7 @@ def is_valid_path(pathname: str) -> bool:
             try:
                 os.lstat(root_dirname + pathname_part)
             except OSError as exc:
-                if hasattr(exc, 'winerror'):
+                if hasattr(exc, "winerror"):
                     if exc.winerror == ERROR_INVALID_NAME:
                         return False
                 elif exc.errno in {errno.ENAMETOOLONG, errno.ERANGE}:
@@ -99,3 +111,24 @@ def is_valid_path(pathname: str) -> bool:
         return False
     else:
         return True
+
+
+def slugify(value: str, allow_unicode=False) -> str:
+    """
+    Taken from https://github.com/django/django/blob/master/django/utils/text.py
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
+    dashes to single dashes. Remove characters that aren't alphanumerics,
+    underscores, or hyphens. Convert to lowercase. Also strip leading and
+    trailing whitespace, dashes, and underscores.
+    """
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize("NFKC", value)
+    else:
+        value = (
+            unicodedata.normalize("NFKD", value)
+            .encode("ascii", "ignore")
+            .decode("ascii")
+        )
+    value = re.sub(r"[^\w\s-]", "", value.lower())
+    return re.sub(r"[-\s]+", "-", value).strip("-_")

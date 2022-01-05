@@ -85,8 +85,7 @@ class ActionBuffer:
                 steps = getattr(self, f.name)
                 step_value = {}
                 for step_name, step in steps.items():
-                    # If the step is hidden and was previously hidden
-                    if step.hide and step.serialize_cache.get("hide", False):
+                    if step.hide:
                         continue
                     step_value[step_name] = step.serialize()
                 result.append((f.name, step_value))
