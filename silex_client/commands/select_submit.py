@@ -1,15 +1,13 @@
 from __future__ import annotations
 
+import logging
 import typing
 from typing import Any, Dict
 
-import logging
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import (
-    SelectParameterMeta,
-)
 from silex_client.resolve.config import Config
+from silex_client.utils.parameter_types import SelectParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:

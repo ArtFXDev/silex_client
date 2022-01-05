@@ -7,13 +7,13 @@ like !include or !inherit
 
 import os
 from pathlib import Path
-from typing import Dict, IO, Any, Union, Callable, List
+from typing import IO, Any, Callable, Dict, List, Union
 
-import yaml
 import jsondiff
+import yaml
 
-from silex_client.utils.log import logger
 from silex_client.utils.datatypes import CommandOutput
+from silex_client.utils.log import logger
 
 
 class Loader(yaml.SafeLoader):

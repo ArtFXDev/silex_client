@@ -10,10 +10,10 @@ from __future__ import annotations
 import asyncio
 import json
 from concurrent import futures
-from typing import Any, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict
 
-from aiohttp import ClientSession
 import socketio
+from aiohttp import ClientSession
 from socketio.exceptions import ConnectionError
 
 from silex_client.network.websocket_action import WebsocketActionNamespace

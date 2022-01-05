@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pathlib
 import copy
+import logging
+import pathlib
 import typing
 from typing import Any, Dict, List
 
@@ -9,12 +10,9 @@ import fileseq
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import (
-    SelectParameterMeta,
-    PathParameterMeta,
-)
 from silex_client.resolve.config import Config
-import logging
+from silex_client.utils.parameter_types import (PathParameterMeta,
+                                                SelectParameterMeta)
 
 # Forward references
 if typing.TYPE_CHECKING:

@@ -8,19 +8,19 @@ from __future__ import annotations
 
 import asyncio
 import copy
-from concurrent import futures
 import os
-from typing import Any, Callable, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
+from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
+from concurrent import futures
 
 import jsondiff
 
+from silex_client.action.action_buffer import ActionBuffer
 from silex_client.core.context import Context
 from silex_client.resolve.config import Config
-from silex_client.action.action_buffer import ActionBuffer
-from silex_client.utils.serialiser import silex_diff
 from silex_client.utils.datatypes import ReadOnlyDict
-from silex_client.utils.enums import Status, Execution
+from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
+from silex_client.utils.serialiser import silex_diff
 
 # Forward references
 if TYPE_CHECKING:

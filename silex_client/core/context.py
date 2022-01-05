@@ -13,18 +13,18 @@ import os
 import sys
 import uuid
 from concurrent import futures
-from typing import Any, Dict, KeysView, ValuesView, ItemsView, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, ItemsView, KeysView, ValuesView
 
 import gazu
 import gazu.client
+import gazu.exception
+import gazu.files
 import gazu.shot
 import gazu.task
-import gazu.files
-import gazu.exception
 
-from silex_client.utils.authentification import authentificate_gazu
-from silex_client.network.websocket import WebsocketConnection
 from silex_client.core.event_loop import EventLoop
+from silex_client.network.websocket import WebsocketConnection
+from silex_client.utils.authentification import authentificate_gazu
 from silex_client.utils.log import logger
 
 # Forward references

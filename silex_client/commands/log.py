@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import logging
 import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-import logging
 
 # Forward references
 if typing.TYPE_CHECKING:

@@ -8,7 +8,7 @@ This namespace is used to reveive and send updates of the action execution
 from __future__ import annotations
 
 import asyncio
-from typing import Any, List, TYPE_CHECKING, Callable, Dict
+from typing import TYPE_CHECKING, Any, Callable, Dict, List
 
 from silex_client.network.websocket_namespace import WebsocketNamespace
 from silex_client.utils.log import logger

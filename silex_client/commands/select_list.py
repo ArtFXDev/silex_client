@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import jsondiff
+import logging
 import typing
 from typing import Any, Dict
 
+import jsondiff
+
 from silex_client.action.command_base import CommandBase
-import logging
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import (
-    SelectParameterMeta,
-    ListParameterMeta,
-    AnyParameter,
-)
+from silex_client.utils.parameter_types import (AnyParameter,
+                                                ListParameterMeta,
+                                                SelectParameterMeta)
 
 # Forward references
 if typing.TYPE_CHECKING:

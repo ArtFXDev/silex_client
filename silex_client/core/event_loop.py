@@ -7,11 +7,11 @@ register_task() with a coroutine as a parameter
 
 import asyncio
 import gc
+import traceback
 from concurrent import futures
 from contextlib import suppress
 from threading import Thread
 from typing import Coroutine
-import traceback
 
 from silex_client.utils.log import logger
 

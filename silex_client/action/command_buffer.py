@@ -10,19 +10,18 @@ import copy
 import importlib
 import os
 import traceback
-import copy
+from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List
-from contextlib import suppress
 
 import dacite.config as dacite_config
 import dacite.core as dacite
 import jsondiff
 
-from silex_client.network.websocket_log import RedirectWebsocketLogs
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
+from silex_client.network.websocket_log import RedirectWebsocketLogs
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-from setuptools import setup
 from distutils.util import convert_path
+
+from setuptools import setup
 
 # Get version without sourcing silex module
 main_ns = {}

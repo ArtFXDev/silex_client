@@ -12,9 +12,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.action.step_buffer import StepBuffer
-from silex_client.utils.parameter_types import AnyParameter
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
+from silex_client.utils.parameter_types import AnyParameter
 
 # Forward references
 if TYPE_CHECKING:

@@ -1,31 +1,30 @@
 from __future__ import annotations
 
+import logging
+import os
 import typing
 from typing import Any, Dict, List
+<<<<<<< HEAD
 import os
 import uuid
+=======
+>>>>>>> 48d2716 (Reformat files)
 
-import gazu.project
 import gazu.client
-import logging
+import gazu.project
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import (
-    SelectParameterMeta,
-    MultipleSelectParameterMeta,
-)
+from silex_client.utils.parameter_types import (MultipleSelectParameterMeta,
+                                                SelectParameterMeta)
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import aiohttp
-from aiohttp.client_exceptions import (
-    ClientConnectionError,
-    ContentTypeError,
-    InvalidURL,
-)
 import tractor.api.author as author
+from aiohttp.client_exceptions import (ClientConnectionError, ContentTypeError,
+                                       InvalidURL)
 
 
 class TractorSubmiter(CommandBase):
@@ -70,7 +69,7 @@ class TractorSubmiter(CommandBase):
         pools: List[str] = parameters["pools"]
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
-        owner: str = ''
+        owner: str = ""
 
         # MOUNT SERVER
         if action_query.context_metadata.get("user_email") is not None:

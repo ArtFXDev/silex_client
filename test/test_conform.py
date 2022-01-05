@@ -4,14 +4,15 @@
 Unit testing functions for the conform actions
 """
 
-import pytest
 import pathlib
+
+import pytest
 from pytest_mock import MockFixture
 
-from silex_client.core.context import Context
 from silex_client.action.action_query import ActionQuery
-from silex_client.utils.enums import Status
+from silex_client.core.context import Context
 from silex_client.resolve.config import Config
+from silex_client.utils.enums import Status
 
 # Run the conform test for each conform types
 conform_types = [

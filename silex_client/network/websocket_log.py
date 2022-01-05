@@ -1,13 +1,13 @@
-import logging
-
 import asyncio
+import logging
 import os
-import logzero
 import traceback
 from concurrent import futures
 
-from silex_client.utils.log import formatter, logger
+import logzero
+
 from silex_client.utils.enums import Status
+from silex_client.utils.log import formatter, logger
 
 # Formatting of the output log to look like
 __LOG_FORMAT__ = "[SILEX]\

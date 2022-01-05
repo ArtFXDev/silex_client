@@ -1,17 +1,17 @@
 from __future__ import annotations
+
 import copy
-
-import fileseq
-from silex_client.utils.parameter_types import AnyParameter
-import uuid
-
 import logging
 import typing
+import uuid
 from typing import Any, Dict
+
+import fileseq
 
 from silex_client.action.command_base import CommandBase
 from silex_client.resolve.config import Config
 from silex_client.utils.datatypes import CommandOutput
+from silex_client.utils.parameter_types import AnyParameter
 
 # Forward references
 if typing.TYPE_CHECKING:

@@ -6,10 +6,10 @@ Unit testing functions for the class ActionQuery
 
 import pytest
 
-from silex_client.core.context import Context
 from silex_client.action.action_query import ActionQuery
-from silex_client.utils.enums import Status
+from silex_client.core.context import Context
 from silex_client.resolve.config import Config
+from silex_client.utils.enums import Status
 
 from .test_config import dummy_config
 

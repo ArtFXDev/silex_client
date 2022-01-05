@@ -6,18 +6,19 @@ SILEX_ACTION_CONFIG: For the actions
 """
 
 from __future__ import annotations
-import copy
+
 import contextlib
+import copy
 import os
 import sys
-import pkg_resources
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import pkg_resources
 from dacite import types
 
-from silex_client.resolve.loader import Loader
 from silex_client.resolve.config_types import ActionYAML
+from silex_client.resolve.loader import Loader
 from silex_client.utils.log import logger
 
 search_path = Optional[List[str]]

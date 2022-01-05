@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
-from typing import List, TYPE_CHECKING, Any, Callable, Dict
+from typing import TYPE_CHECKING, Any, Callable, Dict, List
 
 from silex_client.utils.enums import Status
 

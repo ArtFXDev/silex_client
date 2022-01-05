@@ -9,9 +9,8 @@ from __future__ import annotations
 import copy
 import re
 import uuid as unique_id
-import copy
 from dataclasses import dataclass, field, fields
-from typing import Any, Dict, Optional, List, Type, TypeVar, Union
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
 import dacite.config as dacite_config
 import dacite.core as dacite

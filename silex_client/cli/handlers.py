@@ -5,18 +5,18 @@ Defintion of the handlers for all the CLI commands
 """
 
 import asyncio
-from concurrent import futures
 import os
 import pprint
 import subprocess
+from concurrent import futures
 
 import gazu.files
 
-from silex_client.utils.log import logger
-from silex_client.utils.authentification import authentificate_gazu
-from silex_client.core.context import Context
 from silex_client.action.action_query import ActionQuery
+from silex_client.core.context import Context
 from silex_client.resolve.config import Config
+from silex_client.utils.authentification import authentificate_gazu
+from silex_client.utils.log import logger
 
 
 def action_handler(action_name: str, **kwargs) -> None:

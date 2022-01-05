@@ -1,14 +1,11 @@
 import asyncio
 import os
 
-from aiohttp.client_exceptions import (
-    ClientConnectionError,
-    ContentTypeError,
-    InvalidURL,
-)
+import aiohttp
 import gazu
 import gazu.client
-import aiohttp
+from aiohttp.client_exceptions import (ClientConnectionError, ContentTypeError,
+                                       InvalidURL)
 
 from silex_client.utils.log import logger
 
