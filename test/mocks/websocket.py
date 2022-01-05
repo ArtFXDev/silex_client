@@ -1,6 +1,7 @@
 import socketio
 from aiohttp import web
 
+
 class DCCNamespace(socketio.AsyncNamespace):
     def __init__(self, namespace: str, app: web.Application):
         super().__init__(namespace)
@@ -15,6 +16,7 @@ class DCCNamespace(socketio.AsyncNamespace):
     async def on_disconnect(self, sid, environ):
         return {"status": 200}
 
+
 class ActionNamespace(socketio.AsyncNamespace):
     def __init__(self, namespace: str, app: web.Application):
         super().__init__(namespace)
@@ -28,4 +30,3 @@ class ActionNamespace(socketio.AsyncNamespace):
 
     async def on_initialization(self, sid, environ):
         return {"status": 200}
-

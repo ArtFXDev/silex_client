@@ -20,7 +20,6 @@ class ExecutionInThread:
         thread = threading.Thread(target=wrapped_function, daemon=True)
         thread.start()
 
-
     async def __call__(self, function: Callable, *args, **kwargs):
         """
         Execute the given function in a different thread and wait for its result
@@ -50,9 +49,12 @@ class ExecutionInThread:
             exception = task_result.exception()
             if exception:
                 logger.error("Exception raised in wrapped execute call: %s", exception)
-                raise Exception(f"Exception raised in wrapped execute call: {exception}")
+                raise Exception(
+                    f"Exception raised in wrapped execute call: {exception}"
+                )
 
         future.add_done_callback(callback)
         return await future
+
 
 execute_in_thread = ExecutionInThread()

@@ -45,7 +45,7 @@ def dummy_server() -> threading.Thread:
 
 
 def test_connection_initialization(
-        dummy_context: Context, dummy_server: threading.Thread
+    dummy_context: Context, dummy_server: threading.Thread
 ):
     """
     Test if the context is sent on initialization

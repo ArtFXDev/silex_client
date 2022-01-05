@@ -6,7 +6,6 @@ Unit testing functions for the module core.context
 
 import pytest
 import pathlib
-import shutil
 from pytest_mock import MockFixture
 
 from silex_client.core.context import Context
@@ -38,7 +37,7 @@ def test_execute_foo_action(dummy_config: Config, dummy_context: Context):
     action = ActionQuery("foo", category="test")
     assert hasattr(action, "buffer")
 
-    future = action.execute()
+    future = action.execute(batch=True)
 
     # Let the execution of the action happen in the event loop thread
     future.result()
@@ -57,19 +56,27 @@ def test_execute_tester_action(dummy_context: Context):
     action.set_parameter("parameter_tester:path:path_tester", "/foo/bar")
     action.set_parameter("parameter_tester:path:path_tester_multiple", "/foo/bar")
     action.set_parameter("parameter_tester:path:path_tester_extensions", "/foo/bar")
-    action.set_parameter("parameter_tester:path:path_tester_multiple_extensions", "/foo/bar")
-    future = action.execute()
+    action.set_parameter(
+        "parameter_tester:path:path_tester_multiple_extensions", "/foo/bar"
+    )
+    future = action.execute(batch=True)
 
     # Let the execution of the action happen in the event loop thread
     future.result()
 
     assert action.status is Status.COMPLETED
 
+
 # Run the conform test for each conform types
-conform_types = [i["name"] for i in Config.get().get_actions("conform") if i["name"] != "default"]
+conform_types = [
+    i["name"] for i in Config.get().get_actions("conform") if i["name"] != "default"
+]
+
 
 @pytest.mark.parametrize("conform_type", conform_types)
-def test_execute_conform_action(mocker: MockFixture, tmp_path: pathlib.Path, conform_type: str):
+def test_execute_conform_action(
+    mocker: MockFixture, tmp_path: pathlib.Path, conform_type: str
+):
     """
     Test the execution of all the commands in the 'conform' action
     """
@@ -81,27 +88,28 @@ def test_execute_conform_action(mocker: MockFixture, tmp_path: pathlib.Path, con
 
     output_path = tmp_path / "conform"
     input_path = tmp_path / f"unittest_conform.{conform_type}"
-    final_path = tmp_path / "unittest_conform" / f"conform_unittest_conform.{conform_type}"
+    final_path = (
+        tmp_path / "unittest_conform" / f"conform_unittest_conform.{conform_type}"
+    )
 
     # Patch the gazu functions
     mocker.patch(
-        'silex_client.commands.build_output_path.gazu.task.get_task',
-        return_value=mock
+        "silex_client.commands.build_output_path.gazu.task.get_task", return_value=mock
     )
     mocker.patch(
-        'silex_client.commands.build_output_path.gazu.files.get_output_type_by_short_name',
-        return_value=mock
+        "silex_client.commands.build_output_path.gazu.files.get_output_type_by_short_name",
+        return_value=mock,
     )
     mocker.patch(
-        'silex_client.commands.build_output_path.gazu.files.build_entity_output_file_path',
-        return_value=output_path
+        "silex_client.commands.build_output_path.gazu.files.build_entity_output_file_path",
+        return_value=output_path,
     )
 
     # Set the parameter that are required for the execution
     input_path.parent.mkdir(exist_ok=True)
     input_path.touch(exist_ok=True)
     action.set_parameter("setup:get_conform_output:file_paths", input_path)
-    future = action.execute()
+    future = action.execute(batch=True)
 
     # Let the execution of the action happen in the event loop thread
     future.result()

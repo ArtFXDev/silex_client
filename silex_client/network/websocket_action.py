@@ -117,8 +117,10 @@ class WebsocketActionNamespace(WebsocketNamespace):
         Return a json with all the actions that are currently running
         """
         running_actions = self.context.running_actions
-        running_actions = {key: value.buffer.serialize() for key, value in running_actions.items()}
-        
+        running_actions = {
+            key: value.buffer.serialize() for key, value in running_actions.items()
+        }
+
         return running_actions
 
     async def register_query_callback(

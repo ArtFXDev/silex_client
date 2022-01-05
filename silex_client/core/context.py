@@ -66,7 +66,9 @@ class Context:
 
     @property
     def running_actions(self):
-        return {key: action for key, action in self.actions.items() if action.is_running}
+        return {
+            key: action for key, action in self.actions.items() if action.is_running
+        }
 
     def register_action(self, action: ActionQuery):
         if action.buffer.uuid in self.actions.keys():
