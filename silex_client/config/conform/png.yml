@@ -11,6 +11,12 @@ png:
       label: "Conform"
       index: 20
       commands:
+        get_conform_cache:
+          label: "Get previous conform location"
+          path: "silex_client.commands.get_stored_value.GetStoredValue"
+          parameters:
+            key: "build_output_path_task_id"
+            key_suffix: !command-output "input:input:file_paths"
         build_output_path:
           label: "Build output path"
           path: "silex_client.commands.build_output_path.BuildOutputPath"
@@ -25,6 +31,13 @@ png:
             name: !command-output "input:input:file_paths"
             padding: !command-output "input:input:padding"
           ask_user: true
+        set_conform_cache:
+          label: "Cache conform location"
+          path: "silex_client.commands.set_stored_value.SetStoredValue"
+          parameters:
+            key: "build_output_path_task_id"
+            key_suffix: !command-output "input:input:file_paths"
+            value: !command-output "conform:build_output_path:task"
         copy:
           label: "Copy file to pipeline"
           path: "silex_client.commands.copy.Copy"

@@ -88,15 +88,17 @@ class BuildOutputPath(CommandBase):
     ):
         create_output_dir: bool = parameters["create_output_dir"]
         create_temp_dir: bool = parameters["create_temp_dir"]
+        use_current_context: bool = parameters["use_current_context"]
         name: str = parameters["name"]
+        task_id: str = parameters["task"]
         extension: str = parameters["output_type"]
         frame_set: fileseq.FrameSet = parameters["frame_set"]
         padding: int = parameters["padding"]
         nb_elements = len(frame_set)
 
         # Override with the given task if specified
-        if not parameters["use_current_context"]:
-            task = await gazu.task.get_task(parameters["task"])
+        if not use_current_context:
+            task = await gazu.task.get_task(task_id)
             task_name = task["name"]
             entity = task.get("entity", {}).get("id")
             task_type = task.get("task_type", {}).get("id")
@@ -191,6 +193,7 @@ class BuildOutputPath(CommandBase):
 
         return {
             "directory": directory,
+            "task": task_id,
             "file_name": file_name,
             "full_name": full_names,
             "temp_directory": temp_directory,
@@ -215,7 +218,7 @@ class BuildOutputPath(CommandBase):
             new_value = pathlib.Path(str(name_value)).stem
 
         # Slugify the name
-        self.command_buffer.parameters["name"].value = slugify(new_value)
+        self.command_buffer.parameters["name"].value = slugify(str(new_value))
 
         # Force the name to be visible
         self.command_buffer.parameters["name"].hide = False
@@ -228,7 +231,6 @@ class BuildOutputPath(CommandBase):
                 self.command_buffer.parameters["use_current_context"].hide = True
 
         # Set the hide dynamically
-        if parameters.get("use_current_context", False):
-            self.command_buffer.parameters["task"].hide = True
-        else:
-            self.command_buffer.parameters["task"].hide = False
+        task = self.command_buffer.parameters["task"]
+        task.hide = parameters.get("use_current_context", False)
+        task.value = task.get_value(action_query)

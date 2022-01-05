@@ -299,9 +299,9 @@ class ActionQuery:
         return self.buffer.status
 
     @property
-    def variables(self) -> Dict[str, Any]:
+    def store(self) -> Dict[str, Any]:
         """Shortcut to get the variable of the buffer"""
-        return self.buffer.variables
+        return self.buffer.store
 
     @property
     def steps(self) -> List[StepBuffer]:
