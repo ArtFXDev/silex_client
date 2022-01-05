@@ -2,6 +2,7 @@ vrscene:
   label: "Submit V-Ray scene"
   steps:
     build_output_path:
+      label: "Build output path"
       index: 10
       commands:
         select_list:
@@ -22,8 +23,8 @@ vrscene:
           ask_user: true
           parameters:
             output_type: !command-output "build_output_path:select_list"
-            create_temp_dir:
-              value: false
+            create_temp_dir: false
+            create_output_dir: false
             task:
               hide: true
             use_current_context:

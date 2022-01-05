@@ -69,9 +69,9 @@ class TractorSubmiter(CommandBase):
         pools: List[str] = parameters["pools"]
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
-        owner: str = ""
+        owner: str = ''
 
-        # MOUNt SERVER
+        # MOUNT SERVER
         if action_query.context_metadata.get("user_email") is not None:
             project_dict = await gazu.project.get_project_by_name(project)
             project_data = project_dict["data"]
@@ -92,8 +92,6 @@ class TractorSubmiter(CommandBase):
                     SERVER_ROOT,
                 ]
             ]
-
-            precommands.extend(precommands)
 
             # Get owner from context
             owner: str = action_query.context_metadata.get("user_email", None).split(
@@ -138,14 +136,11 @@ class TractorSubmiter(CommandBase):
 
         # Create the commands
         for cmd in cmds:
-            logger.info(f"Creating task: {cmds.get(cmd)}")
-
             # Create the task
             task = author.Task(title=str(cmd))
 
             # add precommands
             for pre in precommands:
-                logger.info(f"Add pre-command : {pre}")
                 pre_command = author.Command(argv=pre)
                 task.addCommand(pre_command)
 
