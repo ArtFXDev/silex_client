@@ -82,7 +82,7 @@ class BaseBuffer:
         and the children caches
         """
         return self.outdated_cache or not all(
-            not child.outdated_cache for child in self.children.values()
+            not child.outdated_caches for child in self.children.values()
         )
 
     def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
@@ -97,11 +97,11 @@ class BaseBuffer:
 
         result = []
 
-        for f in fields(self):
-            if f.name in ignore_fields:
+        for buffer_field in fields(self):
+            if buffer_field.name in ignore_fields:
                 continue
-            elif f.name == "children":
-                children = getattr(self, f.name)
+            elif buffer_field.name == "children":
+                children = getattr(self, buffer_field.name)
                 children_value = {}
                 for child_name, child in children.items():
                     if child.hide:
@@ -110,7 +110,7 @@ class BaseBuffer:
                 result.append((self.CHILD_NAME, children_value))
                 continue
 
-            result.append((f.name, getattr(self, f.name)))
+            result.append((buffer_field.name, getattr(self, buffer_field.name)))
 
         self.serialize_cache = copy.deepcopy(dict(result))
         self.outdated_cache = False

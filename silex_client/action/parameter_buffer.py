@@ -53,6 +53,14 @@ class ParameterBuffer(BaseBuffer):
         if self.value is None and isinstance(self.type, CommandParameterMeta):
             self.value = self.type.get_default()
 
+    @property
+    def outdated_caches(self) -> bool:
+        """
+        Check if the cache need to be recomputed by looking at the current cache
+        and the children caches
+        """
+        return self.outdated_cache
+
     def get_value(self, action_query: ActionQuery) -> Any:
         """
         Get the value of the parameter, always use this method to get

@@ -58,12 +58,16 @@ class WebsocketConnection:
             logger.warning(
                 "Connection with the websocket server could not be established"
             )
-            # Socketio does not close its aiohttp session corectly when errored out
+            # Socketio does not close its aiohttp session corectly
             if self.socketio.eio.http is not None:
                 await self.socketio.eio.http.close()
 
     async def _disconnect_socketio(self) -> None:
         await self.socketio.disconnect()
+
+        # Socketio does not close its aiohttp session corectly
+        if self.socketio.eio.http is not None:
+            await self.socketio.eio.http.close()
 
     def start(self) -> futures.Future:
         """
