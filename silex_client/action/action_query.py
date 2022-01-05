@@ -160,7 +160,11 @@ class ActionQuery:
             command_left.hide = False
 
         # Send the update to the UI and wait for its response
-        while self.ws_connection.is_running and self.commands[start].require_prompt():
+        while (
+            self.ws_connection.is_running
+            and not self.buffer.hide
+            and self.commands[start].require_prompt()
+        ):
             # Call the setup on all the commands
             for command in self.commands[start:end]:
                 await command.setup(self)
