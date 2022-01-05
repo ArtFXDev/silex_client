@@ -60,7 +60,7 @@ class ActionBuffer(BaseBuffer):
         return self.children
 
     def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
-        super().deserialize(serialized_data, force)
+        super().deserialize(serialized_data, True)
         self.reorder_steps()
 
     def reorder_steps(self):
