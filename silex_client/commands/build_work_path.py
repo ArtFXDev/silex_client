@@ -80,7 +80,9 @@ class BuildWorkPath(CommandBase):
         # Find the last version on disk
         sequences = fileseq.findSequencesOnDisk(os.path.dirname(full_path))
         for sequence in sequences:
-            if pathlib.Path(full_path).stem in [pathlib.Path(path).stem for path in sequence]:
+            if pathlib.Path(full_path).stem in [
+                pathlib.Path(path).stem for path in sequence
+            ]:
                 version = sequence.frameSet()[-1]
         # Check if we need to increment
         if parameters["increment"]:
@@ -91,5 +93,5 @@ class BuildWorkPath(CommandBase):
             task, software=software, revision=version, sep=os.path.sep
         )
         full_path = f"{work_path}.{extension}"
-            
+
         return full_path

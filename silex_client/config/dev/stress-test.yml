@@ -13,3 +13,4 @@ stress-test:
           parameters:
             values: !command-output "iterate_action:create_list:inline_result"
             actions: "tester"
+            categories: "dev"

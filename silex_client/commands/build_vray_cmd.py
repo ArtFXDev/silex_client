@@ -7,7 +7,7 @@ import os
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import IntArrayParameterMeta
+from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta
 import logging
 
 # Forward references
@@ -21,10 +21,13 @@ class VrayCommand(CommandBase):
     """
 
     parameters = {
-        "scene_file": {"label": "Scene file", "type": pathlib.Path},
+        "scene_file": {
+            "label": "Scene file", 
+            "type": PathParameterMeta(extensions=[".vrscene"]),
+        },
         "frame_range": {
             "label": "Frame range (start, end, step)",
-            "type":FrameSet,
+            "type": FrameSet,
             "value": "1-50x1",
         },
         "resolution": {
@@ -61,7 +64,6 @@ class VrayCommand(CommandBase):
         for i in range(0, len(lst), n):
             yield lst[i : i + n]
 
-
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -78,7 +80,6 @@ class VrayCommand(CommandBase):
         task_size: int = parameters["task_size"]
         skip_existing: int = int(parameters["skip_existing"])
 
-
         arg_list = [
             # V-Ray exe path
             "C:/Maya2022/Maya2022/vray/bin/vray.exe",
@@ -94,7 +95,6 @@ class VrayCommand(CommandBase):
             f"-sceneFile={scene}",
             # Render already existing frames or not
             f"-skipExistingFrames={skip_existing}",
- 
             # "-rtEngine=5", # CUDA or CPU?
         ]
 
@@ -109,7 +109,6 @@ class VrayCommand(CommandBase):
         if frame_range is None:
             raise Exception("No frame range found")
 
-
         frame_chunks: List[str] = list(FrameSet(frame_range))
 
         # Cut frames by task
@@ -121,9 +120,7 @@ class VrayCommand(CommandBase):
             start, end = chunk[0], chunk[-1]
             frames: str = ";".join(map(str, chunk))
             logger.info(f"Creating a new task with frames: {start} {end}")
-            cmd_dict[f"frames={start}-{end}"] = arg_list + [
-                f'-frames="{frames}"'
-            ]
+            cmd_dict[f"frames={start}-{end}"] = arg_list + [f'-frames="{frames}"']
 
         return {"commands": cmd_dict, "file_name": scene.stem}
 

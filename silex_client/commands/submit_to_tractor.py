@@ -9,7 +9,10 @@ import gazu.client
 import logging
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import SelectParameterMeta, MultipleSelectParameterMeta
+from silex_client.utils.parameter_types import (
+    SelectParameterMeta,
+    MultipleSelectParameterMeta,
+)
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -67,33 +70,51 @@ class TractorSubmiter(CommandBase):
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
         owner: str = ''
-        
-        # MOUNt SERVER
+
+        # MOUNT SERVER
         if action_query.context_metadata.get("user_email") is not None:
             project_dict = await gazu.project.get_project_by_name(project)
-            project_data = project_dict['data']
+            project_data = project_dict["data"]
 
             if project_data is None:
-                raise Exception('NO PROJECTS FOUND')
+                raise Exception("NO PROJECTS FOUND")
 
-            SERVER_ROOT = project_data['nas']
+            SERVER_ROOT = project_data["nas"]
 
             precommands: List[str] = [
-                ['powershell.exe', '-ExecutionPolicy', 'Bypass', '-NoProfile', '-File', "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive.ps1", SERVER_ROOT]
+                [
+                    "powershell.exe",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-NoProfile",
+                    "-File",
+                    "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive.ps1",
+                    SERVER_ROOT,
+                ]
             ]
 
-            precommands.extend(precommands)
-
             # Get owner from context
-            owner: str = action_query.context_metadata.get("user_email", None).split('@')[0] # get name only
+            owner: str = action_query.context_metadata.get("user_email", None).split(
+                "@"
+            )[
+                0
+            ]  # get name only
         else:
-            
+
             mount: List[str] = [
-                ['powershell.exe', '-ExecutionPolicy', 'Bypass', '-NoProfile', '-File', "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive_3d4.ps1", "marvin"]
+                [
+                    "powershell.exe",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-NoProfile",
+                    "-File",
+                    "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive_3d4.ps1",
+                    "marvin",
+                ]
             ]
 
             precommands.extend(mount)
-            
+
             # Get owner from context
             owner: str = "3d4"
 
@@ -104,30 +125,29 @@ class TractorSubmiter(CommandBase):
             services = "(" + " || ".join(pools) + ")"
         logger.info(f"Rendering on pools: {services}")
 
-
         # Creating the job
-        job = author.Job(title=job_title, priority=100.0 ,tags=['render'], projects=[project], service=services)
+        job = author.Job(
+            title=job_title,
+            priority=100.0,
+            tags=["render"],
+            projects=[project],
+            service=services,
+        )
 
         # Create the commands
         for cmd in cmds:
-            logger.info(f"Creating task: {cmds.get(cmd)}")
-
             # Create the task
             task = author.Task(title=str(cmd))
-            
+
             # add precommands
             for pre in precommands:
-                logger.info( f"Add pre-command : {pre}")
-                pre_command = author.Command(
-                    argv=pre
-                ) 
+                pre_command = author.Command(argv=pre)
                 task.addCommand(pre_command)
 
             # Create the main command
             command = author.Command(argv=cmds.get(cmd))
             task.addCommand(command)
             job.addChild(task)
-
 
         # Spool the job
         jid = job.spool(owner=owner)
@@ -184,21 +204,16 @@ class TractorSubmiter(CommandBase):
 
         # Get the list of available projects
         if "project" in action_query.context_metadata:
-            self.command_buffer.parameters[
-                "project"
-            ].type = SelectParameterMeta(
+            self.command_buffer.parameters["project"].type = SelectParameterMeta(
                 action_query.context_metadata["project"]
             )
             self.command_buffer.parameters["project"].hide = True
         else:
             # If there is no project in the current context return a hard coded list of project for 4th years
-            self.command_buffer.parameters[
-                "project"
-            ].type = SelectParameterMeta("WS_Environment", "WS_Lighting")
+            self.command_buffer.parameters["project"].type = SelectParameterMeta(
+                "WS_Environment", "WS_Lighting"
+            )
 
         self.command_buffer.parameters[
             "project"
         ].value = self.command_buffer.parameters["project"].type.get_default()
-
-      
-
