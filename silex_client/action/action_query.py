@@ -10,7 +10,7 @@ import asyncio
 import copy
 from concurrent import futures
 import os
-from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
+from typing import Any, Callable, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
 
 import jsondiff
 
@@ -65,6 +65,8 @@ class ActionQuery:
             for commands in self.commands:
                 commands.hide = True
 
+        self.command_iterator: CommandIterator = self.iter_commands()
+        self.post_execute_callback: Callable = lambda: None
         self._buffer_diff = copy.deepcopy(self.buffer.serialize())
         self._task: Optional[asyncio.Task] = None
 
@@ -77,11 +79,16 @@ class ActionQuery:
         The result value can be awaited with result = future.result(timeout)
         and the task can be canceled with future.cancel()
         """
-        # If the action has no commands, don't execute it
-        if not self.commands:
-            logger.warning(
-                "Could not execute %s: The action has no commands", self.name
-            )
+        # If the action has no commands or is already running, don't execute it
+        if not self.commands or self.is_running:
+            if not self.commands:
+                logger.warning(
+                    "Could not execute %s: The action has no commands", self.name
+                )
+            if not self.is_running:
+                logger.warning(
+                    "Could not execute %s: The action is already running", self.name
+                )
             future: futures.Future = futures.Future()
             future.set_result(None)
             return future
@@ -94,10 +101,9 @@ class ActionQuery:
         self.initialize_websocket()
 
         async def execute_commands() -> None:
+            command_iterator = enumerate(self.command_iterator)
             if step_by_step:
-                command_iterator = [next(enumerate(self.iter_commands()))]
-            else:
-                command_iterator = enumerate(self.iter_commands())
+                command_iterator = [next(enumerate(self.command_iterator))]
 
             # Execut all the commands one by one
             for index, command in command_iterator:
@@ -127,8 +133,12 @@ class ActionQuery:
                 )
 
         async def create_task():
+            # Execute the task that will run all the commands
             self._task = self.event_loop.loop.create_task(execute_commands())
             await self._task
+
+            # Execute the customm callback
+            self.post_execute_callback()
 
         # Execute the commands in the event loop
         return self.event_loop.register_task(create_task())
@@ -167,6 +177,9 @@ class ActionQuery:
 
         await asyncio.wait_for(await self.async_update_websocket(), None)
 
+    def set_execute_callback(self, callback: Callable):
+        self.post_execute_callback = callback
+
     def cancel(self, emit_clear: bool = True):
         """
         Cancel the execution of the action
@@ -181,8 +194,19 @@ class ActionQuery:
 
         self._task.cancel()
 
-    def undo(self):
-        self.execution_type = Execution.BACKWARD
+    def stop(self):
+        self.execution_type = Execution.PAUSE
+
+    def undo(self, all_commands: bool=False):
+        def undo_command():
+            self.execution_type = Execution.BACKWARD
+            self.execute(step_by_step=not all_commands)
+
+        if self.is_running:
+            self.stop()
+            self.set_execute_callback(undo_command)
+        else:
+            undo_command()
 
     def redo(self):
         self.execution_type = Execution.FORWARD
@@ -279,9 +303,19 @@ class ActionQuery:
             return confirm
 
     @property
+    def is_running(self):
+        """Check if the action is currently running"""
+        return not (self._task is None or self._task.done())
+
+    @property
     def execution_type(self) -> Execution:
         """Shortcut to get the status of the action stored in the buffer"""
         return self.buffer.execution_type
+
+    @property
+    def current_command_index(self):
+        """Get the index stored in the command iterator"""
+        return self.command_iterator.command_index
 
     @execution_type.setter
     def execution_type(self, value: Execution) -> None:
@@ -452,25 +486,19 @@ class CommandIterator(Iterator):
         self.command_index = -1
 
     def __iter__(self) -> CommandIterator:
-        commands = self.action_buffer.commands
-        try:
-            self.command_index = next(
-                index
-                for index, command in enumerate(commands)
-                if command.status == Status.INITIALIZED
-            )
-            self.command_index -= 1
-        except StopIteration:
-            self.command_index = -1
         return self
 
     def __next__(self) -> CommandBuffer:
+        # Check if there is a transition in the execution
         commands = self.action_buffer.commands
         execution_type_transition = (
             self.execution_type != self.action_buffer.execution_type
         )
         self.execution_type = copy.deepcopy(self.action_buffer.execution_type)
 
+        if self.action_buffer.execution_type == Execution.PAUSE:
+            raise StopIteration
+        # Increment the index according to the callback
         if self.action_buffer.execution_type == Execution.FORWARD:
             if not execution_type_transition:
                 self.command_index += 1
@@ -478,6 +506,7 @@ class CommandIterator(Iterator):
             if not execution_type_transition:
                 self.command_index -= 1
 
+        # Test if the command is out of bound and raise StopIteration if so
         if self.command_index < 0:
             raise StopIteration
 
