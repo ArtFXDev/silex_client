@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict, List
 import os
+import uuid
 
 import gazu.project
 import gazu.client
@@ -138,14 +139,27 @@ class TractorSubmiter(CommandBase):
         for cmd in cmds:
             # Create the task
             task = author.Task(title=str(cmd))
-
+            
             # add precommands
-            for pre in precommands:
-                pre_command = author.Command(argv=pre)
+            for pre_index, pre in enumerate(precommands):
+                params = {"argv":pre, "id":str(uuid.uuid4())}
+                
+                if pre_index > 0:
+                    params["refersto"] = task.cmds[pre_index-1].id
+                
+                pre_command = author.Command(**params)
+
+                # add precommand
                 task.addCommand(pre_command)
 
             # Create the main command
-            command = author.Command(argv=cmds.get(cmd))
+            params = {"argv":cmds.get(cmd), "id":str(uuid.uuid4())}
+            if len(precommands) > 0:
+                params["refersto"] = task.cmds[-1].id
+            
+            command = author.Command(**params)
+
+            # add the main command
             task.addCommand(command)
             job.addChild(task)
 
