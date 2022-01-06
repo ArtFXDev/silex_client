@@ -142,18 +142,18 @@ class TractorSubmiter(CommandBase):
             
             # add precommands
             for pre_index, pre in enumerate(precommands):
-                params = {"argv":pre, "id":str(uuid.uuid1())}
+                params = {"argv":pre, "id":str(uuid.uuid4())}
                 
                 if pre_index > 0:
                     params["refersto"] = task.cmds[pre_index-1].id
                 
                 pre_command = author.Command(**params)
-                
+
                 # add precommand
                 task.addCommand(pre_command)
 
             # Create the main command
-            params = {"argv":cmds.get(cmd), "id":str(uuid.uuid1())}
+            params = {"argv":cmds.get(cmd), "id":str(uuid.uuid4())}
             if len(precommands) > 0:
                 params["refersto"] = task.cmds[-1].id
             
