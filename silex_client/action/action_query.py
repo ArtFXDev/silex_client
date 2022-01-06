@@ -107,6 +107,8 @@ class ActionQuery:
 
             # Execut all the commands one by one
             for index, command in command_iterator:
+                # Set the status to initialized
+                command.status = Status.INITIALIZED
                 # Only run the command if it is valid
                 if self.buffer.status in [Status.INVALID, Status.ERROR]:
                     logger.error(
@@ -198,18 +200,16 @@ class ActionQuery:
         self.execution_type = Execution.PAUSE
 
     def undo(self, all_commands: bool=False):
-        def undo_command():
-            self.execution_type = Execution.BACKWARD
-            self.execute(step_by_step=not all_commands)
-
         if self.is_running:
-            self.stop()
-            self.set_execute_callback(undo_command)
-        else:
-            undo_command()
+            self.cancel(emit_clear=False)
+
+        self.execution_type = Execution.BACKWARD
+        self.execute(step_by_step=not all_commands)
 
     def redo(self):
         self.execution_type = Execution.FORWARD
+        if not self.is_running:
+            self.execute()
 
     def _initialize_buffer(
         self, resolved_config: dict, custom_data: Union[dict, None] = None
