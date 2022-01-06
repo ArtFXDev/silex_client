@@ -69,6 +69,7 @@ class ActionQuery:
         self.post_execute_callback: Callable = lambda: None
         self._buffer_diff = copy.deepcopy(self.buffer.serialize())
         self._task: Optional[asyncio.Task] = None
+        self.finished = futures.Future()
 
         context.register_action(self)
 
@@ -195,7 +196,13 @@ class ActionQuery:
                 "/dcc/action", "clearAction", {"uuid": self.buffer.uuid}
             )
 
-        self._task.cancel()
+        async def cancel():
+            if self._task is not None:
+                self._task.cancel()
+
+        # The cancel method must be executer from within the event loop
+        future = self.event_loop.register_task(cancel())
+        future.result()
 
     def stop(self):
         self.execution_type = Execution.PAUSE
