@@ -25,6 +25,7 @@ tga:
             use_current_context: false
             create_temp_dir: false
             frame_set: !command-output "input:input:frame_set"
+            task: !command-output "conform:get_conform_cache:value"
             output_type:
               value: "tga"
               hide: true
