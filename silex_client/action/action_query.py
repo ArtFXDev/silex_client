@@ -165,7 +165,8 @@ class ActionQuery:
         # Send the update to the UI and wait for its response
         while self.ws_connection.is_running and self.commands[start].require_prompt():
             # Call the setup on all the commands
-            [await command.setup(self) for command in self.commands[start:end]]
+            for command in self.commands[start:end]:
+                await command.setup(self)
             # Wait for a response from the UI
             logger.debug("Waiting for UI response")
             await asyncio.wait_for(
@@ -200,13 +201,17 @@ class ActionQuery:
         self.execution_type = Execution.PAUSE
 
     def undo(self, all_commands: bool=False):
-        if self.is_running:
+        if self.is_running and self._task is not None:
             self.cancel(emit_clear=False)
+            if self.execution_type is not Execution.BACKWARD:
+                self.command_iterator.command_index += 1
 
         self.execution_type = Execution.BACKWARD
         self.execute(step_by_step=not all_commands)
 
     def redo(self):
+        if self.execution_type is not Execution.FORWARD:
+            self.command_iterator.command_index -= 1
         self.execution_type = Execution.FORWARD
         if not self.is_running:
             self.execute()
@@ -299,8 +304,7 @@ class ActionQuery:
             return await self.ws_connection.action_namespace.register_update_callback(
                 self.buffer.uuid, apply_update
             )
-        else:
-            return confirm
+        return confirm
 
     @property
     def is_running(self):
@@ -482,36 +486,32 @@ class CommandIterator(Iterator):
 
     def __init__(self, action_buffer: ActionBuffer):
         self.action_buffer = action_buffer
-        self.execution_type = copy.deepcopy(action_buffer.execution_type)
         self.command_index = -1
 
     def __iter__(self) -> CommandIterator:
         return self
 
     def __next__(self) -> CommandBuffer:
-        # Check if there is a transition in the execution
         commands = self.action_buffer.commands
-        execution_type_transition = (
-            self.execution_type != self.action_buffer.execution_type
-        )
-        self.execution_type = copy.deepcopy(self.action_buffer.execution_type)
+        # We store the index in a temporary variable to not edit the real index
+        # in case we raise a StopIteration
+        new_index = self.command_index
 
         if self.action_buffer.execution_type == Execution.PAUSE:
             raise StopIteration
         # Increment the index according to the callback
         if self.action_buffer.execution_type == Execution.FORWARD:
-            if not execution_type_transition:
-                self.command_index += 1
+            new_index += 1
         if self.action_buffer.execution_type == Execution.BACKWARD:
-            if not execution_type_transition:
-                self.command_index -= 1
+            new_index -= 1
 
         # Test if the command is out of bound and raise StopIteration if so
-        if self.command_index < 0:
+        if new_index < 0:
             raise StopIteration
 
         try:
-            command = commands[self.command_index]
+            command = commands[new_index]
+            self.command_index = new_index
             return command
         except IndexError:
             raise StopIteration

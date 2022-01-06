@@ -71,9 +71,15 @@ class WebsocketActionNamespace(WebsocketNamespace):
             )
             return
 
+        # Send the data to the pending future
         if not future.cancelled():
             future.set_result(data)
             del self.update_futures[uuid]
+
+        # Make sure the action is executing in forward mode
+        action = self.context.actions.get(data.get("uuid"))
+        if action is not None:
+            action.redo()
 
     async def on_clear(self, data):
         """
