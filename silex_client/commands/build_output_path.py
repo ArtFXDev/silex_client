@@ -191,9 +191,6 @@ class BuildOutputPath(CommandBase):
         else:
             logger.info("Output path(s) built: %s", full_paths)
 
-        # Store the selected task to preselect for the next BuildOutputPath
-        action_query.buffer.store["build_output_path_task_id"] = task_id
-
         return {
             "directory": directory,
             "task": task_id,
@@ -234,6 +231,6 @@ class BuildOutputPath(CommandBase):
                 self.command_buffer.parameters["use_current_context"].hide = True
 
         # Set the hide dynamically
-        task = self.command_buffer.parameters["task"]
-        task.hide = parameters.get("use_current_context", False)
-        task.value = task.get_value(action_query)
+        task_parameter = self.command_buffer.parameters["task"]
+        task_parameter.hide = parameters.get("use_current_context", False)
+        task_parameter.value = task_parameter.get_value(action_query)

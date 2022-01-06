@@ -161,7 +161,7 @@ class Loader(yaml.SafeLoader):
             )
             return node_data
 
-        return jsondiff.patch(node_data, inherit_data)
+        return jsondiff.patch(inherit_data, node_data)
 
     def command_output(self, node: yaml.Node) -> CommandOutput:
         """
