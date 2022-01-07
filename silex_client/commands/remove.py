@@ -1,17 +1,19 @@
 from __future__ import annotations
+
+import logging
 import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-import logging
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_client.utils.parameter_types import ListParameter
-import shutil
 import os
 import pathlib
+import shutil
+
+from silex_client.utils.parameter_types import ListParameter
 
 
 class Remove(CommandBase):

@@ -1,13 +1,13 @@
-import logging
-
 import asyncio
+import logging
 import os
-import logzero
 import traceback
 from concurrent import futures
 
-from silex_client.utils.log import formatter
+import logzero
+
 from silex_client.utils.enums import Status
+from silex_client.utils.log import formatter, logger
 
 # Formatting of the output log to look like
 __LOG_FORMAT__ = "[SILEX]\
@@ -45,7 +45,7 @@ class RedirectWebsocketLogs(object):
         self.silex_command = command
         self.logger = logzero.setup_logger(
             name=command.uuid,
-            level=os.getenv("SILEX_LOG_LEVEL", "DEBUG"),
+            level=logger.level,
             formatter=formatter,
         )
         self.handler = WebsocketLogHandler(action_query, command)

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import logging
 import pathlib
 import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import IntArrayParameterMeta
-import logging
 
 # Forward references
 if typing.TYPE_CHECKING:

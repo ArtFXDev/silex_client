@@ -6,21 +6,19 @@ from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 
+# Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class ExecutePython(CommandBase):
+class Log(CommandBase):
     """
-    Execute the given python code
+    Log the given string
     """
 
     parameters = {
-        "inline_code": {
-            "label": "Inline code",
-            "type": str,
-            "value": "",
-        },
+        "message": {"label": "Message", "type": str, "value": None},
+        "level": {"label": "Level", "type": str, "value": "info"},
     }
 
     @CommandBase.conform_command()
@@ -30,6 +28,7 @@ class ExecutePython(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        inline_code: str = parameters["inline_code"]
-
-        return {"inline_result": eval(inline_code)}
+        try:
+            getattr(logger, parameters["level"])(parameters["message"])
+        except ValueError:
+            logger.warning("Invalid log level")

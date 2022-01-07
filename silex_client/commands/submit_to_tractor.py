@@ -1,31 +1,26 @@
 from __future__ import annotations
 
-import typing
-from typing import Any, Dict, List
-import os
-import uuid
-
-import gazu.project
-import gazu.client
 import logging
+import os
+import typing
+import uuid
+from typing import Any, Dict, List
+
+import gazu.client
+import gazu.project
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import (
-    SelectParameterMeta,
-    MultipleSelectParameterMeta,
-)
+from silex_client.utils.parameter_types import (MultipleSelectParameterMeta,
+                                                SelectParameterMeta)
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import aiohttp
-from aiohttp.client_exceptions import (
-    ClientConnectionError,
-    ContentTypeError,
-    InvalidURL,
-)
 import tractor.api.author as author
+from aiohttp.client_exceptions import (ClientConnectionError, ContentTypeError,
+                                       InvalidURL)
 
 
 class TractorSubmiter(CommandBase):
@@ -70,7 +65,7 @@ class TractorSubmiter(CommandBase):
         pools: List[str] = parameters["pools"]
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
-        owner: str = ''
+        owner: str = ""
 
         # MOUNT SERVER
         if action_query.context_metadata.get("user_email") is not None:
@@ -139,24 +134,24 @@ class TractorSubmiter(CommandBase):
         for cmd in cmds:
             # Create the task
             task = author.Task(title=str(cmd))
-            
+
             # add precommands
             for pre_index, pre in enumerate(precommands):
-                params = {"argv":pre, "id":str(uuid.uuid4())}
-                
+                params = {"argv": pre, "id": str(uuid.uuid4())}
+
                 if pre_index > 0:
-                    params["refersto"] = task.cmds[pre_index-1].id
-                
+                    params["refersto"] = task.cmds[pre_index - 1].id
+
                 pre_command = author.Command(**params)
 
                 # add precommand
                 task.addCommand(pre_command)
 
             # Create the main command
-            params = {"argv":cmds.get(cmd), "id":str(uuid.uuid4())}
+            params = {"argv": cmds.get(cmd), "id": str(uuid.uuid4())}
             if len(precommands) > 0:
                 params["refersto"] = task.cmds[-1].id
-            
+
             command = author.Command(**params)
 
             # add the main command

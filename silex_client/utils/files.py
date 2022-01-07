@@ -5,15 +5,13 @@ Helper that reload a given module and all its submodules recursively
 Can be used for development purposes
 """
 
+import errno
 import importlib
 import os
 import pathlib
 import re
 import sys
-import errno
 import unicodedata
-import re
-
 from types import ModuleType
 
 from silex_client.core.context import Context

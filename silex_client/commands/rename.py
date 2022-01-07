@@ -1,11 +1,14 @@
 from __future__ import annotations
+
+import logging
 import typing
-import fileseq
 from typing import Any, Dict, List
 
+import fileseq
+
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import PathParameterMeta, ListParameterMeta
-import logging
+from silex_client.utils.parameter_types import (ListParameterMeta,
+                                                PathParameterMeta)
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery

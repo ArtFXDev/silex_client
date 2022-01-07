@@ -1,7 +1,7 @@
-import shutil
 import contextlib
-import sys
 import os
+import shutil
+import sys
 
 
 def build(source_path, build_path, install_path, targets):

@@ -8,19 +8,19 @@ from __future__ import annotations
 
 import asyncio
 import copy
-from concurrent import futures
 import os
-from typing import Any, Callable, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
+from concurrent import futures
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
 import jsondiff
 
+from silex_client.action.action_buffer import ActionBuffer
 from silex_client.core.context import Context
 from silex_client.resolve.config import Config
-from silex_client.action.action_buffer import ActionBuffer
-from silex_client.utils.serialiser import silex_diff
 from silex_client.utils.datatypes import ReadOnlyDict
-from silex_client.utils.enums import Status, Execution
+from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
+from silex_client.utils.serialiser import silex_diff
 
 # Forward references
 if TYPE_CHECKING:
@@ -45,9 +45,10 @@ class ActionQuery:
         context = Context.get()
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(context.metadata))
         if resolved_config is None:
-            resolved_config = Config().resolve_action(name, category)
+            resolved_config = Config.get().resolve_action(name, category)
 
         if resolved_config is None:
+            self.buffer = ActionBuffer("none")
             return
 
         self.event_loop: EventLoop = context.event_loop
@@ -72,7 +73,7 @@ class ActionQuery:
 
         context.register_action(self)
 
-    async def execute_commands(self, step_by_step: bool=False) -> None:
+    async def execute_commands(self, step_by_step: bool = False) -> None:
         command_iterator = self.command_iterator
         if step_by_step:
             command_iterator = [next(self.command_iterator)]
@@ -102,7 +103,7 @@ class ActionQuery:
         # Inform the UI of the state of the action (either completed or sucess)
         await self.async_update_websocket()
 
-    def execute(self, batch=False, step_by_step: bool=False) -> futures.Future:
+    def execute(self, batch=False, step_by_step: bool = False) -> futures.Future:
         """
         Register a task that will execute the action's commands in order
 
@@ -132,7 +133,9 @@ class ActionQuery:
 
         async def create_task():
             # Execute the task that will run all the commands
-            self._task = self.event_loop.loop.create_task(self.execute_commands(step_by_step))
+            self._task = self.event_loop.loop.create_task(
+                self.execute_commands(step_by_step)
+            )
             await self._task
 
         # Execute the commands in the event loop
@@ -159,7 +162,11 @@ class ActionQuery:
             command_left.hide = False
 
         # Send the update to the UI and wait for its response
-        while self.ws_connection.is_running and self.commands[start].require_prompt():
+        while (
+            self.ws_connection.is_running
+            and not self.buffer.hide
+            and self.commands[start].require_prompt()
+        ):
             # Call the setup on all the commands
             for command in self.commands[start:end]:
                 await command.setup(self)
@@ -194,7 +201,7 @@ class ActionQuery:
         future = self.event_loop.register_task(self.async_cancel(emit_clear))
         future.result()
 
-    async def async_undo(self, all_commands: bool=False):
+    async def async_undo(self, all_commands: bool = False):
         """
         Cancel the action if running and restart it backward
         """
@@ -203,13 +210,13 @@ class ActionQuery:
             if self.execution_type is not Execution.BACKWARD:
                 self.command_iterator.command_index += 1
 
-        for command in self.commands[self.current_command_index:]:
+        for command in self.commands[self.current_command_index :]:
             command.status = Status.INITIALIZED
 
         self.execution_type = Execution.BACKWARD
         await self.execute_commands(step_by_step=not all_commands)
 
-    def undo(self, all_commands: bool=False):
+    def undo(self, all_commands: bool = False):
         self.event_loop.register_task(self.async_undo(all_commands))
 
     def redo(self):
@@ -321,6 +328,11 @@ class ActionQuery:
     def current_command(self):
         """Get the current command or the last command before stopping"""
         return self.commands[self.current_command_index]
+
+    @property
+    def is_running(self):
+        """Check if the action is currently running"""
+        return not (self._task is None or self._task.done())
 
     @property
     def execution_type(self) -> Execution:

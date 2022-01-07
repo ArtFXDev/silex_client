@@ -1,19 +1,18 @@
 from __future__ import annotations
 
+import logging
 import os
+import pathlib
 import typing
 from typing import Any, Dict
-import pathlib
-import fileseq
-import glob
 
-import gazu.shot
+import fileseq
 import gazu.asset
 import gazu.files
+import gazu.shot
 import gazu.task
 
 from silex_client.action.command_base import CommandBase
-import logging
 
 # Forward references
 if typing.TYPE_CHECKING:
