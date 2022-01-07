@@ -36,9 +36,9 @@ class Config:
         config_search_path: search_path = None,
     ):
         # Add the custom action config search path
-        if config_search_path is not None:
-            self.action_search_path = config_search_path
-            return
+        self.action_search_path = config_search_path
+        if config_search_path is None:
+            self.action_search_path = Config.get_default_action_search_path()
 
     @staticmethod
     def get() -> Config:
@@ -148,25 +148,25 @@ class Config:
             finally:
                 loader.dispose()
 
+    @staticmethod
+    def get_default_action_search_path():
+        """
+        Get a list of search path from environment variables and entry points
+        This is for the default Config object
+        """
+        action_search_path = []
 
-def get_action_search_path():
-    """
-    Get a list of search path from environment variables and entry points
-    This is for the default Config object
-    """
-    action_search_path = []
+        # Look for config search path in the environment variables
+        env_config_path = os.getenv("SILEX_ACTION_CONFIG")
+        if env_config_path is not None:
+            action_search_path += env_config_path.split(os.pathsep)
 
-    # Look for config search path in the environment variables
-    env_config_path = os.getenv("SILEX_ACTION_CONFIG")
-    if env_config_path is not None:
-        action_search_path += env_config_path.split(os.pathsep)
+        # Look for config search path in silex_config entry_point
+        for entry_point in pkg_resources.iter_entry_points("silex_action_config"):
+            with contextlib.suppress(pkg_resources.DistributionNotFound):
+                action_search_path += entry_point.load()
 
-    # Look for config search path in silex_config entry_point
-    for entry_point in pkg_resources.iter_entry_points("silex_action_config"):
-        with contextlib.suppress(pkg_resources.DistributionNotFound):
-            action_search_path += entry_point.load()
-
-    return action_search_path
+        return action_search_path
 
 
-config = Config(get_action_search_path())
+config = Config()
