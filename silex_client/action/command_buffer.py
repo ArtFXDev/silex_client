@@ -46,6 +46,7 @@ class CommandBuffer(BaseBuffer):
     ]
     READONLY_FIELDS = ["logs", "label"]
     CHILD_NAME = "parameters"
+    ALLOW_HIDE_CHILDS = False
 
     #: Childs in the buffer hierarchy of buffer of the action
     children: Dict[str, ParameterBuffer] = field(default_factory=dict)

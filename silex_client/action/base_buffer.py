@@ -39,6 +39,8 @@ class BaseBuffer:
 
     #: The name of the child, it can be parameters, commands...
     CHILD_NAME = "none"
+    #: Specify if the childs can be hidden or not
+    ALLOW_HIDE_CHILDS = True
 
     #: Name of the buffer, must have no space or special characters
     name: str = field(default="unnamed")
@@ -99,11 +101,11 @@ class BaseBuffer:
         for buffer_field in fields(self):
             if buffer_field.name in ignore_fields:
                 continue
-            elif buffer_field.name == "children":
+            if buffer_field.name == "children":
                 children = getattr(self, buffer_field.name)
                 children_value = {}
                 for child_name, child in children.items():
-                    if child.hide:
+                    if self.ALLOW_HIDE_CHILDS and child.hide:
                         continue
                     children_value[child_name] = child.serialize()
                 result.append((self.CHILD_NAME, children_value))
