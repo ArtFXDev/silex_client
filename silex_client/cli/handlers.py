@@ -71,7 +71,7 @@ def action_handler(action_name: str, **kwargs) -> None:
         if not kwargs.get("batch", False):
             action_future = action.closed
         while not action_future.done():
-            action_future.result(timeout=0.1)
+            futures.wait([action_future], timeout=0.1)
     except KeyboardInterrupt:
         action.cancel()
     finally:
