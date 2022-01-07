@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+import logging
+import os
 import pathlib
 import typing
-from fileseq import FrameSet
-import os
 from typing import Any, Dict, List
 
+from fileseq import FrameSet
+
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta
-import logging
+from silex_client.utils.parameter_types import (IntArrayParameterMeta,
+                                                PathParameterMeta)
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -22,7 +24,7 @@ class VrayCommand(CommandBase):
 
     parameters = {
         "scene_file": {
-            "label": "Scene file", 
+            "label": "Scene file",
             "type": PathParameterMeta(extensions=[".vrscene"]),
         },
         "frame_range": {

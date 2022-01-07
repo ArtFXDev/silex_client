@@ -1,19 +1,20 @@
 from __future__ import annotations
+
+import logging
 import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.thread import execute_in_thread
-import logging
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-
-from silex_client.utils.parameter_types import ListParameterMeta
-import shutil
 import os
 import pathlib
+import shutil
+
+from silex_client.utils.parameter_types import ListParameterMeta
 
 
 class Move(CommandBase):

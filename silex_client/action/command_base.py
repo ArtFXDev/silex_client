@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
-from typing import List, TYPE_CHECKING, Any, Callable, Dict
+from typing import TYPE_CHECKING, Any, Callable, Dict, List
 
 from silex_client.utils.enums import Status
 
@@ -36,6 +36,7 @@ class CommandBase:
 
     def __init__(self, command_buffer: CommandBuffer):
         self.command_buffer = command_buffer
+        self.history_require_prompt = command_buffer.require_prompt()
 
     @property
     def type_name(self) -> str:
@@ -197,6 +198,7 @@ class CommandBase:
                 "This command does not have any execution function"
             )
 
+        self.command_buffer.ask_user = self.history_require_prompt
         self.conform_command()(default)
 
     async def setup(

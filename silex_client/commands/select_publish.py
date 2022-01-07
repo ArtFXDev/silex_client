@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import jsondiff
+import logging
 import typing
 from typing import Any, Dict
 
-import logging
+import jsondiff
+
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import SelectParameterMeta
 from silex_client.resolve.config import Config
+from silex_client.utils.parameter_types import SelectParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -23,7 +24,7 @@ class SelectPublish(CommandBase):
         "publish_type": {
             "label": "Select a publish type",
             "type": SelectParameterMeta(
-                *[publish_action["name"] for publish_action in Config().publishes]
+                *[publish_action["name"] for publish_action in Config.get().publishes]
             ),
             "value": None,
             "tooltip": "Select a publish type in the list",
@@ -37,7 +38,9 @@ class SelectPublish(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        publish_action = Config().resolve_publish(parameters["publish_type"].lower())
+        publish_action = Config.get().resolve_publish(
+            parameters["publish_type"].lower()
+        )
 
         if publish_action is None:
             raise Exception("Could not resolve the action %s")

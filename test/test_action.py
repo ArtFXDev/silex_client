@@ -1,16 +1,17 @@
 """
 @author: TD gang
 
-Unit testing functions for the module core.context
+Unit testing functions for the class ActionQuery
 """
 
-import os
 import pytest
-from concurrent import futures
 
+from silex_client.action.action_query import ActionQuery
 from silex_client.core.context import Context
+from silex_client.resolve.config import Config
 from silex_client.utils.enums import Status
-from silex_client.resolve.loader import Loader
+
+from .test_config import dummy_config
 
 
 @pytest.fixture
@@ -20,52 +21,45 @@ def dummy_context() -> Context:
     that has been created only for test purpose
     """
     context = Context.get()
-    config_root = os.path.join(os.path.dirname(__file__), "config", "action")
-    context.config.action_search_path.insert(0, config_root)
     context.update_metadata({"project": "TEST_PIPE"})
     context.is_outdated = False
+    if not context.event_loop.is_running:
+        context.start_services()
     return context
 
 
-def test_get_action(dummy_context: Context):
+def test_execute_foo_action(dummy_config: Config, dummy_context: Context):
     """
-    Test if the resolved action by the context is the same as if we try to resolve it manually
+    Test the execution of all the commands in the 'foo' action
     """
-    resolved_action = dummy_context.get_action("publish")
-    assert resolved_action is not None
+    action = ActionQuery("foo", category="test")
+    assert hasattr(action, "buffer")
 
-    # Load the file manualy and check if it correspond to the resolved file
-    config_root = os.path.join(os.path.dirname(__file__), "config", "action")
-    action_file = os.path.join(config_root, "publish.yml")
-    # Compare the two config
-    with open(action_file, "r") as config_data:
-        loader = Loader(config_data, tuple(config_root))
-        manual_action = loader.get_single_data()["publish"]["steps"]
-        assert len(resolved_action.buffer.steps["pre_action"].commands.values()) == len(
-            manual_action["pre_action"]["commands"].values()
-        )
-        assert len(resolved_action.buffer.steps["action"].commands.values()) == len(
-            manual_action["action"]["commands"].values()
-        )
-        assert len(
-            resolved_action.buffer.steps["post_action"].commands.values()
-        ) == len(manual_action["post_action"]["commands"].values())
-        loader.dispose()
+    future = action.execute(batch=True)
 
-
-def test_execute_action(dummy_context: Context):
-    """
-    Test the execution of all the commands in the 'foo' action from the config
-    given by the dummy_context
-    """
-    action = dummy_context.get_action("publish")
-    assert action is not None
-
-    dummy_context.event_loop.start()
-    future = action.execute()
     # Let the execution of the action happen in the event loop thread
-    futures.wait([future])
-    dummy_context.event_loop.stop()
-    for command in action.commands:
-        print(command.status)
+    future.result()
+
+    assert action.status is Status.COMPLETED
+
+
+def test_execute_tester_action(dummy_context: Context):
+    """
+    Test the execution of all the commands in the 'testing' action
+    """
+    action = ActionQuery("tester", category="dev")
+    assert hasattr(action, "buffer")
+
+    # Set the parameter that are required for the execution
+    action.set_parameter("parameter_tester:path:path_tester", "/foo/bar")
+    action.set_parameter("parameter_tester:path:path_tester_multiple", "/foo/bar")
+    action.set_parameter("parameter_tester:path:path_tester_extensions", "/foo/bar")
+    action.set_parameter(
+        "parameter_tester:path:path_tester_multiple_extensions", "/foo/bar"
+    )
+    future = action.execute(batch=True)
+
+    # Let the execution of the action happen in the event loop thread
+    future.result()
+
     assert action.status is Status.COMPLETED

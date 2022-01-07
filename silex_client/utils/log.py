@@ -27,5 +27,11 @@ handler.setFormatter(formatter)
 logger.handlers = []
 logger.addHandler(handler)
 
-log_level = getattr(logging, os.getenv("SILEX_LOG_LEVEL", "DEBUG"))
+env_log_level = os.getenv("SILEX_LOG_LEVEL", "DEBUG")
+env_log_level = env_log_level.upper()
+if env_log_level not in logging._nameToLevel:
+    env_log_level = "DEBUG"
+    logger.error("Invalid log level (%s): Setting DEBUG as value", env_log_level)
+
+log_level = getattr(logging, env_log_level)
 logger.setLevel(log_level)  # set default level

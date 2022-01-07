@@ -6,8 +6,8 @@ Helpers to encode or decode the json stream
 
 import uuid
 
-import jsondiff
 import fileseq
+import jsondiff
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.action.command_buffer import CommandBuffer

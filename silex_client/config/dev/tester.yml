@@ -19,6 +19,11 @@ tester:
           parameters:
             bool_tester: true
           ask_user: True
+        traceback:
+          path: "silex_client.commands.tester.TracebackTester"
+          parameters:
+            raise_exception: false
+          ask_user: True
         path:
           path: "silex_client.commands.tester.PathTester"
           ask_user: True
@@ -87,9 +92,4 @@ tester:
           path: "silex_client.commands.tester.FrameSetTester"
           parameters:
             frameset_tester: "42,78-102,144,1254-1277"
-          ask_user: True
-        traceback:
-          path: "silex_client.commands.tester.TracebackTester"
-          parameters:
-            raise_exception: false
           ask_user: True

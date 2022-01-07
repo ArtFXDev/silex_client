@@ -1,61 +1,10 @@
-obj:
-  steps:
-    input:
-      hide: true
-      index: 10
-      commands:
-        input:
-          path: "silex_client.commands.pass.Pass"
+obj: !inherit
+  parent: ".default"
 
+  steps:
     conform:
-      label: "Conform"
-      index: 20
       commands:
-        get_conform_cache:
-          label: "Get previous conform location"
-          path: "silex_client.commands.get_stored_value.GetStoredValue"
-          parameters:
-            key: "build_output_path_task_id"
-            key_suffix: !command-output "input:input:file_paths"
         build_output_path:
-          label: "Build output path"
-          path: "silex_client.commands.build_output_path.BuildOutputPath"
-          tooltip: "Build the complete output path"
           parameters:
-            use_current_context: false
-            create_temp_dir: false
-            frame_set: !command-output "input:input:frame_set"
             output_type:
               value: "obj"
-              hide: true
-            name: !command-output "input:input:file_paths"
-            padding: !command-output "input:input:padding"
-          ask_user: true
-        set_conform_cache:
-          label: "Cache conform location"
-          path: "silex_client.commands.set_stored_value.SetStoredValue"
-          parameters:
-            key: "build_output_path_task_id"
-            key_suffix: !command-output "input:input:file_paths"
-            value: !command-output "conform:build_output_path:task"
-        copy:
-          label: "Copy file to pipeline"
-          path: "silex_client.commands.copy.Copy"
-          parameters:
-            src: !command-output "input:input:file_paths"
-            dst: !command-output "conform:build_output_path:directory"
-        rename:
-          label: "Rename the copied files"
-          path: "silex_client.commands.rename.Rename"
-          parameters:
-            src: !command-output "conform:copy:destination_paths"
-            name: !command-output "conform:build_output_path:full_name"
-
-    output:
-      index: 30
-      hide: true
-      commands:
-        output:
-          path: "silex_client.commands.pass.Pass"
-          parameters:
-            input: !command-output "conform:rename:new_paths"

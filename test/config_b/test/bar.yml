@@ -1,0 +1,29 @@
+bar:
+  steps:
+    pre_action:
+      index: 10
+      label: "Pre action"
+      commands:
+        initalize_action_b:
+          label: "Initialize Action"
+          path: "silex_client.commands.log.Log"
+          parameters:
+            message: "BAR action config from path config_b"
+            level: "debug"
+          hide: true
+
+    action:
+      label: "Action"
+      index: 20
+
+    post_action:
+      index: 30
+      label: "Post action"
+      commands:
+        close_action_b:
+          label: "Close Action"
+          path: "silex_client.commands.log.Log"
+          parameters:
+            message: "BAR action config from path config_b"
+            level: "debug"
+          hide: true

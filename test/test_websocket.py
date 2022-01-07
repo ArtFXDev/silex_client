@@ -1,33 +1,25 @@
 """
 @author: TD gang
 
-Unit testing functions for the module networK.websocket
+Unit testing functions for the module network.websocket
 """
 
 import asyncio
-import os
 import threading
-import time
 
 import pytest
 import socketio
-from aiohttp import web
+from aiohttp import test_utils, web
 
 from silex_client.core.context import Context
+from silex_client.network.websocket import WebsocketConnection
 
+from .mocks.websocket import ActionNamespace, DCCNamespace
+from .test_action import dummy_context
+from .test_config import dummy_config
 
-@pytest.fixture
-def dummy_context() -> Context:
-    """
-    Return a context initialized in the test folder to work the configuration files
-    that has been created only for test purpose
-    """
-    context = Context.get()
-    config_root = os.path.join(os.path.dirname(__file__), "config", "action")
-    context.config.action_search_path.append(config_root)
-    context.update_metadata({"project": "TEST_PIPE"})
-    context.is_outdated = False
-    return context
+# Get an unused port
+TEST_PORT = test_utils.get_unused_port_socket("127.0.0.1").getsockname()[-1]
 
 
 @pytest.fixture
@@ -36,50 +28,39 @@ def dummy_server() -> threading.Thread:
     Return a function to start a server that will listen on the namespaces /dcc and /dcc/action
     """
 
-    def start_server() -> None:
-        server = socketio.AsyncServer(async_mode="aiohttp")
-        app = web.Application()
+    server = socketio.AsyncServer(async_mode="aiohttp")
+    app = web.Application()
 
-        class DCCNamespace(socketio.AsyncNamespace):
-            def __init__(self, namespace: str, app: web.Application):
-                super().__init__(namespace)
-                self.app = app
+    server.register_namespace(DCCNamespace("/dcc", app))
+    server.register_namespace(ActionNamespace("/dcc/action", app))
+    server.attach(app)
+    runner = web.AppRunner(app)
 
-            async def on_connect(self, sid, environ):
-                pass
-
-            async def on_initialization(self, sid, environ):
-                pass
-
-            async def on_disconnect(self, sid):
-                pass
-
-        class ActionNamespace(socketio.AsyncNamespace):
-            async def query(self, sid, environ):
-                pass
-
-            async def update(self, sid):
-                pass
-
-        server.register_namespace(DCCNamespace("/dcc", app))
-        server.register_namespace(ActionNamespace("/dcc/action"))
-        server.attach(app)
-
+    def start_server(runner: web.AppRunner) -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        web.run_app(app, host="127.0.0.1", port=5118)
 
-    return threading.Thread(target=start_server, daemon=True)
+        loop.run_until_complete(runner.setup())
+        site = web.TCPSite(runner, host="127.0.0.1", port=TEST_PORT)
+        loop.run_until_complete(site.start())
+        loop.run_forever()
+
+    return threading.Thread(target=start_server, daemon=True, args=(runner,))
 
 
-def wip_test_connection_initialization(
+def test_connection_initialization(
     dummy_context: Context, dummy_server: threading.Thread
 ):
     """
     Test if the context is sent on initialization
     """
     dummy_server.start()
-    dummy_context.event_loop.start()
-    dummy_context.ws_connection.start()
+
+    # Restart the services on a new port
+    dummy_context.stop_services()
+    dummy_context.ws_connection = WebsocketConnection(
+        f"ws://127.0.0.1:{TEST_PORT}", dummy_context
+    )
+    dummy_context.start_services()
 
     assert dummy_context.ws_connection.is_running

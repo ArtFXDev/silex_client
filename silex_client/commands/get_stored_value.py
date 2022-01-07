@@ -1,11 +1,13 @@
 from __future__ import annotations
+
+import logging
+import pathlib
 import typing
 from typing import Any, Dict
-import pathlib
+
 import fileseq
 
 from silex_client.action.command_base import CommandBase
-import logging
 
 # Forward references
 if typing.TYPE_CHECKING:

@@ -1,17 +1,17 @@
 from __future__ import annotations
+
 import copy
-
-import fileseq
-from silex_client.utils.parameter_types import AnyParameter
-import uuid
-
 import logging
 import typing
+import uuid
 from typing import Any, Dict
+
+import fileseq
 
 from silex_client.action.command_base import CommandBase
 from silex_client.resolve.config import Config
 from silex_client.utils.datatypes import CommandOutput
+from silex_client.utils.parameter_types import AnyParameter
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -84,7 +84,7 @@ class InsertAction(CommandBase):
         label_key = parameters["label_key"]
         value = parameters["value"]
         hide_commands = parameters["hide_commands"]
-        action = Config().resolve_action(action_type, parameters["category"])
+        action = Config.get().resolve_action(action_type, parameters["category"])
 
         if action is None:
             raise Exception("Could not resolve the action %s", action_type)

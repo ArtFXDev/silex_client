@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pathlib
 import copy
+import logging
+import pathlib
 import typing
 from typing import Any, Dict, List
 
@@ -9,12 +10,9 @@ import fileseq
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import (
-    SelectParameterMeta,
-    PathParameterMeta,
-)
 from silex_client.resolve.config import Config
-import logging
+from silex_client.utils.parameter_types import (PathParameterMeta,
+                                                SelectParameterMeta)
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -48,7 +46,7 @@ class SelectConform(CommandBase):
         "conform_type": {
             "label": "Select a conform type",
             "type": SelectParameterMeta(
-                *[publish_action["name"] for publish_action in Config().conforms]
+                *[publish_action["name"] for publish_action in Config.get().conforms]
             ),
             "value": None,
             "tooltip": "Select a conform type in the list",
@@ -62,7 +60,7 @@ class SelectConform(CommandBase):
         # Create a new parameter to prompt for the new file path
         new_parameter = ParameterBuffer(
             type=SelectParameterMeta(
-                *[publish_action["name"] for publish_action in Config().conforms]
+                *[publish_action["name"] for publish_action in Config.get().conforms]
             ),
             name="new_type",
             label=f"Conform type",
@@ -103,7 +101,7 @@ class SelectConform(CommandBase):
             conform_type = extension.lower()
             # Some extensions are not the exact same as their conform type
             if conform_type not in [
-                publish_action["name"] for publish_action in Config().conforms
+                publish_action["name"] for publish_action in Config.get().conforms
             ]:
                 # TODO: This mapping should be somewhere else
                 EXTENSION_TYPES_MAPPING = {
@@ -122,7 +120,7 @@ class SelectConform(CommandBase):
 
             # Some extensions are just not handled at all
             if conform_type not in [
-                publish_action["name"] for publish_action in Config().conforms
+                publish_action["name"] for publish_action in Config.get().conforms
             ]:
                 logger.warning("Could not guess the conform type of %s", sequence)
                 conform_type = await self._prompt_new_type(action_query)
