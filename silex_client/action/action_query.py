@@ -9,8 +9,8 @@ from __future__ import annotations
 import asyncio
 import copy
 import os
-from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
 from concurrent import futures
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
 import jsondiff
 
@@ -73,7 +73,7 @@ class ActionQuery:
 
         context.register_action(self)
 
-    async def execute_commands(self, step_by_step: bool=False) -> None:
+    async def execute_commands(self, step_by_step: bool = False) -> None:
         command_iterator = self.command_iterator
         if step_by_step:
             command_iterator = [next(self.command_iterator)]
@@ -103,7 +103,7 @@ class ActionQuery:
         # Inform the UI of the state of the action (either completed or sucess)
         await self.async_update_websocket()
 
-    def execute(self, batch=False, step_by_step: bool=False) -> futures.Future:
+    def execute(self, batch=False, step_by_step: bool = False) -> futures.Future:
         """
         Register a task that will execute the action's commands in order
 
@@ -133,7 +133,9 @@ class ActionQuery:
 
         async def create_task():
             # Execute the task that will run all the commands
-            self._task = self.event_loop.loop.create_task(self.execute_commands(step_by_step))
+            self._task = self.event_loop.loop.create_task(
+                self.execute_commands(step_by_step)
+            )
             await self._task
 
         # Execute the commands in the event loop
@@ -199,7 +201,7 @@ class ActionQuery:
         future = self.event_loop.register_task(self.async_cancel(emit_clear))
         future.result()
 
-    async def async_undo(self, all_commands: bool=False):
+    async def async_undo(self, all_commands: bool = False):
         """
         Cancel the action if running and restart it backward
         """
@@ -208,13 +210,13 @@ class ActionQuery:
             if self.execution_type is not Execution.BACKWARD:
                 self.command_iterator.command_index += 1
 
-        for command in self.commands[self.current_command_index:]:
+        for command in self.commands[self.current_command_index :]:
             command.status = Status.INITIALIZED
 
         self.execution_type = Execution.BACKWARD
         await self.execute_commands(step_by_step=not all_commands)
 
-    def undo(self, all_commands: bool=False):
+    def undo(self, all_commands: bool = False):
         self.event_loop.register_task(self.async_undo(all_commands))
 
     def redo(self):
