@@ -10,8 +10,10 @@ import gazu.client
 import gazu.project
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import (MultipleSelectParameterMeta,
-                                                SelectParameterMeta)
+from silex_client.utils.parameter_types import (
+    MultipleSelectParameterMeta,
+    SelectParameterMeta,
+)
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -19,8 +21,11 @@ if typing.TYPE_CHECKING:
 
 import aiohttp
 import tractor.api.author as author
-from aiohttp.client_exceptions import (ClientConnectionError, ContentTypeError,
-                                       InvalidURL)
+from aiohttp.client_exceptions import (
+    ClientConnectionError,
+    ContentTypeError,
+    InvalidURL,
+)
 
 
 class TractorSubmiter(CommandBase):
