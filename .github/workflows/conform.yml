@@ -39,7 +39,7 @@ jobs:
         run: black .
 
       - name: Run import formatter
-        run: isort .
+        run: isort --profile black .
 
       - name: Commit changes
         run: |
