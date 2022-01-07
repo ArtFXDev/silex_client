@@ -203,17 +203,14 @@ class ActionQuery:
             if self.execution_type is not Execution.BACKWARD:
                 self.command_iterator.command_index += 1
 
+        for command in self.commands[self.current_command_index:]:
+            command.status = Status.INITIALIZED
+
         self.execution_type = Execution.BACKWARD
         await self.execute_commands(step_by_step=not all_commands)
 
     def undo(self, all_commands: bool=False):
-        if self.is_running and self._task is not None:
-            self.cancel(emit_clear=False)
-            if self.execution_type is not Execution.BACKWARD:
-                self.command_iterator.command_index += 1
-
-        self.execution_type = Execution.BACKWARD
-        self.execute(step_by_step=not all_commands)
+        self.event_loop.register_task(self.async_undo(all_commands))
 
     def redo(self):
         if self.execution_type is not Execution.FORWARD:
