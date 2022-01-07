@@ -94,7 +94,7 @@ class WebsocketActionNamespace(WebsocketNamespace):
             )
             return
 
-        action.cancel(emit_clear=False)
+        await action.async_cancel(emit_clear=False)
         action.closed.set_result(True)
 
     async def on_undo(self, data):

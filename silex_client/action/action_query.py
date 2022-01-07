@@ -66,14 +66,43 @@ class ActionQuery:
                 commands.hide = True
 
         self.command_iterator: CommandIterator = self.iter_commands()
-        self.post_execute_callback: Callable = lambda: None
         self._buffer_diff = copy.deepcopy(self.buffer.serialize())
         self._task: Optional[asyncio.Task] = None
         self.closed = futures.Future()
 
         context.register_action(self)
 
-    def execute(self, batch=False, step_by_step=False) -> futures.Future:
+    async def execute_commands(self, step_by_step: bool=False) -> None:
+        command_iterator = self.command_iterator
+        if step_by_step:
+            command_iterator = [next(self.command_iterator)]
+
+        # Execut all the commands one by one
+        for command in command_iterator:
+            # Set the status to initialized
+            command.status = Status.INITIALIZED
+            # Only run the command if it is valid
+            if self.buffer.status in [Status.INVALID, Status.ERROR]:
+                logger.error(
+                    "Stopping action %s because the buffer is invalid or errored out",
+                    self.name,
+                )
+                break
+
+            # If the command requires an input from user, wait for the response
+            if command.require_prompt() and self.execution_type is Execution.FORWARD:
+                await self.prompt_commands()
+
+            # Setup the command
+            await command.setup(self)
+
+            # Execution of the command
+            await command.execute(self, self.execution_type)
+
+        # Inform the UI of the state of the action (either completed or sucess)
+        await self.async_update_websocket()
+
+    def execute(self, batch=False, step_by_step: bool=False) -> futures.Future:
         """
         Register a task that will execute the action's commands in order
 
@@ -101,56 +130,22 @@ class ActionQuery:
         # Initialize the communication with the websocket server
         self.initialize_websocket()
 
-        async def execute_commands() -> None:
-            command_iterator = enumerate(self.command_iterator)
-            if step_by_step:
-                command_iterator = [next(enumerate(self.command_iterator))]
-
-            # Execut all the commands one by one
-            for index, command in command_iterator:
-                # Set the status to initialized
-                command.status = Status.INITIALIZED
-                # Only run the command if it is valid
-                if self.buffer.status in [Status.INVALID, Status.ERROR]:
-                    logger.error(
-                        "Stopping action %s because the buffer is invalid or errored out",
-                        self.name,
-                    )
-                    break
-
-                # If the command requires an input from user, wait for the response
-                if command.require_prompt():
-                    await self.prompt_commands(index)
-
-                # Setup the command
-                await command.setup(self)
-
-                # Execution of the command
-                await command.execute(self, self.execution_type)
-
-            # Inform the UI of the state of the action (either completed or sucess)
-            await self.async_update_websocket()
-            if self.ws_connection.is_running and not self.buffer.hide:
-                await self.ws_connection.async_send(
-                    "/dcc/action", "clearAction", {"uuid": self.buffer.uuid}
-                )
-
         async def create_task():
             # Execute the task that will run all the commands
-            self._task = self.event_loop.loop.create_task(execute_commands())
+            self._task = self.event_loop.loop.create_task(self.execute_commands(step_by_step))
             await self._task
-
-            # Execute the customm callback
-            self.post_execute_callback()
 
         # Execute the commands in the event loop
         return self.event_loop.register_task(create_task())
 
-    async def prompt_commands(self, start: int = 0, end: Optional[int] = None):
+    async def prompt_commands(self, start: int = None, end: int = None):
         """
         Ask a user input for a given range of commands, only the commands that
         require an input will wait for a response
         """
+        if start is None:
+            start = self.current_command_index
+
         # Get the range of commands
         commands_prompt = self.commands[start:end]
         # Set the commands to WAITING_FOR_RESPONSE
@@ -181,9 +176,6 @@ class ActionQuery:
 
         await asyncio.wait_for(await self.async_update_websocket(), None)
 
-    def set_execute_callback(self, callback: Callable):
-        self.post_execute_callback = callback
-
     async def async_cancel(self, emit_clear: bool = True):
         """
         Cancel the execution of the action
@@ -212,7 +204,7 @@ class ActionQuery:
                 self.command_iterator.command_index += 1
 
         self.execution_type = Execution.BACKWARD
-        self.execute(step_by_step=not all_commands)
+        await self.execute_commands(step_by_step=not all_commands)
 
     def undo(self, all_commands: bool=False):
         if self.is_running and self._task is not None:
@@ -327,6 +319,11 @@ class ActionQuery:
     def is_running(self):
         """Check if the action is currently running"""
         return not (self._task is None or self._task.done())
+
+    @property
+    def current_command(self):
+        """Get the current command or the last command before stopping"""
+        return self.commands[self.current_command_index]
 
     @property
     def execution_type(self) -> Execution:
