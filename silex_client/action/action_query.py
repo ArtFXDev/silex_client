@@ -69,7 +69,7 @@ class ActionQuery:
         self.post_execute_callback: Callable = lambda: None
         self._buffer_diff = copy.deepcopy(self.buffer.serialize())
         self._task: Optional[asyncio.Task] = None
-        self.finished = futures.Future()
+        self.closed = futures.Future()
 
         context.register_action(self)
 
@@ -184,7 +184,7 @@ class ActionQuery:
     def set_execute_callback(self, callback: Callable):
         self.post_execute_callback = callback
 
-    def cancel(self, emit_clear: bool = True):
+    async def async_cancel(self, emit_clear: bool = True):
         """
         Cancel the execution of the action
         """
@@ -196,16 +196,23 @@ class ActionQuery:
                 "/dcc/action", "clearAction", {"uuid": self.buffer.uuid}
             )
 
-        async def cancel():
-            if self._task is not None:
-                self._task.cancel()
+        self._task.cancel()
 
-        # The cancel method must be executer from within the event loop
-        future = self.event_loop.register_task(cancel())
+    def cancel(self, emit_clear: bool = True):
+        future = self.event_loop.register_task(self.async_cancel(emit_clear))
         future.result()
 
-    def stop(self):
-        self.execution_type = Execution.PAUSE
+    async def async_undo(self, all_commands: bool=False):
+        """
+        Cancel the action if running and restart it backward
+        """
+        if self.is_running and self._task is not None:
+            await self.async_cancel(emit_clear=False)
+            if self.execution_type is not Execution.BACKWARD:
+                self.command_iterator.command_index += 1
+
+        self.execution_type = Execution.BACKWARD
+        self.execute(step_by_step=not all_commands)
 
     def undo(self, all_commands: bool=False):
         if self.is_running and self._task is not None:
@@ -222,6 +229,9 @@ class ActionQuery:
         self.execution_type = Execution.FORWARD
         if not self.is_running:
             self.execute()
+
+    def stop(self):
+        self.execution_type = Execution.PAUSE
 
     def _initialize_buffer(
         self, resolved_config: dict, custom_data: Union[dict, None] = None

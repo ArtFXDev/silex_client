@@ -95,7 +95,7 @@ class WebsocketActionNamespace(WebsocketNamespace):
             return
 
         action.cancel(emit_clear=False)
-        action.finished.set_result(True)
+        action.closed.set_result(True)
 
     async def on_undo(self, data):
         """
@@ -110,7 +110,7 @@ class WebsocketActionNamespace(WebsocketNamespace):
             )
             return
 
-        action.undo()
+        await action.async_undo(all_commands=data.get("full", False))
 
     async def register_query_callback(
         self, coroutine: Callable[[asyncio.Future], Any]
