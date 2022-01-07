@@ -71,9 +71,15 @@ class WebsocketActionNamespace(WebsocketNamespace):
             )
             return
 
+        # Send the data to the pending future
         if not future.cancelled():
             future.set_result(data)
             del self.update_futures[uuid]
+
+        # Make sure the action is executing in forward mode
+        action = self.context.actions.get(data.get("uuid"))
+        if action is not None:
+            action.redo()
 
     async def on_clear(self, data):
         """
@@ -88,7 +94,8 @@ class WebsocketActionNamespace(WebsocketNamespace):
             )
             return
 
-        action.cancel(emit_clear=False)
+        await action.async_cancel(emit_clear=False)
+        action.closed.set_result(True)
 
     async def on_undo(self, data):
         """
@@ -103,22 +110,7 @@ class WebsocketActionNamespace(WebsocketNamespace):
             )
             return
 
-        action.undo()
-
-    async def on_redo(self, data):
-        """
-        Redo an executing action
-        """
-        logger.debug("Action redo request received: %s from %s", data, self.url)
-        action = self.context.actions.get(data.get("uuid"))
-        if action is None:
-            logger.error(
-                "Could not redo the action %s: The action does not exists",
-                data.get("uuid"),
-            )
-            return
-
-        action.redo()
+        await action.async_undo(all_commands=data.get("full", False))
 
     async def register_query_callback(
         self, coroutine: Callable[[asyncio.Future], Any]

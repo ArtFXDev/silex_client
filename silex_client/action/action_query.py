@@ -10,7 +10,7 @@ import asyncio
 import copy
 from concurrent import futures
 import os
-from typing import Any, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
+from typing import Any, Callable, Iterator, Dict, Union, List, TYPE_CHECKING, Optional
 
 import jsondiff
 
@@ -65,23 +65,60 @@ class ActionQuery:
             for commands in self.commands:
                 commands.hide = True
 
+        self.command_iterator: CommandIterator = self.iter_commands()
         self._buffer_diff = copy.deepcopy(self.buffer.serialize())
         self._task: Optional[asyncio.Task] = None
+        self.closed = futures.Future()
 
         context.register_action(self)
 
-    def execute(self, batch=False, step_by_step=False) -> futures.Future:
+    async def execute_commands(self, step_by_step: bool=False) -> None:
+        command_iterator = self.command_iterator
+        if step_by_step:
+            command_iterator = [next(self.command_iterator)]
+
+        # Execut all the commands one by one
+        for command in command_iterator:
+            # Set the status to initialized
+            command.status = Status.INITIALIZED
+            # Only run the command if it is valid
+            if self.buffer.status in [Status.INVALID, Status.ERROR]:
+                logger.error(
+                    "Stopping action %s because the buffer is invalid or errored out",
+                    self.name,
+                )
+                break
+
+            # If the command requires an input from user, wait for the response
+            if command.require_prompt() and self.execution_type is Execution.FORWARD:
+                await self.prompt_commands()
+
+            # Setup the command
+            await command.setup(self)
+
+            # Execution of the command
+            await command.execute(self, self.execution_type)
+
+        # Inform the UI of the state of the action (either completed or sucess)
+        await self.async_update_websocket()
+
+    def execute(self, batch=False, step_by_step: bool=False) -> futures.Future:
         """
         Register a task that will execute the action's commands in order
 
         The result value can be awaited with result = future.result(timeout)
         and the task can be canceled with future.cancel()
         """
-        # If the action has no commands, don't execute it
-        if not self.commands:
-            logger.warning(
-                "Could not execute %s: The action has no commands", self.name
-            )
+        # If the action has no commands or is already running, don't execute it
+        if not self.commands or self.is_running:
+            if not self.commands:
+                logger.warning(
+                    "Could not execute %s: The action has no commands", self.name
+                )
+            if not self.is_running:
+                logger.warning(
+                    "Could not execute %s: The action is already running", self.name
+                )
             future: futures.Future = futures.Future()
             future.set_result(None)
             return future
@@ -93,51 +130,22 @@ class ActionQuery:
         # Initialize the communication with the websocket server
         self.initialize_websocket()
 
-        async def execute_commands() -> None:
-            if step_by_step:
-                command_iterator = [next(enumerate(self.iter_commands()))]
-            else:
-                command_iterator = enumerate(self.iter_commands())
-
-            # Execut all the commands one by one
-            for index, command in command_iterator:
-                # Only run the command if it is valid
-                if self.buffer.status in [Status.INVALID, Status.ERROR]:
-                    logger.error(
-                        "Stopping action %s because the buffer is invalid or errored out",
-                        self.name,
-                    )
-                    break
-
-                # If the command requires an input from user, wait for the response
-                if command.require_prompt():
-                    await self.prompt_commands(index)
-
-                # Setup the command
-                await command.setup(self)
-
-                # Execution of the command
-                await command.execute(self, self.execution_type)
-
-            # Inform the UI of the state of the action (either completed or sucess)
-            await self.async_update_websocket()
-            if self.ws_connection.is_running and not self.buffer.hide:
-                await self.ws_connection.async_send(
-                    "/dcc/action", "clearAction", {"uuid": self.buffer.uuid}
-                )
-
         async def create_task():
-            self._task = self.event_loop.loop.create_task(execute_commands())
+            # Execute the task that will run all the commands
+            self._task = self.event_loop.loop.create_task(self.execute_commands(step_by_step))
             await self._task
 
         # Execute the commands in the event loop
         return self.event_loop.register_task(create_task())
 
-    async def prompt_commands(self, start: int = 0, end: Optional[int] = None):
+    async def prompt_commands(self, start: int = None, end: int = None):
         """
         Ask a user input for a given range of commands, only the commands that
         require an input will wait for a response
         """
+        if start is None:
+            start = self.current_command_index
+
         # Get the range of commands
         commands_prompt = self.commands[start:end]
         # Set the commands to WAITING_FOR_RESPONSE
@@ -153,7 +161,8 @@ class ActionQuery:
         # Send the update to the UI and wait for its response
         while self.ws_connection.is_running and self.commands[start].require_prompt():
             # Call the setup on all the commands
-            [await command.setup(self) for command in self.commands[start:end]]
+            for command in self.commands[start:end]:
+                await command.setup(self)
             # Wait for a response from the UI
             logger.debug("Waiting for UI response")
             await asyncio.wait_for(
@@ -167,7 +176,7 @@ class ActionQuery:
 
         await asyncio.wait_for(await self.async_update_websocket(), None)
 
-    def cancel(self, emit_clear: bool = True):
+    async def async_cancel(self, emit_clear: bool = True):
         """
         Cancel the execution of the action
         """
@@ -181,11 +190,37 @@ class ActionQuery:
 
         self._task.cancel()
 
-    def undo(self):
+    def cancel(self, emit_clear: bool = True):
+        future = self.event_loop.register_task(self.async_cancel(emit_clear))
+        future.result()
+
+    async def async_undo(self, all_commands: bool=False):
+        """
+        Cancel the action if running and restart it backward
+        """
+        if self.is_running and self._task is not None:
+            await self.async_cancel(emit_clear=False)
+            if self.execution_type is not Execution.BACKWARD:
+                self.command_iterator.command_index += 1
+
+        for command in self.commands[self.current_command_index:]:
+            command.status = Status.INITIALIZED
+
         self.execution_type = Execution.BACKWARD
+        await self.execute_commands(step_by_step=not all_commands)
+
+    def undo(self, all_commands: bool=False):
+        self.event_loop.register_task(self.async_undo(all_commands))
 
     def redo(self):
+        if self.execution_type is not Execution.FORWARD:
+            self.command_iterator.command_index -= 1
         self.execution_type = Execution.FORWARD
+        if not self.is_running:
+            self.execute()
+
+    def stop(self):
+        self.execution_type = Execution.PAUSE
 
     def _initialize_buffer(
         self, resolved_config: dict, custom_data: Union[dict, None] = None
@@ -275,13 +310,27 @@ class ActionQuery:
             return await self.ws_connection.action_namespace.register_update_callback(
                 self.buffer.uuid, apply_update
             )
-        else:
-            return confirm
+        return confirm
+
+    @property
+    def is_running(self):
+        """Check if the action is currently running"""
+        return not (self._task is None or self._task.done())
+
+    @property
+    def current_command(self):
+        """Get the current command or the last command before stopping"""
+        return self.commands[self.current_command_index]
 
     @property
     def execution_type(self) -> Execution:
         """Shortcut to get the status of the action stored in the buffer"""
         return self.buffer.execution_type
+
+    @property
+    def current_command_index(self):
+        """Get the index stored in the command iterator"""
+        return self.command_iterator.command_index
 
     @execution_type.setter
     def execution_type(self, value: Execution) -> None:
@@ -448,41 +497,32 @@ class CommandIterator(Iterator):
 
     def __init__(self, action_buffer: ActionBuffer):
         self.action_buffer = action_buffer
-        self.execution_type = copy.deepcopy(action_buffer.execution_type)
         self.command_index = -1
 
     def __iter__(self) -> CommandIterator:
-        commands = self.action_buffer.commands
-        try:
-            self.command_index = next(
-                index
-                for index, command in enumerate(commands)
-                if command.status == Status.INITIALIZED
-            )
-            self.command_index -= 1
-        except StopIteration:
-            self.command_index = -1
         return self
 
     def __next__(self) -> CommandBuffer:
         commands = self.action_buffer.commands
-        execution_type_transition = (
-            self.execution_type != self.action_buffer.execution_type
-        )
-        self.execution_type = copy.deepcopy(self.action_buffer.execution_type)
+        # We store the index in a temporary variable to not edit the real index
+        # in case we raise a StopIteration
+        new_index = self.command_index
 
+        if self.action_buffer.execution_type == Execution.PAUSE:
+            raise StopIteration
+        # Increment the index according to the callback
         if self.action_buffer.execution_type == Execution.FORWARD:
-            if not execution_type_transition:
-                self.command_index += 1
+            new_index += 1
         if self.action_buffer.execution_type == Execution.BACKWARD:
-            if not execution_type_transition:
-                self.command_index -= 1
+            new_index -= 1
 
-        if self.command_index < 0:
+        # Test if the command is out of bound and raise StopIteration if so
+        if new_index < 0:
             raise StopIteration
 
         try:
-            command = commands[self.command_index]
+            command = commands[new_index]
+            self.command_index = new_index
             return command
         except IndexError:
             raise StopIteration
