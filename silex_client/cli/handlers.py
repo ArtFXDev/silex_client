@@ -46,7 +46,7 @@ def action_handler(action_name: str, **kwargs) -> None:
         action_name, category=category, simplify=kwargs.get("simplify", False)
     )
     if not action.commands:
-        logger.error("The resolved action is invalid")
+        logger.error("The resolved action is invalid: no commands resolved")
         return
 
     if kwargs.get("list_parameters", False):

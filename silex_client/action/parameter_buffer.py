@@ -30,6 +30,8 @@ class ParameterBuffer(BaseBuffer):
     PRIVATE_FIELDS = ["outdated_cache", "serialize_cache", "parent"]
     READONLY_FIELDS = ["type", "label"]
 
+    #: Type name to help differentiate the different buffer types
+    buffer_type: str = field(default="parameters")
     #: The type of the parameter, must be a class definition or a CommandParameterMeta instance
     type: Type = field(default=type(None))
     #: The value that will return the parameter

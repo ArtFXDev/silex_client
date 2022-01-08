@@ -243,6 +243,7 @@ class ActionQuery:
         if self.name not in resolved_config.keys():
             logger.error(
                 "Could not resolve the action %s: The root key should be the same as the config file name",
+                self.name,
             )
             return
 

@@ -23,8 +23,9 @@ class StepBuffer(BaseBuffer):
     #: The list of fields that should be ignored when serializing this buffer to json
     PRIVATE_FIELDS = ["outdated_cache", "serialize_cache", "parent"]
     READONLY_FIELDS = ["label"]
-    CHILD_NAME = "commands"
 
+    #: Type name to help differentiate the different buffer types
+    buffer_type: str = field(default="steps")
     #: The index of the step, to set the order in which they should be executed
     index: int = field(default=0)
     #: The status is readonly, it is computed from the commands's status
@@ -32,8 +33,8 @@ class StepBuffer(BaseBuffer):
     #: Dict that represent the parameters of the command, their type, value, name...
     children: Dict[str, CommandBuffer] = field(default_factory=dict)
 
-    @property
-    def child_type(self):
+    @staticmethod
+    def get_child_type():
         return CommandBuffer
 
     @property

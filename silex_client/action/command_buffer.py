@@ -45,9 +45,10 @@ class CommandBuffer(BaseBuffer):
         "serialize_cache",
     ]
     READONLY_FIELDS = ["logs", "label"]
-    CHILD_NAME = "parameters"
     ALLOW_HIDE_CHILDS = False
 
+    #: Type name to help differentiate the different buffer types
+    buffer_type: str = field(default="commands")
     #: Childs in the buffer hierarchy of buffer of the action
     children: Dict[str, ParameterBuffer] = field(default_factory=dict)
     #: The path to the command's module
@@ -73,8 +74,8 @@ class CommandBuffer(BaseBuffer):
         # Get the executor
         self.executor = self._get_executor(self.path)
 
-    @property
-    def child_type(self):
+    @staticmethod
+    def get_child_type():
         return ParameterBuffer
 
     @property
@@ -194,9 +195,9 @@ class CommandBuffer(BaseBuffer):
         # Initialize the buffer without the children, since the children needs special treatment
         filtered_data = serialized_data
         filtered_data["parent"] = parent
-        if cls.CHILD_NAME in serialized_data:
+        if cls.get_child_type().buffer_type in serialized_data:
             filtered_data = copy.copy(serialized_data)
-            del filtered_data[cls.CHILD_NAME]
+            del filtered_data[cls.get_child_type().buffer_type]
         command = dacite.from_dict(cls, filtered_data, config)
 
         # Get the default data from the executor and patch it with the serialized data

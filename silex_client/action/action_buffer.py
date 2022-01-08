@@ -34,8 +34,9 @@ class ActionBuffer(BaseBuffer):
         "serialize_cache",
     ]
     READONLY_FIELDS = ["label"]
-    CHILD_NAME = "steps"
 
+    #: Type name to help differentiate the different buffer types
+    buffer_type: str = field(default="actions")
     #: Specify if the action must be simplified in the UI or not
     simplify: bool = field(compare=False, repr=False, default=False)
     #: The status is readonly, it is computed from the commands's status
@@ -51,15 +52,15 @@ class ActionBuffer(BaseBuffer):
     #: Snapshot of the context's metadata when this buffer is created
     context_metadata: Dict[str, Any] = field(default_factory=dict)
 
-    @property
-    def child_type(self):
+    @staticmethod
+    def get_child_type():
         return StepBuffer
 
     @property
     def steps(self) -> Dict[str, StepBuffer]:
         return self.children
 
-    def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
+    def deserialize(self, serialized_data: Dict[str, Any], _=False) -> None:
         super().deserialize(serialized_data, True)
         self.reorder_steps()
 

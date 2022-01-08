@@ -37,8 +37,6 @@ class BaseBuffer:
     #: The list of fields that should be ignored when deserializing this buffer to json
     READONLY_FIELDS = ["label"]
 
-    #: The name of the child, it can be parameters, commands...
-    CHILD_NAME = "none"
     #: Specify if the childs can be hidden or not
     ALLOW_HIDE_CHILDS = True
 
@@ -60,6 +58,8 @@ class BaseBuffer:
     outdated_cache: bool = field(compare=False, repr=False, default=True)
     #: Cache the serialize output
     serialize_cache: dict = field(compare=False, repr=False, default_factory=dict)
+    #: Type name to help differentiate the different buffer types
+    buffer_type: str = field(default="none")
 
     def __setattr__(self, name, value):
         super().__setattr__("outdated_cache", True)
@@ -72,8 +72,8 @@ class BaseBuffer:
             self.label = slugify_pattern.sub(" ", self.name)
             self.label = self.label.title()
 
-    @property
-    def child_type(self) -> Type[BaseBuffer]:
+    @staticmethod
+    def get_child_type() -> Type[BaseBuffer]:
         return BaseBuffer
 
     @property
@@ -108,7 +108,7 @@ class BaseBuffer:
                     if self.ALLOW_HIDE_CHILDS and child.hide:
                         continue
                     children_value[child_name] = child.serialize()
-                result.append((self.CHILD_NAME, children_value))
+                result.append((self.get_child_type().buffer_type, children_value))
                 continue
 
             result.append((buffer_field.name, getattr(self, buffer_field.name)))
@@ -126,7 +126,7 @@ class BaseBuffer:
 
         # If the given child is a new child we construct it
         if child is None:
-            return self.child_type.construct(child_data, self)
+            return self.get_child_type().construct(child_data, self)
 
         # Otherwise, we update the already existing one
         child.deserialize(child_data)
@@ -143,21 +143,25 @@ class BaseBuffer:
         # Patch the current buffer's data, except the chils data
         current_buffer_data = self.serialize()
         current_buffer_data = copy.copy(current_buffer_data)
-        del current_buffer_data[self.CHILD_NAME]
+        del current_buffer_data[self.get_child_type().buffer_type]
         serialized_data = jsondiff.patch(current_buffer_data, serialized_data)
 
         # Format the children corectly, the name is defined in the key only
-        for child_name, child in serialized_data.get(self.CHILD_NAME, {}).items():
+        for child_name, child in serialized_data.get(
+            self.get_child_type().buffer_type, {}
+        ).items():
             child["name"] = child_name
 
         # Create a new buffer with the patched serialized data
         config_data: Dict[str, Union[list, dict]] = {"cast": [Status, CommandOutput]}
-        if self.child_type is not BaseBuffer:
-            config_data["type_hooks"] = {self.child_type: self._deserialize_child}
+        if self.get_child_type() is not BaseBuffer:
+            config_data["type_hooks"] = {self.get_child_type(): self._deserialize_child}
         config = dacite_config.Config(**config_data)
 
-        if self.CHILD_NAME in serialized_data:
-            serialized_data["children"] = serialized_data.pop(self.CHILD_NAME)
+        if self.get_child_type().buffer_type in serialized_data:
+            serialized_data["children"] = serialized_data.pop(
+                self.get_child_type().buffer_type
+            )
 
         new_buffer = dacite.from_dict(type(self), serialized_data, config)
 
@@ -189,9 +193,9 @@ class BaseBuffer:
         # because the children needs special treatment
         filtered_data = serialized_data
         filtered_data["parent"] = parent
-        if cls.CHILD_NAME in serialized_data:
+        if cls.get_child_type().buffer_type in serialized_data:
             filtered_data = copy.copy(serialized_data)
-            del filtered_data[cls.CHILD_NAME]
+            del filtered_data[cls.get_child_type().buffer_type]
         buffer = dacite.from_dict(cls, filtered_data, config)
 
         # Deserialize the newly created buffer to apply the children
