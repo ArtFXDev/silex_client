@@ -68,7 +68,7 @@ def action_handler(action_name: str, **kwargs) -> None:
 
     try:
         action_future = action.execute(batch=kwargs.get("batch", False))
-        if not kwargs.get("batch", False):
+        if not kwargs.get("batch", False) and action.ws_connection.is_running:
             action_future = action.closed
         while not action_future.done():
             futures.wait([action_future], timeout=0.1)
