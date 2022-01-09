@@ -7,7 +7,7 @@ Dataclass used to store the data related to a step
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict, List
 
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.command_buffer import CommandBuffer
@@ -38,8 +38,8 @@ class StepBuffer(BaseBuffer):
         return CommandBuffer
 
     @property
-    def commands(self) -> Dict[str, CommandBuffer]:
-        return self.children
+    def commands(self) -> List[CommandBuffer]:
+        return list(self.children.values())
 
     @property  # type: ignore
     def status(self) -> Status:
@@ -47,12 +47,12 @@ class StepBuffer(BaseBuffer):
         The status of the action depends of the status of its commands
         """
         status = Status.COMPLETED
-        for command in self.commands.values():
+        for command in self.commands:
             status = command.status if command.status > status else status
 
         # If some commands are completed and the rest initialized, then the step is processing
         if status is Status.INITIALIZED and Status.COMPLETED in [
-            command.status for command in self.commands.values()
+            command.status for command in self.commands
         ]:
             status = Status.PROCESSING
 

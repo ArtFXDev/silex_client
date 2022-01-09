@@ -52,10 +52,12 @@ class CommandOutput(str):
     Helper to differenciate the strings from the command_output
     """
 
+    SPLIT = ":"
+
     def __init__(self, *args, **kwargs):
         super().__init__()
 
-        splited_path = self.split(":")
+        splited_path = self.split(self.SPLIT)
 
         # Initialize attrubutes
         self.step = None
@@ -77,7 +79,7 @@ class CommandOutput(str):
         Get the path to get the command with the method ActionQuery::get_command
         """
         if self.step is not None:
-            return f"{self.step}:{self.command}"
+            return f"{self.step}{self.SPLIT}{self.command}"
 
         return self.command
 
@@ -90,13 +92,15 @@ class CommandOutput(str):
         we let this for now to keep string features like json serialisability,
         but it is not ideal
         """
-        return CommandOutput(":".join([self.get_command_path(), *self.output_keys]))
+        return CommandOutput(
+            self.SPLIT.join([self.get_command_path(), *self.output_keys])
+        )
 
     def get_value(self, action_query: ActionQuery) -> Any:
         """
         Get the actual returned value of the command this path is pointing to
         """
-        command = action_query.get_command(self.get_command_path())
+        command = action_query.get_command(self.get_command_path().split(self.SPLIT))
         value = command.output_result if command is not None else None
 
         for key in self.output_keys:

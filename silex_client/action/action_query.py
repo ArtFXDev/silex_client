@@ -361,11 +361,6 @@ class ActionQuery:
         return self.buffer.store
 
     @property
-    def steps(self) -> List[StepBuffer]:
-        """Shortcut to get the steps of the buffer"""
-        return list(self.buffer.steps.values())
-
-    @property
     def commands(self) -> list[CommandBuffer]:
         """Shortcut to get the commands of the buffer"""
         return self.buffer.commands
@@ -384,9 +379,11 @@ class ActionQuery:
         The format of the output is {<step>:<command> : parameters}
         """
         parameters = {}
-        for step in self.steps:
-            for command in step.commands.values():
-                parameters[f"{step.name}:{command.name}"] = command.parameters
+        for command in self.commands:
+            for parameter in command.children.values():
+                parameters[
+                    f"{parameter.get_path()}:{parameter.type}"
+                ] = command.parameters
 
         return parameters
 
@@ -396,106 +393,17 @@ class ActionQuery:
         """
         return CommandIterator(self.buffer)
 
-    def set_parameter(self, parameter_name: str, value: Any, **kwargs) -> None:
+    def set_parameter(self, parameter_path: List[str], value: Any, **kwargs) -> None:
         """
-        Shortcut to set variables on the buffer easly
-
-        The parameter name is parsed, according to the scheme : <step>:<command>:<parameter>
-        The missing values can be guessed if there is no ambiguity, only <parameter> is required
+        Shortcut to set parameters on the buffer easly
         """
-        step = None
-        command = None
+        self.buffer.set_parameter(parameter_path, value, **kwargs)
 
-        # Get the infos that are provided
-        parameter_split = parameter_name.split(":")
-        name = parameter_split[-1]
-        if len(parameter_split) == 3:
-            step = parameter_split[0]
-            command = parameter_split[1]
-        elif len(parameter_split) == 2:
-            command = parameter_split[0]
-        elif len(parameter_split) != 1:
-            logger.warning(
-                "Invalid parameter path: The given parameter path %s has too many separators",
-                parameter_name,
-            )
-
-        # Guess the info that were not provided by taking the first match
-        index = None
-        for parameter_path, parameters in self.parameters.items():
-            parameter_step = parameter_path.split(":")[0]
-            parameter_command = parameter_path.split(":")[1]
-            # If only the parameter is provided
-            if step is None and command is None and name in parameters:
-                step = parameter_step
-                index = parameter_command
-                break
-            # If the command name and the parameter are provided
-            elif step is None and command == parameter_command and name in parameters:
-                step = parameter_step
-                index = parameter_command
-                break
-            # If everything is provided
-            elif step is not None and command is not None:
-                if (
-                    step == parameter_step
-                    and command == parameter_command
-                    and name in parameters
-                ):
-                    index = parameter_command
-                    break
-
-        if step is None or index is None:
-            logger.error(
-                "Could not set parameter %s: The parameter does not exists",
-                parameter_name,
-            )
-            return
-
-        self.buffer.set_parameter(step, index, name, value, **kwargs)
-
-    def get_command(self, command_path: str) -> Optional[CommandBuffer]:
+    def get_command(self, command_path: List[str]) -> Optional[CommandBuffer]:
         """
         Shortcut to get a command easly
-
-        The command path is parsed, according to the scheme : <step>:<command>
-        If you only provide a <command> the first occurence will be returned
         """
-
-        command_split = command_path.split(":")
-        name = command_split[-1]
-        step = None
-
-        if len(command_split) == 2:
-            step = command_split[0]
-        elif len(command_split) != 1:
-            logger.warning(
-                "Invalid command path: The given command path %s has too many separators",
-                command_path,
-            )
-            return None
-
-        # If the command path is explicit, get the command directly
-        if step is not None:
-            try:
-                return self.buffer.steps[step].commands[name]
-            except KeyError:
-                logger.error(
-                    "Could not retrieve the command %s: The command does not exists",
-                    command_path,
-                )
-                return None
-
-        # If only the command is given, get the first occurence
-        for command in self.iter_commands():
-            if command.name == name:
-                return command
-
-        logger.error(
-            "Could not retrieve the command %s: The command does not exists",
-            command_path,
-        )
-        return None
+        self.buffer.get_command(command_path)
 
 
 class CommandIterator(Iterator):

@@ -7,7 +7,7 @@ Dataclass used to store the data related to a parameter
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any, Type, Optional
 
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.utils.datatypes import CommandOutput
@@ -82,3 +82,16 @@ class ParameterBuffer(BaseBuffer):
             return self.value()
 
         return self.value
+
+    def get_path(self) -> str:
+        """
+        Traverse the parent tree to get the path that lead to this parameter
+        """
+        path = ""
+        parent: Optional[BaseBuffer] = self
+
+        while parent is not None:
+            path = f"{parent.name}:{path}" if path else parent.name
+            parent = parent.parent
+
+        return path
