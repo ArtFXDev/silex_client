@@ -52,25 +52,30 @@ class Context:
         self._actions: Dict[str, ActionQuery] = {}
 
     def start_services(self):
+        """This method must be called before running any actions"""
         self.compute_metadata()
         self.event_loop.start()
         self.ws_connection.start()
 
     def stop_services(self):
+        """Stop all the services for clean shutdown"""
         futures.wait([self.ws_connection.stop()], timeout=None)
         self.event_loop.stop()
 
     @property
     def actions(self) -> Dict[str, ActionQuery]:
+        """Return the read only actions registered in this context"""
         return self._actions
 
     @property
     def running_actions(self):
+        """Get the actions that are running in the event loop"""
         return {
             key: action for key, action in self.actions.items() if action.is_running
         }
 
     def register_action(self, action: ActionQuery):
+        """Store an action into this context, this method is called by the action themselves"""
         if action.buffer.uuid in self.actions.keys():
             return
 

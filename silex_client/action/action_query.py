@@ -202,6 +202,7 @@ class ActionQuery:
         self._task.cancel()
 
     def cancel(self, emit_clear: bool = True):
+        """Sync version of async_cancel, this can be called from the main thread"""
         future = self.event_loop.register_task(self.async_cancel(emit_clear))
         future.result()
 
@@ -221,9 +222,11 @@ class ActionQuery:
         await self.execute_commands(step_by_step=not all_commands)
 
     def undo(self, all_commands: bool = False):
+        """Sync version of async_undo, this can be called from the main thread"""
         self.event_loop.register_task(self.async_undo(all_commands))
 
     def redo(self):
+        """Restart the action in formard mode"""
         if self.execution_type is not Execution.FORWARD:
             self.command_iterator.command_index -= 1
         self.execution_type = Execution.FORWARD
@@ -231,6 +234,7 @@ class ActionQuery:
             self.execute()
 
     def stop(self):
+        """Pause the execution of the action"""
         self.execution_type = Execution.PAUSE
 
     def _initialize_buffer(

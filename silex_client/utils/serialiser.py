@@ -70,8 +70,8 @@ class CustomJsonDiffer(jsondiff.JsonDiffer):
         self.options.syntax = CustomDiffSyntax()
 
 
-def silex_diff(a, b, marshal=False):
+def silex_diff(a_object, b_object, marshal=False):
     """
     Helper to make a diff with right configuration to make it json serializable
     """
-    return jsondiff.diff(a, b, cls=CustomJsonDiffer, marshal=marshal)
+    return jsondiff.diff(a_object, b_object, cls=CustomJsonDiffer, marshal=marshal)

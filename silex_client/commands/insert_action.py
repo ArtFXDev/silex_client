@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import logging
 import typing
-import uuid
 from typing import Any, Dict
 
 import fileseq
@@ -11,7 +10,6 @@ import fileseq
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.action.command_base import CommandBase
 from silex_client.resolve.config import Config
-from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.parameter_types import AnyParameter
 
 # Forward references
