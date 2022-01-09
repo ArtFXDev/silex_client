@@ -105,12 +105,15 @@ class Context:
         return item in self.metadata
 
     def keys(self) -> KeysView[str]:
+        """Same method as the one from dict for this context's metadata"""
         return self.metadata.keys()
 
     def values(self) -> ValuesView[Any]:
+        """Same method as the one from dict for this context's metadata"""
         return self.metadata.values()
 
     def items(self) -> ItemsView[str, Any]:
+        """Same method as the one from dict for this context's metadata"""
         return self.metadata.items()
 
     def compute_metadata(self):

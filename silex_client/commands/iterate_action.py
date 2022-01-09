@@ -88,7 +88,7 @@ class IterateAction(InsertAction):
         if hide_commands:
             label = f"{label} [optimized]"
 
-        logger.info("Adding %s actions", len(values))
+        logger.info("Inserting %s actions: {actions}", len(values))
         for index, value in enumerate(values):
             self.command_buffer.label = f"{label} ({index+1}/{len(values)})"
             action = actions[index % len(actions)]

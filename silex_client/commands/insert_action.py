@@ -120,6 +120,7 @@ class InsertAction(CommandBase):
             next_step.index += 10
 
         # Apply the new action to the current action
+        logger.info("Inserting action: %s", action_name)
         current_action.deserialize({"actions": {action_name: action_definition}})
         inserted_action: ActionBuffer = current_action.children[action_name]
 
