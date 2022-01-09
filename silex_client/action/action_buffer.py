@@ -113,7 +113,9 @@ class ActionBuffer(BaseBuffer):
 
         return list(flatten(list(self.children.values())))
 
-    def get_child(self, child_path: List[str], child_type: Type[TBaseBuffer]) -> Optional[TBaseBuffer]:
+    def get_child(
+        self, child_path: List[str], child_type: Type[TBaseBuffer]
+    ) -> Optional[TBaseBuffer]:
         """
         Helper to get a child that belong to this action from a path
         The data is quite nested, this is just for conveniance
@@ -192,4 +194,4 @@ class ActionBuffer(BaseBuffer):
                     parameter,
                 )
                 continue
-            setattr(parameter, key, attribute_value)
+            setattr(parameter, attribute_name, attribute_value)
