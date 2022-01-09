@@ -21,6 +21,7 @@ from dacite.types import is_union
 
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
+from silex_client.utils.log import logger
 
 TBaseBuffer = TypeVar("TBaseBuffer", bound="BaseBuffer")
 
@@ -47,6 +48,8 @@ class BaseBuffer:
     name: str = field(default="unnamed")
     #: The name of the buffer, meant to be displayed
     label: Optional[str] = field(compare=False, repr=False, default=None)
+    #: The index of the buffer, to set the order in which they should be executed
+    index: int = field(default=0)
     #: Parents in the buffer hierarchy of buffer of the action
     parent: Optional[BaseBuffer] = field(repr=False, default=None)
     #: Childs in the buffer hierarchy of buffer of the action
@@ -108,6 +111,65 @@ class BaseBuffer:
 
         return path
 
+    def get_child(
+        self, child_path: List[str], child_type: Type[TBaseBuffer]
+    ) -> Optional[TBaseBuffer]:
+        """
+        Helper to get a child that belong to this action from a path
+        The data is quite nested, this is just for conveniance
+        """
+        if not child_path:
+            logger.error("Could not get the child %s: Invalid path", child_path)
+            return None
+
+        child = self
+        for key in child_path:
+            if not isinstance(child, BaseBuffer):
+                logger.error(
+                    "Could not get the child %s: Invalid path",
+                    child_path,
+                )
+                return None
+            child = child.children.get(key)
+
+        if not isinstance(child, child_type):
+            logger.error(
+                "Could not get the child %s: %s is not of type %s",
+                child_path,
+                child,
+                child_type,
+            )
+            return None
+
+        return child
+
+    def get_parent(self, buffer_type: str) -> Optional[BaseBuffer]:
+        """
+        Get the first parent that has the given buffer type
+        """
+        parent: Optional[BaseBuffer] = self
+
+        while parent is not None and not parent.buffer_type == buffer_type:
+            parent = parent.parent
+
+        if parent is None or parent.buffer_type != buffer_type:
+            logger.error(
+                "Could not get the parent of %s: %s is not of type %s",
+                self,
+                parent,
+                buffer_type,
+            )
+            return None
+        return parent
+
+    def reorder_children(self):
+        """
+        Place the steps in the right order accoring to the index value
+        """
+        self.children = dict(
+            sorted(self.children.items(), key=lambda item: item[1].index)
+        )
+
     def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
         Convert the buffer's data into json so it can be sent to the UI
@@ -164,6 +226,7 @@ class BaseBuffer:
 
         # Otherwise, we update the already existing one
         child.deserialize(child_data)
+        self.reorder_children()
         return child
 
     def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:

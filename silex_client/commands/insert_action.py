@@ -8,6 +8,7 @@ from typing import Any, Dict
 
 import fileseq
 
+from silex_client.action.action_buffer import ActionBuffer
 from silex_client.action.command_base import CommandBase
 from silex_client.resolve.config import Config
 from silex_client.utils.datatypes import CommandOutput
@@ -83,116 +84,62 @@ class InsertAction(CommandBase):
         action_type = parameters["action"]
         label_key = parameters["label_key"]
         value = parameters["value"]
+        parameter = parameters["parameter"]
         hide_commands = parameters["hide_commands"]
-        action = Config.get().resolve_action(action_type, parameters["category"])
 
-        if action is None:
-            raise Exception("Could not resolve the action %s", action_type)
+        resolved_action = Config.get().resolve_action(
+            action_type, parameters["category"]
+        )
+
+        if resolved_action is None:
+            raise Exception(f"Could not resolve the action {action_type}")
 
         # Make sure the required action is in the config
-        if action_type not in action.keys():
+        if action_type not in resolved_action.keys():
             raise Exception(
-                "Could not resolve the action {}: The root key should be the same as the config file name".format(
-                    action_type
-                )
+                f"Could not resolve the action {action_type}: The root key should be the same as the config file name"
             )
 
-        action_definition = action[action_type]
-        action_definition["name"] = action_type
-        if not isinstance(action_definition.get("steps"), dict):
+        action_name = action_type
+        action_definition = resolved_action[action_type]
+        action_definition["name"] = action_name
+        action_definition["buffer_type"] = "actions"
+
+        current_action = self.command_buffer.get_parent("actions")
+        current_step = self.command_buffer.get_parent("steps")
+        if current_action is None or current_step is None:
             raise Exception(
-                "Could not append new action: The resolved action has not steps"
+                "Could not append new action: The current command is invalid"
             )
 
-        action_steps = action_definition.get("steps")
-        parameter_path = CommandOutput(parameters["parameter"])
-        output_path = CommandOutput(parameters["output"])
+        current_action_steps = list(current_action.children.values())
+        current_step_index = current_action_steps.index(current_step)
+        next_steps = current_action_steps[current_step_index + 1 :]
 
-        # Get the current step and the next step to insert the new steps in between
-        current_step_index = next(
-            index
-            for index, step in enumerate(action_query.steps)
-            if self.command_buffer in step.commands.values()
-        )
-        current_step = action_query.steps[current_step_index]
-        next_steps = action_query.steps[current_step_index + 1 :]
+        action_definition["index"] = current_step.index + 10
 
-        # Rename each steps to make sure they don't override existing steps
-        step_name_mapping = {name: name for name in list(action_steps.keys())}
-        for step_name in step_name_mapping.keys():
-            new_name = step_name + "_" + str(uuid.uuid4())
-            step_name_mapping[step_name] = new_name
-            # Set the step label before applying it on the action query
-            action_steps[step_name].setdefault("label", step_name.title())
-            if value:
-                # Add to the label the value to help differenciate it from others
-                splitted_key = label_key.split(":") if label_key else []
-                value_copy = copy.deepcopy(value)
-                while isinstance(value_copy, dict) and splitted_key:
-                    value_copy = value_copy.get(splitted_key[0])
-                    splitted_key.pop(0)
-                if isinstance(value_copy, list):
-                    value_copy = fileseq.findSequencesInList(value_copy)[0]
-                action_steps[step_name]["label"] = (
-                    action_steps[step_name]["label"] + " : " + str(value_copy)
-                )
-            # Rename the step
-            action_steps[new_name] = action_steps.pop(step_name)
+        for next_step in next_steps:
+            next_step.index += 10
 
-        # Remove all the action's infos that are not about the steps
-        for key in list(action_definition.keys()):
-            if key != "steps":
-                del action_definition[key]
         # Apply the new action to the current action
-        # patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
-        action_query.buffer.deserialize(action_definition)
+        current_action.deserialize({"actions": {action_name: action_definition}})
+        inserted_action: ActionBuffer = current_action.children[action_name]
 
-        # Adapt the indexes, the parameter paths on the newly added steps
-        last_index = current_step.index
-        for old_step_name, step_name in step_name_mapping.items():
-            step = action_query.buffer.steps[step_name]
-            # Change the index to make sure the new step in executed after the current step
-            step.index += current_step.index
-            last_index = step.index
-
-            # Adapt the parameter_path to the new step's name
-            if parameter_path.step == old_step_name:
-                parameter_path.step = step_name
-            # Adapt the output_path to the new step's name
-            if output_path.step == old_step_name:
-                output_path.step = step_name
-
-            # Loop over all the commands of the step
-            if (
-                action_query.buffer.simplify
-                or hide_commands
-                or self.command_buffer.hide
-            ):
-                for command in step.commands.values():
-                    command.hide = True
-
-            # Loop over all the parameters of the step
-            step_parameters = [
-                parameter
-                for command in step.commands.values()
-                for parameter in command.parameters.values()
-                if isinstance(parameter.value, CommandOutput)
-            ]
-            for parameter in step_parameters:
-                # If the parameter was pointing to a newly added step
-                if parameter.value.step in step_name_mapping.keys():
-                    # Make it point to the new name of the step
-                    parameter.value.step = step_name_mapping[parameter.value.step]
-                    parameter.value = parameter.value.rebuild()
-
-        # Change the index of the steps that where after to maintain them after
-        for step in next_steps:
-            index_difference = step.index - current_step.index
-            step.index = last_index + index_difference
-
-        action_query.buffer.reorder_steps()
-
-        if parameter_path:
-            action_query.set_parameter(parameter_path.rebuild(), value, hide=True)
-
-        return output_path.rebuild()
+        # Set the parameter at the given path to the given value
+        if parameter:
+            inserted_action.set_parameter(parameter.split(":"), value)
+        # The user can hide the commands, because the actions can get big when inserting actions
+        if hide_commands:
+            for command in inserted_action.commands:
+                command.hide = True
+        # The label key is here to help differentiate
+        # when the same action is inserted multiple times
+        if label_key:
+            splitter_label_key = label_key.split(":")
+            label_value = copy.deepcopy(value)
+            while isinstance(label_value, dict) and splitter_label_key:
+                label_value = label_value.get(splitter_label_key[0])
+                splitter_label_key.pop(0)
+            if isinstance(label_value, list):
+                label_value = fileseq.findSequencesInList(label_value)[0]
+            inserted_action.label = f"{inserted_action.label}: {str(label_value)}"

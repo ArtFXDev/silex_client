@@ -10,11 +10,12 @@ import asyncio
 import copy
 import os
 from concurrent import futures
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional, Union
 
 import jsondiff
 
 from silex_client.action.action_buffer import ActionBuffer
+from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.core.context import Context
 from silex_client.resolve.config import Config
 from silex_client.utils.datatypes import ReadOnlyDict
@@ -25,7 +26,6 @@ from silex_client.utils.serialiser import silex_diff
 # Forward references
 if TYPE_CHECKING:
     from silex_client.action.command_buffer import CommandBuffer
-    from silex_client.action.step_buffer import StepBuffer
     from silex_client.core.event_loop import EventLoop
     from silex_client.network.websocket import WebsocketConnection
 
@@ -74,6 +74,10 @@ class ActionQuery:
         context.register_action(self)
 
     async def execute_commands(self, step_by_step: bool = False) -> None:
+        """
+        Execute the commands one by one in order
+        Starting from the last one
+        """
         command_iterator = self.command_iterator
         if step_by_step:
             command_iterator = [next(self.command_iterator)]
@@ -393,17 +397,23 @@ class ActionQuery:
         """
         return CommandIterator(self.buffer)
 
-    def set_parameter(self, parameter_path: List[str], value: Any, **kwargs) -> None:
+    def get_parameter(self, parameter_path: str) -> Optional[ParameterBuffer]:
+        """
+        Shortcut to get a parameter easly
+        """
+        return self.buffer.get_parameter(parameter_path.split(":"))
+
+    def set_parameter(self, parameter_path: str, value: Any, **kwargs) -> None:
         """
         Shortcut to set parameters on the buffer easly
         """
-        self.buffer.set_parameter(parameter_path, value, **kwargs)
+        self.buffer.set_parameter(parameter_path.split(":"), value, **kwargs)
 
-    def get_command(self, command_path: List[str]) -> Optional[CommandBuffer]:
+    def get_command(self, command_path: str) -> Optional[CommandBuffer]:
         """
         Shortcut to get a command easly
         """
-        self.buffer.get_command(command_path)
+        return self.buffer.get_command(command_path.split(":"))
 
 
 class CommandIterator(Iterator):

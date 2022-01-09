@@ -7,7 +7,7 @@ Dataclass used to store the data related to a parameter
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any, Optional, Type
 
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.utils.datatypes import CommandOutput
@@ -16,6 +16,7 @@ from silex_client.utils.parameter_types import (AnyParameter,
 
 # Forward references
 if TYPE_CHECKING:
+    from silex_client.action.action_buffer import ActionBuffer
     from silex_client.action.action_query import ActionQuery
 
 # Alias the metaclass type, to avoid clash with the type attribute
@@ -76,7 +77,11 @@ class ParameterBuffer(BaseBuffer):
         """
         # If the value is the output of an other command, get is
         if isinstance(self.value, CommandOutput):
-            return self.value.get_value(action_query)
+            parent_action = self.get_parent(buffer_type="actions")
+            prefix = ""
+            if parent_action is not None:
+                prefix = parent_action.get_path()
+            return self.value.get_value(action_query, prefix)
 
         # If the value is a callable, call it (for mutable default values)
         if callable(self.value):

@@ -96,11 +96,15 @@ class CommandOutput(str):
             self.SPLIT.join([self.get_command_path(), *self.output_keys])
         )
 
-    def get_value(self, action_query: ActionQuery) -> Any:
+    def get_value(self, action_query: ActionQuery, path_prefix: str = "") -> Any:
         """
         Get the actual returned value of the command this path is pointing to
         """
-        command = action_query.get_command(self.get_command_path().split(self.SPLIT))
+        path_prefix = path_prefix.strip(self.SPLIT)
+        full_path = f"{path_prefix}{self.SPLIT}{self.get_command_path()}"
+        full_path = full_path.strip(self.SPLIT)
+        full_path = self.SPLIT.join(full_path.split(self.SPLIT)[1:])
+        command = action_query.get_command(full_path)
         value = command.output_result if command is not None else None
 
         for key in self.output_keys:

@@ -46,8 +46,6 @@ class ActionBuffer(BaseBuffer):
     thumbnail: Optional[str] = field(default=None)
     #: A dict of steps that will contain the commands
     children: Dict[str, Union[StepBuffer, ActionBuffer]] = field(default_factory=dict)
-    #: The index of the action, this field is only used for subactions
-    index: int = field(default=0)
     #: Dict of variables that are global to all the commands of this action
     store: Dict[str, Any] = field(compare=False, default_factory=dict)
     #: Snapshot of the context's metadata when this buffer is created
@@ -62,15 +60,6 @@ class ActionBuffer(BaseBuffer):
 
     def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
         super().deserialize(serialized_data, True)
-        self.reorder_steps()
-
-    def reorder_steps(self):
-        """
-        Place the steps in the right order accoring to the index value
-        """
-        self.children = dict(
-            sorted(self.children.items(), key=lambda item: item[1].index)
-        )
 
     @property  # type: ignore
     def status(self) -> Status:
@@ -105,45 +94,13 @@ class ActionBuffer(BaseBuffer):
         """
 
         def flatten(nested_list: List[Union[StepBuffer, ActionBuffer, CommandBuffer]]):
-            for item in nested_list:
+            for item in sorted(nested_list, key=lambda x: x.index):
                 if isinstance(item, CommandBuffer):
                     yield item
                 else:
                     yield from flatten(list(item.children.values()))
 
         return list(flatten(list(self.children.values())))
-
-    def get_child(
-        self, child_path: List[str], child_type: Type[TBaseBuffer]
-    ) -> Optional[TBaseBuffer]:
-        """
-        Helper to get a child that belong to this action from a path
-        The data is quite nested, this is just for conveniance
-        """
-        if not child_path:
-            logger.error("Could not get the child %s: Invalid path", child_path)
-            return None
-
-        child = self
-        for key in child_path:
-            if not isinstance(child, BaseBuffer):
-                logger.error(
-                    "Could not get the child %s: Invalid path",
-                    child_path,
-                )
-                return None
-            child = child.children.get(key)
-
-        if not isinstance(child, child_type):
-            logger.error(
-                "Could not get the child %s: %s is not of type %s",
-                child_path,
-                child,
-                child_type,
-            )
-            return None
-
-        return child
 
     def get_command(self, command_path: List[str]) -> Optional[CommandBuffer]:
         """

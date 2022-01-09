@@ -26,8 +26,6 @@ class StepBuffer(BaseBuffer):
 
     #: Type name to help differentiate the different buffer types
     buffer_type: str = field(default="steps")
-    #: The index of the step, to set the order in which they should be executed
-    index: int = field(default=0)
     #: The status is readonly, it is computed from the commands's status
     status: Status = field(init=False)  # type: ignore
     #: Dict that represent the parameters of the command, their type, value, name...
