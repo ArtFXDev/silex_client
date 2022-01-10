@@ -3,10 +3,9 @@ from __future__ import annotations
 import logging
 import os
 import pathlib
-import re
 import typing
 import uuid
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import fileseq
 import gazu.asset
@@ -16,7 +15,7 @@ import gazu.task
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.files import slugify
-from silex_client.utils.parameter_types import TaskParameterMeta
+from silex_client.utils.parameter_types import TaskParameterMeta, SelectParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -29,10 +28,17 @@ class BuildOutputPath(CommandBase):
     """
 
     parameters = {
+        "use_existing_name": {
+            "label": "Use existing name",
+            "type": bool,
+            "value": False,
+            "tooltip": "Replaced the name parameter by a drop down of all the exising names",
+        },
         "name": {
             "label": "Name",
             "type": str,
             "value": "",
+            "tooltip": "This value can be left empty",
         },
         "output_type": {
             "label": "Insert publish type",
@@ -79,25 +85,20 @@ class BuildOutputPath(CommandBase):
         },
     }
 
-    @CommandBase.conform_command()
-    async def __call__(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
-    ):
-        create_output_dir: bool = parameters["create_output_dir"]
-        create_temp_dir: bool = parameters["create_temp_dir"]
-        use_current_context: bool = parameters["use_current_context"]
-        name: str = parameters["name"]
+    @staticmethod
+    async def _get_gazu_output_path(
+        action_query: ActionQuery, logger: logging.Logger, parameters: dict
+    ) -> Optional[pathlib.Path]:
         task_id: str = parameters["task"]
-        extension: str = parameters["output_type"]
+        use_current_context: bool = parameters["use_current_context"]
+        output_type: str = parameters["output_type"]
         frame_set: fileseq.FrameSet = parameters["frame_set"]
-        padding: int = parameters["padding"]
         nb_elements = len(frame_set)
 
         # Override with the given task if specified
         if not use_current_context:
+            if task_id is None:
+                return None
             task = await gazu.task.get_task(task_id)
             task_name = task["name"]
             entity = task.get("entity", {}).get("id")
@@ -134,17 +135,14 @@ class BuildOutputPath(CommandBase):
             task_name = action_query.context_metadata["task"]
 
         # Get the output type
-        output_type = await gazu.files.get_output_type_by_short_name(
-            parameters["output_type"]
-        )
+        output_type = await gazu.files.get_output_type_by_short_name(output_type)
         if output_type is None:
             logger.error(
                 "Could not build the output type %s: The output type does not exists in the zou database",
-                parameters["output_type"],
+                output_type,
             )
             raise Exception(
-                "Could not build the output type %s: The output type does not exists in the zou database",
-                parameters["output_type"],
+                "Could not build the output type {output_type}: The output type does not exists in the zou database",
             )
 
         # Build the output path
@@ -156,7 +154,27 @@ class BuildOutputPath(CommandBase):
             nb_elements=nb_elements,
             name=task_name,
         )
-        output_path = pathlib.Path(output_path)
+        return pathlib.Path(output_path)
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        create_output_dir: bool = parameters["create_output_dir"]
+        create_temp_dir: bool = parameters["create_temp_dir"]
+        name: str = parameters["name"]
+        task_id: str = parameters["task"]
+        extension: str = parameters["output_type"]
+        frame_set: fileseq.FrameSet = parameters["frame_set"]
+        padding: int = parameters["padding"]
+        nb_elements = len(frame_set)
+
+        output_path = await self._get_gazu_output_path(action_query, logger, parameters)
+        if output_path is None:
+            raise Exception("Could not get the output path from gazu")
 
         directory = output_path.parent / name if name else output_path.parent
         temp_directory = output_path.parent / str(uuid.uuid4())
@@ -208,7 +226,8 @@ class BuildOutputPath(CommandBase):
         logger: logging.Logger,
     ):
         # Handle the case where a file sequence is given
-        name_value = self.command_buffer.parameters["name"].get_value(action_query)
+        name_parameter = self.command_buffer.parameters["name"]
+        name_value = name_parameter.get_value(action_query)
         new_value = name_value
         sequences = []
         if isinstance(name_value, list):
@@ -230,7 +249,26 @@ class BuildOutputPath(CommandBase):
                 self.command_buffer.parameters["use_current_context"].value = False
                 self.command_buffer.parameters["use_current_context"].hide = True
 
-        # Set the hide dynamically
         task_parameter = self.command_buffer.parameters["task"]
+
+        # Set the hide dynamically
         task_parameter.hide = parameters.get("use_current_context", False)
         task_parameter.value = task_parameter.get_value(action_query)
+
+        # Change the type of the name parameter is use_existing_name is true
+        use_existing_name_parameter = self.command_buffer.parameters[
+            "use_existing_name"
+        ]
+        if not use_existing_name_parameter.get_value(action_query):
+            name_parameter.type = str
+        else:
+            # Get the selected task an populate the existing name
+            output_path = await self._get_gazu_output_path(
+                action_query, logger, parameters
+            )
+            if output_path is not None and output_path.parent.exists():
+                name_parameter.type = SelectParameterMeta(
+                    *[str(s.name) for s in output_path.parent.iterdir() if s.is_dir()]
+                )
+            else:
+                name_parameter.type = SelectParameterMeta(NO_NAME="")
