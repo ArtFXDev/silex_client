@@ -10,9 +10,10 @@ from __future__ import annotations
 import asyncio
 import json
 from concurrent import futures
-from typing import Any, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict
 
 import socketio
+from aiohttp import ClientSession
 from socketio.exceptions import ConnectionError
 
 from silex_client.network.websocket_action import WebsocketActionNamespace
@@ -57,13 +58,20 @@ class WebsocketConnection:
             logger.warning(
                 "Connection with the websocket server could not be established"
             )
+            # Socketio does not close its aiohttp session corectly
+            if self.socketio.eio.http is not None:
+                await self.socketio.eio.http.close()
 
     async def _disconnect_socketio(self) -> None:
         await self.socketio.disconnect()
 
+        # Socketio does not close its aiohttp session corectly
+        if self.socketio.eio.http is not None:
+            await self.socketio.eio.http.close()
+
     def start(self) -> futures.Future:
         """
-        initialize the event loop's task and run it in main thread
+        initialize the event loop's task and run it
         """
         if self.is_running:
             logger.warning(
@@ -79,7 +87,7 @@ class WebsocketConnection:
 
     def stop(self) -> futures.Future:
         """
-        Ask to all the event loop's tasks to stop and join the thread to the main thread
+        Ask to all the event loop's tasks to stop
         if there is one running
         """
         if not self.is_running:

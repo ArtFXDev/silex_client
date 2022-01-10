@@ -1,20 +1,20 @@
 from __future__ import annotations
 
+import logging
 import os
-import uuid
-import typing
 import pathlib
 import re
+import typing
+import uuid
 from typing import Any, Dict
 
 import fileseq
-import gazu.shot
 import gazu.asset
 import gazu.files
+import gazu.shot
 import gazu.task
 
 from silex_client.action.command_base import CommandBase
-import logging
 from silex_client.utils.files import slugify
 from silex_client.utils.parameter_types import TaskParameterMeta
 
@@ -209,8 +209,8 @@ class BuildOutputPath(CommandBase):
     ):
         # Handle the case where a file sequence is given
         name_value = self.command_buffer.parameters["name"].get_value(action_query)
-        sequences = []
         new_value = name_value
+        sequences = []
         if isinstance(name_value, list):
             sequences = fileseq.findSequencesInList(name_value)
             new_value = sequences[0].basename()
@@ -231,6 +231,6 @@ class BuildOutputPath(CommandBase):
                 self.command_buffer.parameters["use_current_context"].hide = True
 
         # Set the hide dynamically
-        task = self.command_buffer.parameters["task"]
-        task.hide = parameters.get("use_current_context", False)
-        task.value = task.get_value(action_query)
+        task_parameter = self.command_buffer.parameters["task"]
+        task_parameter.hide = parameters.get("use_current_context", False)
+        task_parameter.value = task_parameter.get_value(action_query)

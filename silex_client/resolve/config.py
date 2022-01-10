@@ -5,16 +5,20 @@ Utility class that will find the configurations according to the environment var
 SILEX_ACTION_CONFIG: For the actions
 """
 
-import copy
+from __future__ import annotations
+
 import contextlib
+import copy
 import os
-import pkg_resources
+import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import pkg_resources
 from dacite import types
 
-from silex_client.resolve.loader import Loader
 from silex_client.resolve.config_types import ActionYAML
+from silex_client.resolve.loader import Loader
 from silex_client.utils.log import logger
 
 search_path = Optional[List[str]]
@@ -31,22 +35,18 @@ class Config:
         self,
         config_search_path: search_path = None,
     ):
-        # List of the path to look for any included file
-        self.action_search_path = ["/"]
-
         # Add the custom action config search path
-        if config_search_path is not None:
-            self.action_search_path += config_search_path
+        self.action_search_path = config_search_path
+        if config_search_path is None:
+            self.action_search_path = Config.get_default_action_search_path()
 
-        # Look for config search path in the environment variables
-        env_config_path = os.getenv("SILEX_ACTION_CONFIG")
-        if env_config_path is not None:
-            self.action_search_path += env_config_path.split(os.pathsep)
-
-        # Look for config search path in silex_config entry_point
-        for entry_point in pkg_resources.iter_entry_points("silex_action_config"):
-            with contextlib.suppress(pkg_resources.DistributionNotFound):
-                self.action_search_path += entry_point.load()
+    @staticmethod
+    def get() -> Config:
+        """
+        Return a globaly instanciated config. This static method is just for conveniance
+        """
+        # Get the instance of Context created in this same module
+        return getattr(sys.modules[__name__], "config")
 
     def find_config(self, search_path: List[str]) -> List[Dict[str, str]]:
         """
@@ -141,8 +141,32 @@ class Config:
         # Load the config
         with open(config_path, "r", encoding="utf-8") as config_data:
             search_path = copy.deepcopy(self.action_search_path)
-            loader = Loader(config_data, tuple(search_path))
+            search_path = [Path(path) for path in search_path]
+            loader = Loader(config_data, Path(config_path), search_path)
             try:
                 return loader.get_single_data()
             finally:
                 loader.dispose()
+
+    @staticmethod
+    def get_default_action_search_path():
+        """
+        Get a list of search path from environment variables and entry points
+        This is for the default Config object
+        """
+        action_search_path = []
+
+        # Look for config search path in the environment variables
+        env_config_path = os.getenv("SILEX_ACTION_CONFIG")
+        if env_config_path is not None:
+            action_search_path += env_config_path.split(os.pathsep)
+
+        # Look for config search path in silex_config entry_point
+        for entry_point in pkg_resources.iter_entry_points("silex_action_config"):
+            with contextlib.suppress(pkg_resources.DistributionNotFound):
+                action_search_path += entry_point.load()
+
+        return action_search_path
+
+
+config = Config()
