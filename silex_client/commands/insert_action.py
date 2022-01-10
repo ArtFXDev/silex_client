@@ -113,11 +113,12 @@ class InsertAction(CommandBase):
         current_action_steps = list(current_action.children.values())
         current_step_index = current_action_steps.index(current_step)
         next_steps = current_action_steps[current_step_index + 1 :]
+        index_shift = action_definition.get("index", 0) + 1
 
-        action_definition["index"] = current_step.index + 10
+        action_definition["index"] = current_step.index + index_shift
 
         for next_step in next_steps:
-            next_step.index += 10
+            next_step.index += index_shift
 
         # Apply the new action to the current action
         logger.info("Inserting action: %s", action_name)
@@ -128,7 +129,7 @@ class InsertAction(CommandBase):
         if parameter:
             inserted_action.set_parameter(parameter.split(":"), value)
         # The user can hide the commands, because the actions can get big when inserting actions
-        if hide_commands:
+        if hide_commands or self.command_buffer.hide or action_query.buffer.simplify:
             for command in inserted_action.commands:
                 command.hide = True
         # The label key is here to help differentiate
