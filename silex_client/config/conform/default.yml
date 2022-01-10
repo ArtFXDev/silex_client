@@ -19,7 +19,7 @@ default:
             key_suffix: !command-output "input:input:file_paths"
         build_output_path:
           label: "Build output path"
-          path: "silex_client.commands.build_output_path.BuildOutputPath"
+          path: "silex_client.commands.build_output_path_conform.BuildOutputPathConform"
           tooltip: "Build the complete output path"
           parameters:
             task: !command-output "conform:get_conform_cache:value"
