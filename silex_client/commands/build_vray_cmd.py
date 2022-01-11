@@ -113,14 +113,14 @@ class VrayCommand(CommandBase):
         frame_chunks: List[str] = list(FrameSet(frame_range))
 
         # Cut frames by task
-        task_chunks = list(self._chunks(frame_chunks, task_size))
-        cmd_dict = dict()
+        task_chunks: List[Any] = list(self._chunks(frame_chunks, task_size))
+        cmd_dict: Dict[str, str] = dict()
 
         # create commands
         for chunk in task_chunks:
             start, end = chunk[0], chunk[-1]
             frames: str = ";".join(map(str, chunk))
-            logger.info(f"Creating a new task with frames: {start} {end}")
+            logger.info(f"Creating a new task with frames: {start} to {end}")
             cmd_dict[f"frames={start}-{end}"] = arg_list + [f'-frames="{frames}"']
 
         return {"commands": cmd_dict, "file_name": scene.stem}
