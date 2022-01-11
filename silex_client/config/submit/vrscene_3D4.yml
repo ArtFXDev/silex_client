@@ -22,5 +22,5 @@ vrscene_3D4:
           path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
           ask_user: true
           parameters:
-            cmd_list: !command-output "send_vray_render:build_vray_cmd:commands"
+            cmd_dict: !command-output "send_vray_render:build_vray_cmd:commands"
             job_title: !command-output "send_vray_render:build_vray_cmd:file_name"
