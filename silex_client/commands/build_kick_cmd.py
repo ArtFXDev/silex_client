@@ -97,7 +97,9 @@ class KickCommand(CommandBase):
         logger: logging.Logger,
     ):
 
-        ass_target: pathlib.Path = parameters["ass_target"] # target a ass in a sequence to use as pattern
+        ass_target: pathlib.Path = parameters[
+            "ass_target"
+        ]  # target a ass in a sequence to use as pattern
 
         directory: str = parameters["directory"]
         export_name: str = parameters["export_name"]
@@ -105,7 +107,7 @@ class KickCommand(CommandBase):
         frame_range: fileseq.FrameSet = parameters["frame_range"]
         reslution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
-        export_file: str = 'NONE'
+        export_file: str = "NONE"
 
         # Create list of arguents
         if action_query.context_metadata.get("user_email") is not None:
@@ -146,10 +148,7 @@ class KickCommand(CommandBase):
 
             cmd_dict[f"frames={start}-{end}"] = arg_list + ['-AssFiles'] + [','.join(ass_files)]
 
-        return {
-            "commands": cmd_dict,
-            "file_name": export_name
-        }
+        return {"commands": cmd_dict, "file_name": export_name}
 
     async def setup(
         self,
