@@ -70,7 +70,9 @@ class KickCommand(CommandBase):
         for i in range(0, len(lst), n):
             yield lst[i : i + n]
 
-    def find_ass_sequence(self, directory: str, export_name: str, frema_list) -> List[str]:
+    def find_ass_sequence(
+        self, directory: str, export_name: str, frema_list
+    ) -> List[str]:
 
         """
         return a list of ass files for a specific frame list
@@ -98,16 +100,18 @@ class KickCommand(CommandBase):
         logger: logging.Logger,
     ):
 
-        ass_target: pathlib.Path = parameters["ass_target"] # target a ass in a sequence to use as pattern
+        ass_target: pathlib.Path = parameters[
+            "ass_target"
+        ]  # target a ass in a sequence to use as pattern
 
         directory: str = parameters["directory"]
         export_name: str = parameters["export_name"]
-        extension:  str = parameters["extension"]
+        extension: str = parameters["extension"]
 
         frame_range: fileseq.FrameSet = parameters["frame_range"]
         reslution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
-        export_file: str = 'NONE'
+        export_file: str = "NONE"
 
         # Create list of arguents
         if action_query.context_metadata.get("user_email") is not None:
@@ -150,10 +154,7 @@ class KickCommand(CommandBase):
             )
             logger.error(cmd_dict)
 
-        return {
-            "commands": cmd_dict,
-            "file_name": export_name
-        }
+        return {"commands": cmd_dict, "file_name": export_name}
 
     async def setup(
         self,
@@ -165,4 +166,3 @@ class KickCommand(CommandBase):
         # show resolution only if context
         if action_query.context_metadata.get("user_email") is None:
             self.command_buffer.parameters["resolution"].hide = True
-
