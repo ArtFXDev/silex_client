@@ -70,7 +70,9 @@ class KickCommand(CommandBase):
         for i in range(0, len(lst), n):
             yield lst[i : i + n]
 
-    def find_ass_sequence(self, directory: str, export_name: str, frame_list) -> List[str]:
+    def find_ass_sequence(
+        self, directory: str, export_name: str, frame_list
+    ) -> List[str]:
         """
         return a list of ass files for a specific frame list
         """
@@ -103,7 +105,7 @@ class KickCommand(CommandBase):
 
         directory: str = parameters["directory"]
         export_name: str = parameters["export_name"]
-        extension:  str = parameters["extension"]
+        extension: str = parameters["extension"]
         frame_range: fileseq.FrameSet = parameters["frame_range"]
         reslution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
@@ -146,7 +148,9 @@ class KickCommand(CommandBase):
             ass_files: str = self.find_ass_sequence(ass_dir, ass_name, chunk)
             logger.info(f"Creating a new task with frames: {start} to {end}")
 
-            cmd_dict[f"frames={start}-{end}"] = arg_list + ['-AssFiles'] + [','.join(ass_files)]
+            cmd_dict[f"frames={start}-{end}"] = (
+                arg_list + ["-AssFiles"] + [",".join(ass_files)]
+            )
 
         return {"commands": cmd_dict, "file_name": export_name}
 
