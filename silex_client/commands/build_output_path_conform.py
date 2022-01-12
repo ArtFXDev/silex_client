@@ -17,6 +17,15 @@ class BuildOutputPathConform(BuildOutputPath):
     BuildOutputPath with extra features to auto complete the parameters
     """
 
+    parameters = {
+        "fast_conform": {
+            "label": "Fast conform the next files in this directory",
+            "type": bool,
+            "value": False,
+            "tooltip": "All the files in this directory will be conform in the selected location without any prompt",
+        },
+    }
+
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -24,4 +33,26 @@ class BuildOutputPathConform(BuildOutputPath):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        return super().__call_(parameters, action_query, logger)
+        fast_conform = parameters["fast_conform"]
+        result = await super().__call__(parameters, action_query, logger)
+        result.update({"fast_conform": fast_conform})
+        return result
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        await super().setup(parameters, action_query, logger)
+
+        # If the fast_conform is enabled and a valid task is selected
+        # Don't prompt the user
+        task_parameter = self.command_buffer.parameters["task"]
+        selected_task = task_parameter.get_value(action_query)
+        fast_parameter = self.command_buffer.parameters["fast_conform"]
+        fast_conform = fast_parameter.get_value(action_query)
+        if selected_task is not None and fast_conform:
+            self.command_buffer.ask_user = False
+        else:
+            fast_parameter.hide = False

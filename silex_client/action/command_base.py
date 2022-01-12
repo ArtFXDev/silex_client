@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
+import inspect
 from typing import TYPE_CHECKING, Any, Callable, Dict, List
 
 from silex_client.utils.enums import Status
@@ -37,6 +38,16 @@ class CommandBase:
     def __init__(self, command_buffer: CommandBuffer):
         self.command_buffer = command_buffer
         self.history_require_prompt = command_buffer.require_prompt()
+        inheritance_tree = inspect.getmro(type(self))
+
+        # Merge the parameters of the inherited trees
+        self.parameters = {}
+        for inherited_class in inheritance_tree[::-1]:
+            if not hasattr(inherited_class, "parameters"):
+                continue
+            class_parameters = getattr(inherited_class, "parameters")
+            if isinstance(class_parameters, dict):
+                self.parameters.update(class_parameters)
 
     @property
     def type_name(self) -> str:
