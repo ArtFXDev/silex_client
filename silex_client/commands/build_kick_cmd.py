@@ -29,7 +29,7 @@ class KickCommand(CommandBase):
     parameters = {
         "ass_target": {
             "label": "Select ass file",
-            "type": PathParameterMeta(extensions=[".ass"]),
+            "type": PathParameterMeta(extensions=[".ass", ".ass.gz"]),
             "value": None,
         },
         "frame_range": {
@@ -52,7 +52,7 @@ class KickCommand(CommandBase):
             "type": str,
             "value": "",
         },
-        "exoprt_name": {
+        "export_name": {
             "label": "File name",
             "type": pathlib.Path,
             "value": "",
@@ -70,16 +70,14 @@ class KickCommand(CommandBase):
         for i in range(0, len(lst), n):
             yield lst[i : i + n]
 
-    def find_ass_sequence(
-        self, directory: str, exoprt_name: str, frema_list
-    ) -> List[str]:
+    def find_ass_sequence(self, directory: str, export_name: str, frame_list) -> List[str]:
         """
         return a list of ass files for a specific frame list
         """
 
         ass_files = list()
 
-        for frame in frema_list:
+        for frame in frame_list:
             frame = str(frame)
 
             # Format frame number to 4 digits
@@ -87,7 +85,7 @@ class KickCommand(CommandBase):
                 frame = "0" + frame
 
             # add new ass file to list
-            ass_files.append(f"{os.path.join(directory, exoprt_name)}.{frame}.ass")
+            ass_files.append(f"{os.path.join(directory, export_name)}.{frame}.ass")
 
         return ass_files
 
@@ -99,17 +97,19 @@ class KickCommand(CommandBase):
         logger: logging.Logger,
     ):
 
-        ass_target: pathlib.Path = parameters["ass_target"]
+        ass_target: pathlib.Path = parameters["ass_target"] # target a ass in a sequence to use as pattern
 
         directory: str = parameters["directory"]
-        exoprt_name: str = parameters["exoprt_name"]
-        extension: str = parameters["extension"]
+        export_name: str = parameters["export_name"]
+        extension:  str = parameters["extension"]
         frame_range: fileseq.FrameSet = parameters["frame_range"]
         reslution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
+        export_file: str = 'NONE'
 
         # Create list of arguents
-        export_file = os.path.join(directory, f"{exoprt_name}.{extension}")
+        if action_query.context_metadata.get("user_email") is not None:
+            export_file = os.path.join(directory, f"{export_name}.{extension}")
 
         arg_list: List[Any] = [
             "powershell.exe",
@@ -143,9 +143,21 @@ class KickCommand(CommandBase):
             ass_name: str = ass_target.stem.split(".")[0]
             ass_files: str = self.find_ass_sequence(ass_dir, ass_name, chunk)
             logger.info(f"Creating a new task with frames: {start} to {end}")
-            cmd_dict[f"frames={start}-{end}"] = (
-                arg_list + ["-AssFiles"] + [",".join(ass_files)]
-            )
-            logger.error(cmd_dict)
 
-        return {"commands": cmd_dict, "file_name": exoprt_name}
+            cmd_dict[f"frames={start}-{end}"] = arg_list + ['-AssFiles'] + [','.join(ass_files)]
+
+        return {
+            "commands": cmd_dict,
+            "file_name": export_name
+        }
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+
+        # show resolution only if context
+        if action_query.context_metadata.get("user_email") is None:
+            self.command_buffer.parameters["resolution"].hide = True
