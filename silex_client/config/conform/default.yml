@@ -17,6 +17,7 @@ default:
           parameters:
             key: "build_output_path_task_id"
             key_suffix: !command-output "input:input:file_paths"
+          hide: true
         get_fast_conform_cache:
           label: "Check fast conform"
           path: "silex_client.commands.get_stored_value.GetStoredValue"
@@ -24,6 +25,7 @@ default:
             key: "fast_conform_enabled"
             key_suffix: !command-output "input:input:file_paths"
             default: false
+          hide: true
         build_output_path:
           label: "Build output path"
           path: "silex_client.commands.build_output_path_conform.BuildOutputPathConform"
@@ -46,6 +48,7 @@ default:
             key: "build_output_path_task_id"
             key_suffix: !command-output "input:input:file_paths"
             value: !command-output "conform:build_output_path:task"
+          hide: true
         set_fast_conform_cache:
           label: "Cache conform location"
           path: "silex_client.commands.set_stored_value.SetStoredValue"
@@ -53,6 +56,7 @@ default:
             key: "fast_conform_enabled"
             key_suffix: !command-output "input:input:file_paths"
             value: !command-output "conform:build_output_path:fast_conform"
+          hide: true
         copy:
           label: "Copy file to pipeline"
           path: "silex_client.commands.copy.Copy"
