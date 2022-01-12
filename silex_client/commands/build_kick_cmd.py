@@ -102,11 +102,11 @@ class KickCommand(CommandBase):
         frame_range: fileseq.FrameSet = parameters["frame_range"]
         reslution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
-
-        logger.error('testze')
+        export_file: str = 'NONE'
 
         # Create list of arguents
-        export_file = os.path.join(directory, f"{exoprt_name}.{extension}")
+        if action_query.context_metadata.get("user_email") is not None:
+            export_file = os.path.join(directory, f"{exoprt_name}.{extension}")
 
         arg_list: List[Any] = [
             "powershell.exe",
@@ -119,11 +119,9 @@ class KickCommand(CommandBase):
             str(reslution[0]),
             "-ResolutionY",
             str(reslution[1]),
+            "-ExportFile",
+            export_file,
         ]
-
-        if action_query.context_metadata.get("user_email") is not None:
-            arg_list.append('-ExportFile')
-            arg_list.append(export_file)
 
         # check if frame_range exists
         if frame_range is None:
