@@ -74,7 +74,7 @@ class SetStoredValue(CommandBase):
         # Handle file_paths in key suffix
         if isinstance(key_suffix, list):
             sequences = fileseq.findSequencesInList(key_suffix)
-            key_suffix = sequences[0].dirname()
+            key_suffix = pathlib.Path(str(sequences[0].dirname()))
         elif pathlib.Path(str(key_suffix)).is_file():
             key_suffix = pathlib.Path(str(key_suffix)).parent
 
