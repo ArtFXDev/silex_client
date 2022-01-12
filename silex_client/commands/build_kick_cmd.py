@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import pathlib
@@ -157,3 +156,4 @@ class KickCommand(CommandBase):
         # show resolution only if context
         if action_query.context_metadata.get("user_email") is None:
             self.command_buffer.parameters["resolution"].hide = True
+            
