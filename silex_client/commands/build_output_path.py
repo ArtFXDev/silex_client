@@ -271,4 +271,4 @@ class BuildOutputPath(CommandBase):
                     *[str(s.name) for s in output_path.parent.iterdir() if s.is_dir()]
                 )
             else:
-                name_parameter.type = SelectParameterMeta(NO_NAME="")
+                name_parameter.type = SelectParameterMeta(**{"<no_name>": ""})
