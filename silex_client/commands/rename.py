@@ -7,8 +7,7 @@ from typing import Any, Dict, List
 import fileseq
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import (ListParameterMeta,
-                                                PathParameterMeta)
+from silex_client.utils.parameter_types import ListParameterMeta, PathParameterMeta
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery

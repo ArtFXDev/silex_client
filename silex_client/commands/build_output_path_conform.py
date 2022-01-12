@@ -49,10 +49,9 @@ class BuildOutputPathConform(BuildOutputPath):
         # If the fast_conform is enabled and a valid task is selected
         # Don't prompt the user
         task_parameter = self.command_buffer.parameters["task"]
-        selected_task = task_parameter.get_value(action_query)
         fast_parameter = self.command_buffer.parameters["fast_conform"]
         fast_conform = fast_parameter.get_value(action_query)
-        if selected_task is not None and fast_conform:
+        if task_parameter.get_value(action_query) is not None and fast_conform:
             self.command_buffer.ask_user = False
         else:
             fast_parameter.hide = False

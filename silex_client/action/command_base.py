@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import logging
 import inspect
+import logging
 from typing import TYPE_CHECKING, Any, Callable, Dict, List
 
 from silex_client.utils.enums import Status
