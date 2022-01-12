@@ -29,7 +29,7 @@ class KickCommand(CommandBase):
     parameters = {
         "ass_target": {
             "label": "Select ass file",
-            "type": PathParameterMeta(extensions=[".ass"]),
+            "type": PathParameterMeta(extensions=[".ass", ".ass.gz"]),
             "value": None,
         },
         "frame_range": {
@@ -94,8 +94,7 @@ class KickCommand(CommandBase):
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
 
-
-        ass_target: pathlib.Path = parameters["ass_target"]
+        ass_target: pathlib.Path = parameters["ass_target"] # target a ass in a sequence to use as pattern
 
         directory: str = parameters["directory"]
         exoprt_name: str = parameters["exoprt_name"]
@@ -103,6 +102,8 @@ class KickCommand(CommandBase):
         frame_range: fileseq.FrameSet = parameters["frame_range"]
         reslution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
+
+        logger.error('testze')
 
         # Create list of arguents
         export_file = os.path.join(directory, f"{exoprt_name}.{extension}")
@@ -118,9 +119,11 @@ class KickCommand(CommandBase):
             str(reslution[0]),
             "-ResolutionY",
             str(reslution[1]),
-            "-ExportFile",
-            export_file,
         ]
+
+        if action_query.context_metadata.get("user_email") is not None:
+            arg_list.append('-ExportFile')
+            arg_list.append(export_file)
 
         # check if frame_range exists
         if frame_range is None:
@@ -147,6 +150,13 @@ class KickCommand(CommandBase):
             "file_name": exoprt_name
         }
 
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
 
-
-
+        # show resolution only if context
+        if action_query.context_metadata.get("user_email") is None:
+            self.command_buffer.parameters["resolution"].hide = True
