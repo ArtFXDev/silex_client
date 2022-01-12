@@ -31,6 +31,7 @@ class IterateAction(InsertAction):
             "type": ListParameterMeta(str),
             "value": "action",
             "tooltip": "Set the category of the action you want to execute",
+            "hide": True,
         },
         "values": {
             "label": "List to iterate over",
@@ -81,11 +82,6 @@ class IterateAction(InsertAction):
         categories = parameters["categories"]
         hide_threshold = parameters["hide_threshold"]
 
-        # Inherit from the parameters of the InsertAction command
-        for key, value in super().parameters.items():
-            value["name"] = key
-            self.command_buffer.parameters.setdefault(key, ParameterBuffer(**value))
-
         outputs = []
         label = self.command_buffer.label
 
@@ -112,3 +108,16 @@ class IterateAction(InsertAction):
             outputs.append(output)
 
         return outputs
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+
+        # Hide the parameters of the child classes
+        for key, _ in super().parameters.items():
+            parameter = self.command_buffer.parameters.get(key)
+            if parameter is not None:
+                parameter.hide = True

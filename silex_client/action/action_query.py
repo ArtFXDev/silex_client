@@ -320,11 +320,6 @@ class ActionQuery:
         return confirm
 
     @property
-    def is_running(self):
-        """Check if the action is currently running"""
-        return not (self._task is None or self._task.done())
-
-    @property
     def current_command(self):
         """Get the current command or the last command before stopping"""
         return self.commands[self.current_command_index]
