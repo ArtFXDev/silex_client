@@ -5,7 +5,7 @@ publish:
       lavel: "Setup"
       index: 50
       commands:
-        get_publish_output:
+        get_publish_type:
           label: "Select publish type"
           path: "silex_client.commands.select_publish.SelectPublish"
           tooltip: "Select the type of publish you want to make"
@@ -16,7 +16,7 @@ publish:
           tooltip: "Build the complete output path"
           ask_user: True
           parameters:
-            output_type: !command-output "setup:get_publish_output"
+            output_type: !command-output "setup:get_publish_type:publish_type"
             use_current_context:
               value: true
               hide: true
