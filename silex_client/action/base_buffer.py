@@ -53,7 +53,7 @@ class BaseBuffer:
     #: Specify if the buffer must be displayed by the UI or not
     hide: bool = field(compare=False, repr=False, default=False)
     #: Small explanation for the UI
-    tooltip: str = field(compare=False, repr=False, default="No tooltip provided")
+    tooltip: Optional[str] = field(compare=False, repr=False, default=None)
     #: A Unique ID to help differentiate multiple buffers
     uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
     #: Marquer to know if the serialize cache is outdated or not
