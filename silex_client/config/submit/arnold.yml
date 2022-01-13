@@ -24,7 +24,7 @@ arnold:
           parameters:
             output_type: !command-output "build_output_path:select_list"
             create_temp_dir: false
-            create_output_dir: false
+            create_output_dir: true
             task:
               hide: true
             use_current_context:
