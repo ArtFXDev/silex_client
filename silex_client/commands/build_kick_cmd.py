@@ -7,7 +7,6 @@ import typing
 from typing import Any, Dict, List
 
 import fileseq
-from silex_maya.utils.utils import Utils
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta
@@ -15,10 +14,6 @@ from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParame
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
-
-import pathlib
-
-import maya.cmds as cmds
 
 
 class KickCommand(CommandBase):
@@ -34,7 +29,7 @@ class KickCommand(CommandBase):
         },
         "frame_range": {
             "label": "Frame range (start, end, step)",
-            "type": FrameSet,
+            "type": fileseq.FrameSet,
             "value": "1-50x1",
         },
         "resolution": {
@@ -100,6 +95,8 @@ class KickCommand(CommandBase):
         ass_target: pathlib.Path = parameters[
             "ass_target"
         ]  # target a ass in a sequence to use as pattern
+        ass_dir: str = ass_target.parents[0]
+        ass_name: str = ass_target.stem.split(".")[0]
 
         directory: str = parameters["directory"]
         export_name: str = parameters["export_name"]
@@ -133,7 +130,7 @@ class KickCommand(CommandBase):
             raise Exception("No frame range found")
 
         # Cut frames by task
-        frame_chunks: List[str] = list(FrameSet(frame_range))
+        frame_chunks: List[str] = list(fileseq.FrameSet(frame_range))
         task_chunks: List[Any] = list(self._chunks(frame_chunks, task_size))
         cmd_dict: Dict[str, str] = dict()
 
@@ -141,14 +138,12 @@ class KickCommand(CommandBase):
         for chunk in task_chunks:
             start: int = chunk[0]
             end: int = chunk[-1]
-            ass_dir: str = ass_target.parents[0]
-            ass_name: str = ass_target.stem.split(".")[0]
             ass_files: str = self.find_ass_sequence(ass_dir, ass_name, chunk)
             logger.info(f"Creating a new task with frames: {start} to {end}")
 
             cmd_dict[f"frames={start}-{end}"] = arg_list + ['-AssFiles'] + [','.join(ass_files)]
 
-        return {"commands": cmd_dict, "file_name": export_name}
+        return {"commands": cmd_dict, "file_name": ass_name}
 
     async def setup(
         self,
@@ -159,4 +154,4 @@ class KickCommand(CommandBase):
 
         # show resolution only if context
         if action_query.context_metadata.get("user_email") is None:
-            self.command_buffer.parameters["resolution"].hide = True
+            self.command_buffer.parameters["export_name"].hide = True

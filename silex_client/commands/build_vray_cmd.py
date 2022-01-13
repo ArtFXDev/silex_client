@@ -47,7 +47,7 @@ class VrayCommand(CommandBase):
             "type": str,
             "value": "",
         },
-        "exoprt_name": {
+        "export_name": {
             "label": "File name",
             "type": pathlib.Path,
             "value": "",
@@ -73,7 +73,7 @@ class VrayCommand(CommandBase):
         logger: logging.Logger,
     ):
         directory: str = parameters["export_dir"]
-        exoprt_name: str = str(parameters["exoprt_name"])
+        export_name: str = str(parameters["export_name"])
         extension: str = parameters["extension"]
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
@@ -101,7 +101,7 @@ class VrayCommand(CommandBase):
 
         # Check if context
         if action_query.context_metadata.get("user_email") is not None:
-            export_file = os.path.join(directory, f"{exoprt_name}.{extension}")
+            export_file = os.path.join(directory, f"{export_name}.{extension}")
             arg_list.append(f"-imgFile={export_file}")
             arg_list.extend(
                 [f"-imgWidth={resolution[0]}", f"-imgHeight={resolution[1]}"]

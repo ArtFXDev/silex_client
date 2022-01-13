@@ -12,7 +12,7 @@ vrscene_3D4:
           parameters:
             export_dir:
               hide: true
-            exoprt_name:
+            export_name:
               hide: true
             extension:
               hide: true

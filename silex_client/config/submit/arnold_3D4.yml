@@ -12,7 +12,7 @@ arnold_3D4:
           parameters:
             directory:
               hide: true
-            exoprt_name:
+            export_name:
               hide: true
             extension:
               hide: true
@@ -22,7 +22,5 @@ arnold_3D4:
           path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
           ask_user: true
           parameters:
-            precommands:
-              hide: true
             cmd_dict: !command-output "send_kick_render:build_kick_cmd:commands"
             job_title: !command-output "send_kick_render:build_kick_cmd:file_name"
