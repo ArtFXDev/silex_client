@@ -122,6 +122,10 @@ class VrayCommand(CommandBase):
             frames: str = ";".join(map(str, chunk))
             logger.info(f"Creating a new task with frames: {start} to {end}")
             cmd_dict[f"frames={start}-{end}"] = arg_list + [f'-frames="{frames}"']
+        
+        # create export directory
+        os.makedirs(directory, exist_ok=True)
+
 
         return {"commands": cmd_dict, "file_name": scene.stem}
 

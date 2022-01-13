@@ -143,6 +143,9 @@ class KickCommand(CommandBase):
 
             cmd_dict[f"frames={start}-{end}"] = arg_list + ['-AssFiles'] + [','.join(ass_files)]
 
+        # create export directory 
+        os.makedirs(directory, exist_ok=True)
+
         return {"commands": cmd_dict, "file_name": ass_name}
 
     async def setup(
