@@ -60,12 +60,8 @@ def authentificate_gazu() -> bool:
     async def get_authentification_token():
         async with aiohttp.ClientSession() as session:
             silex_service_host = os.getenv("SILEX_SERVICE_HOST", "")
-            try:
-                async with session.get(f"{silex_service_host}/auth/token") as response:
-                    response = await response.json()
-                    return True
-            except (ClientConnectionError, ContentTypeError, InvalidURL):
-                return False
+            async with session.get(f"{silex_service_host}/auth/token") as response:
+                return await response.json()
 
     # Get the authentification token
     if not is_authentificated():
