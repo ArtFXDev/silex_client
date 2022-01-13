@@ -65,4 +65,16 @@ class SelectPublish(CommandBase):
 
         patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
         action_query.buffer.deserialize(patch)
-        return parameters["publish_type"]
+        return {"publish_type": parameters["publish_type"]}
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        # Set a default value
+        publish_type = self.command_buffer.parameters["publish_type"]
+        self.command_buffer.output_result = {
+            "publish_type": publish_type.get_value(action_query)
+        }
