@@ -104,7 +104,6 @@ class SelectConform(CommandBase):
 
             # TODO: This mapping should be somewhere else
             EXTENSION_TYPES_MAPPING = {
-                "bgeo.sc": "bgeo",
                 "mb": "ma",
                 "tif": "tiff",
                 "jpeg": "jpg",
@@ -121,12 +120,14 @@ class SelectConform(CommandBase):
                 conform_types.append(conform_type)
                 continue
 
-            # Try to guess the conform by getting the last extension
-            conform_type = conform_type.split(".")[-1]
-            conform_type = EXTENSION_TYPES_MAPPING.get(conform_type, conform_type)
-            if conform_type in handled_conform:
-                conform_types.append(conform_type)
-                continue
+            # Try to guess the conform for mutliple extensions (like .tar.gz)
+            for conform_type_split in conform_type.split("."):
+                conform_type = EXTENSION_TYPES_MAPPING.get(
+                    conform_type_split, conform_type
+                )
+                if conform_type in handled_conform:
+                    conform_types.append(conform_type)
+                    continue
 
             # Some extensions are just not handled at all, the user can select one manually
             logger.warning("Could not guess the conform type of %s", sequence)
