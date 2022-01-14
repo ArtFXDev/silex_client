@@ -153,11 +153,11 @@ class ActionQuery:
         commands_prompt = self.commands[start:end]
         # Set the commands to WAITING_FOR_RESPONSE
         for index, command_left in enumerate(commands_prompt):
+            await command_left.setup(self)
             if not command_left.require_prompt():
                 end = start + index if start is not None else index
                 break
             command_left.ask_user = True
-            await command_left.setup(self)
             command_left.status = Status.WAITING_FOR_RESPONSE
             command_left.hide = False
 
@@ -318,11 +318,6 @@ class ActionQuery:
                 self.buffer.uuid, apply_update
             )
         return confirm
-
-    @property
-    def is_running(self):
-        """Check if the action is currently running"""
-        return not (self._task is None or self._task.done())
 
     @property
     def current_command(self):

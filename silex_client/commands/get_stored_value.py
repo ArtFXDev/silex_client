@@ -8,6 +8,7 @@ from typing import Any, Dict
 import fileseq
 
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.parameter_types import AnyParameter
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -31,6 +32,11 @@ class GetStoredValue(CommandBase):
             "value": None,
             "hide": True,
         },
+        "default": {
+            "label": "Default value",
+            "type": AnyParameter,
+            "value": None,
+        },
     }
 
     @CommandBase.conform_command()
@@ -42,11 +48,12 @@ class GetStoredValue(CommandBase):
     ):
         key: str = parameters["key"]
         key_suffix: str = parameters["key_suffix"]
+        default: Any = parameters["default"]
 
         if key_suffix:
             key = f"{key}:{key_suffix}"
 
-        value = action_query.store.get(key)
+        value = action_query.store.get(key, default)
         return {"value": value, "key": key}
 
     async def setup(
@@ -65,7 +72,7 @@ class GetStoredValue(CommandBase):
         # Handle file_paths in key suffix
         if isinstance(key_suffix, list):
             sequences = fileseq.findSequencesInList(key_suffix)
-            key_suffix = sequences[0].dirname()
+            key_suffix = pathlib.Path(str(sequences[0].dirname()))
         elif pathlib.Path(str(key_suffix)).is_file():
             key_suffix = pathlib.Path(str(key_suffix)).parent
 

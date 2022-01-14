@@ -40,7 +40,7 @@ class TractorSubmiter(CommandBase):
             "value": [],
             "hide": True,
         },
-        "cmd_list": {
+        "cmd_dict": {
             "label": "Commands list",
             "type": dict,
         },
@@ -66,7 +66,7 @@ class TractorSubmiter(CommandBase):
         author.setEngineClientParam(debug=True)
 
         precommands: List[str] = parameters["precommands"]
-        cmds: Dict[str, str] = parameters["cmd_list"]
+        cmds: Dict[str, str] = parameters["cmd_dict"]
         pools: List[str] = parameters["pools"]
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
@@ -126,7 +126,7 @@ class TractorSubmiter(CommandBase):
             services = "(" + " || ".join(pools) + ")"
         logger.info(f"Rendering on pools: {services}")
 
-        # Creating the job
+        # Creating job
         job = author.Job(
             title=job_title,
             priority=100.0,
@@ -135,9 +135,9 @@ class TractorSubmiter(CommandBase):
             service=services,
         )
 
-        # Create the commands
+        # Create commands
         for cmd in cmds:
-            # Create the task
+            # Create task
             task = author.Task(title=str(cmd))
 
             # add precommands
@@ -152,14 +152,14 @@ class TractorSubmiter(CommandBase):
                 # add precommand
                 task.addCommand(pre_command)
 
-            # Create the main command
+            # Create main command
             params = {"argv": cmds.get(cmd), "id": str(uuid.uuid4())}
             if len(precommands) > 0:
                 params["refersto"] = task.cmds[-1].id
 
             command = author.Command(**params)
 
-            # add the main command
+            # add main command
             task.addCommand(command)
             job.addChild(task)
 

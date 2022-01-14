@@ -1,5 +1,5 @@
-vrscene:
-  label: "Submit V-Ray scene"
+arnold:
+  label: "Submit ass sequence"
   steps:
     build_output_path:
       label: "Build output path"
@@ -24,7 +24,7 @@ vrscene:
           parameters:
             output_type: !command-output "build_output_path:select_list"
             create_temp_dir: false
-            create_output_dir: false
+            create_output_dir: true
             task:
               hide: true
             use_current_context:
@@ -32,17 +32,19 @@ vrscene:
               hide: true
             frame_set:
               hide: true
+            name:
+              value: "render"
 
-    send_vray_render:
+    send_kick_render:
       label: "Setup render parameters"
       index: 20
       commands:
-        build_vray_cmd:
-          path: "silex_client.commands.build_vray_cmd.VrayCommand"
-          label: "V-Ray Job parameters"
+        build_kick_cmd:
+          path: "silex_client.commands.build_kick_cmd.KickCommand"
+          label: "arnold Job parameters"
           ask_user: true
           parameters:
-            export_dir: !command-output "build_output_path:build_output_path:directory"
+            directory: !command-output "build_output_path:build_output_path:directory"
             export_name: !command-output "build_output_path:build_output_path:file_name"
             extension: !command-output "build_output_path:select_list"
 
@@ -53,5 +55,5 @@ vrscene:
           parameters:
             precommands:
               hide: true
-            cmd_dict: !command-output "send_vray_render:build_vray_cmd:commands"
-            job_title: !command-output "send_vray_render:build_vray_cmd:file_name"
+            cmd_dict: !command-output "send_kick_render:build_kick_cmd:commands"
+            job_title: !command-output "send_kick_render:build_kick_cmd:file_name"

@@ -33,11 +33,29 @@ def is_authentificated() -> bool:
         return False
 
 
+async def refresh_token() -> bool:
+    """
+    Refresh the authentification tokens
+    """
+
+    async with aiohttp.ClientSession() as session:
+        silex_service_host = os.getenv("SILEX_SERVICE_HOST", "")
+        try:
+            async with session.get(
+                f"{silex_service_host}/auth/refresh-token"
+            ) as response:
+                gazu.client.set_tokens(await response.json())
+                return True
+        except:
+            return False
+
+
 def authentificate_gazu() -> bool:
     """
     Get the zou authentification token from the socket service
     """
     gazu.set_host(os.getenv("SILEX_ZOU_HOST"))
+    gazu.set_auth_fail_callback(refresh_token)
 
     async def get_authentification_token():
         async with aiohttp.ClientSession() as session:

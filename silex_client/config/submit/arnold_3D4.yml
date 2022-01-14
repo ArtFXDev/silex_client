@@ -1,16 +1,16 @@
-vrscene_3D4:
-  label: "Submit V-Ray scene"
+arnold_3D4:
+  label: "Submit ass sequence"
   steps:
-    send_vray_render:
+    send_kick_render:
       label: "Setup render parameters"
       index: 20
       commands:
-        build_vray_cmd:
-          path: "silex_client.commands.build_vray_cmd.VrayCommand"
-          label: "V-Ray Job parameters"
+        build_kick_cmd:
+          path: "silex_client.commands.build_kick_cmd.KickCommand"
+          label: "arnold Job parameters"
           ask_user: true
           parameters:
-            export_dir:
+            directory:
               hide: true
             export_name:
               hide: true
@@ -22,5 +22,5 @@ vrscene_3D4:
           path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
           ask_user: true
           parameters:
-            cmd_dict: !command-output "send_vray_render:build_vray_cmd:commands"
-            job_title: !command-output "send_vray_render:build_vray_cmd:file_name"
+            cmd_dict: !command-output "send_kick_render:build_kick_cmd:commands"
+            job_title: !command-output "send_kick_render:build_kick_cmd:file_name"

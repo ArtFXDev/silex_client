@@ -5,7 +5,6 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.commands.insert_action import InsertAction
 from silex_client.utils.parameter_types import AnyParameter, ListParameterMeta
 
@@ -21,7 +20,7 @@ class IterateAction(InsertAction):
 
     parameters = {
         "actions": {
-            "label": "Action to execute",
+            "label": "Actions to execute",
             "type": ListParameterMeta(str),
             "value": None,
             "tooltip": "This action will be executed for each items in the given list",
@@ -31,6 +30,7 @@ class IterateAction(InsertAction):
             "type": ListParameterMeta(str),
             "value": "action",
             "tooltip": "Set the category of the action you want to execute",
+            "hide": True,
         },
         "values": {
             "label": "List to iterate over",
@@ -81,11 +81,6 @@ class IterateAction(InsertAction):
         categories = parameters["categories"]
         hide_threshold = parameters["hide_threshold"]
 
-        # Inherit from the parameters of the InsertAction command
-        for key, value in super().parameters.items():
-            value["name"] = key
-            self.command_buffer.parameters.setdefault(key, ParameterBuffer(**value))
-
         outputs = []
         label = self.command_buffer.label
 
@@ -112,3 +107,16 @@ class IterateAction(InsertAction):
             outputs.append(output)
 
         return outputs
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+
+        # Hide the parameters of the child classes
+        for key, _ in super().parameters.items():
+            parameter = self.command_buffer.parameters.get(key)
+            if parameter is not None:
+                parameter.hide = True
