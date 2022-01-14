@@ -10,8 +10,8 @@ from silex_client.action.command_base import CommandBase
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import subprocess
 import platform
+import subprocess
 
 
 class Focus(CommandBase):
