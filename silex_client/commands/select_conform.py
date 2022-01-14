@@ -62,7 +62,7 @@ class SelectConform(CommandBase):
                 *[publish_action["name"] for publish_action in Config.get().conforms]
             ),
             name="new_type",
-            label=f"Conform type",
+            label="Conform type",
         )
         # Prompt the user to get the new path
         new_type = await self.prompt_user(
@@ -96,34 +96,42 @@ class SelectConform(CommandBase):
                 conform_types.append(conform_type)
                 continue
 
+            handled_conform = [
+                publish_action["name"] for publish_action in Config.get().conforms
+            ]
             extension = str(sequence.extension())[1:]
             conform_type = extension.lower()
-            # Some extensions are not the exact same as their conform type
-            if conform_type not in [
-                publish_action["name"] for publish_action in Config.get().conforms
-            ]:
-                # TODO: This mapping should be somewhere else
-                EXTENSION_TYPES_MAPPING = {
-                    "bgeo.sc": "bgeo",
-                    "mb": "ma",
-                    "tif": "tiff",
-                    "jpeg": "jpg",
-                    "hdri": "hdr",
-                    "hipnc": "hip",
-                    "hiplc": "hip",
-                    "hdanc": "hda",
-                    "hdalc": "hda",
-                }
-                # Find the right conform action for the given extension
-                conform_type = EXTENSION_TYPES_MAPPING.get(conform_type, "")
 
-            # Some extensions are just not handled at all
-            if conform_type not in [
-                publish_action["name"] for publish_action in Config.get().conforms
-            ]:
-                logger.warning("Could not guess the conform type of %s", sequence)
-                conform_type = await self._prompt_new_type(action_query)
+            # TODO: This mapping should be somewhere else
+            EXTENSION_TYPES_MAPPING = {
+                "mb": "ma",
+                "tif": "tiff",
+                "jpeg": "jpg",
+                "hdri": "hdr",
+                "hipnc": "hip",
+                "hiplc": "hip",
+                "hdanc": "hda",
+                "hdalc": "hda",
+            }
 
+            # Test if the conform is a handled conform type
+            conform_type = EXTENSION_TYPES_MAPPING.get(conform_type, conform_type)
+            if conform_type in handled_conform:
+                conform_types.append(conform_type)
+                continue
+
+            # Try to guess the conform for mutliple extensions (like .tar.gz)
+            for conform_type_split in conform_type.split("."):
+                conform_type = EXTENSION_TYPES_MAPPING.get(
+                    conform_type_split, conform_type
+                )
+                if conform_type in handled_conform:
+                    conform_types.append(conform_type)
+                    continue
+
+            # Some extensions are just not handled at all, the user can select one manually
+            logger.warning("Could not guess the conform type of %s", sequence)
+            conform_type = await self._prompt_new_type(action_query)
             conform_types.append(conform_type)
 
         # Convert the fileseq's sequences into list of pathlib.Path
@@ -134,8 +142,8 @@ class SelectConform(CommandBase):
             if len(sequence) > 1:
                 sequences.append([pathlib.Path(str(path)) for path in list(sequence)])
                 continue
-            elif len(sequence) == 1:
-                sequences.append(pathlib.Path(str(sequence[0])))
+
+            sequences.append(pathlib.Path(str(sequence[0])))
 
         # Simply return what was sent if find_sequence not set
         if not find_sequence:
