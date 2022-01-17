@@ -64,10 +64,10 @@ class BuildOutputPathConform(BuildOutputPath):
         files_value = files_parameter.get_value(action_query)
         if not isinstance(files_value, list):
             files_value = [files_value]
-        files_value = fileseq.findSequencesInList(files_value)[0]
+        file_paths: fileseq.FileSequence = fileseq.findSequencesInList(files_value)[0]
 
         # If the file has already been conformed, don't build the path
-        key = f"build_output_path_conform:{str(files_value)}"
+        key = f"build_output_path_conform:{str(file_paths)}"
         previous_result = action_query.store.get(key)
         if previous_result is not None:
             self.command_buffer.output_result = previous_result
@@ -75,7 +75,9 @@ class BuildOutputPathConform(BuildOutputPath):
             return
 
         # Autofill the name from the files
-        new_name_value = files_value.basename()
+        new_name_value = file_paths.basename()
+        if len(file_paths) <= 1:
+            new_name_value = pathlib.Path(str(file_paths[0])).stem
         name_parameter = self.command_buffer.parameters["name"]
         if not name_parameter.get_value(action_query):
             name_parameter.value = new_name_value
