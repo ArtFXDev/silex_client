@@ -249,7 +249,6 @@ class BaseBuffer:
         current_buffer_data = self.serialize()
         for child_type in self.get_child_types():
             current_buffer_data.pop(child_type.buffer_type, None)
-        current_buffer_data.pop("children", None)
         serialized_data = jsondiff.patch(current_buffer_data, serialized_data)
 
         # Format the children corectly, the name is defined in the key only
@@ -262,6 +261,13 @@ class BaseBuffer:
             child["name"] = child_name
             child["buffer_type"] = child_type.buffer_type
 
+        serialized_data.setdefault("children", {})
+        for child_type in self.get_child_types():
+            buffer_type = child_type.buffer_type
+            if buffer_type not in serialized_data:
+                continue
+            serialized_data["children"].update(serialized_data.pop(buffer_type))
+
         # Create a new buffer with the patched serialized data
         config_data: Dict[str, Union[list, dict]] = {"cast": [Status, CommandOutput]}
         if BaseBuffer not in self.get_child_types():
@@ -270,13 +276,6 @@ class BaseBuffer:
                 for child_type in self.get_child_types()
             }
         config = dacite_config.Config(**config_data)
-
-        serialized_data.setdefault("children", {})
-        for child_type in self.get_child_types():
-            buffer_type = child_type.buffer_type
-            if buffer_type not in serialized_data:
-                continue
-            serialized_data["children"].update(serialized_data.pop(buffer_type))
 
         new_buffer = dacite.from_dict(type(self), serialized_data, config)
 
