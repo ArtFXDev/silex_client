@@ -22,7 +22,9 @@ arnold:
           tooltip: "Build the complete output path"
           ask_user: true
           parameters:
-            output_type: !command-output "build_output_path:select_list"
+            output_type: 
+              value: !command-output "build_output_path:select_list"
+              hide: true
             create_temp_dir: false
             create_output_dir: true
             task:
@@ -44,9 +46,15 @@ arnold:
           label: "arnold Job parameters"
           ask_user: true
           parameters:
-            directory: !command-output "build_output_path:build_output_path:directory"
-            export_name: !command-output "build_output_path:build_output_path:file_name"
-            extension: !command-output "build_output_path:select_list"
+            directory: 
+              value: !command-output "build_output_path:build_output_path:directory"
+              hide: true
+            export_name: 
+              value: !command-output "build_output_path:build_output_path:file_name"
+              hide: true
+            extension: 
+              value: !command-output "build_output_path:select_list"
+              hide: true
 
         submit_to_tractor:
           label: "Submit"
@@ -55,5 +63,9 @@ arnold:
           parameters:
             precommands:
               hide: true
-            cmd_dict: !command-output "send_kick_render:build_kick_cmd:commands"
-            job_title: !command-output "send_kick_render:build_kick_cmd:file_name"
+            cmd_dict: 
+              value: !command-output "send_kick_render:build_kick_cmd:commands"
+              hide: true
+            job_title: 
+              value: !command-output "send_kick_render:build_kick_cmd:file_name"
+              hide: true

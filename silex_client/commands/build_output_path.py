@@ -63,6 +63,7 @@ class BuildOutputPath(CommandBase):
             "type": fileseq.FrameSet,
             "value": fileseq.FrameSet(0),
             "tooltip": "The range is start, end, increment",
+            "hide": True,
         },
         "padding": {
             "label": "padding for index in sequences",

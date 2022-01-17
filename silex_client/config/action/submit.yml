@@ -17,5 +17,7 @@ submit:
           tooltip: "Append the selected submit to the list of commands to execute"
           parameters:
             category: "submit"
-            action: !command-output "setup:get_submiter:action"
+            action: 
+              value: !command-output "setup:get_submiter:action"
+              hide: true
 

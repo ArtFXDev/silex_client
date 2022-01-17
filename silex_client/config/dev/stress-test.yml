@@ -11,6 +11,8 @@ stress-test:
         iterate_list:
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
-            values: !command-output "iterate_action:create_list:inline_result"
+            values: 
+              value: !command-output "iterate_action:create_list:inline_result"
+              hide: true
             actions: "tester"
             categories: "dev"
