@@ -77,7 +77,8 @@ class BuildOutputPathConform(BuildOutputPath):
         # Autofill the name from the files
         new_name_value = files_value.basename()
         name_parameter = self.command_buffer.parameters["name"]
-        name_parameter.value = new_name_value
+        if not name_parameter.get_value(action_query):
+            name_parameter.value = new_name_value
 
         # Force the name to be visible
         self.command_buffer.parameters["name"].hide = False
