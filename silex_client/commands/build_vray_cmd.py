@@ -4,10 +4,9 @@ import logging
 import os
 import pathlib
 import typing
-from typing import Any, Dict, List
+from typing import Any, Dict, Generator, List
 
 from fileseq import FrameSet
-
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta
 
@@ -60,7 +59,7 @@ class VrayCommand(CommandBase):
         },
     }
 
-    def _chunks(self, lst, n):
+    def _chunks(self, lst: List[Any], n: int) -> Generator[list[Any], None, None]:
         """Yield successive n-sized chunks from lst."""
         for i in range(0, len(lst), n):
             yield lst[i : i + n]
@@ -81,13 +80,13 @@ class VrayCommand(CommandBase):
         task_size: int = parameters["task_size"]
         skip_existing: int = int(parameters["skip_existing"])
 
-        arg_list: List[str] = [
+        vray_args: List[str] = [
             # V-Ray exe path
             "C:/Maya2022/Maya2022/vray/bin/vray.exe",
             # Don't show VFB (render view)
             "-display=0",
             # Update frequency for logs
-            "-progressUpdateFreq=2000",
+            "-progressIncrement=5",
             # Don't format logs with colors
             "-progressUseColor=0",
             # Use proper carrier returns
@@ -99,17 +98,24 @@ class VrayCommand(CommandBase):
             # "-rtEngine=5", # CUDA or CPU?
         ]
 
-        # Check if context
-        if action_query.context_metadata["project"] is not None:
-
+        # Check if project in context
+        if "project" in action_query.context_metadata:
             # Prepend rez arguments
-            rez_args: List[str] =  ["rez", "env", action_query.context_metadata['project'].lower(), '--']
-            rez_args.extend(arg_list)
-            arg_list = rez_args
+            rez_args: List[str] = [
+                "rez",
+                "env",
+                action_query.context_metadata["project"].lower(),
+                "--",
+            ]
 
-            # Append export path to arguments 
-            export_file = os.path.join(directory, f"{export_name}.{extension}")
-            arg_list.append(f"-imgFile={export_file}")
+            arg_list = rez_args + vray_args
+
+            # Construct the output path
+            output_path = os.path.join(directory, f"{export_name}.{extension}")
+
+            # Add the V-Ray output path argument
+            arg_list.append(f"-imgFile={output_path}")
+
             arg_list.extend(
                 [f"-imgWidth={resolution[0]}", f"-imgHeight={resolution[1]}"]
             )
@@ -117,18 +123,22 @@ class VrayCommand(CommandBase):
         if frame_range is None:
             raise Exception("No frame range found")
 
-        frame_chunks: List[str] = list(FrameSet(frame_range))
+        # Evaluate the frame set expression
+        frames_list: List[int] = list(FrameSet(frame_range))
 
-        # Cut frames by task
-        task_chunks: List[List[str]] = list(self._chunks(frame_chunks, task_size))
+        # Split frames by task size
+        frame_chunks: List[List[int]] = list(self._chunks(frames_list, task_size))
         cmd_dict: Dict[str, List[str]] = dict()
 
-        # Create commands
-        for chunk in task_chunks:
-            start, end = chunk[0], chunk[-1]
-            frames: str = ";".join(map(str, chunk))
-            logger.info(f"Creating a new task with frames: {start} to {end}")
-            cmd_dict[f"frames={start}-{end}"] = arg_list + ["-frames=", f'{frames}']
+        # Creating tasks for each frame chunk
+        for chunk in frame_chunks:
+            fmt_frames = ";".join(map(str, chunk))
+
+            # Converting the chunk back to a frame set
+            task_title = FrameSet(chunk).frameRange()
+
+            # Add the frames argument
+            cmd_dict[task_title] = vray_args + ["-frames=", fmt_frames]
 
         return {"commands": cmd_dict, "file_name": scene.stem}
 
@@ -138,8 +148,6 @@ class VrayCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-
         # show resolution only if context
-        if action_query.context_metadata["project"] is not None:
+        if "project" in action_query.context_metadata:
             self.command_buffer.parameters["resolution"].hide = True
-
