@@ -11,7 +11,6 @@ import subprocess
 from concurrent import futures
 
 import gazu.files
-
 from silex_client.action.action_query import ActionQuery
 from silex_client.core.context import Context
 from silex_client.resolve.config import Config
@@ -116,7 +115,7 @@ def launch_handler(dcc: str, **kwargs) -> None:
         command.append(kwargs["file"])
 
     # check for env variable
-    if os.environ.get(dcc) is not None:
-        command[0] = os.environ[dcc]
+    if os.environ.get("SILEX_DCC_BIN") is not None:
+        command[0] = os.environ["SILEX_DCC_BIN"]
 
-    subprocess.Popen(command, cwd=os.getcwd())
+    subprocess.Popen(command, cwd=os.getcwd(), shell=True)

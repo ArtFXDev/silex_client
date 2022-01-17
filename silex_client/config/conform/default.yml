@@ -38,7 +38,7 @@ default:
             frame_set: !command-output "input:input:frame_set"
             output_type:
               hide: true
-            name: !command-output "input:input:file_paths"
+            files: !command-output "input:input:file_paths"
             padding: !command-output "input:input:padding"
           ask_user: true
         set_conform_cache:
