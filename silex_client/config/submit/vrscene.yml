@@ -22,7 +22,7 @@ vrscene:
           tooltip: "Build the complete output path"
           ask_user: true
           parameters:
-            output_type: 
+            output_type:
               value: !command-output "build_output_path:select_list"
               hide: true
             create_temp_dir: false
@@ -44,13 +44,13 @@ vrscene:
           label: "V-Ray Job parameters"
           ask_user: true
           parameters:
-            export_dir: 
+            export_dir:
               value: !command-output "build_output_path:build_output_path:directory"
               hide: true
-            export_name: 
+            export_name:
               value: !command-output "build_output_path:build_output_path:file_name"
               hide: true
-            extension: 
+            extension:
               value: !command-output "build_output_path:select_list"
               hide: true
 
@@ -61,9 +61,9 @@ vrscene:
           parameters:
             precommands:
               hide: true
-            cmd_dict: 
+            cmd_dict:
               value: !command-output "send_vray_render:build_vray_cmd:commands"
               hide: true
-            job_title: 
+            job_title:
               value: !command-output "send_vray_render:build_vray_cmd:file_name"
               hide: true
