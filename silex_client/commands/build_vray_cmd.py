@@ -41,22 +41,7 @@ class VrayCommand(CommandBase):
             "value": 10,
         },
         "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
-        "export_dir": {
-            "label": "File directory",
-            "type": str,
-            "value": "",
-        },
-        "export_name": {
-            "label": "File name",
-            "type": pathlib.Path,
-            "value": "",
-        },
-        "extension": {
-            "label": "File extension",
-            "type": str,
-            "value": None,
-            "hide": True,
-        },
+        "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
     }
 
     def _chunks(self, lst: List[Any], n: int) -> Generator[list[Any], None, None]:
@@ -71,9 +56,6 @@ class VrayCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        directory: str = parameters["export_dir"]
-        export_name: str = str(parameters["export_name"])
-        extension: str = parameters["extension"]
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
         resolution: List[int] = parameters["resolution"]
@@ -108,22 +90,19 @@ class VrayCommand(CommandBase):
                 "--",
             ]
 
-            arg_list = rez_args + vray_args
-
-            # Construct the output path
-            output_path = os.path.join(directory, f"{export_name}.{extension}")
+            vray_args = rez_args + vray_args
 
             # Add the V-Ray output path argument
-            arg_list.append(f"-imgFile={output_path}")
+            vray_args.append(f"-imgFile={parameters['output_filename']}")
 
-            arg_list.extend(
+            vray_args.extend(
                 [f"-imgWidth={resolution[0]}", f"-imgHeight={resolution[1]}"]
             )
 
         if frame_range is None:
             raise Exception("No frame range found")
 
-        # Evaluate the frame set expression
+        # Evaluate frame set expression
         frames_list: List[int] = list(FrameSet(frame_range))
 
         # Split frames by task size
@@ -141,13 +120,3 @@ class VrayCommand(CommandBase):
             cmd_dict[task_title] = vray_args + ["-frames=", fmt_frames]
 
         return {"commands": cmd_dict, "file_name": scene.stem}
-
-    async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
-    ):
-        # show resolution only if context
-        if "project" in action_query.context_metadata:
-            self.command_buffer.parameters["resolution"].hide = True
