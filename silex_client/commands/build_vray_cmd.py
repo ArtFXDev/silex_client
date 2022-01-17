@@ -81,7 +81,7 @@ class VrayCommand(CommandBase):
         task_size: int = parameters["task_size"]
         skip_existing: int = int(parameters["skip_existing"])
 
-        arg_list = [
+        arg_list: List[str] = [
             # V-Ray exe path
             "C:/Maya2022/Maya2022/vray/bin/vray.exe",
             # Don't show VFB (render view)
@@ -101,6 +101,13 @@ class VrayCommand(CommandBase):
 
         # Check if context
         if action_query.context_metadata.get("user_email") is not None:
+
+            # Prepend rez arguments
+            rez_args: List[str] =  ["rez", "env", action_query.context_metadata['project'].lower(), '--']
+            rez_args.extend(arg_list)
+            arg_list = rez_args
+
+            # Append export path to arguments 
             export_file = os.path.join(directory, f"{export_name}.{extension}")
             arg_list.append(f"-imgFile={export_file}")
             arg_list.extend(
@@ -113,15 +120,15 @@ class VrayCommand(CommandBase):
         frame_chunks: List[str] = list(FrameSet(frame_range))
 
         # Cut frames by task
-        task_chunks: List[Any] = list(self._chunks(frame_chunks, task_size))
-        cmd_dict: Dict[str, str] = dict()
+        task_chunks: List[List[str]] = list(self._chunks(frame_chunks, task_size))
+        cmd_dict: Dict[str, List[str]] = dict()
 
-        # create commands
+        # Create commands
         for chunk in task_chunks:
             start, end = chunk[0], chunk[-1]
             frames: str = ";".join(map(str, chunk))
             logger.info(f"Creating a new task with frames: {start} to {end}")
-            cmd_dict[f"frames={start}-{end}"] = arg_list + [f'-frames="{frames}"']
+            cmd_dict[f"frames={start}-{end}"] = arg_list + ["-frames=", f'{frames}']
 
         return {"commands": cmd_dict, "file_name": scene.stem}
 
@@ -135,3 +142,4 @@ class VrayCommand(CommandBase):
         # show resolution only if context
         if action_query.context_metadata.get("user_email") is None:
             self.command_buffer.parameters["resolution"].hide = True
+
