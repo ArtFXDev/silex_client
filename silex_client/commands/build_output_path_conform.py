@@ -71,7 +71,7 @@ class BuildOutputPathConform(BuildOutputPath):
         previous_result = action_query.store.get(key)
         if previous_result is not None:
             self.command_buffer.output_result = previous_result
-            self.command_buffer.ask_user = False
+            self.command_buffer.skip = True
             return
 
         # Autofill the name from the files

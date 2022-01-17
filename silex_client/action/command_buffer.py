@@ -64,6 +64,8 @@ class CommandBuffer(BaseBuffer):
     executor: CommandBase = field(init=False)
     #: List of all the logs during the execution of that command
     logs: List[Dict[str, str]] = field(default_factory=list)
+    #: Defines if the command must be executed or not
+    skip: bool = field(default=False)
 
     def __post_init__(self):
         super().__post_init__()
@@ -107,45 +109,55 @@ class CommandBuffer(BaseBuffer):
         """
         Execute the command using the executor
         """
-        # Create a dictionary that only contains the name and the value of the parameters
-        # without infos like the type, label...
-        parameters = {
-            key: value.get_value(action_query) for key, value in self.children.items()
-        }
-        with suppress(TypeError):
-            parameters = copy.deepcopy(parameters)
+        if self.skip:
+            logger.debug("Skipping command %s", self.name)
+        else:
+            # Create a dictionary that only contains the name and the value of the parameters
+            # without infos like the type, label...
+            parameters = {
+                key: value.get_value(action_query)
+                for key, value in self.children.items()
+            }
+            with suppress(TypeError):
+                parameters = copy.deepcopy(parameters)
 
-        # Run the executor and copy the parameters
-        # to prevent them from being modified during execution
-        logger.debug("Executing command %s", self.name)
-        async with RedirectWebsocketLogs(action_query, self) as log:
-            # Set the status to processing
-            self.status = Status.PROCESSING
+            # Run the executor and copy the parameters
+            # to prevent them from being modified during execution
+            logger.debug("Executing command %s", self.name)
+            async with RedirectWebsocketLogs(action_query, self) as log:
+                # Set the status to processing
+                self.status = Status.PROCESSING
 
-            # Call the actual command
-            if execution_type == Execution.FORWARD:
-                await self.executor(parameters, action_query, log)
-            elif execution_type == Execution.BACKWARD:
-                await self.executor.undo(parameters, action_query, log)
+                # Call the actual command
+                if execution_type == Execution.FORWARD:
+                    await self.executor(parameters, action_query, log)
+                elif execution_type == Execution.BACKWARD:
+                    await self.executor.undo(parameters, action_query, log)
 
-            # Keep the error statuses
-            if self.status in [Status.INVALID, Status.ERROR]:
-                return
-            # Set the status to completed or initialized according to the execution
-            if execution_type == Execution.FORWARD:
-                self.status = Status.COMPLETED
-            elif execution_type == Execution.BACKWARD:
-                self.status = Status.INITIALIZED
+        # Keep the error statuses
+        if self.status in [Status.INVALID, Status.ERROR]:
+            return
+        # Set the status to completed or initialized according to the execution
+        if execution_type == Execution.FORWARD:
+            self.status = Status.COMPLETED
+        elif execution_type == Execution.BACKWARD:
+            self.status = Status.INITIALIZED
 
     def require_prompt(self) -> bool:
         """
         Check if this command require a user input, by testing the ask_user field
         and none values on the parameters
         """
-        return self.ask_user or not all(
+        if self.skip:
+            return False
+        if self.ask_user:
+            return True
+        if all(
             parameter.value is not None or parameter.hide
             for parameter in self.children.values()
-        )
+        ):
+            return False
+        return True
 
     async def setup(self, action_query: ActionQuery):
         """
