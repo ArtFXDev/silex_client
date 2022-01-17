@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import logging
 import typing
+import pathlib
 from typing import Any, Dict
+import fileseq
 
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.parameter_types import PathParameterMeta
 from silex_client.commands.build_output_path import BuildOutputPath
 
 # Forward references
@@ -18,6 +21,11 @@ class BuildOutputPathConform(BuildOutputPath):
     """
 
     parameters = {
+        "files": {
+            "label": "File paths the we want to conform",
+            "type": PathParameterMeta(multiple=True),
+            "hide": True,
+        },
         "fast_conform": {
             "label": "Fast conform the next files in this directory",
             "type": bool,
@@ -34,8 +42,16 @@ class BuildOutputPathConform(BuildOutputPath):
         logger: logging.Logger,
     ):
         fast_conform = parameters["fast_conform"]
+        file_paths = parameters["files"]
+
         result = await super().__call__(parameters, action_query, logger)
         result.update({"fast_conform": fast_conform})
+
+        # Store the result of the built output path
+        file_paths = fileseq.findSequencesInList(file_paths)[0]
+        key = f"build_output_path_conform:{str(file_paths)}"
+        action_query.store[key] = result
+
         return result
 
     async def setup(
@@ -44,7 +60,27 @@ class BuildOutputPathConform(BuildOutputPath):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        await super().setup(parameters, action_query, logger)
+        files_parameter = self.command_buffer.parameters["files"]
+        files_value = files_parameter.get_value(action_query)
+        if not isinstance(files_value, list):
+            files_value = [files_value]
+        files_value = fileseq.findSequencesInList(files_value)[0]
+
+        # If the file has already been conformed, don't build the path
+        key = f"build_output_path_conform:{str(files_value)}"
+        previous_result = action_query.store.get(key)
+        if previous_result is not None:
+            self.command_buffer.output_result = previous_result
+            self.command_buffer.ask_user = False
+            return
+
+        # Autofill the name from the files
+        new_name_value = files_value.basename()
+        name_parameter = self.command_buffer.parameters["name"]
+        name_parameter.value = new_name_value
+
+        # Force the name to be visible
+        self.command_buffer.parameters["name"].hide = False
 
         # If the fast_conform is enabled and a valid task is selected
         # Don't prompt the user
@@ -57,3 +93,5 @@ class BuildOutputPathConform(BuildOutputPath):
             self.command_buffer.ask_user = False
         else:
             fast_parameter.hide = False
+
+        await super().setup(parameters, action_query, logger)
