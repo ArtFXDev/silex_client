@@ -18,10 +18,14 @@ conform:
           path: "silex_client.commands.iterate_action.IterateAction"
           tooltip: "Append the selected conforms to the list of commands to execute"
           parameters:
-            values: !command-output "setup:get_conform_output:files"
+            values: 
+              value: !command-output "setup:get_conform_output:files"
+              hide: true
             categories:
               - "conform"
-            actions: !command-output "setup:get_conform_output:types"
+            actions: 
+              value: !command-output "setup:get_conform_output:types"
+              hide: true
             parameter: "input:input:input"
             output: "output:output"
             label_key: "file_paths"
