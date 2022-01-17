@@ -43,7 +43,6 @@ class KickCommand(CommandBase):
             "value": 10,
         },
         "directory": {
-            "label": "File directory",
             "type": pathlib.Path,
             "value": "",
         },
@@ -109,7 +108,7 @@ class KickCommand(CommandBase):
         arg_list: List[Any] = []
 
         # Create list of arguents
-        if action_query.context_metadata.get("user_email") is not None:
+        if action_query.context_metadata["project"] is not None:
 
             # Prepend rez arguments
             rez_args: List[str] =  ["rez", "env", action_query.context_metadata['project'].lower(), '--']
@@ -161,5 +160,5 @@ class KickCommand(CommandBase):
     ):
 
         # show resolution only if context
-        if action_query.context_metadata.get("user_email") is None:
+        if action_query.context_metadata["project"] is not None:
             self.command_buffer.parameters["export_name"].hide = True

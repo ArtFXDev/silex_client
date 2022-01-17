@@ -100,7 +100,7 @@ class VrayCommand(CommandBase):
         ]
 
         # Check if context
-        if action_query.context_metadata.get("user_email") is not None:
+        if action_query.context_metadata["project"] is not None:
 
             # Prepend rez arguments
             rez_args: List[str] =  ["rez", "env", action_query.context_metadata['project'].lower(), '--']
@@ -140,6 +140,6 @@ class VrayCommand(CommandBase):
     ):
 
         # show resolution only if context
-        if action_query.context_metadata.get("user_email") is None:
+        if action_query.context_metadata["project"] is not None:
             self.command_buffer.parameters["resolution"].hide = True
 
