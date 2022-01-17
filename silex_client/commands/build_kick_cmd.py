@@ -7,7 +7,6 @@ import typing
 from typing import Any, Dict, List
 
 import fileseq
-
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta
 
@@ -64,8 +63,9 @@ class KickCommand(CommandBase):
         for i in range(0, len(lst), n):
             yield lst[i : i + n]
 
-
-    def find_ass_sequence(self, directory: pathlib.Path, export_name: str, frame_list) -> List[str]:
+    def find_ass_sequence(
+        self, directory: pathlib.Path, export_name: str, frame_list
+    ) -> List[str]:
         """
         return a list of ass files for a specific frame list
         """
@@ -98,10 +98,9 @@ class KickCommand(CommandBase):
         ass_dir: pathlib.Path = ass_target.parents[0]
         ass_name: str = str(ass_target.stem).split(".")[0]
 
-
         directory: pathlib.Path = parameters["directory"]
         export_name: pathlib.Path = parameters["export_name"]
-        extension:  str = parameters["extension"]
+        extension: str = parameters["extension"]
         frame_range: fileseq.FrameSet = parameters["frame_range"]
         reslution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
@@ -113,26 +112,33 @@ class KickCommand(CommandBase):
         if action_query.context_metadata["project"] is not None:
 
             # Prepend rez arguments
-            rez_args: List[str] =  ["rez", "env", action_query.context_metadata['project'].lower(), '--']
+            rez_args: List[str] = [
+                "rez",
+                "env",
+                action_query.context_metadata["project"].lower(),
+                "--",
+            ]
             arg_list.extend(rez_args)
 
             # Specify export path
             export_file = str((directory / export_name).with_suffix(f".{extension}"))
 
-        arg_list.extend([
-            "powershell.exe",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-NoProfile",
-            "-File",
-            "\\\\prod.silex.artfx.fr\\rez\windows\\render_kick_ass.ps1",
-            "-ResolutionX",
-            str(reslution[0]),
-            "-ResolutionY",
-            str(reslution[1]),
-            "-ExportFile",
-            export_file,
-        ])
+        arg_list.extend(
+            [
+                "powershell.exe",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-NoProfile",
+                "-File",
+                "\\\\prod.silex.artfx.fr\\rez\\windows\\render_kick_ass.ps1",
+                "-ResolutionX",
+                str(reslution[0]),
+                "-ResolutionY",
+                str(reslution[1]),
+                "-ExportFile",
+                export_file,
+            ]
+        )
 
         # Check if frame_range exists
         if frame_range is None:
