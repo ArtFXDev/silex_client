@@ -225,22 +225,10 @@ class BuildOutputPath(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        # Handle the case where a file sequence is given
+        # Slugify the name
         name_parameter = self.command_buffer.parameters["name"]
         name_value = name_parameter.get_value(action_query)
-        new_value = name_value
-        sequences = []
-        if isinstance(name_value, list):
-            sequences = fileseq.findSequencesInList(name_value)
-            new_value = sequences[0].basename()
-        elif name_value:
-            new_value = pathlib.Path(str(name_value)).stem
-
-        # Slugify the name
-        self.command_buffer.parameters["name"].value = slugify(str(new_value))
-
-        # Force the name to be visible
-        self.command_buffer.parameters["name"].hide = False
+        name_parameter.value = slugify(str(name_value))
 
         # This action can be used with or without a context
         for context_value in ["entity_id", "task_type_id", "entity_type", "task"]:
