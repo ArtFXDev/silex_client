@@ -65,7 +65,7 @@ class TractorSubmiter(CommandBase):
         # Initialize the tractor agent
         author.setEngineClientParam(debug=True)
 
-        precommands: List[str] = parameters["precommands"]
+        precommands:  List[List[str]] = parameters["precommands"]
         cmds: Dict[str, str] = parameters["cmd_dict"]
         pools: List[str] = parameters["pools"]
         project: str = parameters["project"]
@@ -73,7 +73,7 @@ class TractorSubmiter(CommandBase):
         owner: str = ""
 
         # MOUNT SERVER
-        if action_query.context_metadata.get("user_email") is not None:
+        if action_query.context_metadata["project"] is not None:
             project_dict = await gazu.project.get_project_by_name(project)
             project_data = project_dict["data"]
 
@@ -82,7 +82,7 @@ class TractorSubmiter(CommandBase):
 
             SERVER_ROOT = project_data["nas"]
 
-            precommands: List[str] = [
+            precommands = [
                 [
                     "powershell.exe",
                     "-ExecutionPolicy",
@@ -95,14 +95,14 @@ class TractorSubmiter(CommandBase):
             ]
 
             # Get owner from context
-            owner: str = action_query.context_metadata.get("user_email", None).split(
+            owner: str = action_query.context_metadata['user_email'].split(
                 "@"
             )[
                 0
             ]  # get name only
         else:
 
-            mount: List[str] = [
+            mount:  List[List[str]] = [
                 [
                     "powershell.exe",
                     "-ExecutionPolicy",
