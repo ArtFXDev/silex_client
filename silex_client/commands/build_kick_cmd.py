@@ -64,6 +64,7 @@ class KickCommand(CommandBase):
         for i in range(0, len(lst), n):
             yield lst[i : i + n]
 
+
     def find_ass_sequence(self, directory: pathlib.Path, export_name: str, frame_list) -> List[str]:
         """
         return a list of ass files for a specific frame list
@@ -96,6 +97,7 @@ class KickCommand(CommandBase):
         ]  # Target a ass file in a sequence to be used as pattern
         ass_dir: pathlib.Path = ass_target.parents[0]
         ass_name: str = str(ass_target.stem).split(".")[0]
+
 
         directory: pathlib.Path = parameters["directory"]
         export_name: pathlib.Path = parameters["export_name"]
@@ -148,7 +150,9 @@ class KickCommand(CommandBase):
             ass_files: List[str] = self.find_ass_sequence(ass_dir, ass_name, chunk)
             logger.info(f"Creating a new task with frames: {start} to {end}")
 
-            cmd_dict[f"frames={start}-{end}"] = arg_list + ['-AssFiles'] + [','.join(ass_files)]
+            cmd_dict[f"frames={start}-{end}"] = (
+                arg_list + ["-AssFiles"] + [",".join(ass_files)]
+            )
 
         return {"commands": cmd_dict, "file_name": ass_name}
 
@@ -160,5 +164,6 @@ class KickCommand(CommandBase):
     ):
 
         # show resolution only if context
+
         if action_query.context_metadata["project"] is not None:
             self.command_buffer.parameters["export_name"].hide = True
