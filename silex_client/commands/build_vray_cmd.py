@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import logging
-import os
 import pathlib
 import typing
-from typing import Any, Dict, Generator, List
+from typing import Any, Dict, List
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import PathParameterMeta
+from silex_client.utils.utils import chunks
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -38,11 +38,6 @@ class VrayCommand(CommandBase):
         "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
     }
-
-    def _chunks(self, lst: List[Any], n: int) -> Generator[list[Any], None, None]:
-        """Yield successive n-sized chunks from lst."""
-        for i in range(0, len(lst), n):
-            yield lst[i : i + n]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -96,7 +91,7 @@ class VrayCommand(CommandBase):
         frames_list: List[int] = list(FrameSet(frame_range))
 
         # Split frames by task size
-        frame_chunks: List[List[int]] = list(self._chunks(frames_list, task_size))
+        frame_chunks = list(chunks(frames_list, task_size))
         cmd_dict: Dict[str, List[str]] = dict()
 
         # Creating tasks for each frame chunk
