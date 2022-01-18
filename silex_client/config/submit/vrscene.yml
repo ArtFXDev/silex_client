@@ -44,15 +44,8 @@ vrscene:
           label: "V-Ray Job parameters"
           ask_user: true
           parameters:
-            export_dir:
-              value: !command-output "build_output_path:build_output_path:directory"
-              hide: true
-            export_name:
-              value: !command-output "build_output_path:build_output_path:file_name"
-              hide: true
-            extension:
-              value: !command-output "build_output_path:select_list"
-              hide: true
+            output_filename:
+              value: !command-output "build_output_path:build_output_path:full_path"
 
         submit_to_tractor:
           label: "Submit"
