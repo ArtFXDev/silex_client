@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 import fileseq
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import PathParameterMeta
-from silex_client.utils.utils import chunks
+from silex_client.utils.utils import Utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -104,7 +104,7 @@ class KickCommand(CommandBase):
 
         # Cut frames by task
         frame_chunks: List[str] = list(fileseq.FrameSet(frame_range))
-        task_chunks: List[List[str]] = list(chunks(frame_chunks, task_size))
+        task_chunks: List[List[str]] = list(Utils.chunks(frame_chunks, task_size))
         cmd_dict: Dict[str, List[str]] = dict()
 
         # Create commands
