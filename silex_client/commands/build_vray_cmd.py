@@ -8,7 +8,7 @@ from typing import Any, Dict, Generator, List
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta
+from silex_client.utils.parameter_types import PathParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -29,11 +29,6 @@ class VrayCommand(CommandBase):
             "label": "Frame range (start, end, step)",
             "type": FrameSet,
             "value": "1-50x1",
-        },
-        "resolution": {
-            "label": "Resolution ( width, height )",
-            "type": IntArrayParameterMeta(2),
-            "value": [1920, 1080],
         },
         "task_size": {
             "label": "Task size",
@@ -58,7 +53,6 @@ class VrayCommand(CommandBase):
     ):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
-        resolution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
         skip_existing: int = int(parameters["skip_existing"])
 
@@ -94,10 +88,6 @@ class VrayCommand(CommandBase):
 
             # Add the V-Ray output path argument
             vray_args.append(f"-imgFile={parameters['output_filename']}")
-
-            vray_args.extend(
-                [f"-imgWidth={resolution[0]}", f"-imgHeight={resolution[1]}"]
-            )
 
         if frame_range is None:
             raise Exception("No frame range found")
