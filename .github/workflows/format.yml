@@ -3,13 +3,14 @@ name: Format
 on:
   workflow_dispatch:
 
-  push:
   pull_request:
-    branches: [dev]
-    types: [closed]
+    branches:
+      - dev
+  types: [closed]
 
 jobs:
   conform:
+    if: ${{ github.event.pull_request.merged }}
     runs-on: ubuntu-latest
 
     steps:
