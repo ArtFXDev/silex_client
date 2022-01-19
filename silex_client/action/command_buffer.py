@@ -102,7 +102,7 @@ class CommandBuffer(BaseBuffer):
             # If the module is not a subclass or CommandBase, return an error
             raise ImportError("The given command does not inherit from CommandBase")
         except (ImportError, AttributeError, ModuleNotFoundError) as exception:
-            logger.error("Invalid command path, skipping %s", path)
+            logger.error("Invalid command path, skipping %s (%s)", path, exception)
             self.status = Status.INVALID
             if os.getenv("SILEX_LOG_LEVEL") == "DEBUG":
                 traceback.print_tb(exception.__traceback__)
