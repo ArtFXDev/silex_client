@@ -131,21 +131,25 @@ class TractorSubmiter(CommandBase):
         # Create the render tasks
         for task_title, task_argv in render_tasks.items():
             # Create task
-            task = author.Task(title=task_title)
+            task: author.Task = author.Task(title=task_title)
 
             # Add precommands
             all_commands = precommands + [task_argv]
 
+            last_id = None
+
             # Add every command to the task
             for index, argv in enumerate(all_commands):
                 # Generates a random uuid for every command
-                params = {"argv": argv, "id": str(uuid.uuid4())}
+                id = str(uuid.uuid4())
+                params = {"argv": argv, "id": id}
 
                 # Every command refers to the previous one
                 if index > 0:
-                    params["refersto"] = task.cmds[index - 1].id
+                    params["refersto"] = last_id
 
                 task.addCommand(author.Command(**params))
+                last_id = id
 
             # Add the task as child
             job.addChild(task)
