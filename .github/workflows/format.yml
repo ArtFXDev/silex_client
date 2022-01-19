@@ -1,14 +1,12 @@
-name: Conform
+name: Format
 
 on:
   workflow_dispatch:
-  
+
   push:
     branches:
-    - dev
+      - dev
   pull_request:
-    branches:
-    - dev
 
 jobs:
   conform:
