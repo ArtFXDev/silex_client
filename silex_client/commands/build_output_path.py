@@ -107,15 +107,12 @@ class BuildOutputPath(CommandBase):
 
         else:
             # Get the entity dict
+            task_id = action_query.context_metadata["entity_id"]
             entity = None
             if action_query.context_metadata["entity_type"] == "shot":
-                entity = await gazu.shot.get_shot(
-                    action_query.context_metadata["entity_id"]
-                )
+                entity = await gazu.shot.get_shot(task_id)
             else:
-                entity = await gazu.asset.get_asset(
-                    action_query.context_metadata["entity_id"]
-                )
+                entity = await gazu.asset.get_asset(task_id)
 
             # Get the task type
             task_type = await gazu.task.get_task_type(
@@ -166,12 +163,16 @@ class BuildOutputPath(CommandBase):
     ):
         create_output_dir: bool = parameters["create_output_dir"]
         create_temp_dir: bool = parameters["create_temp_dir"]
+        use_current_context: bool = parameters["use_current_context"]
         name: str = parameters["name"]
         task_id: str = parameters["task"]
         extension: str = parameters["output_type"]
         frame_set: fileseq.FrameSet = parameters["frame_set"]
         padding: int = parameters["padding"]
         nb_elements = len(frame_set)
+
+        if use_current_context:
+            task_id = action_query.context_metadata["task_id"]
 
         output_path = await self._get_gazu_output_path(action_query, logger, parameters)
         if output_path is None:
