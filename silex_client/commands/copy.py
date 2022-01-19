@@ -67,11 +67,11 @@ class Copy(CommandBase):
             os.makedirs(str(destination_dir), exist_ok=True)
 
             # Execute the copy in a different thread to not block the event loop
-            def copy():
+            def copy(source, destination):
                 with contextlib.suppress(shutil.SameFileError):
-                    shutil.copy(source_path, destination_dir)
+                    shutil.copy(source, destination)
 
-            await execute_in_thread(copy)
+            await execute_in_thread(copy, source_path, destination_dir)
 
             destination_paths.append(destination_dir / source_path.name)
 
