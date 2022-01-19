@@ -85,15 +85,30 @@ class BuildWorkPath(CommandBase):
 
         existing_sequences = fileseq.findSequencesOnDisk(os.path.dirname(full_path))
 
-        for sequence in existing_sequences:
+        # Only get the sequences of that software
+        software_sequences = [
+            seq
+            for seq in existing_sequences
+            if software["file_extension"] in seq.extension()
+        ]
+
+        matching_sequence = None
+
+        for sequence in software_sequences:
             # Check if the filename is present in any of the file sequences
             if pathlib.Path(work_path).stem in [
                 pathlib.Path(path).stem for path in sequence
             ]:
                 # Set the version to the latest of that sequence
-                version = max(version, sequence.frameSet()[-1])
+                last_version = sequence.frameSet()[-1]
 
-        if parameters["increment"]:
+                # If the version is greater, use that
+                if last_version > version:
+                    version = last_version
+                    matching_sequence = sequence
+
+        # We also increment when an existing sequence was found
+        if matching_sequence or parameters["increment"]:
             version += 1
 
         if version != initial_version:
