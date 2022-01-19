@@ -8,6 +8,7 @@ import fileseq
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
+from silex_client.utils.thread import execute_in_thread
 from silex_client.utils.parameter_types import (
     ListParameterMeta,
     PathParameterMeta,
@@ -59,7 +60,7 @@ class Rename(CommandBase):
             type=TextParameterMeta("info"),
             name="info",
             label="Info",
-            value=f"The file:\n{file_path}\nAlready exists",
+            value=f"The path:\n{file_path}\nAlready exists",
         )
         new_parameter = ParameterBuffer(
             type=RadioSelectParameterMeta(
@@ -127,12 +128,12 @@ class Rename(CommandBase):
                     action_query.store["rename_override"] = response
                 if response in ["Override", "Always override"]:
                     force = True
-                    os.remove(new_path)
+                    await execute_in_thread(os.remove, new_path)
                 if response in ["Keep existing", "Always keep existing"]:
                     new_paths.append(new_path)
                     continue
 
-            os.rename(source_path, new_path)
+            await execute_in_thread(os.rename, source_path, new_path)
             new_paths.append(new_path)
 
         return {
