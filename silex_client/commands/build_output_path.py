@@ -87,58 +87,18 @@ class BuildOutputPath(CommandBase):
     }
 
     @staticmethod
-    async def _get_gazu_output_path(
-        action_query: ActionQuery, logger: logging.Logger, parameters: dict
-    ) -> Optional[pathlib.Path]:
-        task_id: str = parameters["task"]
-        use_current_context: bool = parameters["use_current_context"]
-        output_type: str = parameters["output_type"]
-        frame_set: fileseq.FrameSet = parameters["frame_set"]
-        nb_elements = len(frame_set)
-
+    async def _get_gazu_output_path(task_id: str, output_type: str, nb_elements: int) -> Optional[pathlib.Path]:
         # Override with the given task if specified
-        if not use_current_context:
-            if task_id is None:
-                return None
-            task = await gazu.task.get_task(task_id)
-            task_name = task["name"]
-            entity = task.get("entity", {}).get("id")
-            task_type = task.get("task_type", {}).get("id")
-
-        else:
-            # Get the entity dict
-            task_id = action_query.context_metadata["entity_id"]
-            entity = None
-            if action_query.context_metadata["entity_type"] == "shot":
-                entity = await gazu.shot.get_shot(task_id)
-            else:
-                entity = await gazu.asset.get_asset(task_id)
-
-            # Get the task type
-            task_type = await gazu.task.get_task_type(
-                action_query.context_metadata["task_type_id"]
-            )
-
-            if task_type is None:
-                logger.error(
-                    "Could not get the task type %s: The task type does not exists",
-                    action_query.context_metadata["task_type_id"],
-                )
-                raise Exception(
-                    "Could not get the task type %s: The task type does not exists",
-                    action_query.context_metadata["task_type_id"],
-                )
-
-            # Get the task name
-            task_name = action_query.context_metadata["task"]
+        if task_id is None:
+            return None
+        task = await gazu.task.get_task(task_id)
+        task_name = task["name"]
+        entity = task.get("entity", {}).get("id")
+        task_type = task.get("task_type", {}).get("id")
 
         # Get the output type
         output_type = await gazu.files.get_output_type_by_short_name(output_type)
         if output_type is None:
-            logger.error(
-                "Could not build the output type %s: The output type does not exists in the zou database",
-                output_type,
-            )
             raise Exception(
                 "Could not build the output type {output_type}: The output type does not exists in the zou database",
             )
@@ -164,6 +124,7 @@ class BuildOutputPath(CommandBase):
         create_output_dir: bool = parameters["create_output_dir"]
         create_temp_dir: bool = parameters["create_temp_dir"]
         use_current_context: bool = parameters["use_current_context"]
+        output_type: str = parameters["output_type"]
         name: str = parameters["name"]
         task_id: str = parameters["task"]
         extension: str = parameters["output_type"]
@@ -174,7 +135,7 @@ class BuildOutputPath(CommandBase):
         if use_current_context:
             task_id = action_query.context_metadata["task_id"]
 
-        output_path = await self._get_gazu_output_path(action_query, logger, parameters)
+        output_path = await self._get_gazu_output_path(task_id, output_type, nb_elements)
         if output_path is None:
             raise Exception("Could not get the output path from gazu")
 
@@ -252,9 +213,18 @@ class BuildOutputPath(CommandBase):
         if not use_existing_name_parameter.get_value(action_query):
             name_parameter.type = str
         else:
+            use_current_context: bool = parameters["use_current_context"]
+            task_id: str = parameters["task"]
+            output_type: str = parameters["output_type"]
+            frame_set: fileseq.FrameSet = parameters["frame_set"]
+            nb_elements = len(frame_set)
+
+            if use_current_context:
+                task_id = action_query.context_metadata["task_id"]
+
             # Get the selected task an populate the existing name
             output_path = await self._get_gazu_output_path(
-                action_query, logger, parameters
+                task_id, output_type, nb_elements
             )
             if output_path is not None and output_path.parent.exists():
                 name_parameter.type = SelectParameterMeta(
