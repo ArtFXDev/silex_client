@@ -69,7 +69,7 @@ class IntArrayParameterMeta(CommandParameterMeta):
             }
 
         def get_default():
-            return [0 for i in range(size)]
+            return [0 for _ in range(size)]
 
         attributes = {
             "__init__": __init__,
