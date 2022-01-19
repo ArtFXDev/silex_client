@@ -119,7 +119,7 @@ class Rename(CommandBase):
 
             # Handle override of existing file
             if new_path.exists() and force:
-                os.remove(new_path)
+                await execute_in_thread(os.remove, new_path)
             elif new_path.exists():
                 response = action_query.store.get("rename_override")
                 if response is None:

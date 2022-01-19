@@ -102,9 +102,9 @@ class Move(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-
         src: List[str] = [str(source) for source in parameters["src"]]
         dst: str = str(parameters["dst"])
+        force: bool = parameters["force"]
 
         # Check for file to copy
         if not os.path.exists(dst):
@@ -118,7 +118,7 @@ class Move(CommandBase):
             new_path = pathlib.Path(dst)
             # Handle override of existing file
             if new_path.exists() and force:
-                os.remove(new_path)
+                await execute_in_thread(self.remove, dst)
             elif new_path.exists():
                 response = action_query.store.get("move_override")
                 if response is None:
