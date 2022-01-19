@@ -1,4 +1,3 @@
-
 def chunks(to_split_list, chunk_size):
     """
     Yield successive n-sized chunks from lst.
