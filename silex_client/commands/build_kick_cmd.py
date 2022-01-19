@@ -7,8 +7,8 @@ from typing import Any, Dict, List
 
 import fileseq
 from silex_client.action.command_base import CommandBase
+from silex_client.utils import frames
 from silex_client.utils.parameter_types import PathParameterMeta
-from silex_client.utils import utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -36,11 +36,7 @@ class KickCommand(CommandBase):
             "type": int,
             "value": 10,
         },
-        "output_filename": {
-            "type": pathlib.Path,
-            "value": "",
-            "hide": True
-        }
+        "output_filename": {"type": pathlib.Path, "value": "", "hide": True},
     }
 
     def _find_sequence(
@@ -49,11 +45,15 @@ class KickCommand(CommandBase):
         """
         Return a files sequence for a specific frame range
         """
-        
-        path_without_extenstion: pathlib.Path = (file_path.parents[0] / file_path.stem)
-        extension: str = f'.{frame_range}#.{file_path.suffix}'
-        return list(fileseq.FileSequence( path_without_extenstion.with_suffix(extension), pad_style=fileseq.PAD_STYLE_HASH4))
 
+        path_without_extenstion: pathlib.Path = file_path.parents[0] / file_path.stem
+        extension: str = f".{frame_range}#.{file_path.suffix}"
+        return list(
+            fileseq.FileSequence(
+                path_without_extenstion.with_suffix(extension),
+                pad_style=fileseq.PAD_STYLE_HASH4,
+            )
+        )
 
     @CommandBase.conform_command()
     async def __call__(
@@ -71,19 +71,16 @@ class KickCommand(CommandBase):
         frame_range: fileseq.FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
 
-
-        kick_list: List[str] = (
-            [
-                "powershell.exe",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-NoProfile",
-                "-File",
-                "\\\\prod.silex.artfx.fr\\rez\\windows\\render_kick_ass.ps1",
-                "-ExportFile",
-                str(output_filename),
-            ]
-        )
+        kick_list: List[str] = [
+            "powershell.exe",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-NoProfile",
+            "-File",
+            "\\\\prod.silex.artfx.fr\\rez\\windows\\render_kick_ass.ps1",
+            "-ExportFile",
+            str(output_filename),
+        ]
 
         # Create list of arguents
         if action_query.context_metadata["project"] is not None:
@@ -104,21 +101,23 @@ class KickCommand(CommandBase):
 
         # Cut frames by task
         frame_chunks: List[str] = list(fileseq.FrameSet(frame_range))
-        task_chunks: List[List[str]] = list(utils.chunks(frame_chunks, task_size))
+        task_chunks: List[List[str]] = list(frames.chunks(frame_chunks, task_size))
         cmd_dict: Dict[str, List[str]] = dict()
 
         # Create commands
         for chunk in task_chunks:
             # Get ass sequence  using a specific frame_range
-            ass_files: List[pathlib.Path] = self._find_sequence(ass_file, fileseq.FrameSet(chunk))
+            ass_files: List[pathlib.Path] = self._find_sequence(
+                ass_file, fileseq.FrameSet(chunk)
+            )
 
             # Converting chunk back to a frame set
             task_name = fileseq.FrameSet(chunk).frameRange()
 
             # Add ass sequence to argument list
-            cmd_dict[task_name] = (
-                kick_list + ["-AssFiles", ",".join(map(str, ass_files))]
-            )
+            cmd_dict[task_name] = kick_list + [
+                "-AssFiles",
+                ",".join(map(str, ass_files)),
+            ]
 
         return {"commands": cmd_dict, "file_name": ass_file.stem}
-
