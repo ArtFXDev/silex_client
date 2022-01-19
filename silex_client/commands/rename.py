@@ -130,6 +130,7 @@ class Rename(CommandBase):
                     force = True
                     await execute_in_thread(os.remove, new_path)
                 if response in ["Keep existing", "Always keep existing"]:
+                    await execute_in_thread(os.remove, source_path)
                     new_paths.append(new_path)
                     continue
 
