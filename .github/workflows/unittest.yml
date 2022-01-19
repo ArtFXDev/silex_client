@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       log_level:
-        description: 'Log level'
+        description: "Log level"
         required: false
-        default: 'warning'
+        default: "warning"
         type: choice
         options:
           - error
@@ -34,8 +34,6 @@ jobs:
         include:
           - os: ubuntu-latest
             path: ~/.cache/pip
-          - os: macos-latest
-            path: ~/Library/Caches/pip
           - os: windows-latest
             path: ~\AppData\Local
 
