@@ -1,4 +1,5 @@
 # Silex client
+
 Python library to execute actions on DCCs and interface with the silex socket service end using websocket.
 
 ![python](https://img.shields.io/badge/PYTHON-blue?style=for-the-badge&logo=Python&logoColor=white)
@@ -9,7 +10,7 @@ Python library to execute actions on DCCs and interface with the silex socket se
 <br>
 <br>
 ![unit test](https://github.com/ArtFXDev/silex_client/actions/workflows/unittest.yml/badge.svg)
-![conform code](https://github.com/ArtFXDev/silex_client/actions/workflows/conform.yml/badge.svg)
+![format code](https://github.com/ArtFXDev/silex_client/actions/workflows/format.yml/badge.svg)
 
 ## Get started
 
@@ -19,6 +20,7 @@ Python library to execute actions on DCCs and interface with the silex socket se
 - REZ (optional)
 
 ### Installation
+
 ```bash
 # Simple global install
 $ pip install git+https://github.com/ArtFXDev/silex_client.git
@@ -46,7 +48,6 @@ $ silex action <action_name> --task-id <cgwire_task_id> --parameter <parameter_n
 # To launch a dcc in a silex context (the silex plugin of the selected dcc must be installed)
 $ silex launch --dcc <dcc_name> --task_id <cgwire_task_id>
 ```
-
 
 ### Python
 

@@ -22,9 +22,9 @@ arnold_3D4:
           path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
           ask_user: true
           parameters:
-            cmd_dict: 
+            cmd_dict:
               value: !command-output "send_kick_render:build_kick_cmd:commands"
               hide: true
-            job_title: 
+            job_title:
               value: !command-output "send_kick_render:build_kick_cmd:file_name"
               hide: true

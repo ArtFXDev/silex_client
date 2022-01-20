@@ -5,8 +5,10 @@ import pathlib
 import typing
 from typing import Any, Dict, List
 
+from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import IntArrayParameterMeta
+from silex_client.utils.command import CommandBuilder
+from silex_client.utils.frames import split_frameset
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -15,15 +17,15 @@ if typing.TYPE_CHECKING:
 
 class BuildNukeCommand(CommandBase):
     """
-    Put the given file on database and to locked file system
+    Construct a Nuke command for the render farm
     """
 
     parameters = {
         "scene_file": {"label": "Scene file", "type": pathlib.Path},
         "frame_range": {
-            "label": "Frame range",
-            "type": IntArrayParameterMeta(2),
-            "value": [0, 100],
+            "label": "Frame range (start, end, step)",
+            "type": FrameSet,
+            "value": "1-50x1",
         },
         "task_size": {
             "label": "Task size",
@@ -31,11 +33,6 @@ class BuildNukeCommand(CommandBase):
             "value": 10,
         },
     }
-
-    def _chunks(self, lst, n):
-        """Yield successive n-sized chunks from lst."""
-        for i in range(0, len(lst), n):
-            yield lst[i : i + n]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -45,27 +42,25 @@ class BuildNukeCommand(CommandBase):
         logger: logging.Logger,
     ):
         scene: pathlib.Path = parameters["scene_file"]
-        frame_range: List[int] = parameters["frame_range"]
+        frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
 
-        arg_list = [
-            # V-Ray exe path
-            "C:/Nuke13.0v3/Nuke13.0.exe",
-            # Execute in interactive mode
-            "-i",
+        nuke_cmd = CommandBuilder("nuke")
+        nuke_cmd.add_rez_env(["nuke"])
+
+        # Execute in interactive mode
+        nuke_cmd.param("i")
+
+        frame_chunks = split_frameset(frame_range, task_size)
+        cmd_dict: Dict[str, List[str]] = {}
+
+        for chunk in frame_chunks:
+            # Specify the frames
+            nuke_cmd.param("F", chunk.frameRange())
+
             # Specify the scene file
-            "-x",
-            f"{scene}",
-        ]
+            nuke_cmd.param("x", str(scene))
 
-        chunks = list(
-            self._chunks(range(frame_range[0], frame_range[1] + 1), task_size)
-        )
-        cmd_dict = dict()
-
-        for chunk in chunks:
-            start, end = chunk[0], chunk[-1]
-            logger.info(f"Creating a new task with frames: {start} {end}")
-            cmd_dict[f"frames={start}-{end}"] = arg_list + ["-F", f"{start}-{end}"]
+            cmd_dict[chunk.frameRange()] = nuke_cmd.as_argv()
 
         return {"commands": cmd_dict, "file_name": scene.stem}

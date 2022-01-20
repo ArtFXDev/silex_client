@@ -9,22 +9,15 @@ vrscene_3D4:
           path: "silex_client.commands.build_vray_cmd.VrayCommand"
           label: "V-Ray Job parameters"
           ask_user: true
-          parameters:
-            export_dir:
-              hide: true
-            export_name:
-              hide: true
-            extension:
-              hide: true
 
         submit_to_tractor:
           label: "Submit"
           path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
           ask_user: true
           parameters:
-            cmd_dict: 
+            cmd_dict:
               value: !command-output "send_vray_render:build_vray_cmd:commands"
               hide: true
-            job_title: 
+            job_title:
               value: !command-output "send_vray_render:build_vray_cmd:file_name"
               hide: true

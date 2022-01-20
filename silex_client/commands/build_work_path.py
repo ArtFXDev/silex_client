@@ -11,7 +11,6 @@ import gazu.asset
 import gazu.files
 import gazu.shot
 import gazu.task
-
 from silex_client.action.command_base import CommandBase
 
 # Forward references
@@ -42,6 +41,7 @@ class BuildWorkPath(CommandBase):
     ):
         # Get informations about the current task
         task = await gazu.task.get_task(action_query.context_metadata["task_id"])
+
         if task is None:
             logger.error(
                 "Could not build the work path: The given task %s does not exists",
@@ -53,10 +53,11 @@ class BuildWorkPath(CommandBase):
                 )
             )
 
-        # Get informations about the current software
+        # Get information about the current software
         software = await gazu.files.get_software_by_name(
             action_query.context_metadata["dcc"]
         )
+
         if software is None:
             logger.error(
                 "Could not build the work path: The given software %s does not exists",
@@ -67,30 +68,51 @@ class BuildWorkPath(CommandBase):
                     action_query.context_metadata["task_id"]
                 )
             )
+
         extension: str = software.get("file_extension", ".no")
 
-        # Build the work path
-        version = 1
-        work_path = await gazu.files.build_working_file_path(
-            task, software=software, revision=version, sep=os.path.sep
-        )
-        full_path = f"{work_path}.{extension}"
+        async def work_and_full_path(version: int) -> tuple[str, str]:
+            work_path: str = await gazu.files.build_working_file_path(
+                task, software=software, revision=version, sep=os.path.sep
+            )
+            full_path = f"{work_path}.{extension}"
+            return work_path, full_path
 
-        # Find the last version on disk
-        sequences = fileseq.findSequencesOnDisk(os.path.dirname(full_path))
-        for sequence in sequences:
-            if pathlib.Path(full_path).stem in [
+        # Build the work path
+        initial_version = 1
+        version = initial_version
+        work_path, full_path = await work_and_full_path(initial_version)
+
+        existing_sequences = fileseq.findSequencesOnDisk(os.path.dirname(full_path))
+
+        # Only get the sequences of that software
+        software_sequences = [
+            seq
+            for seq in existing_sequences
+            if software["file_extension"] in seq.extension()
+        ]
+
+        matching_sequence = None
+
+        for sequence in software_sequences:
+            # Check if the filename is present in any of the file sequences
+            if pathlib.Path(work_path).stem in [
                 pathlib.Path(path).stem for path in sequence
             ]:
-                version = sequence.frameSet()[-1]
-        # Check if we need to increment
-        if parameters["increment"]:
+                # Set the version to the latest of that sequence
+                last_version = sequence.frameSet()[-1]
+
+                # If the version is greater, use that
+                if last_version > version:
+                    version = last_version
+                    matching_sequence = sequence
+
+        # We also increment when an existing sequence was found
+        if matching_sequence or parameters["increment"]:
             version += 1
 
-        # Build the file path again
-        work_path = await gazu.files.build_working_file_path(
-            task, software=software, revision=version, sep=os.path.sep
-        )
-        full_path = f"{work_path}.{extension}"
+        if version != initial_version:
+            # Rebuild the file path again with the new version
+            _, full_path = await work_and_full_path(version)
 
         return full_path
