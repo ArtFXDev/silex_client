@@ -116,7 +116,7 @@ class Move(CommandBase):
                 raise Exception(f"{item} doesn't exist.")
 
             new_path = pathlib.Path(dst)
-            destination_path = os.path.join(dst, os.path.basename(dst))
+            destination_path = os.path.join(dst, os.path.basename(item))
             # Handle override of existing file
             if new_path.exists() and force:
                 await execute_in_thread(self.remove, destination_path)
@@ -133,5 +133,5 @@ class Move(CommandBase):
                     await execute_in_thread(self.remove, item)
                     continue
 
-            logger.info(f"Moving file from {src} to {dst}")
+            logger.info(f"Moving file from {item} to {dst}")
             await execute_in_thread(self.move, item, dst)
