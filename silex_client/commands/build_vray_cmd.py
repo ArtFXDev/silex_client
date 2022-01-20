@@ -84,7 +84,7 @@ class VrayCommand(CommandBase):
         # If the user is connected
         if "project" in action_query.context_metadata:
             # Add the project in the rez environment
-            vray_cmd.add_rez_env(action_query.context_metadata["project"].lower())
+            vray_cmd.add_rez_env([action_query.context_metadata["project"].lower()])
 
         if parameter_overrides:
             vray_cmd.param("imgWidth", resolution[0]).param("imgHeight", resolution[1])

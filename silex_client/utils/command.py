@@ -37,12 +37,14 @@ class CommandBuilder:
         Return the full command as a list of tokens (argv)
         """
         args = [
-            f"-{key}={value}" if value else f"-{key}"
+            f"-{key}={value}" if value is not None else f"-{key}"
             for (key, value) in self.params.items()
         ]
-        command = [self.executable] + args
+        command: List[str] = [self.executable] + args
 
         if self.rez_packages:
+            print(self.rez_packages)
+            print(command)
             command = ["rez", "env"] + self.rez_packages + ["--"] + command
 
         return command
