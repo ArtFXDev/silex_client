@@ -26,11 +26,11 @@ class CommandBuilder:
             self.param(key, false_value)
         return self
 
-    def add_rez_env(self, packages: str):
+    def add_rez_env(self, packages: List[str]):
         """
         Set the rez packages that will be resolved with this command
         """
-        self.rez_cmd = ["rez", "env", packages, "--"]
+        self.rez_cmd = ["rez", "env"] + packages + ["--"]
 
     def as_argv(self) -> List[str]:
         """
