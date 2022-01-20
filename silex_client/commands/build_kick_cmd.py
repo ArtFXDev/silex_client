@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 import fileseq
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import frames
+from silex_client.utils.command import CommandBuilder
 from silex_client.utils.parameter_types import PathParameterMeta
 
 # Forward references
@@ -48,6 +49,7 @@ class KickCommand(CommandBase):
 
         path_without_extenstion: pathlib.Path = file_path.parents[0] / file_path.stem
         extension: str = f".{frame_range}#.{file_path.suffix}"
+        
         return list(
             fileseq.FileSequence(
                 path_without_extenstion.with_suffix(extension),
@@ -70,36 +72,21 @@ class KickCommand(CommandBase):
         output_filename: pathlib.Path = parameters["output_filename"]
         frame_range: fileseq.FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
+        
+        # Call Kick render script on the server
+        kick_cmd = CommandBuilder("powershell.exe")
+        kick_cmd.param("-ExecutionPolicy").param("Bypass").param("-NoProfile").param("-File").param('\\\\prod.silex.artfx.fr\\rez\\windows\\render_kick_ass.ps1')
+        kick_cmd.param("-ExportFile", str(output_filename))
 
-        kick_list: List[str] = [
-            "powershell.exe",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-NoProfile",
-            "-File",
-            "\\\\prod.silex.artfx.fr\\rez\\windows\\render_kick_ass.ps1",
-            "-ExportFile",
-            str(output_filename),
-        ]
-
-        # Create list of arguents
+        # Specify rez environement
         if action_query.context_metadata["project"] is not None:
-
-            # Prepend rez arguments
-            rez_args: List[str] = [
-                "rez",
-                "env",
-                action_query.context_metadata["project"].lower(),
-                "--",
-            ]
-
-            kick_list = rez_args + kick_list
+            kick_cmd.add_rez_env([action_query.context_metadata["project"].lower()])
 
         # Check if frame_range exists
         if frame_range is None:
             raise Exception("No frame range found")
 
-        # Cut frames by task
+        # Split frames by task
         frame_chunks: List[str] = list(fileseq.FrameSet(frame_range))
         task_chunks: List[List[str]] = list(frames.chunks(frame_chunks, task_size))
         cmd_dict: Dict[str, List[str]] = dict()
@@ -115,9 +102,6 @@ class KickCommand(CommandBase):
             task_name = fileseq.FrameSet(chunk).frameRange()
 
             # Add ass sequence to argument list
-            cmd_dict[task_name] = kick_list + [
-                "-AssFiles",
-                ",".join(map(str, ass_files)),
-            ]
+            cmd_dict[task_name] = kick_cmd.param( "-AssFiles",",".join(map(str, ass_files))).as_argv()
 
         return {"commands": cmd_dict, "file_name": ass_file.stem}
