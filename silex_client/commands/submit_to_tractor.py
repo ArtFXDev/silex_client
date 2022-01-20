@@ -50,7 +50,7 @@ class TractorSubmiter(CommandBase):
         "job_title": {"label": "Job title", "type": str, "value": "No Title"},
         "project": {
             "label": "Project",
-            "type": str,
+            "type": SelectParameterMeta(),
         },
     }
 
@@ -131,21 +131,25 @@ class TractorSubmiter(CommandBase):
         # Create the render tasks
         for task_title, task_argv in render_tasks.items():
             # Create task
-            task = author.Task(title=task_title)
+            task: author.Task = author.Task(title=task_title)
 
             # Add precommands
             all_commands = precommands + [task_argv]
 
+            last_id = None
+
             # Add every command to the task
             for index, argv in enumerate(all_commands):
                 # Generates a random uuid for every command
-                params = {"argv": argv, "id": str(uuid.uuid4())}
+                id = str(uuid.uuid4())
+                params = {"argv": argv, "id": id}
 
                 # Every command refers to the previous one
                 if index > 0:
-                    params["refersto"] = task.cmds[index - 1].id
+                    params["refersto"] = last_id
 
                 task.addCommand(author.Command(**params))
+                last_id = id
 
             # Add the task as child
             job.addChild(task)
@@ -204,24 +208,13 @@ class TractorSubmiter(CommandBase):
         pool_parameter = self.command_buffer.parameters["pools"]
         project_parameter = self.command_buffer.parameters["project"]
 
-        pool_parameter.type = MultipleSelectParameterMeta(*pools)
-
-        # User the default value for profiles
-        if pool_parameter.value is None:
-            pool_parameter.value = pool_parameter.type.get_default()
+        pool_parameter.rebuild_type(*pools)
 
         # If user have a project
         if "project" in action_query.context_metadata:
             # Use the project as value
-            project_parameter.type = SelectParameterMeta(
-                action_query.context_metadata["project"]
-            )
+            project_parameter.rebuild_type(action_query.context_metadata["project"])
             project_parameter.hide = True
         else:
             # If there is no project in the current context return a hard coded list of project for 4th years
-            project_parameter.type = SelectParameterMeta(
-                "WS_Environment", "WS_Lighting"
-            )
-
-        # Apply the project as value
-        project_parameter.value = project_parameter.type.get_default()
+            project_parameter.rebuild_type("WS_Environment", "WS_Lighting")

@@ -45,6 +45,19 @@ class ParameterBuffer(BaseBuffer):
         if self.value is None and isinstance(self.type, CommandParameterMeta):
             self.value = self.type.get_default()
 
+    def rebuild_type(self, *args, **kwargs):
+        """
+        Allows changing the value of the parameter by rebuilding the type
+        """
+        if not isinstance(self.type, CommandParameterMeta):
+            return
+
+        # Rebuild the parameter type
+        self.type = type(self.type)(*args, **kwargs)
+
+        if self.value is None:
+            self.value = self.type.get_default()
+
     @property
     def outdated_caches(self) -> bool:
         """

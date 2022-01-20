@@ -7,8 +7,9 @@ from typing import Any, Dict, List
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import PathParameterMeta
-from silex_client.utils.utils import chunks
+from silex_client.utils.command import CommandBuilder
+from silex_client.utils.frames import split_frameset
+from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -37,7 +38,27 @@ class VrayCommand(CommandBase):
         },
         "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
+        "parameter_overrides": {
+            "type": bool,
+            "label": "Parameter overrides",
+            "value": False,
+        },
+        "resolution": {
+            "label": "Resolution ( width, height )",
+            "type": IntArrayParameterMeta(2),
+            "value": [1920, 1080],
+            "hide": True,
+        },
     }
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        hide_overrides = not parameters["parameter_overrides"]
+        self.command_buffer.parameters["resolution"].hide = hide_overrides
 
     @CommandBase.conform_command()
     async def __call__(
@@ -49,59 +70,38 @@ class VrayCommand(CommandBase):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
-        skip_existing: int = int(parameters["skip_existing"])
+        parameter_overrides: bool = parameters["parameter_overrides"]
+        resolution: List[int] = parameters["resolution"]
 
-        vray_args: List[str] = [
-            # V-Ray exe path
-            "C:/Maya2022/Maya2022/vray/bin/vray.exe",
-            # Don't show VFB (render view)
-            "-display=0",
-            # Update frequency for logs
-            "-progressIncrement=5",
-            # Don't format logs with colors
-            "-progressUseColor=0",
-            # Use proper carrier returns
-            "-progressUseCR=0",
-            # Specify the scene file
-            f"-sceneFile={scene}",
-            # Render already existing frames or not
-            f"-skipExistingFrames={skip_existing}",
-            # "-rtEngine=5", # CUDA or CPU?
-        ]
+        vray_cmd = CommandBuilder("C:/Maya2022/Maya2022/vray/bin/vray.exe")
 
-        # Check if project in context
+        vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
+        vray_cmd.param("progressIncrement", 5)
+        vray_cmd.param("sceneFile", scene)
+        vray_cmd.param("skipExistingFrames", int(parameters["skip_existing"]))
+        vray_cmd.param("imgFile", parameters["output_filename"])
+
+        # If the user is connected
         if "project" in action_query.context_metadata:
-            # Prepend rez arguments
-            rez_args: List[str] = [
-                "rez",
-                "env",
-                action_query.context_metadata["project"].lower(),
-                "--",
-            ]
+            # Add the project in the rez environment
+            vray_cmd.add_rez_env(action_query.context_metadata["project"].lower())
 
-            vray_args = rez_args + vray_args
+        if parameter_overrides:
+            vray_cmd.param("imgWidth", resolution[0]).param("imgHeight", resolution[1])
 
-            # Add the V-Ray output path argument
-            vray_args.append(f"-imgFile={parameters['output_filename']}")
-
-        if frame_range is None:
-            raise Exception("No frame range found")
-
-        # Evaluate frame set expression
-        frames_list: List[int] = list(FrameSet(frame_range))
+        # This is going to hold all the separate commands argv
+        cmd_dict: Dict[str, List[str]] = {}
 
         # Split frames by task size
-        frame_chunks = list(chunks(frames_list, task_size))
-        cmd_dict: Dict[str, List[str]] = dict()
+        frame_chunks = split_frameset(frame_range, task_size)
 
         # Creating tasks for each frame chunk
         for chunk in frame_chunks:
-            fmt_frames = ";".join(map(str, chunk))
+            fmt_frames = ";".join(map(str, list(chunk)))
 
-            # Converting the chunk back to a frame set
-            task_title = FrameSet(chunk).frameRange()
+            task_title = chunk.frameRange()
 
             # Add the frames argument
-            cmd_dict[task_title] = vray_args + ["-frames=", fmt_frames]
+            cmd_dict[task_title] = vray_cmd.param("frames", fmt_frames).as_argv()
 
         return {"commands": cmd_dict, "file_name": scene.stem}
