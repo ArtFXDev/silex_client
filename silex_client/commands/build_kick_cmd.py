@@ -48,7 +48,7 @@ class KickCommand(CommandBase):
         """
 
         without_extension: pathlib.Path = file_path.parents[0] / file_path.stem
-        frame_pattern: str = f".{frame_range}#.{file_path.suffix}"
+        frame_pattern = f".{frame_range}#.{file_path.suffix}"
 
         sequence = fileseq.FileSequence(
             without_extension.with_suffix(frame_pattern),
@@ -77,7 +77,7 @@ class KickCommand(CommandBase):
             .param("File", "\\\\prod.silex.artfx.fr\\rez\\windows\\render_kick_ass.ps1")
         )
 
-        kick_cmd.param("-ExportFile", str(output_filename))
+        kick_cmd.param("ExportFile", str(output_filename))
 
         # Specify rez environement
         if action_query.context_metadata["project"] is not None:
@@ -95,9 +95,9 @@ class KickCommand(CommandBase):
             )
 
             # Converting chunk back to a frame set
-            task_name = fileseq.FrameSet(chunk).frameRange()
+            task_name = chunk.frameRange()
 
             # Add ass sequence to argument list
-            commands[task_name] = kick_cmd.param("-AssFiles", ",".join(ass_files))
+            commands[task_name] = kick_cmd.param("AssFiles", ",".join(ass_files))
 
         return {"commands": commands, "file_name": ass_file.stem}
