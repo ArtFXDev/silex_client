@@ -54,7 +54,7 @@ class CommandBuilder:
             if value is not None:
                 if self.delimiter is not None:
                     # In case of a -key=value parameter
-                    args.append(f"-{key}{self.delimiter}{value}")
+                    args.append(f"-{key}{self.delimiter}{str(value)}")
                 else:
                     # If there's no delimiter we add the values with spaces
                     # eg: -frames 0 1 5
