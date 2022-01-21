@@ -7,7 +7,10 @@ class CommandBuilder:
     """
 
     def __init__(
-        self, executable: str, rez_packages: List[str] = [], delimiter: Optional[str] = "="
+        self,
+        executable: str,
+        rez_packages: List[str] = [],
+        delimiter: Optional[str] = "=",
     ):
         self.executable = executable
         self.rez_cmd = None
@@ -24,9 +27,9 @@ class CommandBuilder:
         return self
 
     def set_last_param(self, last_parameter: str):
-        '''
+        """
         Set last aprameter in command
-        '''
+        """
         self.last_param = last_parameter
 
     def disable(self, keys: List[str], false_value: Union[int, bool] = 0):
@@ -64,12 +67,14 @@ class CommandBuilder:
             else:
                 # We just add -key as a flag
                 args.append(f"-{key}")
-        
-        args.append(self.last_param)
+
+        if self.last_param is not None:
+            args.append(self.last_param)
+
         command: List[str] = [self.executable] + args
 
         if self.rez_packages:
-            command = ["rez", "env"] + self.rez_packages + ["--"] + command 
+            command = ["rez", "env"] + self.rez_packages + ["--"] + command
 
         return command
 

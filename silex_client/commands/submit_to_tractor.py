@@ -11,8 +11,8 @@ import gazu.project
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.command import CommandBuilder
 from silex_client.utils.parameter_types import (
-    MultipleSelectParameterMeta,
     DictParameterMeta,
+    MultipleSelectParameterMeta,
     SelectParameterMeta,
 )
 
