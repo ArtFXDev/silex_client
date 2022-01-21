@@ -14,6 +14,7 @@ class CommandBuilder:
         self.params: Dict[str, Optional[Union[Any, List[Any]]]] = {}
         self.rez_packages = rez_packages
         self.delimiter = delimiter
+        self.last_param = None
 
     def param(self, key: str, value: Union[Any, List[Any]] = None):
         """
@@ -21,6 +22,12 @@ class CommandBuilder:
         """
         self.params[key] = value
         return self
+
+    def set_last_param(self, last_parameter: str):
+        '''
+        Set last aprameter in command
+        '''
+        self.last_param = last_parameter
 
     def disable(self, keys: List[str], false_value: Union[int, bool] = 0):
         """
@@ -57,11 +64,12 @@ class CommandBuilder:
             else:
                 # We just add -key as a flag
                 args.append(f"-{key}")
-
+        
+        args.append(self.last_param)
         command: List[str] = [self.executable] + args
 
         if self.rez_packages:
-            command = ["rez", "env"] + self.rez_packages + ["--"] + command
+            command = ["rez", "env"] + self.rez_packages + ["--"] + command 
 
         return command
 
