@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 
 class CommandBuilder:
@@ -6,19 +6,30 @@ class CommandBuilder:
     Used to construct a command with arguments with the format: executable {-key=value}
     """
 
-    def __init__(self, executable: str):
+    def __init__(
+        self, executable: str, rez_packages: List[str] = [], delimiter: Optional[str] = "="
+    ):
         self.executable = executable
         self.rez_cmd = None
-        self.params: Dict[str, Optional[str]] = {}
+        self.params: Dict[str, Optional[Union[Any, List[Any]]]] = {}
+        self.rez_packages = rez_packages
+        self.delimiter = delimiter
+        self.last_param = None
 
-    def param(self, key: str, value: Any = None):
+    def param(self, key: str, value: Union[Any, List[Any]] = None):
         """
         Add a parameter to the command
         """
         self.params[key] = value
         return self
-    
-    def disable(self, keys: List[str], false_value=0):
+
+    def set_last_param(self, last_parameter: str):
+        '''
+        Set last aprameter in command
+        '''
+        self.last_param = last_parameter
+
+    def disable(self, keys: List[str], false_value: Union[int, bool] = 0):
         """
         Set multiple keys with a false value
         """
@@ -26,26 +37,39 @@ class CommandBuilder:
             self.param(key, false_value)
         return self
 
-    def add_rez_env(self, packages: str):
+    def add_rez_package(self, package: str):
         """
-        Set the rez packages that will be resolved with this command
+        Add one rez package that will be added to the final command
         """
-        self.rez_cmd = ["rez", "env", packages, "--"]
+        self.rez_packages.append(package)
 
     def as_argv(self) -> List[str]:
         """
         Return the full command as a list of tokens (argv)
         """
-        args = [
-            f"-{key}={value}" if value is not None else f"-{key}"
-            for (key, value) in self.params.items()
-        ]
+
+        args = []
+
+        for (key, value) in self.params.items():
+            if value is not None:
+                if self.delimiter is not None:
+                    # In case of a -key=value parameter
+                    args.append(f"-{key}{self.delimiter}{str(value)}")
+                else:
+                    # If there's no delimiter we add the values with spaces
+                    # eg: -frames 0 1 5
+                    args.append(f"-{key}")
+                    values = value if type(value) == list else [value]
+                    args.extend(values)
+            else:
+                # We just add -key as a flag
+                args.append(f"-{key}")
+        
+        args.append(self.last_param)
         command: List[str] = [self.executable] + args
 
-        if self.rez_cmd:
-            print(self.rez_cmd)
-            print(command)
-            command = self.rez_cmd + command
+        if self.rez_packages:
+            command = ["rez", "env"] + self.rez_packages + ["--"] + command 
 
         return command
 

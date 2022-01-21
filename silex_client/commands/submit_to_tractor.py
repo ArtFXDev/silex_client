@@ -9,8 +9,10 @@ from typing import Any, Dict, List
 import gazu.client
 import gazu.project
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.command import CommandBuilder
 from silex_client.utils.parameter_types import (
     MultipleSelectParameterMeta,
+    DictParameterMeta,
     SelectParameterMeta,
 )
 
@@ -39,15 +41,21 @@ class TractorSubmiter(CommandBase):
             "value": [],
             "hide": True,
         },
-        "cmd_dict": {
+        "commands": {
             "label": "Commands list",
-            "type": dict,
+            "type": DictParameterMeta(str, CommandBase),
+            "hide": True,
         },
         "pools": {
             "label": "Pool",
             "type": MultipleSelectParameterMeta(),
         },
-        "job_title": {"label": "Job title", "type": str, "value": "No Title"},
+        "job_title": {
+            "label": "Job title",
+            "type": str,
+            "value": "untitled",
+            "hide": True,
+        },
         "project": {
             "label": "Project",
             "type": SelectParameterMeta(),
@@ -61,14 +69,20 @@ class TractorSubmiter(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        precommands: List[List[str]] = parameters["precommands"]
-        render_tasks: Dict[str, List[str]] = parameters["cmd_dict"]
+        precommands: List[CommandBuilder] = parameters["precommands"]
+        commands: Dict[str, CommandBuilder] = parameters["commands"]
         pools: List[str] = parameters["pools"]
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
-        owner: str = ""
+        owner = ""
 
-        # Mount NAS server if user is authenticated
+        # This command will mount network drive
+        mount_cmd = (
+            CommandBuilder("powershell.exe", delimiter=None)
+            .param("ExecutionPolicy", "Bypass")
+            .param("NoProfile")
+        )
+
         if "project" in action_query.context_metadata:
             project_dict = await gazu.project.get_project_by_name(project)
 
@@ -80,38 +94,26 @@ class TractorSubmiter(CommandBase):
             except KeyError:
                 raise Exception(f"Project {project} doesn't have data or nas key")
 
-            precommands = [
+            owner = action_query.context_metadata["user_email"].split("@")[0]
+            mount_cmd.param(
+                "File",
                 [
-                    "powershell.exe",
-                    "-ExecutionPolicy",
-                    "Bypass",
-                    "-NoProfile",
-                    "-File",
                     "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive.ps1",
                     project_dict["data"]["nas"],
-                ]
-            ]
-
-            # Get owner from context
-            owner: str = action_query.context_metadata["user_email"].split("@")[0]
+                ],
+            )
         else:
-
-            mount: List[List[str]] = [
+            owner = "3d4"
+            mount_cmd.param(
+                "File",
                 [
-                    "powershell.exe",
-                    "-ExecutionPolicy",
-                    "Bypass",
-                    "-NoProfile",
-                    "-File",
                     "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive_3d4.ps1",
                     "marvin",
-                ]
-            ]
+                ],
+            )
 
-            precommands.extend(mount)
-
-            # Get owner from context
-            owner: str = "3d4"
+        # Add the mount command
+        precommands.append(mount_cmd)
 
         # Set the services the job will run on (groups of blades)
         if len(pools) == 1:
@@ -128,21 +130,21 @@ class TractorSubmiter(CommandBase):
             service=services,
         )
 
-        # Create the render tasks
-        for task_title, task_argv in render_tasks.items():
+        # Create the render tasks for each command
+        for task_title, task_argv in commands.items():
             # Create task
             task: author.Task = author.Task(title=task_title)
 
-            # Add precommands
+            # Add precommands to each task
             all_commands = precommands + [task_argv]
 
             last_id = None
 
             # Add every command to the task
-            for index, argv in enumerate(all_commands):
+            for index, command in enumerate(all_commands):
                 # Generates a random uuid for every command
                 id = str(uuid.uuid4())
-                params = {"argv": argv, "id": id}
+                params = {"argv": command.as_argv(), "id": id}
 
                 # Every command refers to the previous one
                 if index > 0:
@@ -156,9 +158,7 @@ class TractorSubmiter(CommandBase):
 
         # Submit the job to Tractor
         jid = job.spool(owner=owner)
-
-        logger.info(f"Sent job: {job} ({jid})")
-        logger.info(f"- Rendering on pools: {services}")
+        logger.info(f"Sent job: {job_title} ({jid})")
 
     async def setup(
         self,

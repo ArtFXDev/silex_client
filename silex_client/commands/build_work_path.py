@@ -28,7 +28,7 @@ class BuildWorkPath(CommandBase):
             "type": bool,
             "value": False,
             "tooltip": "Increment the scene name",
-        }
+        },
     }
     required_metadata = ["task_id", "dcc", "project_file_tree"]
 
@@ -108,7 +108,7 @@ class BuildWorkPath(CommandBase):
                     matching_sequence = sequence
 
         # We also increment when an existing sequence was found
-        if matching_sequence or parameters["increment"]:
+        if parameters["increment"]:
             version += 1
 
         if version != initial_version:
