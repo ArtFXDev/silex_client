@@ -1,0 +1,10 @@
+vrlmap: !inherit
+  parent: ".default"
+
+  steps:
+    conform:
+      commands:
+        build_output_path:
+          parameters:
+            output_type:
+              value: "vrlmap"
