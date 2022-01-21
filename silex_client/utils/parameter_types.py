@@ -16,6 +16,9 @@ class CommandParameterMeta(type):
     def get_default(cls):
         pass
 
+    def rebuild(cls, *args, **kwargs):
+        pass
+
 
 class AnyParameter(object):
     def __new__(cls, value):
@@ -47,6 +50,7 @@ def TaskParameterMeta():
     attributes = {
         "serialize": serialize,
         "get_default": get_default,
+        "rebuild": TaskParameterMeta,
     }
     return CommandParameterMeta("TaskParameter", (str,), attributes)
 
@@ -74,6 +78,7 @@ def IntArrayParameterMeta(size: int):
         "__init__": __init__,
         "serialize": serialize,
         "get_default": get_default,
+        "rebuild": IntArrayParameterMeta,
     }
     return CommandParameterMeta("IntArrayParameter", (list,), attributes)
 
@@ -93,6 +98,7 @@ def RangeParameterMeta(start: int, end: int, increment: int = 1):
     attributes = {
         "serialize": serialize,
         "get_default": get_default,
+        "rebuild": RangeParameterMeta,
     }
     return CommandParameterMeta("RangeParameter", (int,), attributes)
 
@@ -110,6 +116,7 @@ def SelectParameterMeta(*list_options, **options):
     attributes = {
         "serialize": serialize,
         "get_default": get_default,
+        "rebuild": SelectParameterMeta,
     }
     return CommandParameterMeta("SelectParameter", (str,), attributes)
 
@@ -127,6 +134,7 @@ def RadioSelectParameterMeta(*list_options, **options):
     attributes = {
         "serialize": serialize,
         "get_default": get_default,
+        "rebuild": RadioSelectParameterMeta,
     }
     return CommandParameterMeta("RadioSelectParameter", (str,), attributes)
 
@@ -144,6 +152,7 @@ def MultipleSelectParameterMeta(*list_options, **options):
     attributes = {
         "serialize": serialize,
         "get_default": get_default,
+        "rebuild": MultipleSelectParameterMeta,
     }
     return CommandParameterMeta("SelectParameter", (list,), attributes)
 
@@ -174,6 +183,7 @@ def PathParameterMeta(extensions: List[str] = None, multiple: bool = False):
     attributes = {
         "serialize": serialize,
         "get_default": get_default,
+        "rebuild": PathParameterMeta,
     }
 
     if multiple:
@@ -209,6 +219,7 @@ def ListParameterMeta(parameter_type: Type):
         "__init__": __init__,
         "serialize": serialize,
         "get_default": get_default,
+        "rebuild": ListParameterMeta,
     }
 
     return CommandParameterMeta("ListParameter", (list,), attributes)
@@ -224,6 +235,7 @@ def TextParameterMeta(color=None):
     attributes = {
         "serialize": serialize,
         "get_default": get_default,
+        "rebuild": TextParameterMeta,
     }
 
     return CommandParameterMeta("ListParameter", (str,), attributes)
@@ -239,6 +251,7 @@ def StringParameterMeta(multiline: bool = False, max_lenght: int = 1000):
     attributes = {
         "serialize": serialize,
         "get_default": get_default,
+        "rebuild": StringParameterMeta,
     }
 
     return CommandParameterMeta("StringParameter", (str,), attributes)
@@ -273,12 +286,13 @@ def DictParameterMeta(key_type: Type, value_type: Type):
         return {"name": "dict", "key": key_serialized, "value": value_serialized}
 
     def get_default():
-        return ""
+        return {}
 
     attributes = {
         "__init__": __init__,
         "serialize": serialize,
         "get_default": get_default,
+        "rebuild": DictParameterMeta,
     }
 
     return CommandParameterMeta("ListParameter", (dict,), attributes)

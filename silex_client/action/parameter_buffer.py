@@ -49,11 +49,11 @@ class ParameterBuffer(BaseBuffer):
         """
         Allows changing the value of the parameter by rebuilding the type
         """
-        if not isinstance(self.type, CommandParameterMeta):
+        if not isinstance(self.type, CommandParameterMeta) and self.type is not None:
             return
 
         # Rebuild the parameter type
-        self.type = type(self.type)(*args, **kwargs)
+        self.type = self.type.rebuild(*args, **kwargs)
 
         if self.value is None:
             self.value = self.type.get_default()

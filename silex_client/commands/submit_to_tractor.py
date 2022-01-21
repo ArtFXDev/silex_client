@@ -4,7 +4,6 @@ import logging
 import os
 import typing
 import uuid
-from distutils.cmd import Command
 from typing import Any, Dict, List
 
 import gazu.client
@@ -13,6 +12,7 @@ from silex_client.action.command_base import CommandBase
 from silex_client.utils.command import CommandBuilder
 from silex_client.utils.parameter_types import (
     MultipleSelectParameterMeta,
+    DictParameterMeta,
     SelectParameterMeta,
 )
 
@@ -43,7 +43,7 @@ class TractorSubmiter(CommandBase):
         },
         "commands": {
             "label": "Commands list",
-            "type": dict,
+            "type": DictParameterMeta(str, CommandBase),
             "hide": True,
         },
         "pools": {
