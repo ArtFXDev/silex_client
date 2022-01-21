@@ -227,3 +227,58 @@ def TextParameterMeta(color=None):
     }
 
     return CommandParameterMeta("ListParameter", (str,), attributes)
+
+
+def StringParameterMeta(multiline: bool = False, max_lenght: int = 1000):
+    def serialize():
+        return {"name": "str", "multiline": multiline, "max_lenght": max_lenght}
+
+    def get_default():
+        return ""
+
+    attributes = {
+        "serialize": serialize,
+        "get_default": get_default,
+    }
+
+    return CommandParameterMeta("StringParameter", (str,), attributes)
+
+
+def DictParameterMeta(key_type: Type, value_type: Type):
+    def __init__(self, input_value):
+        # Cast the input into a dict
+        if not isinstance(input_value, dict):
+            value = dict(input_value)
+
+        # Cast the input key into the given type
+        for key in input_value.keys():
+            if not isinstance(key, key_type):
+                input_value[key_type(key)] = input_value.pop(key)
+        # Cast the input value into the given type
+        for key, value in input_value.items():
+            if not isinstance(value, value_type):
+                input_value[key] = input_value.pop(key)
+
+        super(type(self), self).__init__(input_value)
+
+    def serialize():
+        key_serialized = {"name": key_type.__name__}
+        if isinstance(key_type, CommandParameterMeta):
+            key_serialized = key_type.serialize()
+
+        value_serialized = {"name": value_type.__name__}
+        if isinstance(value_type, CommandParameterMeta):
+            value_serialized = value_type.serialize()
+
+        return {"name": "dict", "key": key_serialized, "value": value_serialized}
+
+    def get_default():
+        return ""
+
+    attributes = {
+        "__init__": __init__,
+        "serialize": serialize,
+        "get_default": get_default,
+    }
+
+    return CommandParameterMeta("ListParameter", (dict,), attributes)
