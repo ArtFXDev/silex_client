@@ -102,7 +102,7 @@ class KickCommand(CommandBase):
         # Cut frames by task
         frame_chunks: List[str] = list(fileseq.FrameSet(frame_range))
         task_chunks: List[List[str]] = list(frames.chunks(frame_chunks, task_size))
-        cmd_dict: Dict[str, List[str]] = dict()
+        commands: Dict[str, List[str]] = dict()
 
         # Create commands
         for chunk in task_chunks:
@@ -115,9 +115,9 @@ class KickCommand(CommandBase):
             task_name = fileseq.FrameSet(chunk).frameRange()
 
             # Add ass sequence to argument list
-            cmd_dict[task_name] = kick_list + [
+            commands[task_name] = kick_list + [
                 "-AssFiles",
                 ",".join(map(str, ass_files)),
             ]
 
-        return {"commands": cmd_dict, "file_name": ass_file.stem}
+        return {"commands": commands, "file_name": ass_file.stem}
