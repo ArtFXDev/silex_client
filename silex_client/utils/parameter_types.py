@@ -200,7 +200,7 @@ def ListParameterMeta(parameter_type: Type):
         if isinstance(parameter_type, CommandParameterMeta):
             item_type = parameter_type.serialize()
 
-        return {"name": "list", "itemtype": item_type}
+        return {"name": "list", "itemType": item_type}
 
     def get_default():
         return []
@@ -231,7 +231,7 @@ def TextParameterMeta(color=None):
 
 def StringParameterMeta(multiline: bool = False, max_lenght: int = 1000):
     def serialize():
-        return {"name": "str", "multiline": multiline, "max_lenght": max_lenght}
+        return {"name": "str", "multiline": multiline, "maxLenght": max_lenght}
 
     def get_default():
         return ""
