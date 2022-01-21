@@ -18,7 +18,7 @@ if typing.TYPE_CHECKING:
 
 class VrayCommand(CommandBase):
     """
-    build vray command
+    Construct V-Ray render commands
     """
 
     parameters = {
@@ -70,27 +70,27 @@ class VrayCommand(CommandBase):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
+        skip_existing = int(parameters["skip_existing"])
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
 
-        vray_cmd = CommandBuilder("C:/Maya2022/Maya2022/vray/bin/vray.exe")
-
+        # Build the V-Ray command
+        vray_cmd = CommandBuilder("vray", rez_packages=["vray"])
         vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
         vray_cmd.param("progressIncrement", 5)
         vray_cmd.param("sceneFile", scene)
-        vray_cmd.param("skipExistingFrames", int(parameters["skip_existing"]))
+        vray_cmd.param("skipExistingFrames", skip_existing)
         vray_cmd.param("imgFile", parameters["output_filename"])
 
         # If the user is connected
         if "project" in action_query.context_metadata:
             # Add the project in the rez environment
-            vray_cmd.add_rez_env(action_query.context_metadata["project"].lower())
+            vray_cmd.add_rez_package(action_query.context_metadata["project"].lower())
 
         if parameter_overrides:
             vray_cmd.param("imgWidth", resolution[0]).param("imgHeight", resolution[1])
 
-        # This is going to hold all the separate commands argv
-        cmd_dict: Dict[str, List[str]] = {}
+        commands: Dict[str, CommandBuilder] = {}
 
         # Split frames by task size
         frame_chunks = split_frameset(frame_range, task_size)
@@ -102,6 +102,6 @@ class VrayCommand(CommandBase):
             task_title = chunk.frameRange()
 
             # Add the frames argument
-            cmd_dict[task_title] = vray_cmd.param("frames", fmt_frames).as_argv()
+            commands[task_title] = vray_cmd.param("frames", fmt_frames)
 
-        return {"commands": cmd_dict, "file_name": scene.stem}
+        return {"commands": commands, "file_name": scene.stem}

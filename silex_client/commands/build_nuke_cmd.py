@@ -17,7 +17,7 @@ if typing.TYPE_CHECKING:
 
 class BuildNukeCommand(CommandBase):
     """
-    Construct a Nuke command for the render farm
+    Construct Nuke render commands
     """
 
     parameters = {
@@ -45,14 +45,13 @@ class BuildNukeCommand(CommandBase):
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
 
-        nuke_cmd = CommandBuilder("nuke")
-        nuke_cmd.add_rez_env(["nuke"])
+        nuke_cmd = CommandBuilder("nuke", rez_packages=["nuke"])
 
         # Execute in interactive mode
         nuke_cmd.param("i")
 
         frame_chunks = split_frameset(frame_range, task_size)
-        cmd_dict: Dict[str, List[str]] = {}
+        commands: Dict[str, CommandBuilder] = {}
 
         for chunk in frame_chunks:
             # Specify the frames
@@ -61,6 +60,6 @@ class BuildNukeCommand(CommandBase):
             # Specify the scene file
             nuke_cmd.param("x", str(scene))
 
-            cmd_dict[chunk.frameRange()] = nuke_cmd.as_argv()
+            commands[chunk.frameRange()] = nuke_cmd
 
-        return {"commands": cmd_dict, "file_name": scene.stem}
+        return {"commands": commands, "file_name": scene.stem}

@@ -43,7 +43,7 @@ arnold:
       commands:
         build_kick_cmd:
           path: "silex_client.commands.build_kick_cmd.KickCommand"
-          label: "arnold Job parameters"
+          label: "Arnold job parameters"
           ask_user: true
           parameters:
             output_filename:
@@ -54,11 +54,7 @@ arnold:
           path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
           ask_user: true
           parameters:
-            precommands:
-              hide: true
-            cmd_dict:
-              value: !command-output "send_kick_render:build_kick_cmd:commands"
-              hide: true
             job_title:
               value: !command-output "send_kick_render:build_kick_cmd:file_name"
-              hide: true
+            commands:
+              value: !command-output "send_kick_render:build_kick_cmd:commands"
