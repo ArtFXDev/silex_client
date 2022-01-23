@@ -242,6 +242,12 @@ def TextParameterMeta(color=None):
 
 
 def StringParameterMeta(multiline: bool = False, max_lenght: int = 1000):
+    def __new__(cls, value):
+        value = str(value)
+        # Trim the name with the max lenght
+        value = value[:max_lenght]
+        return str.__new__(cls, value)
+
     def serialize():
         return {"name": "str", "multiline": multiline, "maxLenght": max_lenght}
 
@@ -249,6 +255,7 @@ def StringParameterMeta(multiline: bool = False, max_lenght: int = 1000):
         return ""
 
     attributes = {
+        "__new__": __new__,
         "serialize": serialize,
         "get_default": get_default,
         "rebuild": StringParameterMeta,
