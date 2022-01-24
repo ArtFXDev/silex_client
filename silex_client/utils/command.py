@@ -1,3 +1,4 @@
+import copy
 from typing import Any, Dict, List, Optional, Union
 
 
@@ -8,7 +9,7 @@ class CommandBuilder:
 
     def __init__(
         self,
-        executable: str,
+        executable: Optional[str] = None,
         rez_packages: List[str] = [],
         delimiter: Optional[str] = "=",
     ):
@@ -19,11 +20,12 @@ class CommandBuilder:
         self.delimiter = delimiter
         self.last_param = None
 
-    def param(self, key: str, value: Union[Any, List[Any]] = None):
+    def param(self, key: str, value: Union[Any, List[Any]] = None, condition=True):
         """
         Add a parameter to the command
         """
-        self.params[key] = value
+        if condition:
+            self.params[key] = value
         return self
 
     def set_last_param(self, last_parameter: str):
@@ -71,12 +73,15 @@ class CommandBuilder:
         if self.last_param is not None:
             args.append(self.last_param)
 
-        command: List[str] = [self.executable] + args
+        command: List[str] = ([self.executable] + args) if self.executable else args
 
         if self.rez_packages:
             command = ["rez", "env"] + self.rez_packages + ["--"] + command
 
         return command
+
+    def deepcopy(self):
+        return copy.deepcopy(self)
 
     def __repr__(self) -> str:
         return " ".join(self.as_argv())
