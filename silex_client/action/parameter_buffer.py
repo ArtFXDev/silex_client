@@ -11,8 +11,7 @@ from typing import TYPE_CHECKING, Any, Optional, Type
 
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.utils.datatypes import CommandOutput
-from silex_client.utils.parameter_types import (AnyParameter,
-                                                CommandParameterMeta)
+from silex_client.utils.parameter_types import AnyParameter, CommandParameterMeta
 
 # Forward references
 if TYPE_CHECKING:

@@ -11,8 +11,17 @@ import re
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
 from functools import partial
-from typing import (Any, Dict, List, Optional, Tuple, Type, TypeVar, Union,
-                    get_type_hints)
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    get_type_hints,
+)
 
 import dacite.config as dacite_config
 import dacite.core as dacite
@@ -191,11 +200,8 @@ class BaseBuffer:
                 for child_name, child in children.items():
                     if self.ALLOW_HIDE_CHILDS and child.hide:
                         continue
-                    children_value.setdefault(child.buffer_type, {})
-                    children_value[child.buffer_type][child_name] = child.serialize()
-                for child_type in self.get_child_types():
-                    buffer_type = child_type.buffer_type
-                    result.append((buffer_type, children_value.get(buffer_type, {})))
+                    children_value[child_name] = child.serialize()
+                result.append(("children", children_value))
                 continue
 
             result.append((buffer_field.name, getattr(self, buffer_field.name)))
@@ -218,10 +224,12 @@ class BaseBuffer:
             for child_type in self.get_child_types():
                 if child_data.get("buffer_type") == child_type.buffer_type:
                     if expected_child_type is not child_type:
-                        raise Exception("The given expected child type is invalid")
+                        raise Exception(
+                            f"Could not deserialize the buffer {child_name}: the expected child type is invalid"
+                        )
                     return child_type.construct(child_data, self)
             raise TypeError(
-                f"Could not deserialize the buffer {child_name}, the buffer_type is invalid"
+                f"Could not deserialize the buffer {child_name}: the buffer_type is invalid"
             )
 
         # Otherwise, we update the already existing one
@@ -241,6 +249,7 @@ class BaseBuffer:
         current_buffer_data = self.serialize()
         for child_type in self.get_child_types():
             current_buffer_data.pop(child_type.buffer_type, None)
+        current_buffer_data.pop("children", None)
         serialized_data = jsondiff.patch(current_buffer_data, serialized_data)
 
         # Format the children corectly, the name is defined in the key only
@@ -262,11 +271,11 @@ class BaseBuffer:
             }
         config = dacite_config.Config(**config_data)
 
+        serialized_data.setdefault("children", {})
         for child_type in self.get_child_types():
             buffer_type = child_type.buffer_type
             if buffer_type not in serialized_data:
                 continue
-            serialized_data.setdefault("children", {})
             serialized_data["children"].update(serialized_data.pop(buffer_type))
 
         new_buffer = dacite.from_dict(type(self), serialized_data, config)

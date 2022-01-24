@@ -22,8 +22,11 @@ if typing.TYPE_CHECKING:
 
 import aiohttp
 import tractor.api.author as author
-from aiohttp.client_exceptions import (ClientConnectionError, ContentTypeError,
-                                       InvalidURL)
+from aiohttp.client_exceptions import (
+    ClientConnectionError,
+    ContentTypeError,
+    InvalidURL,
+)
 
 
 class TractorSubmiter(CommandBase):
