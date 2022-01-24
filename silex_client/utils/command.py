@@ -1,3 +1,4 @@
+import copy
 from typing import Any, Dict, List, Optional, Union
 
 
@@ -77,6 +78,9 @@ class CommandBuilder:
             command = ["rez", "env"] + self.rez_packages + ["--"] + command
 
         return command
+
+    def deepcopy(self):
+        return copy.deepcopy(self)
 
     def __repr__(self) -> str:
         return " ".join(self.as_argv())

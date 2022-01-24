@@ -102,6 +102,6 @@ class VrayCommand(CommandBase):
             task_title = chunk.frameRange()
 
             # Add the frames argument
-            commands[task_title] = vray_cmd.param("frames", fmt_frames)
+            commands[task_title] = vray_cmd.param("frames", fmt_frames).deepcopy()
 
         return {"commands": commands, "file_name": scene.stem}

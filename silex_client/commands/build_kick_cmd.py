@@ -98,6 +98,8 @@ class KickCommand(CommandBase):
             task_name = chunk.frameRange()
 
             # Add ass sequence to argument list
-            commands[task_name] = kick_cmd.param("AssFiles", ",".join(ass_files))
+            commands[task_name] = kick_cmd.param(
+                "AssFiles", ",".join(ass_files)
+            ).deepcopy()
 
         return {"commands": commands, "file_name": ass_file.stem}
