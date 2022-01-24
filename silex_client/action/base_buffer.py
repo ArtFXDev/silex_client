@@ -10,22 +10,14 @@ import copy
 import re
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    get_type_hints,
-)
+from functools import partial
+from typing import (Any, Dict, List, Optional, Tuple, Type, TypeVar, Union,
+                    get_type_hints)
 
-from dacite.types import is_union
 import dacite.config as dacite_config
 import dacite.core as dacite
 import jsondiff
+from dacite.types import is_union
 
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
@@ -150,7 +142,9 @@ class BaseBuffer:
         self.outdated_cache = False
         return self.serialize_cache
 
-    def _deserialize_child(self, child_data: Any) -> BaseBuffer:
+    def _deserialize_child(
+        self, expected_child_type: Type[BaseBuffer], child_data: Any
+    ) -> BaseBuffer:
         """
         Called bu deserialize to deserialize a given child of this buffer
         """
@@ -161,6 +155,8 @@ class BaseBuffer:
         if child is None:
             for child_type in self.get_child_types():
                 if child_data.get("buffer_type") == child_type.buffer_type:
+                    if expected_child_type is not child_type:
+                        raise Exception("The given expected child type is invalid")
                     return child_type.construct(child_data, self)
             raise TypeError(
                 f"Could not deserialize the buffer {child_name}, the buffer_type is invalid"
@@ -198,7 +194,7 @@ class BaseBuffer:
         config_data: Dict[str, Union[list, dict]] = {"cast": [Status, CommandOutput]}
         if BaseBuffer not in self.get_child_types():
             config_data["type_hooks"] = {
-                child_type: self._deserialize_child
+                child_type: partial(self._deserialize_child, child_type)
                 for child_type in self.get_child_types()
             }
         config = dacite_config.Config(**config_data)

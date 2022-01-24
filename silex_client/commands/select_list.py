@@ -8,11 +8,9 @@ import jsondiff
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import (
-    AnyParameter,
-    ListParameterMeta,
-    SelectParameterMeta,
-)
+from silex_client.utils.parameter_types import (AnyParameter,
+                                                ListParameterMeta,
+                                                SelectParameterMeta)
 
 # Forward references
 if typing.TYPE_CHECKING:

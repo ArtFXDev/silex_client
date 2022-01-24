@@ -8,16 +8,14 @@ from typing import Any, Dict
 from fileseq import FrameSet
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import (
-    IntArrayParameterMeta,
-    MultipleSelectParameterMeta,
-    PathParameterMeta,
-    RadioSelectParameterMeta,
-    RangeParameterMeta,
-    SelectParameterMeta,
-    TaskParameterMeta,
-    TextParameterMeta,
-)
+from silex_client.utils.parameter_types import (IntArrayParameterMeta,
+                                                MultipleSelectParameterMeta,
+                                                PathParameterMeta,
+                                                RadioSelectParameterMeta,
+                                                RangeParameterMeta,
+                                                SelectParameterMeta,
+                                                TaskParameterMeta,
+                                                TextParameterMeta)
 
 # Forward references
 if typing.TYPE_CHECKING:

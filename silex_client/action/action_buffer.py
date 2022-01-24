@@ -7,7 +7,7 @@ Dataclass used to store the data related to an action
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union, TypeVar, Type
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.command_buffer import CommandBuffer
@@ -60,7 +60,7 @@ class ActionBuffer(BaseBuffer):
         """
         return self.children
 
-    def deserialize(self, serialized_data: Dict[str, Any], _=False) -> None:
+    def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
         super().deserialize(serialized_data, True)
         self.reorder_steps()
 
