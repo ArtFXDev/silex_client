@@ -10,8 +10,19 @@ import copy
 import re
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    get_type_hints,
+)
 
+from dacite.types import is_union
 import dacite.config as dacite_config
 import dacite.core as dacite
 import jsondiff
@@ -19,7 +30,7 @@ import jsondiff
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
 
-T = TypeVar("T", bound="BaseBuffer")
+TBaseBuffer = TypeVar("TBaseBuffer", bound="BaseBuffer")
 
 
 @dataclass()
@@ -72,9 +83,15 @@ class BaseBuffer:
             self.label = slugify_pattern.sub(" ", self.name)
             self.label = self.label.title()
 
-    @staticmethod
-    def get_child_type() -> Type[BaseBuffer]:
-        return BaseBuffer
+    @classmethod
+    def get_child_types(cls) -> Tuple[Type[BaseBuffer]]:
+        """
+        The childs type are to possible class that this buffer can have in the children field
+        """
+        children_type = get_type_hints(cls)["children"].__args__[1]
+        if is_union(children_type):
+            return children_type.__args__
+        return (children_type,)
 
     @property
     def outdated_caches(self) -> bool:
@@ -85,6 +102,19 @@ class BaseBuffer:
         return self.outdated_cache or not all(
             not child.outdated_caches for child in self.children.values()
         )
+
+    def get_path(self) -> str:
+        """
+        Traverse the parent tree to get the path that lead to this buffer
+        """
+        path = ""
+        parent: Optional[BaseBuffer] = self
+
+        while parent is not None:
+            path = f"{parent.name}:{path}" if path else parent.name
+            parent = parent.parent
+
+        return path
 
     def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
@@ -107,8 +137,11 @@ class BaseBuffer:
                 for child_name, child in children.items():
                     if self.ALLOW_HIDE_CHILDS and child.hide:
                         continue
-                    children_value[child_name] = child.serialize()
-                result.append((self.get_child_type().buffer_type, children_value))
+                    children_value.setdefault(child.buffer_type, {})
+                    children_value[child.buffer_type][child_name] = child.serialize()
+                for child_type in self.get_child_types():
+                    buffer_type = child_type.buffer_type
+                    result.append((buffer_type, children_value.get(buffer_type, {})))
                 continue
 
             result.append((buffer_field.name, getattr(self, buffer_field.name)))
@@ -126,7 +159,12 @@ class BaseBuffer:
 
         # If the given child is a new child we construct it
         if child is None:
-            return self.get_child_type().construct(child_data, self)
+            for child_type in self.get_child_types():
+                if child_data.get("buffer_type") == child_type.buffer_type:
+                    return child_type.construct(child_data, self)
+            raise TypeError(
+                f"Could not deserialize the buffer {child_name}, the buffer_type is invalid"
+            )
 
         # Otherwise, we update the already existing one
         child.deserialize(child_data)
@@ -140,28 +178,37 @@ class BaseBuffer:
         if self.hide and not force:
             return
 
-        # Patch the current buffer's data, except the chils data
+        # Patch the current buffer's data, except the children data
         current_buffer_data = self.serialize()
-        current_buffer_data = copy.copy(current_buffer_data)
-        del current_buffer_data[self.get_child_type().buffer_type]
+        for child_type in self.get_child_types():
+            current_buffer_data.pop(child_type.buffer_type, None)
         serialized_data = jsondiff.patch(current_buffer_data, serialized_data)
 
         # Format the children corectly, the name is defined in the key only
-        for child_name, child in serialized_data.get(
-            self.get_child_type().buffer_type, {}
-        ).items():
+        children_data = [
+            (name, data, child_type)
+            for child_type in self.get_child_types()
+            for name, data in serialized_data.get(child_type.buffer_type, {}).items()
+        ]
+        for child_name, child, child_type in children_data:
             child["name"] = child_name
+            child["buffer_type"] = child_type.buffer_type
 
         # Create a new buffer with the patched serialized data
         config_data: Dict[str, Union[list, dict]] = {"cast": [Status, CommandOutput]}
-        if self.get_child_type() is not BaseBuffer:
-            config_data["type_hooks"] = {self.get_child_type(): self._deserialize_child}
+        if BaseBuffer not in self.get_child_types():
+            config_data["type_hooks"] = {
+                child_type: self._deserialize_child
+                for child_type in self.get_child_types()
+            }
         config = dacite_config.Config(**config_data)
 
-        if self.get_child_type().buffer_type in serialized_data:
-            serialized_data["children"] = serialized_data.pop(
-                self.get_child_type().buffer_type
-            )
+        for child_type in self.get_child_types():
+            buffer_type = child_type.buffer_type
+            if buffer_type not in serialized_data:
+                continue
+            serialized_data.setdefault("children", {})
+            serialized_data["children"].update(serialized_data.pop(buffer_type))
 
         new_buffer = dacite.from_dict(type(self), serialized_data, config)
 
@@ -179,8 +226,10 @@ class BaseBuffer:
 
     @classmethod
     def construct(
-        cls: Type[T], serialized_data: Dict[str, Any], parent: BaseBuffer = None
-    ) -> T:
+        cls: Type[TBaseBuffer],
+        serialized_data: Dict[str, Any],
+        parent: BaseBuffer = None,
+    ) -> TBaseBuffer:
         """
         Create an command buffer from serialized data
 
@@ -191,11 +240,10 @@ class BaseBuffer:
 
         # Initialize the buffer without the children,
         # because the children needs special treatment
-        filtered_data = serialized_data
+        filtered_data = copy.copy(serialized_data)
         filtered_data["parent"] = parent
-        if cls.get_child_type().buffer_type in serialized_data:
-            filtered_data = copy.copy(serialized_data)
-            del filtered_data[cls.get_child_type().buffer_type]
+        for child_type in cls.get_child_types():
+            filtered_data.pop(child_type.buffer_type, None)
         buffer = dacite.from_dict(cls, filtered_data, config)
 
         # Deserialize the newly created buffer to apply the children

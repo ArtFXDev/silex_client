@@ -33,12 +33,11 @@ class StepBuffer(BaseBuffer):
     #: Dict that represent the parameters of the command, their type, value, name...
     children: Dict[str, CommandBuffer] = field(default_factory=dict)
 
-    @staticmethod
-    def get_child_type():
-        return CommandBuffer
-
     @property
     def commands(self) -> List[CommandBuffer]:
+        """
+        Alias for children
+        """
         return list(self.children.values())
 
     @property  # type: ignore

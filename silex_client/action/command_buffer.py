@@ -74,12 +74,11 @@ class CommandBuffer(BaseBuffer):
         # Get the executor
         self.executor = self._get_executor(self.path)
 
-    @staticmethod
-    def get_child_type():
-        return ParameterBuffer
-
     @property
     def parameters(self) -> Dict[str, ParameterBuffer]:
+        """
+        Alias for children
+        """
         return self.children
 
     def _get_executor(self, path: str) -> CommandBase:
@@ -193,11 +192,10 @@ class CommandBuffer(BaseBuffer):
         config = dacite_config.Config(cast=[Status, CommandOutput])
 
         # Initialize the buffer without the children, since the children needs special treatment
-        filtered_data = serialized_data
+        filtered_data = copy.copy(serialized_data)
         filtered_data["parent"] = parent
-        if cls.get_child_type().buffer_type in serialized_data:
-            filtered_data = copy.copy(serialized_data)
-            del filtered_data[cls.get_child_type().buffer_type]
+        for child_type in cls.get_child_types():
+            filtered_data.pop(child_type.buffer_type, None)
         command = dacite.from_dict(cls, filtered_data, config)
 
         # Get the default data from the executor and patch it with the serialized data

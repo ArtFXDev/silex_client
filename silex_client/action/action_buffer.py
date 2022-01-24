@@ -17,7 +17,7 @@ from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
 from silex_client.utils.parameter_types import AnyParameter
 
-T = TypeVar("T", bound=BaseBuffer)
+TBaseBuffer = TypeVar("TBaseBuffer", bound="BaseBuffer")
 
 
 @dataclass()
@@ -53,12 +53,11 @@ class ActionBuffer(BaseBuffer):
     #: Snapshot of the context's metadata when this buffer is created
     context_metadata: Dict[str, Any] = field(default_factory=dict)
 
-    @staticmethod
-    def get_child_type():
-        return StepBuffer
-
     @property
     def steps(self) -> Dict[str, Union[StepBuffer, ActionBuffer]]:
+        """
+        Alias for children
+        """
         return self.children
 
     def deserialize(self, serialized_data: Dict[str, Any], _=False) -> None:
@@ -114,7 +113,7 @@ class ActionBuffer(BaseBuffer):
 
         return list(flatten(list(self.children.values())))
 
-    def get_child(self, child_path: List[str], child_type: Type[T]) -> Optional[T]:
+    def get_child(self, child_path: List[str], child_type: Type[TBaseBuffer]) -> Optional[TBaseBuffer]:
         """
         Helper to get a child that belong to this action from a path
         The data is quite nested, this is just for conveniance
@@ -185,12 +184,12 @@ class ActionBuffer(BaseBuffer):
 
         parameter.value = value
 
-        for key, value in kwargs.items():
-            if not hasattr(parameter, key):
+        for attribute_name, attribute_value in kwargs.items():
+            if not hasattr(parameter, attribute_name):
                 logger.warning(
                     "Could not set the attribute %s on the parameter %s: The attribute does not exists",
-                    key,
+                    attribute_name,
                     parameter,
                 )
                 continue
-            setattr(parameter, key, value)
+            setattr(parameter, key, attribute_value)
