@@ -8,9 +8,10 @@ from typing import Any, Dict, List
 
 import gazu.client
 import gazu.project
-
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.command import CommandBuilder
 from silex_client.utils.parameter_types import (
+    DictParameterMeta,
     MultipleSelectParameterMeta,
     SelectParameterMeta,
 )
@@ -30,7 +31,7 @@ from aiohttp.client_exceptions import (
 
 class TractorSubmiter(CommandBase):
     """
-    Send job to tractor
+    Send job to Tractor
     """
 
     parameters = {
@@ -40,18 +41,24 @@ class TractorSubmiter(CommandBase):
             "value": [],
             "hide": True,
         },
-        "cmd_dict": {
+        "commands": {
             "label": "Commands list",
-            "type": dict,
+            "type": DictParameterMeta(str, CommandBase),
+            "hide": True,
         },
         "pools": {
             "label": "Pool",
             "type": MultipleSelectParameterMeta(),
         },
-        "job_title": {"label": "Job title", "type": str, "value": "No Title"},
+        "job_title": {
+            "label": "Job title",
+            "type": str,
+            "value": "untitled",
+            "hide": True,
+        },
         "project": {
             "label": "Project",
-            "type": str,
+            "type": SelectParameterMeta(),
         },
     }
 
@@ -62,71 +69,59 @@ class TractorSubmiter(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        # Initialize the tractor agent
-        author.setEngineClientParam(debug=True)
-
-        precommands: List[str] = parameters["precommands"]
-        cmds: Dict[str, str] = parameters["cmd_dict"]
+        precommands: List[CommandBuilder] = parameters["precommands"]
+        commands: Dict[str, CommandBuilder] = parameters["commands"]
         pools: List[str] = parameters["pools"]
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
-        owner: str = ""
+        owner = ""
 
-        # MOUNT SERVER
-        if action_query.context_metadata.get("user_email") is not None:
+        # This command will mount network drive
+        mount_cmd = (
+            CommandBuilder("powershell.exe", delimiter=None)
+            .param("ExecutionPolicy", "Bypass")
+            .param("NoProfile")
+        )
+
+        if "project" in action_query.context_metadata:
             project_dict = await gazu.project.get_project_by_name(project)
-            project_data = project_dict["data"]
 
-            if project_data is None:
-                raise Exception("NO PROJECTS FOUND")
+            if not project_dict:
+                Exception(f"Project {project} doesn't exist")
 
-            SERVER_ROOT = project_data["nas"]
+            try:
+                project_dict["data"]["nas"]
+            except KeyError:
+                raise Exception(f"Project {project} doesn't have data or nas key")
 
-            precommands: List[str] = [
+            owner = action_query.context_metadata["user_email"].split("@")[0]
+            mount_cmd.param(
+                "File",
                 [
-                    "powershell.exe",
-                    "-ExecutionPolicy",
-                    "Bypass",
-                    "-NoProfile",
-                    "-File",
                     "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive.ps1",
-                    SERVER_ROOT,
-                ]
-            ]
-
-            # Get owner from context
-            owner: str = action_query.context_metadata.get("user_email", None).split(
-                "@"
-            )[
-                0
-            ]  # get name only
+                    project_dict["data"]["nas"],
+                ],
+            )
         else:
-
-            mount: List[str] = [
+            owner = "3d4"
+            mount_cmd.param(
+                "File",
                 [
-                    "powershell.exe",
-                    "-ExecutionPolicy",
-                    "Bypass",
-                    "-NoProfile",
-                    "-File",
                     "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive_3d4.ps1",
                     "marvin",
-                ]
-            ]
+                ],
+            )
 
-            precommands.extend(mount)
+        # Add the mount command
+        precommands.append(mount_cmd)
 
-            # Get owner from context
-            owner: str = "3d4"
-
-        # Set service
+        # Set the services the job will run on (groups of blades)
         if len(pools) == 1:
             services = pools[0]
         else:
             services = "(" + " || ".join(pools) + ")"
-        logger.info(f"Rendering on pools: {services}")
 
-        # Creating job
+        # Create a job
         job = author.Job(
             title=job_title,
             priority=100.0,
@@ -135,37 +130,35 @@ class TractorSubmiter(CommandBase):
             service=services,
         )
 
-        # Create commands
-        for cmd in cmds:
+        # Create the render tasks for each command
+        for task_title, task_argv in commands.items():
             # Create task
-            task = author.Task(title=str(cmd))
+            task: author.Task = author.Task(title=task_title)
 
-            # add precommands
-            for pre_index, pre in enumerate(precommands):
-                params = {"argv": pre, "id": str(uuid.uuid4())}
+            # Add precommands to each task
+            all_commands = precommands + [task_argv]
 
-                if pre_index > 0:
-                    params["refersto"] = task.cmds[pre_index - 1].id
+            last_id = None
 
-                pre_command = author.Command(**params)
+            # Add every command to the task
+            for index, command in enumerate(all_commands):
+                # Generates a random uuid for every command
+                id = str(uuid.uuid4())
+                params = {"argv": command.as_argv(), "id": id}
 
-                # add precommand
-                task.addCommand(pre_command)
+                # Every command refers to the previous one
+                if index > 0:
+                    params["refersto"] = last_id
 
-            # Create main command
-            params = {"argv": cmds.get(cmd), "id": str(uuid.uuid4())}
-            if len(precommands) > 0:
-                params["refersto"] = task.cmds[-1].id
+                task.addCommand(author.Command(**params))
+                last_id = id
 
-            command = author.Command(**params)
-
-            # add main command
-            task.addCommand(command)
+            # Add the task as child
             job.addChild(task)
 
-        # Spool the job
+        # Submit the job to Tractor
         jid = job.spool(owner=owner)
-        logger.info(f"Created job: {jid} (jid)")
+        logger.info(f"Sent job: {job_title} ({jid})")
 
     async def setup(
         self,
@@ -173,13 +166,14 @@ class TractorSubmiter(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        # Execute the http requests
+        # Query the Tractor config
         try:
             async with aiohttp.ClientSession() as session:
                 tractor_host = os.getenv("silex_tractor_host", "")
-                async with session.get(
+                tractor_config_url = (
                     f"{tractor_host}/Tractor/config?q=get&file=blade.config"
-                ) as response:
+                )
+                async with session.get(tractor_config_url) as response:
                     tractor_pools = await response.json()
         except (ClientConnectionError, ContentTypeError, InvalidURL):
             logger.warning(
@@ -187,9 +181,8 @@ class TractorSubmiter(CommandBase):
             )
             tractor_pools = {"BladeProfiles": []}
 
-        # Build list of profile names from the config
+        # Build list of profile names to ignore
         PROFILE_IGNORE = [
-            None,
             "DEV",
             "Windows10",
             "Linux64",
@@ -204,30 +197,24 @@ class TractorSubmiter(CommandBase):
             "Windows",
             "MacOSX",
         ]
+
+        # Filter the pools
         pools = [
             profile["ProfileName"]
             for profile in tractor_pools["BladeProfiles"]
             if profile.get("ProfileName") not in PROFILE_IGNORE
         ]
-        self.command_buffer.parameters["pools"].type = MultipleSelectParameterMeta(
-            *pools
-        )
-        pool_parameter = self.command_buffer.parameters["pools"]
-        if pool_parameter.value is None:
-            pool_parameter.value = pool_parameter.type.get_default()
 
-        # Get the list of available projects
+        pool_parameter = self.command_buffer.parameters["pools"]
+        project_parameter = self.command_buffer.parameters["project"]
+
+        pool_parameter.rebuild_type(*pools)
+
+        # If user have a project
         if "project" in action_query.context_metadata:
-            self.command_buffer.parameters["project"].type = SelectParameterMeta(
-                action_query.context_metadata["project"]
-            )
-            self.command_buffer.parameters["project"].hide = True
+            # Use the project as value
+            project_parameter.rebuild_type(action_query.context_metadata["project"])
+            project_parameter.hide = True
         else:
             # If there is no project in the current context return a hard coded list of project for 4th years
-            self.command_buffer.parameters["project"].type = SelectParameterMeta(
-                "WS_Environment", "WS_Lighting"
-            )
-
-        self.command_buffer.parameters[
-            "project"
-        ].value = self.command_buffer.parameters["project"].type.get_default()
+            project_parameter.rebuild_type("WS_Environment", "WS_Lighting")

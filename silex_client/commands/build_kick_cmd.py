@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import logging
-import os
 import pathlib
 import typing
 from typing import Any, Dict, List
 
 import fileseq
-
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta
+from silex_client.utils import frames
+from silex_client.utils.command import CommandBuilder
+from silex_client.utils.parameter_types import PathParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -22,7 +22,7 @@ class KickCommand(CommandBase):
     """
 
     parameters = {
-        "ass_target": {
+        "ass_file": {
             "label": "Select ass file",
             "type": PathParameterMeta(extensions=[".ass", ".ass.gz"]),
             "value": None,
@@ -32,59 +32,29 @@ class KickCommand(CommandBase):
             "type": fileseq.FrameSet,
             "value": "1-50x1",
         },
-        "resolution": {
-            "label": "Resolution ( width, height )",
-            "type": IntArrayParameterMeta(2),
-            "value": [1920, 1080],
-        },
         "task_size": {
             "label": "Task size",
             "type": int,
             "value": 10,
         },
-        "directory": {
-            "label": "File directory",
-            "type": str,
-            "value": "",
-        },
-        "export_name": {
-            "label": "File name",
-            "type": pathlib.Path,
-            "value": "",
-        },
-        "extension": {
-            "label": "File extension",
-            "type": str,
-            "value": None,
-            "hide": True,
-        },
+        "output_filename": {"type": pathlib.Path, "value": "", "hide": True},
     }
 
-    def _chunks(self, lst: List[Any], n: int) -> List[Any]:
-        """Yield successive n-sized chunks from lst."""
-        for i in range(0, len(lst), n):
-            yield lst[i : i + n]
-
-    def find_ass_sequence(
-        self, directory: str, export_name: str, frame_list
+    def _find_sequence(
+        self, file_path: pathlib.Path, frame_range: fileseq.FrameSet, logger
     ) -> List[str]:
         """
-        return a list of ass files for a specific frame list
+        Return a file sequence for a specific frame range
         """
 
-        ass_files = list()
+        without_extension: pathlib.Path = file_path.parents[0] / file_path.stem
+        frame_pattern = f".{frame_range}#.{file_path.suffix}"
 
-        for frame in frame_list:
-            frame = str(frame)
+        sequence = fileseq.FileSequence(
+            without_extension.with_suffix(frame_pattern),
+        )
 
-            # Format frame number to 4 digits
-            for i in range(4 - len(frame)):
-                frame = "0" + frame
-
-            # add new ass file to list
-            ass_files.append(f"{os.path.join(directory, export_name)}.{frame}.ass")
-
-        return ass_files
+        return list(sequence)
 
     @CommandBase.conform_command()
     async def __call__(
@@ -93,69 +63,43 @@ class KickCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
+        # Target a ass file in a sequence to be used as pattern
+        ass_file: pathlib.Path = parameters["ass_file"]
 
-        ass_target: pathlib.Path = parameters[
-            "ass_target"
-        ]  # target a ass in a sequence to use as pattern
-        ass_dir: str = ass_target.parents[0]
-        ass_name: str = ass_target.stem.split(".")[0]
-
-        directory: str = parameters["directory"]
-        export_name: str = parameters["export_name"]
-        extension: str = parameters["extension"]
+        output_filename: pathlib.Path = parameters["output_filename"]
         frame_range: fileseq.FrameSet = parameters["frame_range"]
-        reslution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
-        export_file: str = "NONE"
 
-        # Create list of arguents
-        if action_query.context_metadata.get("user_email") is not None:
-            export_file = os.path.join(directory, f"{export_name}.{extension}")
+        kick_cmd = (
+            CommandBuilder("powershell.exe", delimiter=None)
+            .param("ExecutionPolicy", "Bypass")
+            .param("NoProfile")
+            .param("File", "\\\\prod.silex.artfx.fr\\rez\\windows\\render_kick_ass.ps1")
+        )
 
-        arg_list: List[Any] = [
-            "powershell.exe",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-NoProfile",
-            "-File",
-            "\\\\prod.silex.artfx.fr\\rez\windows\\render_kick_ass.ps1",
-            "-ResolutionX",
-            str(reslution[0]),
-            "-ResolutionY",
-            str(reslution[1]),
-            "-ExportFile",
-            export_file,
-        ]
+        kick_cmd.param("ExportFile", str(output_filename))
 
-        # check if frame_range exists
-        if frame_range is None:
-            raise Exception("No frame range found")
+        # Specify rez environement
+        if action_query.context_metadata["project"] is not None:
+            kick_cmd.add_rez_package(action_query.context_metadata["project"].lower())
 
-        # Cut frames by task
-        frame_chunks: List[str] = list(fileseq.FrameSet(frame_range))
-        task_chunks: List[Any] = list(self._chunks(frame_chunks, task_size))
-        cmd_dict: Dict[str, str] = dict()
+        # Split frames by task
+        frame_chunks = frames.split_frameset(frame_range, task_size)
+        commands: Dict[str, CommandBuilder] = dict()
 
-        # create commands
-        for chunk in task_chunks:
-            start: int = chunk[0]
-            end: int = chunk[-1]
-            ass_files: str = self.find_ass_sequence(ass_dir, ass_name, chunk)
-            logger.info(f"Creating a new task with frames: {start} to {end}")
-
-            cmd_dict[f"frames={start}-{end}"] = (
-                arg_list + ["-AssFiles"] + [",".join(ass_files)]
+        # Create commands
+        for chunk in frame_chunks:
+            # Get ass sequence  using a specific frame_range
+            ass_files: List[str] = self._find_sequence(
+                ass_file, fileseq.FrameSet(chunk), logger
             )
 
-        return {"commands": cmd_dict, "file_name": ass_name}
+            # Converting chunk back to a frame set
+            task_name = chunk.frameRange()
 
-    async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
-    ):
+            # Add ass sequence to argument list
+            commands[task_name] = kick_cmd.param(
+                "AssFiles", ",".join(ass_files)
+            ).deepcopy()
 
-        # show resolution only if context
-        if action_query.context_metadata.get("user_email") is None:
-            self.command_buffer.parameters["export_name"].hide = True
+        return {"commands": commands, "file_name": ass_file.stem}

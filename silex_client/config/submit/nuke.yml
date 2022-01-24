@@ -14,5 +14,7 @@ nuke:
           path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
           ask_user: true
           parameters:
-            cmd_dict: !command-output "submit_job:build_nuke_cmd:commands"
-            job_title: !command-output "submit_job:build_nuke_cmd:file_name"
+            job_title:
+              value: !command-output "submit_job:build_nuke_cmd:file_name"
+            commands:
+              value: !command-output "submit_job:build_nuke_cmd:commands"

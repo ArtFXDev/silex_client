@@ -61,14 +61,23 @@ default:
           label: "Copy file to pipeline"
           path: "silex_client.commands.copy.Copy"
           parameters:
-            src: !command-output "input:input:file_paths"
-            dst: !command-output "conform:build_output_path:directory"
+            src: 
+              value: !command-output "input:input:file_paths"
+              hide: true
+            dst: 
+              value: !command-output "conform:build_output_path:directory"
+              hide: true
         rename:
           label: "Rename the copied files"
           path: "silex_client.commands.rename.Rename"
           parameters:
-            src: !command-output "conform:copy:destination_paths"
-            name: !command-output "conform:build_output_path:full_name"
+            src: 
+              value: !command-output "conform:copy:destination_paths"
+              hide: true
+            name: 
+              value: !command-output "conform:build_output_path:full_name"
+              hide: true
+            force: false
 
     output:
       index: 30

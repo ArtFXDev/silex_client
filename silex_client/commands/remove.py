@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 import logging
-import typing
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import os
 import pathlib
 import shutil
+from typing import List
 
-from silex_client.utils.parameter_types import ListParameter
+from silex_client.utils.parameter_types import ListParameterMeta
 
 
 class Remove(CommandBase):
@@ -24,7 +24,7 @@ class Remove(CommandBase):
     parameters = {
         "file_path": {
             "label": "File path",
-            "type": ListParameter,
+            "type": ListParameterMeta(pathlib.Path),
             "value": None,
         },
     }
@@ -37,7 +37,7 @@ class Remove(CommandBase):
         logger: logging.Logger,
     ):
 
-        file_path: pathlib.Path = parameters.get("file_path")
+        file_path: List[pathlib.Path] = parameters["file_path"]
 
         for item in file_path:
             # Check for file to copy

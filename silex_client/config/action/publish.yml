@@ -16,7 +16,9 @@ publish:
           tooltip: "Build the complete output path"
           ask_user: True
           parameters:
-            output_type: !command-output "setup:get_publish_type:publish_type"
+            output_type: 
+              value: !command-output "setup:get_publish_type:publish_type"
+              hide: true
             use_current_context:
               value: true
               hide: true

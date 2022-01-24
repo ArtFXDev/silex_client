@@ -34,23 +34,28 @@ class ParameterBuffer(BaseBuffer):
     type: Type = field(default=type(None))
     #: The value that will return the parameter
     value: Any = field(default=None)
-    #: Specify if the parameter gets its value from a command output or not
-    command_output: bool = field(compare=False, repr=False, default=False)
 
     def __post_init__(self):
         super().__post_init__()
-
-        # Check if the parameter gets a command output
-        if isinstance(self.value, CommandOutput):
-            self.command_output = True
-            self.hide = True
-
         # The AnyParameter type does not have any widget in the frontend
         if self.type is AnyParameter:
             self.hide = True
 
         # Get the default value from to the type
         if self.value is None and isinstance(self.type, CommandParameterMeta):
+            self.value = self.type.get_default()
+
+    def rebuild_type(self, *args, **kwargs):
+        """
+        Allows changing the value of the parameter by rebuilding the type
+        """
+        if not isinstance(self.type, CommandParameterMeta):
+            return
+
+        # Rebuild the parameter type
+        self.type = self.type.rebuild(*args, **kwargs)
+
+        if self.value is None:
             self.value = self.type.get_default()
 
     @property

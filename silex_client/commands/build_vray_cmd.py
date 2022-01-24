@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import logging
-import os
 import pathlib
 import typing
 from typing import Any, Dict, List
 
 from fileseq import FrameSet
-
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.command import CommandBuilder
+from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta
 
 # Forward references
@@ -18,7 +18,7 @@ if typing.TYPE_CHECKING:
 
 class VrayCommand(CommandBase):
     """
-    build vray command
+    Construct V-Ray render commands
     """
 
     parameters = {
@@ -31,39 +31,34 @@ class VrayCommand(CommandBase):
             "type": FrameSet,
             "value": "1-50x1",
         },
-        "resolution": {
-            "label": "Resolution ( width, height )",
-            "type": IntArrayParameterMeta(2),
-            "value": [1920, 1080],
-        },
         "task_size": {
             "label": "Task size",
             "type": int,
             "value": 10,
         },
         "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
-        "export_dir": {
-            "label": "File directory",
-            "type": str,
-            "value": "",
+        "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
+        "parameter_overrides": {
+            "type": bool,
+            "label": "Parameter overrides",
+            "value": False,
         },
-        "export_name": {
-            "label": "File name",
-            "type": pathlib.Path,
-            "value": "",
-        },
-        "extension": {
-            "label": "File extension",
-            "type": str,
-            "value": None,
+        "resolution": {
+            "label": "Resolution ( width, height )",
+            "type": IntArrayParameterMeta(2),
+            "value": [1920, 1080],
             "hide": True,
         },
     }
 
-    def _chunks(self, lst, n):
-        """Yield successive n-sized chunks from lst."""
-        for i in range(0, len(lst), n):
-            yield lst[i : i + n]
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        hide_overrides = not parameters["parameter_overrides"]
+        self.command_buffer.parameters["resolution"].hide = hide_overrides
 
     @CommandBase.conform_command()
     async def __call__(
@@ -72,66 +67,41 @@ class VrayCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        directory: str = parameters["export_dir"]
-        export_name: str = str(parameters["export_name"])
-        extension: str = parameters["extension"]
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
-        resolution: List[int] = parameters["resolution"]
         task_size: int = parameters["task_size"]
-        skip_existing: int = int(parameters["skip_existing"])
+        skip_existing = int(parameters["skip_existing"])
+        parameter_overrides: bool = parameters["parameter_overrides"]
+        resolution: List[int] = parameters["resolution"]
 
-        arg_list = [
-            # V-Ray exe path
-            "C:/Maya2022/Maya2022/vray/bin/vray.exe",
-            # Don't show VFB (render view)
-            "-display=0",
-            # Update frequency for logs
-            "-progressUpdateFreq=2000",
-            # Don't format logs with colors
-            "-progressUseColor=0",
-            # Use proper carrier returns
-            "-progressUseCR=0",
-            # Specify the scene file
-            f"-sceneFile={scene}",
-            # Render already existing frames or not
-            f"-skipExistingFrames={skip_existing}",
-            # "-rtEngine=5", # CUDA or CPU?
-        ]
+        # Build the V-Ray command
+        vray_cmd = CommandBuilder("vray", rez_packages=["vray"])
+        vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
+        vray_cmd.param("progressIncrement", 5)
+        vray_cmd.param("sceneFile", scene)
+        vray_cmd.param("skipExistingFrames", skip_existing)
+        vray_cmd.param("imgFile", parameters["output_filename"])
 
-        # Check if context
-        if action_query.context_metadata.get("user_email") is not None:
-            export_file = os.path.join(directory, f"{export_name}.{extension}")
-            arg_list.append(f"-imgFile={export_file}")
-            arg_list.extend(
-                [f"-imgWidth={resolution[0]}", f"-imgHeight={resolution[1]}"]
-            )
+        # If the user is connected
+        if "project" in action_query.context_metadata:
+            # Add the project in the rez environment
+            vray_cmd.add_rez_package(action_query.context_metadata["project"].lower())
 
-        if frame_range is None:
-            raise Exception("No frame range found")
+        if parameter_overrides:
+            vray_cmd.param("imgWidth", resolution[0]).param("imgHeight", resolution[1])
 
-        frame_chunks: List[str] = list(FrameSet(frame_range))
+        commands: Dict[str, CommandBuilder] = {}
 
-        # Cut frames by task
-        task_chunks: List[Any] = list(self._chunks(frame_chunks, task_size))
-        cmd_dict: Dict[str, str] = dict()
+        # Split frames by task size
+        frame_chunks = split_frameset(frame_range, task_size)
 
-        # create commands
-        for chunk in task_chunks:
-            start, end = chunk[0], chunk[-1]
-            frames: str = ";".join(map(str, chunk))
-            logger.info(f"Creating a new task with frames: {start} to {end}")
-            cmd_dict[f"frames={start}-{end}"] = arg_list + [f'-frames="{frames}"']
+        # Creating tasks for each frame chunk
+        for chunk in frame_chunks:
+            fmt_frames = ";".join(map(str, list(chunk)))
 
-        return {"commands": cmd_dict, "file_name": scene.stem}
+            task_title = chunk.frameRange()
 
-    async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
-    ):
+            # Add the frames argument
+            commands[task_title] = vray_cmd.param("frames", fmt_frames).deepcopy()
 
-        # show resolution only if context
-        if action_query.context_metadata.get("user_email") is None:
-            self.command_buffer.parameters["resolution"].hide = True
+        return {"commands": commands, "file_name": scene.stem}

@@ -22,7 +22,9 @@ vrscene:
           tooltip: "Build the complete output path"
           ask_user: true
           parameters:
-            output_type: !command-output "build_output_path:select_list"
+            output_type:
+              value: !command-output "build_output_path:select_list"
+              hide: true
             create_temp_dir: false
             create_output_dir: false
             task:
@@ -42,16 +44,15 @@ vrscene:
           label: "V-Ray Job parameters"
           ask_user: true
           parameters:
-            export_dir: !command-output "build_output_path:build_output_path:directory"
-            export_name: !command-output "build_output_path:build_output_path:file_name"
-            extension: !command-output "build_output_path:select_list"
+            output_filename:
+              value: !command-output "build_output_path:build_output_path:full_path"
 
         submit_to_tractor:
           label: "Submit"
           path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
           ask_user: true
           parameters:
-            precommands:
-              hide: true
-            cmd_dict: !command-output "send_vray_render:build_vray_cmd:commands"
-            job_title: !command-output "send_vray_render:build_vray_cmd:file_name"
+            commands:
+              value: !command-output "send_vray_render:build_vray_cmd:commands"
+            job_title:
+              value: !command-output "send_vray_render:build_vray_cmd:file_name"
