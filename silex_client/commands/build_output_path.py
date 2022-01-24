@@ -15,7 +15,11 @@ import gazu.task
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.files import slugify
-from silex_client.utils.parameter_types import SelectParameterMeta, TaskParameterMeta
+from silex_client.utils.parameter_types import (
+    SelectParameterMeta,
+    TaskParameterMeta,
+    StringParameterMeta,
+)
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -36,7 +40,7 @@ class BuildOutputPath(CommandBase):
         },
         "name": {
             "label": "Name",
-            "type": str,
+            "type": StringParameterMeta(max_lenght=40),
             "value": "",
             "tooltip": "This value can be left empty",
         },
@@ -87,7 +91,9 @@ class BuildOutputPath(CommandBase):
     }
 
     @staticmethod
-    async def _get_gazu_output_path(task_id: str, output_type: str, nb_elements: int) -> Optional[pathlib.Path]:
+    async def _get_gazu_output_path(
+        task_id: str, output_type: str, nb_elements: int
+    ) -> Optional[pathlib.Path]:
         # Override with the given task if specified
         if task_id is None:
             return None
@@ -135,7 +141,9 @@ class BuildOutputPath(CommandBase):
         if use_current_context:
             task_id = action_query.context_metadata["task_id"]
 
-        output_path = await self._get_gazu_output_path(task_id, output_type, nb_elements)
+        output_path = await self._get_gazu_output_path(
+            task_id, output_type, nb_elements
+        )
         if output_path is None:
             raise Exception("Could not get the output path from gazu")
 
@@ -211,7 +219,7 @@ class BuildOutputPath(CommandBase):
             "use_existing_name"
         ]
         if not use_existing_name_parameter.get_value(action_query):
-            name_parameter.type = str
+            name_parameter.type = StringParameterMeta(max_lenght=40)
         else:
             use_current_context: bool = parameters["use_current_context"]
             task_id: str = parameters["task"]
