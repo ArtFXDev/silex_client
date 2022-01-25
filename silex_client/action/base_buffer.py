@@ -214,7 +214,12 @@ class BaseBuffer:
         self, expected_child_type: Type[BaseBuffer], child_data: Any
     ) -> BaseBuffer:
         """
-        Called bu deserialize to deserialize a given child of this buffer
+        When deserialize is called, this method is used to cast the children
+        in the desired buffer type
+
+        WARNING: This method is called as a type_hooks by dacite, dacite
+        is calling it in a bread try/except block, there is nothing to do about it,
+        so every error in this function will be a silent error
         """
         child_name = child_data.get("name")
         child = self.children.get(child_name)
@@ -224,7 +229,7 @@ class BaseBuffer:
             for child_type in self.get_child_types():
                 if child_data.get("buffer_type") == child_type.buffer_type:
                     if expected_child_type is not child_type:
-                        raise Exception(
+                        raise TypeError(
                             f"Could not deserialize the buffer {child_name}: the expected child type is invalid"
                         )
                     return child_type.construct(child_data, self)
@@ -239,36 +244,55 @@ class BaseBuffer:
 
     def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
         """
-        Reconstruct this buffer from the given serialized data
+        Reconstruct this buffer from the given serialized data, this method is called
+        recursively for all children that are modified.
+
+        The data is applied as a patch, which means that you can pass partial data
+        However, when creating a children, you must give informations about
+        the type of the children, when updating an existing one, it will keep the
+        previous type:
+
+        Example:
+            Here are two ways to define the type of buffer for a new children
+            here for a step buffer
+
+            foo:
+                children:
+                    bar:
+                        name: "<name>"
+                        buffer_type: "steps"
+
+            foo:
+                steps:
+                    bar:
+                        name: "<name>"
         """
         # Don't take the modifications of the hidden commands
         if self.hide and not force:
             return
 
-        # Patch the current buffer's data, except the children data
-        current_buffer_data = self.serialize()
-        for child_type in self.get_child_types():
-            current_buffer_data.pop(child_type.buffer_type, None)
-        serialized_data = jsondiff.patch(current_buffer_data, serialized_data)
-
-        # Format the children corectly, the name is defined in the key only
-        children_data = [
-            (name, data, child_type)
-            for child_type in self.get_child_types()
-            for name, data in serialized_data.get(child_type.buffer_type, {}).items()
-        ]
-        for child_name, child, child_type in children_data:
-            child["name"] = child_name
-            child["buffer_type"] = child_type.buffer_type
-
+        # Format the children corectly, they must all have a name and buffer_type key
         serialized_data.setdefault("children", {})
         for child_type in self.get_child_types():
-            buffer_type = child_type.buffer_type
-            if buffer_type not in serialized_data:
+            children_data = serialized_data.get(child_type.buffer_type)
+            if children_data is None:
                 continue
-            serialized_data["children"].update(serialized_data.pop(buffer_type))
 
-        # Create a new buffer with the patched serialized data
+            for child_name, child_data in children_data.items():
+                child_data["name"] = child_name
+                child_data["buffer_type"] = child_type.buffer_type
+
+            serialized_data["children"].update(
+                serialized_data.pop(child_type.buffer_type)
+            )
+
+        current_buffer_data = self.serialize()
+        # We don't want to re deserialize the existing children data
+        current_buffer_data.pop("children", None)
+        # Patch the current buffer's data
+        serialized_data = jsondiff.patch(current_buffer_data, serialized_data)
+
+        # Setup dacite to use our deserialize function has a type_hook to create the children
         config_data: Dict[str, Union[list, dict]] = {"cast": [Status, CommandOutput]}
         if BaseBuffer not in self.get_child_types():
             config_data["type_hooks"] = {
@@ -277,6 +301,7 @@ class BaseBuffer:
             }
         config = dacite_config.Config(**config_data)
 
+        # Create a new buffer with the patched serialized data
         new_buffer = dacite.from_dict(type(self), serialized_data, config)
 
         # Keep the current value for the private and readonly fields
