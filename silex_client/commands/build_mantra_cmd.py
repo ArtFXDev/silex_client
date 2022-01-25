@@ -16,6 +16,9 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import os
+import asyncio
+import ast
+
 
 class MantraCommand(CommandBase):
     """
@@ -99,13 +102,22 @@ class MantraCommand(CommandBase):
         if not os.isfile(scene):
             return
 
-        get_mantra_nodes_cmd = CommandBuilder("hython3.7", rez_packages=["houdini"])
-        str_cmd = f"hou.hipFile.load('{scene}');render_nodes=[rn.name() for rn in hou.node('/out').allSubChildren() if rn.type().name() == 'ifd'];print(render_nodes)"
-        get_mantra_nodes_cmd.param("-c")
-        mantra_render_nodes = [rn.name() for rn in hou.node("/out/").allSubChildren() if rn.type().name() is "ifd"]
-        
-        parameters["render_nodes"].type =  SelectParameterMeta(**mantra_render_nodes)
+        async def run(cmd):
+            proc = await asyncio.create_subprocess_shell(
+            cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+            )
 
-        """
-        "hou.hipFile.load('D:\mantra_render.hip');render_nodes=[rn.name() for rn in hou.node('/out').allSubChildren() if rn.type().name() == 'ifd'];print(render_nodes)"
-        """
+            stdout, stderr = await proc.communicate()
+            
+            logger.info(f"[{cmd} exited with {proc.returncode}]")
+            
+            if stdout:
+                mantra_render_nodes = ast.literal_eval(stdout.decode())
+                parameters["render_nodes"].type =  SelectParameterMeta(**mantra_render_nodes)
+            if stderr:
+                logger.error(f"stderr: {stderr.decode()}")
+
+        asyncio.run(run("rez env houdini -- hython3.7 -c \"hou.hipFile.load('D:\mantra_render.hip');render_nodes=[rn.name() for rn in hou.node('/out').allSubChildren() if rn.type().name() == 'ifd'];print(render_nodes)\""))
+
