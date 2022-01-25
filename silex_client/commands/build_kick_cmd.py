@@ -48,7 +48,7 @@ class KickCommand(CommandBase):
         """
 
         without_extension: pathlib.Path = file_path.parents[0] / file_path.stem
-        frame_pattern = f".{frame_range}#.{file_path.suffix}"
+        frame_pattern = f".{frame_range}#{file_path.suffix}"
 
         sequence = fileseq.FileSequence(
             without_extension.with_suffix(frame_pattern),
@@ -78,10 +78,6 @@ class KickCommand(CommandBase):
         )
 
         kick_cmd.param("ExportFile", str(output_filename))
-
-        # Specify rez environement
-        if action_query.context_metadata["project"] is not None:
-            kick_cmd.add_rez_package(action_query.context_metadata["project"].lower())
 
         # Split frames by task
         frame_chunks = frames.split_frameset(frame_range, task_size)
