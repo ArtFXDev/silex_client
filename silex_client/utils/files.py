@@ -11,8 +11,11 @@ import os
 import pathlib
 import re
 import sys
-import unicodedata
 from types import ModuleType
+from typing import List
+import unicodedata
+
+import fileseq
 
 from silex_client.core.context import Context
 
@@ -130,3 +133,63 @@ def slugify(value: str, allow_unicode=False) -> str:
         )
     value = re.sub(r"[^\w\s-]", "", value.lower())
     return re.sub(r"[-\s]+", "-", value).strip("-_")
+
+
+def find_sequence_from_path(file_path: pathlib.Path) -> fileseq.FileSequence:
+    """
+    Find the sequence corresponding to the given file path
+    If no file sequence are found, a file sequene of one item is returned
+    """
+    default_sequence = fileseq.findSequencesInList([file_path])[0]
+
+    # Split the input file path using the fileseq's regex
+    regex = fileseq.FileSequence.DISK_RE
+    match = regex.match(str(file_path))
+
+    if match is None:
+        return default_sequence
+
+    # We don't take the index in consideration
+    _, basename, _, ext = match.groups()
+    for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
+        # Find the file sequence that correspond the to file we are looking for
+        if basename == file_sequence.basename() and ext == file_sequence.extension():
+            return file_sequence
+
+    return default_sequence
+
+
+def format_sequence_string(
+    sequence: fileseq.FileSequence, path_template: str, regexes: List[re.Pattern]
+) -> str:
+    """
+    Format a sequence by replacing the index by the notation in the path_template
+
+    Example:
+        path_template: /foo/bar.$F4.exr
+        sequence: /publish/publish_name.####.exr
+
+        output -> /publish/publish_name.$F4.exr
+
+    Each regex in the list must contain a single capturing group that will capture the expression
+    """
+    for regex in regexes:
+        match = regex.match(path_template)
+        if match is None:
+            continue
+
+        # Get the captured index
+        (index_expression,) = match.groups()
+        dirname = pathlib.Path(str(sequence.dirname()))
+        basename = sequence.format("{basename}" + str(index_expression) + "{extension}")
+        return (dirname / basename).as_posix()
+
+    # If there is not match just return the first item of the sequence
+    return pathlib.Path(str(sequence.index(0))).as_posix()
+
+
+def sequence_exists(sequence: fileseq.FileSequence) -> bool:
+    """
+    Test if every files in the given sequence exists
+    """
+    return all(pathlib.Path(str(path)).exists() for path in sequence)

@@ -1,17 +1,22 @@
 import asyncio
 import threading
-from typing import Callable
+from typing import Callable, TypeVar
 
 from silex_client.core.context import Context
 from silex_client.utils.log import logger
 
+ReturnType = TypeVar("ReturnType")
+
 
 class ExecutionInThread:
     """
-    Some functions are not awaitable but we need them to be. This callable class will run the given function in a different thread and make the result awaitable
+    Some functions are not awaitable but we need them to be.
+    This callable class will run the given function in a different thread
+    And make the result awaitable
     """
 
-    def execute_wrapped_function(self, wrapped_function: Callable):
+    @staticmethod
+    def execute_wrapped_function(wrapped_function: Callable):
         """
         This method method can be overriden to customise the behaviour of the call
         Like choose to execute the function in a specific thread,
@@ -20,7 +25,9 @@ class ExecutionInThread:
         thread = threading.Thread(target=wrapped_function, daemon=True)
         thread.start()
 
-    async def __call__(self, function: Callable, *args, **kwargs):
+    async def __call__(
+        self, function: Callable[..., ReturnType], *args, **kwargs
+    ) -> ReturnType:
         """
         Execute the given function in a different thread and wait for its result
         """
