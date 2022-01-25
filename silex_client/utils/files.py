@@ -8,12 +8,14 @@ Can be used for development purposes
 import errno
 import importlib
 import os
-import fileseq
 import pathlib
 import re
 import sys
-import unicodedata
 from types import ModuleType
+from typing import List
+import unicodedata
+
+import fileseq
 
 from silex_client.core.context import Context
 
@@ -155,15 +157,6 @@ def find_sequence_from_path(file_path: pathlib.Path) -> fileseq.FileSequence:
             return file_sequence
 
     return default_sequence
-
-
-REGEX_MATCH = [
-    re.compile(r"^.+\W(\$F\d*)\W.+$"),  # Matches Houdini's $F syntax
-    re.compile(r"^.+\W(\$[TRN])\W.+$"),  # Matches Houdini's $T/$R/$N syntax
-    re.compile(r"^.+\W(\%\(.+\)d)\W.+$"),  # Matches Arnolds's $T/$R/$N syntax
-    re.compile(r"^.+\W(\<.+\>)\W.+$"),  # Matches V-ray's <UDIM> or <Whatever> syntax
-    re.compile(r"^.+[^\w#](#+)\W.+$"),  # Matches V-ray's ####  syntax
-]
 
 
 def format_sequence_string(
