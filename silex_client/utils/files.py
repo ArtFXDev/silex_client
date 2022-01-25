@@ -138,7 +138,7 @@ def slugify(value: str, allow_unicode=False) -> str:
 def find_sequence_from_path(file_path: pathlib.Path) -> fileseq.FileSequence:
     """
     Find the sequence corresponding to the given file path
-    If not file sequence are found, a file sequene of one item is returned
+    If no file sequence are found, a file sequene of one item is returned
     """
     default_sequence = fileseq.findSequencesInList([file_path])[0]
 
@@ -171,7 +171,7 @@ def format_sequence_string(
 
         output -> /publish/publish_name.$F4.exr
 
-    The list of regex must contain a single capturing group that will capture the expression
+    Each regex in the list must contain a single capturing group that will capture the expression
     """
     for regex in regexes:
         match = regex.match(path_template)
