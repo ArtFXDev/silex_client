@@ -90,7 +90,7 @@ class BaseBuffer:
     @classmethod
     def get_child_types(cls) -> Tuple[Type[BaseBuffer]]:
         """
-        The childs type are to possible class that this buffer can have in the children field
+        The childs type are the possible classes that this buffer can have as children
         """
         children_type = get_type_hints(cls)["children"].__args__[1]
         if is_union(children_type):
@@ -173,7 +173,7 @@ class BaseBuffer:
 
     def reorder_children(self):
         """
-        Place the steps in the right order accoring to the index value
+        Place the childrens in the right order accoring to the index value
         """
         self.children = dict(
             sorted(self.children.items(), key=lambda item: item[1].index)
@@ -218,7 +218,7 @@ class BaseBuffer:
         in the desired buffer type
 
         WARNING: This method is called as a type_hooks by dacite, dacite
-        is calling it in a bread try/except block, there is nothing to do about it,
+        is calling it in a broad try/except block, there is nothing to do about it,
         so every error in this function will be a silent error
         """
         child_name = child_data.get("name")
@@ -247,14 +247,14 @@ class BaseBuffer:
         Reconstruct this buffer from the given serialized data, this method is called
         recursively for all children that are modified.
 
-        The data is applied as a patch, which means that you can pass partial data
+        The data is applied as a patch, which means that you can pass partial data.
         However, when creating a children, you must give informations about
         the type of the children, when updating an existing one, it will keep the
         previous type:
 
         Example:
             Here are two ways to define the type of buffer for a new children
-            here for a step buffer
+            here for a step buffer:
 
             foo:
                 children:
@@ -272,7 +272,8 @@ class BaseBuffer:
             return
 
         current_buffer_data = self.serialize()
-        # Format the children corectly, they must all have a name and buffer_type key
+        # The children's buffer_type can be given explicitly or passed by the key
+        # (see docstring's example)
         serialized_data.setdefault("children", {})
         for child_type in self.get_child_types():
             children_data = serialized_data.get(child_type.buffer_type)
@@ -281,19 +282,18 @@ class BaseBuffer:
 
             for child_data in children_data.values():
                 child_data["buffer_type"] = child_type.buffer_type
-
+            # Put all the children data into the children key
             serialized_data["children"].update(
                 serialized_data.pop(child_type.buffer_type)
             )
 
+        # If a children update some existing child, it inherit from its buffer type
         for child_name, child_data in serialized_data["children"].items():
             child_data["name"] = child_name
             current_children_data = current_buffer_data.get("children", {})
             existing_child_data = current_children_data.get(child_name)
-            if existing_child_data is None:
-                continue
-            existing_child_data.pop("children", None)
-            child_data = existing_child_data.update(child_data)
+            if existing_child_data is not None:
+                child_data["buffer_type"] = existing_child_data["buffer_type"]
 
         # We don't want to re deserialize the existing children data
         current_buffer_data.pop("children", None)
