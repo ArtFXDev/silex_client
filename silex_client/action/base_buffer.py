@@ -225,6 +225,9 @@ class BaseBuffer:
         child_buffer_type = child_data.get("buffer_type")
         child = self.children.get(child_name)
 
+        # When dacite is casting a dict into a field of type Union,
+        # it will go throught all the types and try to cast it until it works without exceptions
+        # this is a way to sell dacite to go to the next type of the union
         if child_buffer_type is not expected_child_type.buffer_type:
             raise TypeError(
                 f"Could not deserialize the buffer {child_name}: the expected child type is invalid"
