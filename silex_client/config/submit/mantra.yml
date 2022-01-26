@@ -1,0 +1,60 @@
+mantra:
+  label: "Submit mantra"
+  steps:
+    build_output_path:
+      label: "Build output path"
+      index: 10
+      commands:
+        select_list:
+          label: "Enter extension"
+          path: "silex_client.commands.select_list.SelectList"
+          parameters:
+            parameters_list:
+              - "exr"
+              - "png"
+              - "jpg"
+              - "tiff"
+            param_name: "Render type"
+
+        build_output_path:
+          label: "Build output path"
+          path: "silex_client.commands.build_output_path.BuildOutputPath"
+          tooltip: "Build the complete output path"
+          ask_user: true
+          parameters:
+            output_type:
+              value: !command-output "build_output_path:select_list"
+              hide: true
+            create_temp_dir: false
+            create_output_dir: true
+            task:
+              hide: true
+            use_current_context:
+              value: true
+              hide: true
+            frame_set:
+              hide: true
+            name:
+              value: "render"
+
+    send_mantra_render:
+      label: "Setup render parameters"
+      index: 20
+      commands:
+        build_mantra_cmd:
+          path: "silex_client.commands.build_mantra_cmd.MantraCommand"
+          label: "Mantra job parameters"
+          ask_user: true
+          parameters:
+            output_filename:
+              value: !command-output "build_output_path:build_output_path:full_path"
+
+        submit_to_tractor:
+          label: "Submit"
+          path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
+          ask_user: true
+          parameters:
+            job_title:
+              value: !command-output "send_kick_render:build_kick_cmd:file_name"
+            commands:
+              value: !command-output "send_kick_render:build_kick_cmd:commands"

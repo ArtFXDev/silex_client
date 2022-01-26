@@ -10,6 +10,7 @@ from silex_client.action.command_base import CommandBase
 from silex_client.utils.command import CommandBuilder
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta, SelectParameterMeta
+from silex_client.utils.thread import execute_in_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -99,9 +100,12 @@ class MantraCommand(CommandBase):
         logger: logging.Logger,
     ):
         scene: pathlib.Path = parameters["scene_file"]
-        if not os.isfile(scene):
-            return
 
+        logger.info("test")
+
+        if not scene or not os.path.isfile(scene):
+            return
+        logger.info("OK")
         async def run(cmd):
             proc = await asyncio.create_subprocess_shell(
             cmd,
@@ -114,10 +118,27 @@ class MantraCommand(CommandBase):
             logger.info(f"[{cmd} exited with {proc.returncode}]")
             
             if stdout:
-                mantra_render_nodes = ast.literal_eval(stdout.decode())
-                parameters["render_nodes"].type =  SelectParameterMeta(**mantra_render_nodes)
+                
+                stdout = stdout.decode().splitlines()
+                for line in stdout :
+                    try:
+                        logger.info(f"trying to parse stdout: {line}")
+
+                        render_nodes = ast.literal_eval(line)
+                        self.command_buffer.parameters["render_nodes"].rebuild_type(*render_nodes)
+                        logger.info(f"ok")
+
+                    except Exception as e:
+                        logger.info(f"failed to parse stdout: {e}, str: {line}")
+
             if stderr:
                 logger.error(f"stderr: {stderr.decode()}")
 
-        asyncio.run(run("rez env houdini -- hython3.7 -c \"hou.hipFile.load('D:\mantra_render.hip');render_nodes=[rn.name() for rn in hou.node('/out').allSubChildren() if rn.type().name() == 'ifd'];print(render_nodes)\""))
+        #await run("rez env houdini -- hython -c hou.hipFile.load('D:\mantra_render.hip');render_nodes=hou.node('/out').allSubChildren();print(render_nodes)")
 
+        def aaaa():
+            loop = asyncio.ProactorEventLoop()
+            asyncio.set_event_loop(loop)
+
+            loop.run_until_complete(run(f"rez env silex_client-dev houdini -- hython -m silex_client.utils.houdini.get_rop_nodes --file {scene}"))
+        await execute_in_thread(aaaa)
