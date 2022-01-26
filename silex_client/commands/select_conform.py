@@ -88,7 +88,7 @@ class SelectConform(CommandBase):
         frame_sets = [
             sequence.frameSet() or fileseq.FrameSet(0) for sequence in sequences
         ]
-        paddings = [len(sequence.padding()) for sequence in sequences]
+        paddings = [sequence._zfill for sequence in sequences]
 
         # Guess the conform type from the extension of the given file
         for sequence in sequences:
@@ -170,7 +170,7 @@ class SelectConform(CommandBase):
                 if file_path in sequence_list and len(sequence_list) > 1:
                     frame_sets[index] = file_sequence.frameSet()
                     sequences[index] = sequence_list
-                    paddings[index] = len(file_sequence.padding())
+                    paddings[index] = file_sequence._zfill
                     break
 
         # Finding sequences might result in duplicates
