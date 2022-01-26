@@ -221,32 +221,26 @@ class BaseBuffer:
         is calling it in a bread try/except block, there is nothing to do about it,
         so every error in this function will be a silent error
         """
-        try:
-            child_name = child_data.get("name")
-            child = self.children.get(child_name)
+        child_name = child_data.get("name")
+        child = self.children.get(child_name)
 
-            # If the given child is a new child we construct it
-            if child is None:
-                for child_type in self.get_child_types():
-                    if child_data.get("buffer_type") == child_type.buffer_type:
-                        if expected_child_type is not child_type:
-                            raise TypeError(
-                                f"Could not deserialize the buffer {child_name}: the expected child type is invalid"
-                            )
-                        return child_type.construct(child_data, self)
-                raise TypeError(
-                    f"Could not deserialize the buffer {child_name}: the buffer_type is invalid"
-                )
+        # If the given child is a new child we construct it
+        if child is None:
+            for child_type in self.get_child_types():
+                if child_data.get("buffer_type") == child_type.buffer_type:
+                    if expected_child_type is not child_type:
+                        raise TypeError(
+                            f"Could not deserialize the buffer {child_name}: the expected child type is invalid"
+                        )
+                    return child_type.construct(child_data, self)
+            raise TypeError(
+                f"Could not deserialize the buffer {child_name}: the buffer_type is invalid"
+            )
 
-            # Otherwise, we update the already existing one
-            child.deserialize(child_data)
-            self.reorder_children()
-            return child
-        except Exception as e:
-            import traceback
-
-            print(traceback.format_exc())
-            raise e
+        # Otherwise, we update the already existing one
+        child.deserialize(child_data)
+        self.reorder_children()
+        return child
 
     def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
         """

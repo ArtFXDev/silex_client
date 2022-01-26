@@ -99,7 +99,7 @@ class InsertAction(CommandBase):
                 f"Could not resolve the action {action_type}: The root key should be the same as the config file name"
             )
 
-        action_name = f"action_type_{uuid.uuid4()}"
+        action_name = f"{action_type}_{uuid.uuid4()}"
         action_definition = resolved_action[action_type]
         action_definition["name"] = action_name
         action_definition["buffer_type"] = "actions"
