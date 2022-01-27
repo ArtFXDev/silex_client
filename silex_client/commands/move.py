@@ -86,9 +86,9 @@ class Move(CommandBase):
 
     @staticmethod
     def move(src: str, dst: str):
-        # Move folder or file
+        # move folder or file
         if os.path.isdir(src):
-            # Move all file in dst folder
+            # move all file in dst folder
             file_names = os.listdir(src)
             for file_name in file_names:
                 shutil.move(os.path.join(src, file_name), dst)
@@ -116,10 +116,9 @@ class Move(CommandBase):
                 raise Exception(f"{item} doesn't exist.")
 
             new_path = pathlib.Path(dst)
-            destination_path = os.path.join(dst, os.path.basename(item))
             # Handle override of existing file
             if new_path.exists() and force:
-                await execute_in_thread(self.remove, destination_path)
+                await execute_in_thread(self.remove, dst)
             elif new_path.exists():
                 response = action_query.store.get("move_override")
                 if response is None:
@@ -128,7 +127,7 @@ class Move(CommandBase):
                     action_query.store["move_override"] = response
                 if response in ["Override", "Always override"]:
                     force = True
-                    await execute_in_thread(self.remove, destination_path)
+                    await execute_in_thread(self.remove, dst)
                 if response in ["Keep existing", "Always keep existing"]:
                     await execute_in_thread(self.remove, item)
                     continue
