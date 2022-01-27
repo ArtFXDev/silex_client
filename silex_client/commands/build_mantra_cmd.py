@@ -4,9 +4,11 @@ import logging
 import pathlib
 import typing
 from typing import Any, Dict, List
-
+from pathlib import Path
 from fileseq import FrameSet
+from silex_client.utils import frames
 from silex_client.action.command_base import CommandBase
+from silex_client.utils import command
 from silex_client.utils.command import CommandBuilder
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta, SelectParameterMeta
@@ -19,13 +21,13 @@ if typing.TYPE_CHECKING:
 import os
 import asyncio
 import ast
-
+import subprocess
 
 class MantraCommand(CommandBase):
     """
     Construct Mantra Command
     """
-
+    
     parameters = {
         "scene_file": {
             "label": "Scene file",
@@ -62,15 +64,6 @@ class MantraCommand(CommandBase):
         }
     }
 
-    async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
-    ):
-        hide_overrides = not parameters["parameter_overrides"]
-        self.command_buffer.parameters["resolution"].hide = hide_overrides
-
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -85,13 +78,39 @@ class MantraCommand(CommandBase):
         skip_existing = int(parameters["skip_existing"])
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
+        render_node: str = parameters["render_nodes"]
+        output_file: str = parameters["output_filename"]
+        output_file = Path(output_file)
 
-        """
-        hou.hipFile.load('D:\mantra_render.hip');mantra=hou.node('/out/mantra1');hou.parm('/out/mantra1/trange').set(1);hou.parmTuple('/out/mantra1/f').deleteAllKeyframes();mantra.render()
-        """
+        logger.info(output_file)
+        output_file = output_file.parent / f"{output_file.with_suffix('').stem}_$F{''.join(output_file.suffixes)}"
+        logger.info(output_file)
+        logger.info(resolution)
+
         # Build the mantra command
-        mantra_cmd = CommandBuilder("hython3.7", rez_packages=["houdini"])
-        mantra_cmd.param("-c", f"hou.hipFile.load({scene})")
+        houdini_cmd = CommandBuilder("hython", rez_packages=["houdini"], delimiter=" ")
+        houdini_cmd.value("C:/Houdini18/bin/hrender.py")
+        houdini_cmd.value(str(scene))
+        houdini_cmd.param("d", render_node)
+        houdini_cmd.param("o", str(output_file))
+        houdini_cmd.param("w", resolution[0])
+        houdini_cmd.param("h", resolution[1])
+
+        frame_chunks = frames.split_frameset(frame_range, task_size)
+        commands: Dict[str, CommandBuilder] = {}
+
+        
+        houdini_cmd.param("e")
+        # Create commands
+        for chunk in frame_chunks:
+            task_title = chunk.frameRange()
+            # Add the frames argument
+            houdini_cmd.param("f", str(chunk).split('-'))
+           
+            commands[task_title] = houdini_cmd.deepcopy()
+
+        logger.info(commands)
+        return {"commands": commands, "file_name": scene.stem}
 
     async def setup(
         self,
@@ -100,24 +119,27 @@ class MantraCommand(CommandBase):
         logger: logging.Logger,
     ):
         scene: pathlib.Path = parameters["scene_file"]
+        previous_hip_value = action_query.store.get("submit_houdini_temp_hip_filepath", None)
 
-        logger.info("test")
+        if scene == previous_hip_value:
+            return
 
         if not scene or not os.path.isfile(scene):
             return
-        logger.info("OK")
-        async def run(cmd):
-            proc = await asyncio.create_subprocess_shell(
-            cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+        def run(cmd):
+            proc = subprocess.Popen(
+                cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
             )
 
-            stdout, stderr = await proc.communicate()
-            
+         
+            stdout, stderr = proc.communicate()
             logger.info(f"[{cmd} exited with {proc.returncode}]")
             
             if stdout:
+                logger.info(stdout)
                 
                 stdout = stdout.decode().splitlines()
                 for line in stdout :
@@ -135,10 +157,5 @@ class MantraCommand(CommandBase):
                 logger.error(f"stderr: {stderr.decode()}")
 
         #await run("rez env houdini -- hython -c hou.hipFile.load('D:\mantra_render.hip');render_nodes=hou.node('/out').allSubChildren();print(render_nodes)")
-
-        def aaaa():
-            loop = asyncio.ProactorEventLoop()
-            asyncio.set_event_loop(loop)
-
-            loop.run_until_complete(run(f"rez env silex_client-dev houdini -- hython -m silex_client.utils.houdini.get_rop_nodes --file {scene}"))
-        await execute_in_thread(aaaa)
+        action_query.store["submit_houdini_temp_hip_filepath"] = scene
+        await execute_in_thread(run,f"rez env silex_client-dev houdini -- hython -m silex_client.utils.houdini.get_rop_nodes --file {scene}")

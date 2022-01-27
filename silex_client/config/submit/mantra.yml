@@ -55,6 +55,6 @@ mantra:
           ask_user: true
           parameters:
             job_title:
-              value: !command-output "send_kick_render:build_kick_cmd:file_name"
+              value: !command-output "send_mantra_render:build_mantra_cmd:file_name"
             commands:
-              value: !command-output "send_kick_render:build_kick_cmd:commands"
+              value: !command-output "send_mantra_render:build_mantra_cmd:commands"

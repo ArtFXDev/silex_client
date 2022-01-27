@@ -43,7 +43,7 @@ class TractorSubmiter(CommandBase):
         },
         "commands": {
             "label": "Commands list",
-            "type": DictParameterMeta(str, CommandBase),
+            "type": DictParameterMeta(str, CommandBuilder),
             "hide": True,
         },
         "pools": {
