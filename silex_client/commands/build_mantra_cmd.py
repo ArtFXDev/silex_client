@@ -33,6 +33,7 @@ class MantraCommand(CommandBase):
             "label": "Scene file",
             "type": PathParameterMeta(extensions=[".hip", ".hipnc"]),
         },
+        "rop_from_hip": {"label": "Take ROP from scene file (can take some times)", "type": bool, "value": False},
         "frame_range": {
             "label": "Frame range (start, end, step)",
             "type": FrameSet,
@@ -83,9 +84,7 @@ class MantraCommand(CommandBase):
         output_file = Path(output_file)
 
         logger.info(output_file)
-        output_file = output_file.parent / f"{output_file.with_suffix('').stem}_$F{''.join(output_file.suffixes)}"
-        logger.info(output_file)
-        logger.info(resolution)
+        output_file = output_file.parent / f"{output_file.with_suffix('').stem}_$F4{''.join(output_file.suffixes)}"
 
         # Build the mantra command
         houdini_cmd = CommandBuilder("hython", rez_packages=["houdini"], delimiter=" ")
@@ -97,18 +96,21 @@ class MantraCommand(CommandBase):
         houdini_cmd.param("h", resolution[1])
 
         frame_chunks = frames.split_frameset(frame_range, task_size)
+        logger.info(frame_chunks)
+        logger.info("aaaaaaaaaaaaaaaaaaaaaaaaa")
         commands: Dict[str, CommandBuilder] = {}
 
-        
-        houdini_cmd.param("e")
         # Create commands
         for chunk in frame_chunks:
             task_title = chunk.frameRange()
-            # Add the frames argument
-            houdini_cmd.param("f", str(chunk).split('-'))
-           
-            commands[task_title] = houdini_cmd.deepcopy()
+            if len(chunk) > 1:
+                houdini_cmd.param("e")
+                # Add the frames argument
+                houdini_cmd.param("f", str(chunk).split('-'))
+            else:
+                houdini_cmd.param("F", chunk[0])
 
+                commands[task_title] = houdini_cmd.deepcopy()
         logger.info(commands)
         return {"commands": commands, "file_name": scene.stem}
 
@@ -119,7 +121,16 @@ class MantraCommand(CommandBase):
         logger: logging.Logger,
     ):
         scene: pathlib.Path = parameters["scene_file"]
+        rop_from_hip: bool = parameters["rop_from_hip"]
         previous_hip_value = action_query.store.get("submit_houdini_temp_hip_filepath", None)
+
+        if rop_from_hip:
+            self.command_buffer.parameters["render_nodes"].type = SelectParameterMeta()
+        else:
+            self.command_buffer.parameters["render_nodes"].type = str   
+            return
+
+
 
         if scene == previous_hip_value:
             return
@@ -145,10 +156,8 @@ class MantraCommand(CommandBase):
                 for line in stdout :
                     try:
                         logger.info(f"trying to parse stdout: {line}")
-
                         render_nodes = ast.literal_eval(line)
                         self.command_buffer.parameters["render_nodes"].rebuild_type(*render_nodes)
-                        logger.info(f"ok")
 
                     except Exception as e:
                         logger.info(f"failed to parse stdout: {e}, str: {line}")
@@ -158,4 +167,4 @@ class MantraCommand(CommandBase):
 
         #await run("rez env houdini -- hython -c hou.hipFile.load('D:\mantra_render.hip');render_nodes=hou.node('/out').allSubChildren();print(render_nodes)")
         action_query.store["submit_houdini_temp_hip_filepath"] = scene
-        await execute_in_thread(run,f"rez env silex_client-dev houdini -- hython -m silex_client.utils.houdini.get_rop_nodes --file {scene}")
+        await execute_in_thread(run,f"rez env houdini -- hython -m get_rop_nodes --file {scene}")
