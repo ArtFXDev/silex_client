@@ -19,13 +19,12 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import os
-import asyncio
 import ast
 import subprocess
 
-class MantraCommand(CommandBase):
+class HoudiniCommand(CommandBase):
     """
-    Construct Mantra Command
+    Construct Houdini Command
     """
     
     parameters = {
@@ -61,7 +60,7 @@ class MantraCommand(CommandBase):
             "label": "Render Nodes",
             "type": SelectParameterMeta(),
             "value": None,
-            "tooltip": "Select Render Mantra Node",
+            "tooltip": "Select Render Node",
         }
     }
 
@@ -86,18 +85,18 @@ class MantraCommand(CommandBase):
         logger.info(output_file)
         output_file = output_file.parent / f"{output_file.with_suffix('').stem}_$F4{''.join(output_file.suffixes)}"
 
-        # Build the mantra command
+        # Build the render command
         houdini_cmd = CommandBuilder("hython", rez_packages=["houdini"], delimiter=" ")
         houdini_cmd.value("C:/Houdini18/bin/hrender.py")
         houdini_cmd.value(str(scene))
         houdini_cmd.param("d", render_node)
         houdini_cmd.param("o", str(output_file))
-        houdini_cmd.param("w", resolution[0])
-        houdini_cmd.param("h", resolution[1])
+
+        if parameter_overrides:
+            houdini_cmd.param("w", resolution[0])
+            houdini_cmd.param("h", resolution[1])
 
         frame_chunks = frames.split_frameset(frame_range, task_size)
-        logger.info(frame_chunks)
-        logger.info("aaaaaaaaaaaaaaaaaaaaaaaaa")
         commands: Dict[str, CommandBuilder] = {}
 
         # Create commands
@@ -110,8 +109,8 @@ class MantraCommand(CommandBase):
             else:
                 houdini_cmd.param("F", chunk[0])
 
-                commands[task_title] = houdini_cmd.deepcopy()
-        logger.info(commands)
+            commands[task_title] = houdini_cmd.deepcopy()
+        logger.info(f"final commands: {commands}")
         return {"commands": commands, "file_name": scene.stem}
 
     async def setup(
@@ -123,14 +122,15 @@ class MantraCommand(CommandBase):
         scene: pathlib.Path = parameters["scene_file"]
         rop_from_hip: bool = parameters["rop_from_hip"]
         previous_hip_value = action_query.store.get("submit_houdini_temp_hip_filepath", None)
+        hide_overrides = parameters["parameter_overrides"]
+
+        self.command_buffer.parameters["resolution"].hide = not hide_overrides
 
         if rop_from_hip:
             self.command_buffer.parameters["render_nodes"].type = SelectParameterMeta()
         else:
             self.command_buffer.parameters["render_nodes"].type = str   
             return
-
-
 
         if scene == previous_hip_value:
             return
@@ -165,6 +165,5 @@ class MantraCommand(CommandBase):
             if stderr:
                 logger.error(f"stderr: {stderr.decode()}")
 
-        #await run("rez env houdini -- hython -c hou.hipFile.load('D:\mantra_render.hip');render_nodes=hou.node('/out').allSubChildren();print(render_nodes)")
         action_query.store["submit_houdini_temp_hip_filepath"] = scene
         await execute_in_thread(run,f"rez env houdini -- hython -m get_rop_nodes --file {scene}")

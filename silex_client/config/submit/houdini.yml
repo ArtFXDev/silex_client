@@ -1,5 +1,5 @@
-mantra:
-  label: "Submit mantra"
+houdini:
+  label: "Submit houdini"
   steps:
     build_output_path:
       label: "Build output path"
@@ -37,12 +37,12 @@ mantra:
             name:
               value: "render"
 
-    send_mantra_render:
+    send_houdini_render:
       label: "Setup render parameters"
       index: 20
       commands:
-        build_mantra_cmd:
-          path: "silex_client.commands.build_mantra_cmd.MantraCommand"
+        build_houdini_cmd:
+          path: "silex_client.commands.build_houdini_cmd.HoudiniCommand"
           label: "Mantra job parameters"
           ask_user: true
           parameters:
@@ -55,6 +55,6 @@ mantra:
           ask_user: true
           parameters:
             job_title:
-              value: !command-output "send_mantra_render:build_mantra_cmd:file_name"
+              value: !command-output "send_houdini_render:build_houdini_cmd:file_name"
             commands:
-              value: !command-output "send_mantra_render:build_mantra_cmd:commands"
+              value: !command-output "send_houdini_render:build_houdini_cmd:commands"
