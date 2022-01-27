@@ -43,7 +43,7 @@ class HoudiniCommand(CommandBase):
             "type": int,
             "value": 10,
         },
-        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
+        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": False, "hide": True},
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
         "parameter_overrides": {
             "type": bool,
@@ -75,7 +75,7 @@ class HoudiniCommand(CommandBase):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
-        skip_existing = int(parameters["skip_existing"])
+        # skip_existing = int(parameters["skip_existing"]) todo
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
         render_node: str = parameters["render_nodes"]
