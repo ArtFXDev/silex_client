@@ -3,36 +3,45 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from typing import Any, Dict, List
 from pathlib import Path
+from typing import Any, Dict, List
+
 from fileseq import FrameSet
-from silex_client.utils import frames
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command
+from silex_client.utils import command, frames
 from silex_client.utils.command import CommandBuilder
 from silex_client.utils.frames import split_frameset
-from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta, SelectParameterMeta
+from silex_client.utils.parameter_types import (
+    IntArrayParameterMeta,
+    PathParameterMeta,
+    SelectParameterMeta,
+)
 from silex_client.utils.thread import execute_in_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import os
 import ast
+import os
 import subprocess
+
 
 class HoudiniCommand(CommandBase):
     """
     Construct Houdini Command
     """
-    
+
     parameters = {
         "scene_file": {
             "label": "Scene file",
             "type": PathParameterMeta(extensions=[".hip", ".hipnc"]),
         },
-        "rop_from_hip": {"label": "Take ROP from scene file (can take some times)", "type": bool, "value": False},
+        "rop_from_hip": {
+            "label": "Take ROP from scene file (can take some times)",
+            "type": bool,
+            "value": False,
+        },
         "frame_range": {
             "label": "Frame range (start, end, step)",
             "type": FrameSet,
@@ -43,7 +52,12 @@ class HoudiniCommand(CommandBase):
             "type": int,
             "value": 10,
         },
-        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": False, "hide": True},
+        "skip_existing": {
+            "label": "Skip existing frames",
+            "type": bool,
+            "value": False,
+            "hide": True,
+        },
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
         "parameter_overrides": {
             "type": bool,
@@ -61,7 +75,7 @@ class HoudiniCommand(CommandBase):
             "type": SelectParameterMeta(),
             "value": None,
             "tooltip": "Select Render Node",
-        }
+        },
     }
 
     @CommandBase.conform_command()
@@ -83,7 +97,10 @@ class HoudiniCommand(CommandBase):
         output_file = Path(output_file)
 
         logger.info(output_file)
-        output_file = output_file.parent / f"{output_file.with_suffix('').stem}_$F4{''.join(output_file.suffixes)}"
+        output_file = (
+            output_file.parent
+            / f"{output_file.with_suffix('').stem}_$F4{''.join(output_file.suffixes)}"
+        )
 
         # Build the render command
         houdini_cmd = CommandBuilder("hython", rez_packages=["houdini"], delimiter=" ")
@@ -101,15 +118,18 @@ class HoudiniCommand(CommandBase):
 
         # Create commands
         for chunk in frame_chunks:
+            chunk_cmd = houdini_cmd.deepcopy()
             task_title = chunk.frameRange()
-            if len(chunk) > 1:
-                houdini_cmd.param("e")
-                # Add the frames argument
-                houdini_cmd.param("f", str(chunk).split('-'))
-            else:
-                houdini_cmd.param("F", chunk[0])
 
-            commands[task_title] = houdini_cmd.deepcopy()
+            if len(chunk) > 1:
+                chunk_cmd.param("e")
+                # Add the frames argument
+                chunk_cmd.param("f", str(chunk).split("-"))
+            else:
+                chunk_cmd.param("F", chunk[0])
+
+            commands[task_title] = chunk_cmd
+
         logger.info(f"final commands: {commands}")
         return {"commands": commands, "file_name": scene.stem}
 
@@ -121,7 +141,9 @@ class HoudiniCommand(CommandBase):
     ):
         scene: pathlib.Path = parameters["scene_file"]
         rop_from_hip: bool = parameters["rop_from_hip"]
-        previous_hip_value = action_query.store.get("submit_houdini_temp_hip_filepath", None)
+        previous_hip_value = action_query.store.get(
+            "submit_houdini_temp_hip_filepath", None
+        )
         hide_overrides = parameters["parameter_overrides"]
 
         self.command_buffer.parameters["resolution"].hide = not hide_overrides
@@ -129,7 +151,7 @@ class HoudiniCommand(CommandBase):
         if rop_from_hip:
             self.command_buffer.parameters["render_nodes"].type = SelectParameterMeta()
         else:
-            self.command_buffer.parameters["render_nodes"].type = str   
+            self.command_buffer.parameters["render_nodes"].type = str
             return
 
         if scene == previous_hip_value:
@@ -137,27 +159,26 @@ class HoudiniCommand(CommandBase):
 
         if not scene or not os.path.isfile(scene):
             return
+
         def run(cmd):
             proc = subprocess.Popen(
-                cmd,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
 
-         
             stdout, stderr = proc.communicate()
             logger.info(f"[{cmd} exited with {proc.returncode}]")
-            
+
             if stdout:
                 logger.info(stdout)
-                
+
                 stdout = stdout.decode().splitlines()
-                for line in stdout :
+                for line in stdout:
                     try:
                         logger.info(f"trying to parse stdout: {line}")
                         render_nodes = ast.literal_eval(line)
-                        self.command_buffer.parameters["render_nodes"].rebuild_type(*render_nodes)
+                        self.command_buffer.parameters["render_nodes"].rebuild_type(
+                            *render_nodes
+                        )
 
                     except Exception as e:
                         logger.info(f"failed to parse stdout: {e}, str: {line}")
@@ -166,4 +187,6 @@ class HoudiniCommand(CommandBase):
                 logger.error(f"stderr: {stderr.decode()}")
 
         action_query.store["submit_houdini_temp_hip_filepath"] = scene
-        await execute_in_thread(run,f"rez env houdini -- hython -m get_rop_nodes --file {scene}")
+        await execute_in_thread(
+            run, f"rez env houdini -- hython -m get_rop_nodes --file {scene}"
+        )
