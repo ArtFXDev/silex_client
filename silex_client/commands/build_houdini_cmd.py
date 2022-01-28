@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from pathlib import Path
 from typing import Any, Dict, List
 
 from fileseq import FrameSet
@@ -38,7 +37,7 @@ class HoudiniCommand(CommandBase):
             "type": PathParameterMeta(extensions=[".hip", ".hipnc"]),
         },
         "rop_from_hip": {
-            "label": "Take ROP from scene file (can take some times)",
+            "label": "Take ROP from scene file (can take some time)",
             "type": bool,
             "value": False,
         },
@@ -93,8 +92,7 @@ class HoudiniCommand(CommandBase):
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
         render_node: str = parameters["render_nodes"]
-        output_file: str = parameters["output_filename"]
-        output_file = Path(output_file)
+        output_file = pathlib.Path(parameters["output_filename"])
 
         logger.info(output_file)
         output_file = (
@@ -108,6 +106,8 @@ class HoudiniCommand(CommandBase):
         houdini_cmd.value(str(scene))
         houdini_cmd.param("d", render_node)
         houdini_cmd.param("o", str(output_file))
+        # Verbose mode
+        houdini_cmd.param("v")
 
         if parameter_overrides:
             houdini_cmd.param("w", resolution[0])
