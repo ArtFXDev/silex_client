@@ -47,19 +47,18 @@ class BuildNukeCommand(CommandBase):
 
         nuke_cmd = CommandBuilder("nuke", rez_packages=["nuke"])
 
-        # Execute in interactive mode
-        nuke_cmd.param("i")
-
         frame_chunks = split_frameset(frame_range, task_size)
         commands: Dict[str, CommandBuilder] = {}
 
         for chunk in frame_chunks:
+            chunk_cmd = nuke_cmd.deepcopy()
+
             # Specify the frames
-            nuke_cmd.param("F", chunk.frameRange())
+            chunk_cmd.param("F", chunk.frameRange())
 
             # Specify the scene file
-            nuke_cmd.param("x", str(scene))
+            chunk_cmd.param("xi", str(scene))
 
-            commands[chunk.frameRange()] = nuke_cmd
+            commands[chunk.frameRange()] = chunk_cmd
 
         return {"commands": commands, "file_name": scene.stem}
