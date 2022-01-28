@@ -36,11 +36,6 @@ class HoudiniCommand(CommandBase):
             "label": "Scene file",
             "type": PathParameterMeta(extensions=[".hip", ".hipnc"]),
         },
-        "rop_from_hip": {
-            "label": "Take ROP from scene file (can take some time)",
-            "type": bool,
-            "value": False,
-        },
         "frame_range": {
             "label": "Frame range (start, end, step)",
             "type": FrameSet,
@@ -68,6 +63,11 @@ class HoudiniCommand(CommandBase):
             "type": IntArrayParameterMeta(2),
             "value": [1920, 1080],
             "hide": True,
+        },
+        "rop_from_hip": {
+            "label": "Get ROP node list from scene file (can take some time)",
+            "type": bool,
+            "value": False,
         },
         "render_nodes": {
             "label": "Render Nodes",
@@ -102,7 +102,7 @@ class HoudiniCommand(CommandBase):
 
         # Build the render command
         houdini_cmd = CommandBuilder("hython", rez_packages=["houdini"], delimiter=" ")
-        houdini_cmd.value("C:/Houdini18/bin/hrender.py")
+        houdini_cmd.param("m", "hrender")
         houdini_cmd.value(str(scene))
         houdini_cmd.param("d", render_node)
         houdini_cmd.param("o", str(output_file))
