@@ -79,16 +79,18 @@ class Move(CommandBase):
         if os.path.isdir(path):
             # clean tree
             shutil.rmtree(path)
-            os.makedirs(path)
 
         if os.path.isfile(path):
             os.remove(path)
 
     @staticmethod
-    def move(src: str, dst: str):
-        # move folder or file
+    def move(logger, src: str, dst: str):
+        
+        os.makedirs(dst, exist_ok=True)
+
+        # Move folder or file
         if os.path.isdir(src):
-            # move all file in dst folder
+            # Move all file in dst folder
             file_names = os.listdir(src)
             for file_name in file_names:
                 shutil.move(os.path.join(src, file_name), dst)
@@ -116,9 +118,12 @@ class Move(CommandBase):
                 raise Exception(f"{item} doesn't exist.")
 
             new_path = pathlib.Path(dst)
+            destination_path = dst
+            if not os.path.isdir(item):
+                destination_path = os.path.join(dst, os.path.basename(item))
             # Handle override of existing file
             if new_path.exists() and force:
-                await execute_in_thread(self.remove, dst)
+                await execute_in_thread(self.remove, destination_path)
             elif new_path.exists():
                 response = action_query.store.get("move_override")
                 if response is None:
@@ -127,7 +132,7 @@ class Move(CommandBase):
                     action_query.store["move_override"] = response
                 if response in ["Override", "Always override"]:
                     force = True
-                    await execute_in_thread(self.remove, dst)
+                    await execute_in_thread(self.remove, destination_path)
                 if response in ["Keep existing", "Always keep existing"]:
                     await execute_in_thread(self.remove, item)
                     continue
