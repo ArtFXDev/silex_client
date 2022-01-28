@@ -6,6 +6,7 @@ import typing
 from typing import Any, Dict, List
 
 import fileseq
+
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import frames
 from silex_client.utils.command import CommandBuilder
@@ -71,7 +72,7 @@ class KickCommand(CommandBase):
         task_size: int = parameters["task_size"]
 
         kick_cmd = (
-            CommandBuilder("powershell.exe", delimiter=None)
+            CommandBuilder("powershell.exe", delimiter=" ")
             .param("ExecutionPolicy", "Bypass")
             .param("NoProfile")
             .param("File", "\\\\prod.silex.artfx.fr\\rez\\windows\\render_kick_ass.ps1")
@@ -85,6 +86,8 @@ class KickCommand(CommandBase):
 
         # Create commands
         for chunk in frame_chunks:
+            chunk_cmd = kick_cmd.deepcopy()
+
             # Get ass sequence  using a specific frame_range
             ass_files: List[str] = self._find_sequence(
                 ass_file, fileseq.FrameSet(chunk), logger
@@ -93,9 +96,9 @@ class KickCommand(CommandBase):
             # Converting chunk back to a frame set
             task_name = chunk.frameRange()
 
+            chunk_cmd.param("AssFiles", ",".join(ass_files))
+
             # Add ass sequence to argument list
-            commands[task_name] = kick_cmd.param(
-                "AssFiles", ",".join(ass_files)
-            ).deepcopy()
+            commands[task_name] = chunk_cmd
 
         return {"commands": commands, "file_name": ass_file.stem}

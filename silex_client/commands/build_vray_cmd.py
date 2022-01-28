@@ -6,10 +6,15 @@ import typing
 from typing import Any, Dict, List
 
 from fileseq import FrameSet
+
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.command import CommandBuilder
 from silex_client.utils.frames import split_frameset
-from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta
+from silex_client.utils.parameter_types import (
+    IntArrayParameterMeta,
+    PathParameterMeta,
+    RadioSelectParameterMeta,
+)
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -38,6 +43,13 @@ class VrayCommand(CommandBase):
         },
         "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
+        "engine": {
+            "label": "RT engine",
+            "type": RadioSelectParameterMeta(
+                **{"Regular": 0, "CPU RT": 1, "GPU CUDA": 5, "GPU RTX": 7}
+            ),
+            "value": 0,
+        },
         "parameter_overrides": {
             "type": bool,
             "label": "Parameter overrides",
@@ -78,8 +90,10 @@ class VrayCommand(CommandBase):
         vray_cmd = CommandBuilder("vray", rez_packages=["vray"])
         vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
         vray_cmd.param("progressIncrement", 5)
-        vray_cmd.param("sceneFile", scene)
+        vray_cmd.param("verboseLevel", 3)
+        vray_cmd.param("rtEngine", parameters["engine"])
         vray_cmd.param("skipExistingFrames", skip_existing)
+        vray_cmd.param("sceneFile", scene)
         vray_cmd.param("imgFile", parameters["output_filename"])
 
         # If the user is connected
@@ -97,11 +111,13 @@ class VrayCommand(CommandBase):
 
         # Creating tasks for each frame chunk
         for chunk in frame_chunks:
+            chunk_cmd = vray_cmd.deepcopy()
+
             fmt_frames = ";".join(map(str, list(chunk)))
 
             task_title = chunk.frameRange()
 
             # Add the frames argument
-            commands[task_title] = vray_cmd.param("frames", fmt_frames).deepcopy()
+            commands[task_title] = chunk_cmd.param("frames", fmt_frames)
 
         return {"commands": commands, "file_name": scene.stem}

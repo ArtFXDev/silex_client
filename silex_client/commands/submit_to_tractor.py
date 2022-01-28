@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 
 import gazu.client
 import gazu.project
+
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.command import CommandBuilder
 from silex_client.utils.parameter_types import (
@@ -43,7 +44,7 @@ class TractorSubmiter(CommandBase):
         },
         "commands": {
             "label": "Commands list",
-            "type": DictParameterMeta(str, CommandBase),
+            "type": DictParameterMeta(str, CommandBuilder),
             "hide": True,
         },
         "pools": {
@@ -184,6 +185,7 @@ class TractorSubmiter(CommandBase):
         # Build list of profile names to ignore
         PROFILE_IGNORE = [
             "DEV",
+            "BUG",
             "Windows10",
             "Linux64",
             "Linux32",
