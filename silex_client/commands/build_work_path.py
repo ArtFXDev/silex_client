@@ -11,6 +11,7 @@ import gazu.asset
 import gazu.files
 import gazu.shot
 import gazu.task
+
 from silex_client.action.command_base import CommandBase
 
 # Forward references

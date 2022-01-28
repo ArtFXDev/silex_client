@@ -6,6 +6,7 @@ import typing
 from typing import Any, Dict, List
 
 import fileseq
+
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import frames
 from silex_client.utils.command import CommandBuilder

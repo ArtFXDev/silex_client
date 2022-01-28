@@ -11,9 +11,9 @@ import os
 import pathlib
 import re
 import sys
+import unicodedata
 from types import ModuleType
 from typing import List
-import unicodedata
 
 import fileseq
 

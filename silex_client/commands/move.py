@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 import logging
-import typing
-from typing import Any, Dict, List
 import os
 import pathlib
 import shutil
+import typing
+from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.thread import execute_in_thread
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import (
     ListParameterMeta,
-    TextParameterMeta,
     RadioSelectParameterMeta,
+    TextParameterMeta,
 )
+from silex_client.utils.thread import execute_in_thread
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -85,7 +85,7 @@ class Move(CommandBase):
 
     @staticmethod
     def move(src: str, dst: str):
-        
+
         os.makedirs(dst, exist_ok=True)
 
         # Move folder or file
