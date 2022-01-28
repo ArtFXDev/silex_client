@@ -84,7 +84,7 @@ class Move(CommandBase):
             os.remove(path)
 
     @staticmethod
-    def move(logger, src: str, dst: str):
+    def move(src: str, dst: str):
         
         os.makedirs(dst, exist_ok=True)
 
