@@ -184,6 +184,7 @@ class TractorSubmiter(CommandBase):
         # Build list of profile names to ignore
         PROFILE_IGNORE = [
             "DEV",
+            "BUG",
             "Windows10",
             "Linux64",
             "Linux32",
