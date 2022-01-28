@@ -96,11 +96,6 @@ class VrayCommand(CommandBase):
         vray_cmd.param("sceneFile", scene)
         vray_cmd.param("imgFile", parameters["output_filename"])
 
-        # If the user is connected
-        if "project" in action_query.context_metadata:
-            # Add the project in the rez environment
-            vray_cmd.add_rez_package(action_query.context_metadata["project"].lower())
-
         if parameter_overrides:
             vray_cmd.param("imgWidth", resolution[0]).param("imgHeight", resolution[1])
 
