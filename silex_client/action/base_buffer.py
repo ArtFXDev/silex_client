@@ -11,6 +11,7 @@ import re
 import uuid as unique_id
 from dataclasses import dataclass, field, fields
 from functools import partial
+import textwrap
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -98,6 +99,9 @@ class BaseBuffer:
         if self.label is None:
             self.label = slugify_pattern.sub(" ", self.name)
             self.label = self.label.title()
+        # Detend the tooltip for multiline tooltips
+        if self.tooltip is not None:
+            self.tooltip = textwrap.dedent(self.tooltip)
 
     @classmethod
     def get_child_types(cls) -> Tuple[Type[BaseBuffer]]:

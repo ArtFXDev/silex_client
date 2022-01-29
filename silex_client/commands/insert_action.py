@@ -11,7 +11,7 @@ import fileseq
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.action.command_base import CommandBase
 from silex_client.resolve.config import Config
-from silex_client.utils.parameter_types import AnyParameter
+from silex_client.utils.parameter_types import AnyParameter, UnionParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -25,50 +25,65 @@ class InsertAction(CommandBase):
 
     parameters = {
         "action": {
-            "label": "Action to execute",
-            "type": str,
+            "label": "Action to insert",
+            "type": UnionParameterMeta([str, dict]),
             "value": None,
-            "tooltip": "This action will be executed for each items in the given list",
+            "tooltip": """
+            The action to insert. 
+            It can be an existing action name or an action definition
+            """,
         },
         "category": {
             "label": "Action category",
             "type": str,
             "value": "action",
-            "tooltip": "Set the category of the action you want to execute",
+            "tooltip": """
+            If the action to insert is an action name
+            This define the category of the action to resolve
+            """,
         },
-        "value": {
-            "label": "Value to set on the new action",
+        "prepend": {
+            "label": "Action to prepend",
+            "type": dict,
+            "value": None,
+            "tooltip": """
+            Similar to the action parameter.
+            The steps of this actions will be preprended in the inserted action
+            """,
+            "hide": True,
+        },
+        "append": {
+            "label": "Action to append",
+            "type": dict,
+            "value": None,
+            "tooltip": """
+            Similar to the action parameter.
+            The steps of this actions will be appended in the inserted action
+            """,
+            "hide": True,
+        },
+        "input": {
+            "label": "Action input value",
             "type": AnyParameter,
             "value": "",
-            "tooltip": "This value will be append to action's steps labels",
+            "tooltip": "This value will be set to the newly inserted action's input",
             "hide": True,
         },
-        "parameter": {
+        "parameters": {
             "label": "Parameters to set on the action",
-            "type": str,
-            "value": "",
-            "tooltip": "Set wich parameter will be overriden by the given value",
+            "type": dict,
+            "value": {},
+            "tooltip": """
+            Dict of values to set on the parameters of the inserted action
+            The keys of the dict should look like <step>.<command>.<parameter>
+            """,
             "hide": True,
         },
-        "label_key": {
-            "label": "Value's key to set on the label",
+        "label": {
+            "label": "Action label",
             "type": str,
             "value": "",
-            "tooltip": "If the value is a dictionary, the value at that key will be set on the label",
-            "hide": True,
-        },
-        "output": {
-            "label": "The command to get the output from",
-            "type": str,
-            "value": "",
-            "tooltip": "The output of the given command will be returned",
-            "hide": True,
-        },
-        "hide_commands": {
-            "label": "Hide the insterted commands",
-            "type": bool,
-            "value": False,
-            "tooltip": "This option is for performance purpose",
+            "tooltip": "The label to append to the inserted action's label",
             "hide": True,
         },
     }
