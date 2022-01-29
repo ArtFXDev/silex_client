@@ -163,8 +163,7 @@ class Loader(yaml.SafeLoader):
 
         return jsondiff.patch(inherit_data, node_data)
 
-    @staticmethod
-    def connection(node: yaml.Node) -> Connection:
+    def connection(self, node: yaml.Node) -> Connection:
         """
         Contructor function to handle the !command-output statement
         The result will be a CommandOutput object that will tell the ActionQuery object

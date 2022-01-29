@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, List, Tuple
 
+from silex_client.utils.log import logger
+
 # Forward references
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -31,7 +33,7 @@ class Connection:
 
     def get_buffer(
         self, action_query: ActionQuery, prefix: str = ""
-    ) -> Tuple[BaseBuffer, str]:
+    ) -> Tuple[BaseBuffer, str, str]:
         """
         Get the buffer this connection is leading to by traversing the children
         If the path is too long, the part of the path that has not been traversed is returned
@@ -43,7 +45,7 @@ class Connection:
         path_left: List[str] = []
         buffer: BaseBuffer = action_query.buffer
         # Traverse recursively the children of the buffers
-        for index, path in enumerate(full_path):
+        for index, path in enumerate(full_path[1:]):
             child = buffer.children.get(path)
             if child is None:
                 # The traversal stoped before going throug the full path
@@ -52,7 +54,7 @@ class Connection:
                 break
             buffer = child
 
-        return buffer, self.SPLIT.join(path_left)
+        return buffer, self.SPLIT.join(path_left), self.SPLIT.join(path_left)
 
     def get_output(self, action_query: ActionQuery, prefix: str = "") -> Any:
         """
@@ -60,11 +62,15 @@ class Connection:
         the children. This also go recursively throught items of a dict if the output
         of the buffer is a dictionary
         """
-        buffer, path_left = self.get_buffer(action_query, prefix)
+        buffer, path_left, full_path = self.get_buffer(action_query, prefix)
         buffer_output = buffer.get_output(action_query)
 
         # If we traversed the entire path, return the result directly
         if not path_left:
+            return buffer_output
+
+        if path_left and not isinstance(buffer_output, dict):
+            logger.error("Could not get the output of the connection %s", full_path)
             return buffer_output
 
         # Traverse the returned dict with the left path

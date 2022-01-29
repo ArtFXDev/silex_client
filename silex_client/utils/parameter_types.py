@@ -126,7 +126,7 @@ def RangeParameterMeta(start: int, end: int, increment: int = 1):
 
         if value < start or value > end:
             raise TypeError(
-                "The value {value} does not fit the expexted range ({start}:{end})"
+                f"The value {value} does not fit the expexted range ({start}:{end})"
             )
         return int.__new__(cls, value)
 
@@ -289,7 +289,7 @@ def PathParameterMeta(extensions: List[str] = None, multiple: bool = False):
         attributes["__init__"] = __init__
         return ParameterInputTypeMeta("PathParameter", (list,), attributes)
 
-    return ParameterInputTypeMeta("PathParameter", (pathlib.Path,), attributes)
+    return ParameterInputTypeMeta("PathParameter", (type(pathlib.Path()),), attributes)
 
 
 def TextParameterMeta(color=None):

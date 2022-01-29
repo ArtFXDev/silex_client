@@ -9,15 +9,15 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Union
 
 from silex_client.utils.enums import Status
+from silex_client.action.parameter_buffer import ParameterBuffer
 
 # Forward references
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
     from silex_client.action.command_buffer import CommandBuffer, CommandParameters
-    from silex_client.action.parameter_buffer import ParameterBuffer
 
 
 class CommandBase:
@@ -88,11 +88,7 @@ class CommandBase:
         Meant to be used with the __call__ method of CommandBase objects
         """
 
-        def decorator_conform_command(
-            func: Callable[
-                [CommandBase, CommandParameters, ActionQuery, logging.Logger], Any
-            ]
-        ) -> Callable:
+        def decorator_conform_command(func: Callable) -> Callable:
             @functools.wraps(func)
             async def wrapper_conform_command(
                 command: CommandBase,
@@ -132,7 +128,7 @@ class CommandBase:
         return decorator_conform_command
 
     async def prompt_user(
-        self, action_query: ActionQuery, new_parameters: dict[str, ParameterBuffer]
+        self, action_query: ActionQuery, new_parameters: dict[str, Union[ParameterBuffer, dict]]
     ) -> CommandParameters:
         """
         Add the given parameters to to current command parameters and ask an update from the user
@@ -144,8 +140,17 @@ class CommandBase:
         # Hide the existing parameters
         for parameter in self.command_buffer.parameters.values():
             parameter.hide = True
+
+        # Cast the parameters that are dict into ParameterBuffers
+        parameter_buffers: Dict[str, ParameterBuffer] = {}
+        for key, parameter in new_parameters.items():
+            if isinstance(parameter, ParameterBuffer):
+                parameter_buffers[key] = parameter
+                continue
+            parameter_buffers[key] = ParameterBuffer.construct(parameter, self.command_buffer)
+
         # Add the parameters to the command buffer's parameters
-        self.command_buffer.parameters.update(new_parameters)
+        self.command_buffer.parameters.update(parameter_buffers)
         self.command_buffer.ask_user = True
 
         await action_query.prompt_commands(end=action_query.current_command_index + 1)

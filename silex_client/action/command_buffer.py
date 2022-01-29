@@ -10,7 +10,6 @@ import copy
 import importlib
 import os
 import traceback
-from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, TypeVar, Union
 
@@ -40,7 +39,6 @@ class CommandBuffer(BaseBuffer):
     """
 
     PRIVATE_FIELDS = [
-        "output_result",
         "executor",
         "parent",
         "outdated_cache",
@@ -148,7 +146,7 @@ class CommandBuffer(BaseBuffer):
         if self.ask_user:
             return True
         if all(
-            parameter.value is not None or parameter.hide
+            parameter.data_in is not None or parameter.hide
             for parameter in self.children.values()
         ):
             return False
@@ -188,7 +186,7 @@ class CommandBuffer(BaseBuffer):
             # The parameters can be defined with <key>=<value> as a shortcut
             if not isinstance(serialized_parameters.get(parameter_name, {}), dict):
                 serialized_parameters[parameter_name] = {
-                    "value": serialized_parameters[parameter_name]
+                    "data_in": serialized_parameters[parameter_name]
                 }
 
             # Apply the parameters to the default parameters
