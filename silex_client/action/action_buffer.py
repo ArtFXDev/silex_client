@@ -7,18 +7,17 @@ Dataclass used to store the data related to an action
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 from silex_client.action.base_buffer import BaseBuffer
+from silex_client.action.command_buffer import CommandBuffer
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.action.step_buffer import StepBuffer
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
 from silex_client.utils.parameter_types import AnyParameter
 
-# Forward references
-if TYPE_CHECKING:
-    from silex_client.action.command_buffer import CommandBuffer
+TBaseBuffer = TypeVar("TBaseBuffer", bound="BaseBuffer")
 
 
 @dataclass()
@@ -34,8 +33,9 @@ class ActionBuffer(BaseBuffer):
         "serialize_cache",
     ]
     READONLY_FIELDS = ["label"]
-    CHILD_NAME = "steps"
 
+    #: Type name to help differentiate the different buffer types
+    buffer_type: str = field(default="actions")
     #: Specify if the action must be simplified in the UI or not
     simplify: bool = field(compare=False, repr=False, default=False)
     #: The status is readonly, it is computed from the commands's status
@@ -45,29 +45,21 @@ class ActionBuffer(BaseBuffer):
     #: The status of the action, this value is readonly, it is computed from the commands's status
     thumbnail: Optional[str] = field(default=None)
     #: A dict of steps that will contain the commands
-    children: Dict[str, StepBuffer] = field(default_factory=dict)
+    children: Dict[str, Union[StepBuffer, ActionBuffer]] = field(default_factory=dict)
     #: Dict of variables that are global to all the commands of this action
     store: Dict[str, Any] = field(compare=False, default_factory=dict)
     #: Snapshot of the context's metadata when this buffer is created
     context_metadata: Dict[str, Any] = field(default_factory=dict)
 
     @property
-    def child_type(self):
-        return StepBuffer
-
-    @property
-    def steps(self) -> Dict[str, StepBuffer]:
+    def steps(self) -> Dict[str, Union[StepBuffer, ActionBuffer]]:
+        """
+        Alias for children
+        """
         return self.children
 
     def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
         super().deserialize(serialized_data, True)
-        self.reorder_steps()
-
-    def reorder_steps(self):
-        """
-        Place the steps in the right order accoring to the index value
-        """
-        self.children = dict(sorted(self.steps.items(), key=lambda item: item[1].index))
 
     @property  # type: ignore
     def status(self) -> Status:
@@ -97,36 +89,43 @@ class ActionBuffer(BaseBuffer):
     @property
     def commands(self) -> List[CommandBuffer]:
         """
-        Helper to get a command that belong to this action
+        Helper to get the commands of the actions
         The data is quite nested, this is just for conveniance
         """
-        return [
-            command
-            for step in self.steps.values()
-            for command in step.commands.values()
-        ]
 
-    def get_parameter(
-        self, step: str, command: str, name: str
-    ) -> Optional[ParameterBuffer]:
+        def flatten(nested_list: List[Union[StepBuffer, ActionBuffer, CommandBuffer]]):
+            for item in sorted(nested_list, key=lambda x: x.index):
+                if isinstance(item, CommandBuffer):
+                    yield item
+                else:
+                    yield from flatten(list(item.children.values()))
+
+        return list(flatten(list(self.children.values())))
+
+    def get_command(self, command_path: List[str]) -> Optional[CommandBuffer]:
         """
         Helper to get a parameter of a command that belong to this action
         The data is quite nested, this is just for conveniance
         """
-        command_buffer = self.steps[step].commands[command]
-        return command_buffer.parameters.get(name, None)
+        return self.get_child(command_path, CommandBuffer)
 
-    def set_parameter(
-        self, step: str, command: str, name: str, value: Any, **kwargs
-    ) -> None:
+    def get_parameter(self, parameter_path: List[str]) -> Optional[ParameterBuffer]:
+        """
+        Helper to get a parameter of a command that belong to this action
+        The data is quite nested, this is just for conveniance
+        """
+        return self.get_child(parameter_path, ParameterBuffer)
+
+    def set_parameter(self, parameter_path: List[str], value: Any, **kwargs) -> None:
         """
         Helper to set a parameter of a command that belong to this action
         The data is quite nested, this is just for conveniance
         """
-        parameter = self.get_parameter(step, command, name)
+        parameter = self.get_parameter(parameter_path)
         if parameter is None:
             logger.error(
-                "Could not set parameter %s: The parameter does not exists", name
+                "Could not set parameter %s: The parameter does not exists",
+                parameter_path,
             )
             return
 
@@ -136,18 +135,20 @@ class ActionBuffer(BaseBuffer):
                 value = parameter.type(value)
             except TypeError:
                 logger.error(
-                    "Could not set parameter %s: Invalid value (%s)", name, value
+                    "Could not set parameter %s: Invalid value (%s)",
+                    parameter_path,
+                    value,
                 )
                 return
 
         parameter.value = value
 
-        for key, value in kwargs.items():
-            if not hasattr(parameter, key):
+        for attribute_name, attribute_value in kwargs.items():
+            if not hasattr(parameter, attribute_name):
                 logger.warning(
                     "Could not set the attribute %s on the parameter %s: The attribute does not exists",
-                    key,
+                    attribute_name,
                     parameter,
                 )
                 continue
-            setattr(parameter, key, value)
+            setattr(parameter, attribute_name, attribute_value)

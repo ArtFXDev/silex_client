@@ -30,6 +30,8 @@ class ParameterBuffer(BaseBuffer):
     PRIVATE_FIELDS = ["outdated_cache", "serialize_cache", "parent"]
     READONLY_FIELDS = ["type", "label"]
 
+    #: Type name to help differentiate the different buffer types
+    buffer_type: str = field(default="parameters")
     #: The type of the parameter, must be a class definition or a CommandParameterMeta instance
     type: Type = field(default=type(None))
     #: The value that will return the parameter
@@ -73,7 +75,11 @@ class ParameterBuffer(BaseBuffer):
         """
         # If the value is the output of an other command, get is
         if isinstance(self.value, CommandOutput):
-            return self.value.get_value(action_query)
+            parent_action = self.get_parent(buffer_type="actions")
+            prefix = ""
+            if parent_action is not None:
+                prefix = parent_action.get_path()
+            return self.value.get_value(action_query, prefix)
 
         # If the value is a callable, call it (for mutable default values)
         if callable(self.value):

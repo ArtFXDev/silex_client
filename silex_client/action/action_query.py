@@ -10,11 +10,12 @@ import asyncio
 import copy
 import os
 from concurrent import futures
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional, Union
 
 import jsondiff
 
 from silex_client.action.action_buffer import ActionBuffer
+from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.core.context import Context
 from silex_client.resolve.config import Config
 from silex_client.utils.datatypes import ReadOnlyDict
@@ -25,7 +26,6 @@ from silex_client.utils.serialiser import silex_diff
 # Forward references
 if TYPE_CHECKING:
     from silex_client.action.command_buffer import CommandBuffer
-    from silex_client.action.step_buffer import StepBuffer
     from silex_client.core.event_loop import EventLoop
     from silex_client.network.websocket import WebsocketConnection
 
@@ -74,6 +74,10 @@ class ActionQuery:
         context.register_action(self)
 
     async def execute_commands(self, step_by_step: bool = False) -> None:
+        """
+        Execute the commands one by one in order
+        Starting from the last one
+        """
         command_iterator = self.command_iterator
         if step_by_step:
             command_iterator = [next(self.command_iterator)]
@@ -198,6 +202,7 @@ class ActionQuery:
         self._task.cancel()
 
     def cancel(self, emit_clear: bool = True):
+        """Sync version of async_cancel, this can be called from the main thread"""
         future = self.event_loop.register_task(self.async_cancel(emit_clear))
         future.result()
 
@@ -217,9 +222,11 @@ class ActionQuery:
         await self.execute_commands(step_by_step=not all_commands)
 
     def undo(self, all_commands: bool = False):
+        """Sync version of async_undo, this can be called from the main thread"""
         self.event_loop.register_task(self.async_undo(all_commands))
 
     def redo(self):
+        """Restart the action in formard mode"""
         if self.execution_type is not Execution.FORWARD:
             self.command_iterator.command_index -= 1
         self.execution_type = Execution.FORWARD
@@ -227,6 +234,7 @@ class ActionQuery:
             self.execute()
 
     def stop(self):
+        """Pause the execution of the action"""
         self.execution_type = Execution.PAUSE
 
     def _initialize_buffer(
@@ -243,6 +251,7 @@ class ActionQuery:
         if self.name not in resolved_config.keys():
             logger.error(
                 "Could not resolve the action %s: The root key should be the same as the config file name",
+                self.name,
             )
             return
 
@@ -360,11 +369,6 @@ class ActionQuery:
         return self.buffer.store
 
     @property
-    def steps(self) -> List[StepBuffer]:
-        """Shortcut to get the steps of the buffer"""
-        return list(self.buffer.steps.values())
-
-    @property
     def commands(self) -> list[CommandBuffer]:
         """Shortcut to get the commands of the buffer"""
         return self.buffer.commands
@@ -383,9 +387,11 @@ class ActionQuery:
         The format of the output is {<step>:<command> : parameters}
         """
         parameters = {}
-        for step in self.steps:
-            for command in step.commands.values():
-                parameters[f"{step.name}:{command.name}"] = command.parameters
+        for command in self.commands:
+            for parameter in command.children.values():
+                parameters[
+                    f"{parameter.get_path()}:{parameter.type}"
+                ] = command.parameters
 
         return parameters
 
@@ -395,106 +401,23 @@ class ActionQuery:
         """
         return CommandIterator(self.buffer)
 
-    def set_parameter(self, parameter_name: str, value: Any, **kwargs) -> None:
+    def get_parameter(self, parameter_path: str) -> Optional[ParameterBuffer]:
         """
-        Shortcut to set variables on the buffer easly
-
-        The parameter name is parsed, according to the scheme : <step>:<command>:<parameter>
-        The missing values can be guessed if there is no ambiguity, only <parameter> is required
+        Shortcut to get a parameter easly
         """
-        step = None
-        command = None
+        return self.buffer.get_parameter(parameter_path.split(":"))
 
-        # Get the infos that are provided
-        parameter_split = parameter_name.split(":")
-        name = parameter_split[-1]
-        if len(parameter_split) == 3:
-            step = parameter_split[0]
-            command = parameter_split[1]
-        elif len(parameter_split) == 2:
-            command = parameter_split[0]
-        elif len(parameter_split) != 1:
-            logger.warning(
-                "Invalid parameter path: The given parameter path %s has too many separators",
-                parameter_name,
-            )
-
-        # Guess the info that were not provided by taking the first match
-        index = None
-        for parameter_path, parameters in self.parameters.items():
-            parameter_step = parameter_path.split(":")[0]
-            parameter_command = parameter_path.split(":")[1]
-            # If only the parameter is provided
-            if step is None and command is None and name in parameters:
-                step = parameter_step
-                index = parameter_command
-                break
-            # If the command name and the parameter are provided
-            elif step is None and command == parameter_command and name in parameters:
-                step = parameter_step
-                index = parameter_command
-                break
-            # If everything is provided
-            elif step is not None and command is not None:
-                if (
-                    step == parameter_step
-                    and command == parameter_command
-                    and name in parameters
-                ):
-                    index = parameter_command
-                    break
-
-        if step is None or index is None:
-            logger.error(
-                "Could not set parameter %s: The parameter does not exists",
-                parameter_name,
-            )
-            return
-
-        self.buffer.set_parameter(step, index, name, value, **kwargs)
+    def set_parameter(self, parameter_path: str, value: Any, **kwargs) -> None:
+        """
+        Shortcut to set parameters on the buffer easly
+        """
+        self.buffer.set_parameter(parameter_path.split(":"), value, **kwargs)
 
     def get_command(self, command_path: str) -> Optional[CommandBuffer]:
         """
         Shortcut to get a command easly
-
-        The command path is parsed, according to the scheme : <step>:<command>
-        If you only provide a <command> the first occurence will be returned
         """
-
-        command_split = command_path.split(":")
-        name = command_split[-1]
-        step = None
-
-        if len(command_split) == 2:
-            step = command_split[0]
-        elif len(command_split) != 1:
-            logger.warning(
-                "Invalid command path: The given command path %s has too many separators",
-                command_path,
-            )
-            return None
-
-        # If the command path is explicit, get the command directly
-        if step is not None:
-            try:
-                return self.buffer.steps[step].commands[name]
-            except KeyError:
-                logger.error(
-                    "Could not retrieve the command %s: The command does not exists",
-                    command_path,
-                )
-                return None
-
-        # If only the command is given, get the first occurence
-        for command in self.iter_commands():
-            if command.name == name:
-                return command
-
-        logger.error(
-            "Could not retrieve the command %s: The command does not exists",
-            command_path,
-        )
-        return None
+        return self.buffer.get_command(command_path.split(":"))
 
 
 class CommandIterator(Iterator):

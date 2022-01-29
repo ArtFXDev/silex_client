@@ -13,7 +13,6 @@ from concurrent import futures
 from typing import TYPE_CHECKING, Any, Dict
 
 import socketio
-from aiohttp import ClientSession
 from socketio.exceptions import ConnectionError
 
 from silex_client.network.websocket_action import WebsocketActionNamespace
@@ -49,6 +48,7 @@ class WebsocketConnection:
 
     @property
     def is_running(self):
+        """Shortcut that check if the client is connected to a server"""
         return self.socketio.connected
 
     async def _connect_socketio(self) -> None:
