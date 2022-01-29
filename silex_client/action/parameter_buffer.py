@@ -77,7 +77,10 @@ class ParameterBuffer(BaseBuffer):
         serialized_data: Dict[str, Any],
         parent: BaseBuffer = None,
     ) -> ParameterBuffer:
-        # Value can be used as a shortcut to set the data_in
+        # "value" can be used as a shortcut to set the data_in
         if "value" in serialized_data and "data_in" not in serialized_data:
             serialized_data["data_in"] = serialized_data.pop("value")
+        # "type" can be used as a shortcut to set the value_type
+        if "type" in serialized_data and "value_type" not in serialized_data:
+            serialized_data["value_type"] = serialized_data.pop("type")
         return super().construct(serialized_data, parent)

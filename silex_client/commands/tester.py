@@ -33,13 +33,13 @@ class StringTester(CommandBase):
     parameters = {
         "string_tester": {
             "label": "String Tester",
-            "value_type": str,
+            "type": str,
             "value": None,
             "tooltip": "Testing the string parameters",
         },
         "string_tester_2": {
             "label": "String Tester 2",
-            "value_type": str,
+            "type": str,
             "value": "John Doe",
             "tooltip": "Testing the string parameters",
         },
@@ -73,13 +73,13 @@ class IntegerTester(CommandBase):
     parameters = {
         "int_tester": {
             "label": "Integer Tester",
-            "value_type": int,
+            "type": int,
             "value": None,
             "tooltip": "Testing the int parameters",
         },
         "int_tester_2": {
             "label": "Integer Tester 2",
-            "value_type": int,
+            "type": int,
             "value": 39,
             "tooltip": "Testing the int parameters",
         },
@@ -113,13 +113,13 @@ class BooleanTester(CommandBase):
     parameters = {
         "bool_tester": {
             "label": "Boolean Tester",
-            "value_type": bool,
+            "type": bool,
             "value": None,
             "tooltip": "Testing the bool parameters",
         },
         "bool_tester_2": {
             "label": "Boolean Tester 2",
-            "value_type": bool,
+            "type": bool,
             "value": False,
             "tooltip": "Testing the bool parameters",
         },
@@ -164,23 +164,23 @@ class PathTester(CommandBase):
     parameters = {
         "path_tester": {
             "label": "Path Tester",
-            "value_type": PathParameterMeta(),
+            "type": PathParameterMeta(),
             "value": None,
             "tooltip": "Testing the path parameters",
         },
         "path_tester_multiple": {
             "label": "Path Tester Multiple",
-            "value_type": PathParameterMeta(multiple=True),
+            "type": PathParameterMeta(multiple=True),
             "value": None,
         },
         "path_tester_extensions": {
             "label": "Path Tester extensions .abc, .obj, .fbx",
-            "value_type": PathParameterMeta(extensions=[".abc", ".obj", ".fbx"]),
+            "type": PathParameterMeta(extensions=[".abc", ".obj", ".fbx"]),
             "value": None,
         },
         "path_tester_multiple_extensions": {
             "label": "Path Tester multiple files and extensions (.png, .jpg, .jpeg)",
-            "value_type": PathParameterMeta(
+            "type": PathParameterMeta(
                 extensions=[".png", ".jpg", ".jpeg"], multiple=True
             ),
             "value": None,
@@ -225,13 +225,13 @@ class SelectTester(CommandBase):
     parameters = {
         "select_tester": {
             "label": "Select Tester",
-            "value_type": SelectParameterMeta("hello", "world", "foo", "bar"),
+            "type": SelectParameterMeta("hello", "world", "foo", "bar"),
             "value": None,
             "tooltip": "Testing the select parameters",
         },
         "select_tester_2": {
             "label": "Select Tester 2",
-            "value_type": SelectParameterMeta(
+            "type": SelectParameterMeta(
                 **{
                     "Hello Label": "hello",
                     "World Label": "world",
@@ -272,13 +272,13 @@ class RangeTesterLow(CommandBase):
     parameters = {
         "range_tester": {
             "label": "Range Tester",
-            "value_type": RangeParameterMeta(1, 475, 1),
+            "type": RangeParameterMeta(1, 475, 1),
             "value": None,
             "tooltip": "Testing the range parameters",
         },
         "range_tester_2": {
             "label": "Range Tester 2",
-            "value_type": RangeParameterMeta(1, 475, 1),
+            "type": RangeParameterMeta(1, 475, 1),
             "value": 300,
             "tooltip": "Testing the range parameters",
         },
@@ -312,13 +312,13 @@ class RangeTesterMid(CommandBase):
     parameters = {
         "range_tester": {
             "label": "Range Tester",
-            "value_type": RangeParameterMeta(1, 30, 5),
+            "type": RangeParameterMeta(1, 30, 5),
             "value": None,
             "tooltip": "Testing the range parameters",
         },
         "range_tester_2": {
             "label": "Range Tester 2",
-            "value_type": RangeParameterMeta(1, 30, 5),
+            "type": RangeParameterMeta(1, 30, 5),
             "value": None,
             "tooltip": "Testing the range parameters",
         },
@@ -360,13 +360,13 @@ class RangeTesterHigh(CommandBase):
     parameters = {
         "range_tester": {
             "label": "Range Tester",
-            "value_type": RangeParameterMeta(1000, 10000, 100),
+            "type": RangeParameterMeta(1000, 10000, 100),
             "value": None,
             "tooltip": "Testing the range parameters",
         },
         "range_tester_2": {
             "label": "Range Tester 2",
-            "value_type": RangeParameterMeta(1000, 10000, 100),
+            "type": RangeParameterMeta(1000, 10000, 100),
             "value": 5500,
             "tooltip": "Testing the range parameters",
         },
@@ -400,13 +400,13 @@ class EntityTester(CommandBase):
     parameters = {
         "entity_tester": {
             "label": "Entity Tester",
-            "value_type": TaskParameterMeta(),
+            "type": TaskParameterMeta(),
             "value": None,
             "tooltip": "Testing the entity parameters",
         },
         "entity_tester_2": {
             "label": "Entity Tester 2",
-            "value_type": TaskParameterMeta(),
+            "type": TaskParameterMeta(),
             "value": None,
             "tooltip": "Testing the entity parameters",
         },
@@ -440,13 +440,13 @@ class MultipleSelectTester(CommandBase):
     parameters = {
         "multiple_select_tester": {
             "label": "MultipleSelect Tester",
-            "value_type": MultipleSelectParameterMeta("foo", "bar", "hello", "world"),
+            "type": MultipleSelectParameterMeta("foo", "bar", "hello", "world"),
             "value": None,
             "tooltip": "Testing the multiple_select parameters",
         },
         "multiple_select_tester_2": {
             "label": "MultipleSelect Tester 2",
-            "value_type": MultipleSelectParameterMeta("foo", "bar", "hello", "world"),
+            "type": MultipleSelectParameterMeta("foo", "bar", "hello", "world"),
             "value": None,
             "tooltip": "Testing the multiple_select parameters",
         },
@@ -480,13 +480,13 @@ class RadioSelectTester(CommandBase):
     parameters = {
         "radio_select_tester": {
             "label": "RadioSelect Tester",
-            "value_type": RadioSelectParameterMeta("foo", "bar", "hello", "world"),
+            "type": RadioSelectParameterMeta("foo", "bar", "hello", "world"),
             "value": None,
             "tooltip": "Testing the radio_select parameters",
         },
         "radio_select_tester_2": {
             "label": "RadioSelect Tester 2",
-            "value_type": RadioSelectParameterMeta("foo", "bar", "hello", "world"),
+            "type": RadioSelectParameterMeta("foo", "bar", "hello", "world"),
             "value": "world",
             "tooltip": "Testing the radio_select parameters",
         },
@@ -520,13 +520,13 @@ class IntArrayTester(CommandBase):
     parameters = {
         "int_array_tester": {
             "label": "IntArray Tester",
-            "value_type": IntArrayParameterMeta(2),
+            "type": IntArrayParameterMeta(2),
             "value": None,
             "tooltip": "Testing the int_array parameters",
         },
         "int_array_tester_2": {
             "label": "IntArray Tester 2",
-            "value_type": IntArrayParameterMeta(6),
+            "type": IntArrayParameterMeta(6),
             "value": [3, 4, 2, 39, 204, 3],
             "tooltip": "Testing the int_array parameters",
         },
@@ -560,39 +560,39 @@ class TextTester(CommandBase):
     parameters = {
         "text_tester": {
             "label": "Text Tester",
-            "value_type": TextParameterMeta(),
+            "type": TextParameterMeta(),
             "value": None,
             "tooltip": "Testing the text parameters",
         },
         "text_tester_2": {
             "label": "Text Tester 2",
-            "value_type": TextParameterMeta(),
+            "type": TextParameterMeta(),
             "value": "Lorem ipsum dolor sit amet",
             "tooltip": "Testing the text parameters",
         },
         "text_tester_with_returns": {
             "label": "Text Tester with returns",
-            "value_type": TextParameterMeta(),
+            "type": TextParameterMeta(),
             "value": "First line\nSecond line\nThird line\n\nEnd",
         },
         "text_tester_info": {
             "label": "Text Tester Info",
-            "value_type": TextParameterMeta(color="info"),
+            "type": TextParameterMeta(color="info"),
             "value": "You are doing well! ℹ️",
         },
         "text_tester_success": {
             "label": "Text Tester Success",
-            "value_type": TextParameterMeta(color="success"),
+            "type": TextParameterMeta(color="success"),
             "value": "You are doing well! ✅",
         },
         "text_tester_warning": {
             "label": "Text Tester Warning",
-            "value_type": TextParameterMeta(color="warning"),
+            "type": TextParameterMeta(color="warning"),
             "value": "Be careful... ⚠️",
         },
         "text_tester_error": {
             "label": "Text Tester Error",
-            "value_type": TextParameterMeta(color="error"),
+            "type": TextParameterMeta(color="error"),
             "value": "Something went wrong! 🚫",
         },
     }
@@ -626,13 +626,13 @@ class FrameSetTester(CommandBase):
     parameters = {
         "frameset_tester": {
             "label": "FrameSet Tester",
-            "value_type": FrameSet,
+            "type": FrameSet,
             "value": None,
             "tooltip": "Testing the frameset parameters",
         },
         "frameset_tester_2": {
             "label": "FrameSet Tester 2",
-            "value_type": FrameSet,
+            "type": FrameSet,
             "value": "1-50x5",
             "tooltip": "Testing the frameset parameters",
         },
@@ -667,7 +667,7 @@ class TracebackTester(CommandBase):
     parameters = {
         "raise_exception": {
             "label": "Raise exception",
-            "value_type": bool,
+            "type": bool,
             "value": True,
             "tooltip": "Specify if you what this command to rase an exception or not",
         },
