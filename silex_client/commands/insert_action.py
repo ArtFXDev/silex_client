@@ -3,8 +3,8 @@ from __future__ import annotations
 import copy
 import logging
 import typing
-from typing import Any, Dict
 import uuid
+from typing import Any, Dict
 
 import fileseq
 

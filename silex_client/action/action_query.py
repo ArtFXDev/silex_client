@@ -456,5 +456,5 @@ class CommandIterator(Iterator):
             command = commands[new_index]
             self.command_index = new_index
             return command
-        except IndexError:
-            raise StopIteration
+        except IndexError as exception:
+            raise StopIteration from exception

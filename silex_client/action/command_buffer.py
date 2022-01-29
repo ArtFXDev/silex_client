@@ -20,8 +20,8 @@ import jsondiff
 
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.command_base import CommandBase
-from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.action.connection import Connection
+from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.network.websocket_log import RedirectWebsocketLogs
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 GenericType = TypeVar("GenericType")
+
 
 @dataclass()
 class CommandBuffer(BaseBuffer):
@@ -202,6 +203,7 @@ class CommandParameters:
     """
     Helper to get and set the parameters values of a command quickly
     """
+
     def __init__(self, action_query: ActionQuery, command: CommandBuffer):
         self.action_query = action_query
         self.command = command
@@ -242,8 +244,14 @@ class CommandParameters:
 
     def values(self) -> List[Any]:
         """Same method a the original dict"""
-        return [child.get_output(self.action_query) for child in self.command.children.values()]
+        return [
+            child.get_output(self.action_query)
+            for child in self.command.children.values()
+        ]
 
     def items(self) -> Dict[str, Any]:
         """Same method a the original dict"""
-        return {name: child.get_output(self.action_query) for name, child in self.command.children.items()}
+        return {
+            name: child.get_output(self.action_query)
+            for name, child in self.command.children.items()
+        }

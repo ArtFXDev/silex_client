@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from silex_client.action.command_buffer import CommandBuffer, CommandParameters
     from silex_client.action.parameter_buffer import ParameterBuffer
 
+
 class CommandBase:
     """
     Base class that every command should inherit from
@@ -65,7 +66,9 @@ class CommandBase:
             return False
         return True
 
-    def check_context_metadata(self, context_metadata: Dict[str, Any], logger: logging.Logger):
+    def check_context_metadata(
+        self, context_metadata: Dict[str, Any], logger: logging.Logger
+    ):
         """
         Check if the context snapshot stored in the buffer contains all the required
         data for the command
@@ -84,25 +87,36 @@ class CommandBase:
         and the required metadata are present
         Meant to be used with the __call__ method of CommandBase objects
         """
-        def decorator_conform_command(func: Callable[[CommandBase, CommandParameters, ActionQuery, logging.Logger], Any]) -> Callable:
+
+        def decorator_conform_command(
+            func: Callable[
+                [CommandBase, CommandParameters, ActionQuery, logging.Logger], Any
+            ]
+        ) -> Callable:
             @functools.wraps(func)
             async def wrapper_conform_command(
-                    command: CommandBase,
-                    parameters: CommandParameters,
-                    action_query: ActionQuery,
-                    logger: logging.Logger
+                command: CommandBase,
+                parameters: CommandParameters,
+                action_query: ActionQuery,
+                logger: logging.Logger,
             ) -> None:
                 # Make sure the given parameters are valid
                 if not command.check_parameters(parameters, logger):
                     command.command_buffer.status = Status.INVALID
-                    logger.error("Could not execute the command %s: Some parameters are invalid", command.command_buffer.name)
+                    logger.error(
+                        "Could not execute the command %s: Some parameters are invalid",
+                        command.command_buffer.name,
+                    )
                     return
                 # Make sure all the required metatada is here
                 if not command.check_context_metadata(
                     action_query.context_metadata, logger
                 ):
                     command.command_buffer.status = Status.INVALID
-                    logger.error("Could not execute the command %s: Some required metadata are missing", command.command_buffer.name)
+                    logger.error(
+                        "Could not execute the command %s: Some required metadata are missing",
+                        command.command_buffer.name,
+                    )
                     return
 
                 await action_query.async_update_websocket()
@@ -134,7 +148,7 @@ class CommandBase:
         self.command_buffer.parameters.update(new_parameters)
         self.command_buffer.ask_user = True
 
-        await action_query.prompt_commands(end = action_query.current_command_index + 1)
+        await action_query.prompt_commands(end=action_query.current_command_index + 1)
         return command_parameters
 
     async def __call__(
@@ -144,7 +158,6 @@ class CommandBase:
         logger: logging.Logger,
     ) -> Any:
         raise NotImplementedError("This command does not have any execution function")
-
 
     async def undo(
         self,

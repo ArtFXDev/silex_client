@@ -75,6 +75,7 @@ class CustomJsonDiffer(jsondiff.JsonDiffer):
     """
     Differ that use the diff syntax overrides defined in CustomDiffSyntax
     """
+
     def __init__(self, marshal=False):
         super().__init__(marshal=marshal)
         self.options.syntax = CustomDiffSyntax()

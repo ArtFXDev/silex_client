@@ -10,8 +10,9 @@ from typing import TYPE_CHECKING, Any, List, Tuple
 
 # Forward references
 if TYPE_CHECKING:
-    from silex_client.action.base_buffer import BaseBuffer
     from silex_client.action.action_query import ActionQuery
+    from silex_client.action.base_buffer import BaseBuffer
+
 
 class Connection:
     """
@@ -28,7 +29,9 @@ class Connection:
     def __init__(self, path: str):
         self.path = path.strip(self.SPLIT)
 
-    def get_buffer(self, action_query: ActionQuery, prefix: str = "") -> Tuple[BaseBuffer, str]:
+    def get_buffer(
+        self, action_query: ActionQuery, prefix: str = ""
+    ) -> Tuple[BaseBuffer, str]:
         """
         Get the buffer this connection is leading to by traversing the children
         If the path is too long, the part of the path that has not been traversed is returned

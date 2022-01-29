@@ -6,9 +6,9 @@ constructors gives more control
 # pylint: disable=C0103
 from __future__ import annotations
 
-import pathlib
 import contextlib
-from typing import List, Type, Dict, Any
+import pathlib
+from typing import Any, Dict, List, Type
 
 
 class ParameterInputTypeMeta(type):
@@ -18,6 +18,7 @@ class ParameterInputTypeMeta(type):
     this metaclass. The advantage of this metaclass is that it returns additional
     information about the type
     """
+
     def __new__(cls, name: str, bases: tuple, dct: dict):
         return super().__new__(cls, name, bases, dct)
 
@@ -42,13 +43,14 @@ class ParameterInputTypeMeta(type):
         Parameter types definitions are immutable
         To change their attributes, you can use this method to rebuild it
         """
-        return cls("InvalidParameter", (type(None), ), {})
+        return cls("InvalidParameter", (type(None),), {})
 
 
 class AnyParameter(object):
     """
     Parameter type that allows any value to be passed through
     """
+
     def __new__(cls, value):
         return value
 
@@ -58,6 +60,7 @@ def TaskParameterMeta():
     Builds a parameter type that returns a task id as a string
     In the UI, this parameter is a task selector on the current project
     """
+
     def serialize():
         return {
             "name": "task",
@@ -79,6 +82,7 @@ def IntArrayParameterMeta(size: int):
     Builds a parameter type that returns a list of integers with the given lenght
     In the UI, this parameter is multiple integer fields
     """
+
     def __init__(self, value):
         if not isinstance(value, list):
             value = [value]
@@ -87,7 +91,9 @@ def IntArrayParameterMeta(size: int):
             value[index] = int(item)
 
         if not len(value) == size:
-            raise TypeError(f"The value {value} does not have the right lenght ({size})")
+            raise TypeError(
+                f"The value {value} does not have the right lenght ({size})"
+            )
 
         self.extend(value)
 
@@ -114,11 +120,14 @@ def RangeParameterMeta(start: int, end: int, increment: int = 1):
     Builds a parameter type that returns an integer clipped in the given range
     In the UI, this parameter is a slider with the given limits
     """
+
     def __new__(cls, value):
         value = int(value)
 
         if value < start or value > end:
-            raise TypeError("The value {value} does not fit the expexted range ({start}:{end})")
+            raise TypeError(
+                "The value {value} does not fit the expexted range ({start}:{end})"
+            )
         return int.__new__(cls, value)
 
     def serialize():
@@ -154,9 +163,10 @@ def RadioSelectParameterMeta(*list_options, **options):
     def __new__(cls, value):
         value = str(value)
         if value not in options.values():
-            raise TypeError(f"The value {value} is not among the possible options ({options})")
+            raise TypeError(
+                f"The value {value} is not among the possible options ({options})"
+            )
         return str.__new__(cls, value)
-
 
     def serialize():
         return {"name": "radio_select", "options": options}
@@ -186,7 +196,9 @@ def SelectParameterMeta(*list_options, **options):
     def __new__(cls, value):
         value = str(value)
         if value not in options.values():
-            raise TypeError(f"The value {value} is not among the possible options ({options})")
+            raise TypeError(
+                f"The value {value} is not among the possible options ({options})"
+            )
         return str.__new__(cls, value)
 
     def serialize():
@@ -219,7 +231,9 @@ def MultipleSelectParameterMeta(*list_options, **options):
         for value in values:
             value = str(value)
             if value not in options.values():
-                raise TypeError(f"The value {value} is not among the possible options ({options})")
+                raise TypeError(
+                    f"The value {value} is not among the possible options ({options})"
+                )
 
         self.extend([str(value) for value in values])
 
@@ -283,6 +297,7 @@ def TextParameterMeta(color=None):
     Builds a parameter type that return a string
     In the UI, this parameter display the string with the given color
     """
+
     def serialize():
         return {"name": "text", "color": color}
 
@@ -298,11 +313,14 @@ def TextParameterMeta(color=None):
     return ParameterInputTypeMeta("ListParameter", (str,), attributes)
 
 
-def StringParameterMeta(multiline: bool = False, max_lenght: int = 1000, readonly: bool = False):
+def StringParameterMeta(
+    multiline: bool = False, max_lenght: int = 1000, readonly: bool = False
+):
     """
     Builds a parameter type that return a string that will be trimed if too long
     In the UI, this parameter display a string field
     """
+
     def __new__(cls, value):
         value = str(value)
         # Trim the name with the max lenght
@@ -310,7 +328,12 @@ def StringParameterMeta(multiline: bool = False, max_lenght: int = 1000, readonl
         return str.__new__(cls, value)
 
     def serialize():
-        return {"name": "str", "multiline": multiline, "maxLenght": max_lenght, "readonly": readonly}
+        return {
+            "name": "str",
+            "multiline": multiline,
+            "maxLenght": max_lenght,
+            "readonly": readonly,
+        }
 
     def get_default():
         return ""
@@ -331,6 +354,7 @@ def ListParameterMeta(parameter_type: Type):
     Builds a parameter type that return a list of the given type
     In the UI, this parameter show the widget of the given type in a list
     """
+
     def __init__(self, value):
         if not isinstance(value, list):
             value = [value]
@@ -368,6 +392,7 @@ def DictParameterMeta(key_type: Type, value_type: Type):
     Builds a parameter type that return a dict of the given types
     In the UI, this parameter show the widget of the given types in a key/value manner
     """
+
     def __init__(self, input_value):
         # Cast the input into a dict
         if not isinstance(input_value, dict):

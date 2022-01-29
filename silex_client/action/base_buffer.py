@@ -12,6 +12,7 @@ import uuid as unique_id
 from dataclasses import dataclass, field, fields
 from functools import partial
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -21,7 +22,6 @@ from typing import (
     TypeVar,
     Union,
     get_type_hints,
-    TYPE_CHECKING
 )
 
 import dacite.config as dacite_config
