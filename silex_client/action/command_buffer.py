@@ -12,7 +12,7 @@ import os
 import traceback
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List, TypeVar, Union
 
 import dacite.config as dacite_config
 import dacite.core as dacite
@@ -21,8 +21,8 @@ import jsondiff
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
+from silex_client.action.connection import Connection
 from silex_client.network.websocket_log import RedirectWebsocketLogs
-from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
 
@@ -30,6 +30,7 @@ from silex_client.utils.log import logger
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
+GenericType = TypeVar("GenericType")
 
 @dataclass()
 class CommandBuffer(BaseBuffer):
@@ -59,14 +60,10 @@ class CommandBuffer(BaseBuffer):
     ask_user: bool = field(compare=False, repr=False, default=False)
     #: The status of the command, to keep track of the progression, specify the errors
     status: Status = field(default=Status.INITIALIZED, init=False)
-    #: The output of the command, it can be passed to an other command
-    output_result: Any = field(default=None, init=False)
     #: The callable that will be used when the command is executed
     executor: CommandBase = field(init=False)
     #: List of all the logs during the execution of that command
     logs: List[Dict[str, str]] = field(default_factory=list)
-    #: Defines if the command must be executed or not
-    skip: bool = field(default=False)
 
     def __post_init__(self):
         super().__post_init__()
@@ -116,20 +113,10 @@ class CommandBuffer(BaseBuffer):
         """
         Execute the command using the executor
         """
-        if self.skip:
+        if self.skip_execution():
             logger.debug("Skipping command %s", self.name)
         else:
-            # Create a dictionary that only contains the name and the value of the parameters
-            # without infos like the type, label...
-            parameters = {
-                key: value.get_value(action_query)
-                for key, value in self.children.items()
-            }
-            with suppress(TypeError):
-                parameters = copy.deepcopy(parameters)
-
-            # Run the executor and copy the parameters
-            # to prevent them from being modified during execution
+            parameters = CommandParameters(action_query, self)
             logger.debug("Executing command %s", self.name)
             async with RedirectWebsocketLogs(action_query, self) as log:
                 # Set the status to processing
@@ -171,14 +158,7 @@ class CommandBuffer(BaseBuffer):
         Call the setup of the command, the setup method is used to edit the command attributes
         dynamically (parameters, states...)
         """
-        # Create a dictionary that only contains the name and the value of the parameters
-        # without infos like the type, label...
-        parameters = {
-            key: value.get_value(action_query) for key, value in self.children.items()
-        }
-        with suppress(TypeError):
-            parameters = copy.deepcopy(parameters)
-
+        parameters = CommandParameters(action_query, self)
         async with RedirectWebsocketLogs(action_query, self) as log:
             await self.executor.setup(parameters, action_query, log)
 
@@ -189,7 +169,7 @@ class CommandBuffer(BaseBuffer):
         """
         Create an command buffer from serialized data
         """
-        config = dacite_config.Config(cast=[Status, CommandOutput])
+        config = dacite_config.Config(cast=[Status, Connection])
 
         # Initialize the buffer without the children, since the children needs special treatment
         filtered_data = copy.copy(serialized_data)
@@ -216,3 +196,54 @@ class CommandBuffer(BaseBuffer):
             )
 
         return super().construct(serialized_data, parent)
+
+
+class CommandParameters:
+    """
+    Helper to get and set the parameters values of a command quickly
+    """
+    def __init__(self, action_query: ActionQuery, command: CommandBuffer):
+        self.action_query = action_query
+        self.command = command
+
+    def __getitem__(self, key: str):
+        return self.command.children[key].get_output(self.action_query)
+
+    def __setitem__(self, key: str, value: Any):
+        self.command.children[key].data_in = value
+
+    def get(self, key: str, default: GenericType = None) -> Union[Any, GenericType]:
+        """
+        Return the parameter's value.
+        Return the default if the parametr does not exists
+        """
+        if key not in self.command.children:
+            return default
+        return self.__getitem__(key)
+
+    def get_raw(self, key, default: GenericType = None) -> Union[Any, GenericType]:
+        """
+        Return the parameter's value without casting it to the expected type
+        Return the default if the parametr does not exists
+        """
+        if key not in self.command.children:
+            return default
+        return self.command.children[key].data_in
+
+    def get_buffer(self, key) -> ParameterBuffer:
+        """
+        Return the parameter buffer directly
+        """
+        return self.command.children[key]
+
+    def keys(self) -> List[str]:
+        """Same method a the original dict"""
+        return list(self.command.children.keys())
+
+    def values(self) -> List[Any]:
+        """Same method a the original dict"""
+        return [child.get_output(self.action_query) for child in self.command.children.values()]
+
+    def items(self) -> Dict[str, Any]:
+        """Same method a the original dict"""
+        return {name: child.get_output(self.action_query) for name, child in self.command.children.items()}

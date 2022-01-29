@@ -30,7 +30,6 @@ import jsondiff
 from dacite.types import is_union
 
 from silex_client.action.connection import Connection
-from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
 
@@ -84,6 +83,8 @@ class BaseBuffer:
     serialize_cache: dict = field(compare=False, repr=False, default_factory=dict)
     #: Type name to help differentiate the different buffer types
     buffer_type: str = field(default="none")
+    #: Defines if the buffer must be executed or not
+    skip: bool = field(default=False)
 
     def __setattr__(self, name, value):
         super().__setattr__("outdated_cache", True)
@@ -215,6 +216,19 @@ class BaseBuffer:
         """
         return self._resolve_data_in_out(action_query, self.data_out)
 
+    def skip_execution(self) -> bool:
+        """
+        Check if the current buffer or one of its parent is set to skip
+        """
+        parent: Optional[BaseBuffer] = self
+
+        while parent is not None:
+            if parent.skip:
+                return True
+            parent = parent.parent
+
+        return False
+
     def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
         Convert the buffer's data into json so it can be sent to the UI
@@ -336,7 +350,7 @@ class BaseBuffer:
         serialized_data = jsondiff.patch(current_buffer_data, serialized_data)
 
         # Setup dacite to use our deserialize function has a type_hook to create the children
-        config_data: Dict[str, Union[list, dict]] = {"cast": [Status, CommandOutput]}
+        config_data: Dict[str, Union[list, dict]] = {"cast": [Status, Connection]}
         if BaseBuffer not in self.get_child_types():
             config_data["type_hooks"] = {
                 child_type: partial(self._deserialize_child, child_type)
@@ -371,7 +385,7 @@ class BaseBuffer:
         The difference with deserialize and construct is that construct is used
         when the buffer is newly created, instead of updated
         """
-        config = dacite_config.Config(cast=[Status, CommandOutput])
+        config = dacite_config.Config(cast=[Status, Connection])
 
         # Initialize the buffer without the children,
         # because the children needs special treatment

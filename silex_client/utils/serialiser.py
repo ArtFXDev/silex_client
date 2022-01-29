@@ -11,7 +11,7 @@ import jsondiff
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.action.command_buffer import CommandBuffer
-from silex_client.utils.parameter_types import CommandParameterMeta
+from silex_client.utils.parameter_types import ParameterInputTypeMeta
 
 
 def silex_encoder(obj):
@@ -31,7 +31,7 @@ def silex_encoder(obj):
         return obj.serialize()
 
     # Use the serialize method for command parameters
-    if isinstance(obj, CommandParameterMeta):
+    if isinstance(obj, ParameterInputTypeMeta):
         return obj.serialize()
 
     # Convert frameset to string
@@ -42,8 +42,15 @@ def silex_encoder(obj):
     if isinstance(obj, type):
         return {"name": obj.__name__}
 
+    return None
+
 
 class CustomDiffSyntax(jsondiff.CompactJsonDiffSyntax):
+    """
+    Silex does not support any syntax for removing items from a dict
+    or inserting items in a list.
+    """
+
     def emit_list_diff(self, a, b, s, inserted, changed, deleted):
         """
         Customise the diff of lists, just return the new list completly instead of
@@ -57,7 +64,7 @@ class CustomDiffSyntax(jsondiff.CompactJsonDiffSyntax):
         """
         if s == 0.0 or removed:
             return b
-        elif s == 1.0:
+        if s == 1.0:
             return {}
 
         changed.update(added)
@@ -65,6 +72,9 @@ class CustomDiffSyntax(jsondiff.CompactJsonDiffSyntax):
 
 
 class CustomJsonDiffer(jsondiff.JsonDiffer):
+    """
+    Differ that use the diff syntax overrides defined in CustomDiffSyntax
+    """
     def __init__(self, marshal=False):
         super().__init__(marshal=marshal)
         self.options.syntax = CustomDiffSyntax()

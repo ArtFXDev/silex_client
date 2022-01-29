@@ -155,6 +155,7 @@ class ActionQuery:
 
         # Get the range of commands
         commands_prompt = self.commands[start:end]
+        command_statuses = []
         # Set the commands to WAITING_FOR_RESPONSE
         for index, command_left in enumerate(commands_prompt):
             await command_left.setup(self)
@@ -162,6 +163,7 @@ class ActionQuery:
                 end = start + index if start is not None else index
                 break
             command_left.ask_user = True
+            command_statuses.append(command_left.status)
             command_left.status = Status.WAITING_FOR_RESPONSE
             command_left.hide = False
 
@@ -183,7 +185,7 @@ class ActionQuery:
         # Put the commands back to initialized
         for index, command_left in enumerate(self.commands[start:end]):
             command_left.ask_user = False
-            command_left.status = Status.INITIALIZED
+            command_left.status = command_statuses[index]
 
         await asyncio.wait_for(await self.async_update_websocket(), None)
 
@@ -390,7 +392,7 @@ class ActionQuery:
         for command in self.commands:
             for parameter in command.children.values():
                 parameters[
-                    f"{parameter.get_path()}:{parameter.type}"
+                    f"{parameter.get_path()}:{parameter.input_type}"
                 ] = command.parameters
 
         return parameters
