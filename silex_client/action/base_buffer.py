@@ -21,6 +21,7 @@ from typing import (
     TypeVar,
     Union,
     get_type_hints,
+    TYPE_CHECKING
 )
 
 import dacite.config as dacite_config
@@ -28,9 +29,13 @@ import dacite.core as dacite
 import jsondiff
 from dacite.types import is_union
 
+from silex_client.action.connection import Connection
 from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
+
+if TYPE_CHECKING:
+    from silex_client.action.action_query import ActionQuery
 
 TBaseBuffer = TypeVar("TBaseBuffer", bound="BaseBuffer")
 
@@ -69,6 +74,10 @@ class BaseBuffer:
     tooltip: Optional[str] = field(compare=False, repr=False, default=None)
     #: A Unique ID to help differentiate multiple buffers
     uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
+    #: The input can be connected to an other buffer output
+    data_in: Any = field(default=None, init=False)
+    #: The output can be connected to an other buffer input
+    data_out: Any = field(default=None, init=False)
     #: Marquer to know if the serialize cache is outdated or not
     outdated_cache: bool = field(compare=False, repr=False, default=True)
     #: Cache the serialize output
@@ -178,6 +187,33 @@ class BaseBuffer:
         self.children = dict(
             sorted(self.children.items(), key=lambda item: item[1].index)
         )
+
+    def _resolve_data_in_out(self, action_query: ActionQuery, data: Any) -> Any:
+        """
+        Resolve connection of the given value
+        """
+        if not isinstance(data, Connection):
+            return data
+
+        parent_action = self.get_parent(buffer_type="actions")
+        prefix = ""
+        if parent_action is not None:
+            prefix = parent_action.get_path()
+        return data.get_output(action_query, prefix)
+
+    def get_input(self, action_query: ActionQuery) -> Any:
+        """
+        Always use this method to get the intput of the buffer
+        Return the input after resolving connections
+        """
+        return self._resolve_data_in_out(action_query, self.data_in)
+
+    def get_output(self, action_query: ActionQuery) -> Any:
+        """
+        Always use this method to get the output of the buffer
+        Return the output after resolving connections
+        """
+        return self._resolve_data_in_out(action_query, self.data_out)
 
     def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
         """
