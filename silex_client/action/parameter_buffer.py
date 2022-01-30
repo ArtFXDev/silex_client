@@ -7,7 +7,7 @@ Dataclass used to store the data related to a parameter
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Type, Union, TYPE_CHECKING, Dict
+from typing import Any, Union, TYPE_CHECKING, Dict
 
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.utils.parameter_types import AnyParameter, ParameterInputTypeMeta
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 # Alias the metaclass type, to avoid clash with the type attribute
-Type = type
+TypeAlias = type
 
 
 @dataclass()
@@ -26,35 +26,35 @@ class ParameterBuffer(BaseBuffer):
     """
 
     PRIVATE_FIELDS = ["outdated_cache", "serialize_cache", "parent"]
-    READONLY_FIELDS = ["value_type", "label"]
+    READONLY_FIELDS = ["type", "label"]
 
     #: Type name to help differentiate the different buffer types
     buffer_type: str = field(default="parameters")
     #: The type of the parameter, must be a class definition or a CommandParameterMeta instance
-    value_type: Union[Type, ParameterInputTypeMeta] = field(default=type(None))
+    type: Union[TypeAlias, ParameterInputTypeMeta] = field(default=TypeAlias(None))
 
     def __post_init__(self):
         super().__post_init__()
         # The AnyParameter type does not have any widget in the frontend
-        if self.value_type is AnyParameter:
+        if self.type is AnyParameter:
             self.hide = True
 
         # Get the default value from to the type
-        if self.input is None and isinstance(self.value_type, ParameterInputTypeMeta):
-            self.input = self.value_type.get_default()
+        if self.input is None and isinstance(self.type, ParameterInputTypeMeta):
+            self.input = self.type.get_default()
 
     def rebuild_type(self, *args, **kwargs):
         """
         Allows changing the options of the parameter by rebuilding the type
         """
-        if not isinstance(self.value_type, ParameterInputTypeMeta):
+        if not isinstance(self.type, ParameterInputTypeMeta):
             return
 
         # Rebuild the parameter type
-        self.value_type = self.value_type.rebuild(*args, **kwargs)
+        self.type = self.type.rebuild(*args, **kwargs)
 
         if self.input is None:
-            self.input = self.value_type.get_default()
+            self.input = self.type.get_default()
 
     @property
     def outdated_caches(self) -> bool:
@@ -69,7 +69,7 @@ class ParameterBuffer(BaseBuffer):
         Always use this method to get the output of the buffer
         Return the output after resolving connections
         """
-        return self.value_type(self._resolve_io(action_query, self.input))
+        return self.type(self._resolve_io(action_query, self.input))
 
     @classmethod
     def construct(
@@ -80,7 +80,4 @@ class ParameterBuffer(BaseBuffer):
         # "value" can be used as a shortcut to set the input
         if "value" in serialized_data and "input" not in serialized_data:
             serialized_data["input"] = serialized_data.pop("value")
-        # "type" can be used as a shortcut to set the value_type
-        if "type" in serialized_data and "value_type" not in serialized_data:
-            serialized_data["value_type"] = serialized_data.pop("type")
         return super().construct(serialized_data, parent)

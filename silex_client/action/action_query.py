@@ -401,7 +401,7 @@ class ActionQuery:
         for command in self.commands:
             for parameter in command.children.values():
                 parameters[
-                    f"{parameter.get_path()}:{parameter.value_type}"
+                    f"{parameter.get_path()}:{parameter.type}"
                 ] = command.parameters
 
         return parameters
