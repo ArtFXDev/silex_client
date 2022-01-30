@@ -195,7 +195,7 @@ class BaseBuffer:
             sorted(self.children.items(), key=lambda item: item[1].index)
         )
 
-    def _resolve_io(self, action_query: ActionQuery, data: Any) -> Any:
+    def resolve_io(self, action_query: ActionQuery, data: Any) -> Any:
         """
         Resolve connection of the given value
         """
@@ -206,21 +206,21 @@ class BaseBuffer:
         prefix = ""
         if parent_action is not None:
             prefix = parent_action.get_path()
-        return data.get_output(action_query, prefix)
+        return data.get_value(action_query, prefix)
 
     def get_input(self, action_query: ActionQuery) -> Any:
         """
         Always use this method to get the intput of the buffer
         Return the input after resolving connections
         """
-        return self._resolve_io(action_query, self.input)
+        return self.resolve_io(action_query, self.input)
 
     def get_output(self, action_query: ActionQuery) -> Any:
         """
         Always use this method to get the output of the buffer
         Return the output after resolving connections
         """
-        return self._resolve_io(action_query, self.output)
+        return self.resolve_io(action_query, self.output)
 
     def skip_execution(self) -> bool:
         """

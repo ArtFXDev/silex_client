@@ -60,7 +60,7 @@ class ConnectionOut:
     def _get_buffer_io(buffer: BaseBuffer, action_query: ActionQuery) -> Any:
         return buffer.get_output(action_query)
 
-    def get_output(self, action_query: ActionQuery, prefix: str = "") -> Any:
+    def get_value(self, action_query: ActionQuery, prefix: str = "") -> Any:
         """
         Get the output of the buffer this connection leads to by recursively going throught
         the children. This also go recursively throught items of a dict if the output

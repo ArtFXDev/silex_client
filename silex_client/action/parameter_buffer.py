@@ -69,7 +69,7 @@ class ParameterBuffer(BaseBuffer):
         Always use this method to get the output of the buffer
         Return the output after resolving connections
         """
-        return self.type(self._resolve_io(action_query, self.input))
+        return self.type(self.resolve_io(action_query, self.input))
 
     @classmethod
     def construct(

@@ -157,6 +157,7 @@ class InsertAction(CommandBase):
 
         # The parameter values of the inserted action can be overriden
         for parameter_path, parameter_value in parameter_overrides.items():
+            parameter_value = self.command_buffer.resolve_io(action_query, parameter_value)
             main_action.set_parameter(parameter_path, parameter_value)
 
         action_definition = main_action.buffer.serialize()
@@ -185,8 +186,12 @@ class InsertAction(CommandBase):
         logger.info("Inserting action: %s", name)
         # We always need to make sure the inserted definitions does not override
         # existing children, we use uuid as name to avoid that
-        parent_action.deserialize({"actions": {str(uuid.uuid4()): action_definition}})
+        action_name = str(uuid.uuid4())
+        parent_action.deserialize({"actions": {action_name: action_definition}})
 
         # This command foward the output of the inserted action.
-        # It is usually a connection to the output of one of the action's command
-        return main_action.buffer.output
+        # We need to build the path to the action's output
+        current_command_path = self.command_buffer.get_path()
+        parent_action_path = parent_action.get_path()
+        inserted_action_path =  current_command_path.replace(parent_action_path, "", 1)
+        return ConnectionOut(inserted_action_path + f"{ConnectionOut.SPLIT}{action_name}")
