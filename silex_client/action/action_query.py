@@ -57,7 +57,10 @@ class ActionQuery:
         # The user can pass an action definition directly. If he doesn't provide any,
         # the action definition is resolved by looking at the action definition configs
         if not definition:
-            definition = Config.get().resolve_action(name, category)
+            resolved_definition = Config.get().resolve_action(name, category)
+            if resolved_definition is not None:
+                definition = resolved_definition[name]
+            
 
         self.event_loop: EventLoop = context.event_loop
         self.ws_connection: WebsocketConnection = context.ws_connection
@@ -71,11 +74,9 @@ class ActionQuery:
         self._task: Optional[asyncio.Task] = None
         self.closed = futures.Future()
 
-        if definition is None:
-            return
-
+        definition = {} if definition is None else definition
         self._initialize_buffer(
-            definition[name], {"context_metadata": metadata_snapshot}
+            definition, {"context_metadata": metadata_snapshot}
         )
 
         # TODO: This should be done in the construct static method of buffers
@@ -400,7 +401,7 @@ class ActionQuery:
         for command in self.commands:
             for parameter in command.children.values():
                 parameters[
-                    f"{parameter.get_path()}:{parameter.input_type}"
+                    f"{parameter.get_path()}:{parameter.value_type}"
                 ] = command.parameters
 
         return parameters
