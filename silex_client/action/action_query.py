@@ -32,24 +32,32 @@ if TYPE_CHECKING:
 
 class ActionQuery:
     """
-    Initialize and execute a given action
+    This is the entry point to create, execute, and manipulate actions
+    To create and execute an action, you can instantiate this class with the name of the
+    action you want to execute and call execute()
+
+    WARNING: To execute an action the silex's event loop must be running. To start
+    the silex's event loop, use Context.get().start_services()
     """
 
     def __init__(
         self,
         name: str,
-        resolved_config: Optional[dict] = None,
+        definition: Optional[dict] = None,
         category="action",
         simplify=False,
+        register=True
     ):
         context = Context.get()
-        metadata_snapshot = ReadOnlyDict(copy.deepcopy(context.metadata))
-        if resolved_config is None:
-            resolved_config = Config.get().resolve_action(name, category)
 
-        if resolved_config is None:
-            self.buffer = ActionBuffer("none")
-            return
+        # To prevent concurency problems, the action is running with its own
+        # copy of the context at the time of its creation
+        metadata_snapshot = ReadOnlyDict(copy.deepcopy(context.metadata))
+
+        # The user can pass an action definition directly. If he doesn't provide any,
+        # the action definition is resolved by looking at the action definition configs
+        if not definition:
+            definition = Config.get().resolve_action(name, category)
 
         self.event_loop: EventLoop = context.event_loop
         self.ws_connection: WebsocketConnection = context.ws_connection
@@ -57,21 +65,30 @@ class ActionQuery:
         self.buffer: ActionBuffer = ActionBuffer(
             name, context_metadata=metadata_snapshot
         )
-        self._initialize_buffer(
-            resolved_config, {"context_metadata": metadata_snapshot}
-        )
-
-        if simplify or os.getenv("SILEX_SIMPLE_MODE"):
-            self.buffer.simplify = True
-            for commands in self.commands:
-                commands.hide = True
 
         self.command_iterator: CommandIterator = self.iter_commands()
         self._buffer_diff = copy.deepcopy(self.buffer.serialize())
         self._task: Optional[asyncio.Task] = None
         self.closed = futures.Future()
 
-        context.register_action(self)
+        if definition is None:
+            return
+
+        self._initialize_buffer(
+            definition[name], {"context_metadata": metadata_snapshot}
+        )
+
+        # TODO: This should be done in the construct static method of buffers
+        if simplify or os.getenv("SILEX_SIMPLE_MODE"):
+            self.buffer.simplify = True
+            for commands in self.commands:
+                commands.hide = True
+
+        if register:
+            context.register_action(self)
+
+    def __bool__(self):
+        return bool(self.commands)
 
     async def execute_commands(self, step_by_step: bool = False) -> None:
         """
@@ -240,25 +257,16 @@ class ActionQuery:
         self.execution_type = Execution.PAUSE
 
     def _initialize_buffer(
-        self, resolved_config: dict, custom_data: Union[dict, None] = None
+        self, action_definition: dict, custom_data: Union[dict, None] = None
     ) -> None:
         """
         Initialize the buffer from the config
         """
         # If no config could be found or is invalid, the result is {}
-        if not resolved_config:
-            return
-
-        # Make sure the required action is in the config
-        if self.name not in resolved_config.keys():
-            logger.error(
-                "Could not resolve the action %s: The root key should be the same as the config file name",
-                self.name,
-            )
+        if not action_definition:
             return
 
         # Get the config related to the current task
-        action_definition = resolved_config[self.name]
         action_definition["name"] = self.name
         if (
             self.context_metadata.get("task_type")

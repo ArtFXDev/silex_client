@@ -4,14 +4,15 @@ import copy
 import logging
 import typing
 import uuid
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import fileseq
+from tractor.api.author.base import StringListAttribute
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.action.command_base import CommandBase
 from silex_client.resolve.config import Config
-from silex_client.utils.parameter_types import AnyParameter, UnionParameterMeta
+from silex_client.utils.parameter_types import AnyParameter, StringParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -23,31 +24,45 @@ class InsertAction(CommandBase):
     Insert an action's steps after the current step
     """
 
+    #: When inserting an action, step, command... A margin between the indexes will be set
+    AUTO_INDEX_MARGIN = 10
+
     parameters = {
-        "action": {
-            "label": "Action to insert",
-            "type": UnionParameterMeta([str, dict]),
+        "name": {
+            "label": "Name of the action to insert",
+            "type": StringParameterMeta(),
             "value": None,
             "tooltip": """
-            The action to insert. 
-            It can be an existing action name or an action definition
+            Name of the action to insert.
+            If the definition is empty, this name will be used to find
+            the definition in the config files
             """,
         },
         "category": {
             "label": "Action category",
-            "type": str,
+            "type": StringParameterMeta(),
             "value": "action",
             "tooltip": """
             If the action to insert is an action name
             This define the category of the action to resolve
             """,
         },
+        "definition": {
+            "label": "Action definition",
+            "type": dict,
+            "value": {},
+            "tooltip": """
+            If you don't provide any action definition, the definition will be resolved
+            from the available action config files
+            """,
+            "hide": True,
+        },
         "prepend": {
             "label": "Action to prepend",
             "type": dict,
-            "value": None,
+            "value": {},
             "tooltip": """
-            Similar to the action parameter.
+            Similar to the definition parameter.
             The steps of this actions will be preprended in the inserted action
             """,
             "hide": True,
@@ -55,7 +70,7 @@ class InsertAction(CommandBase):
         "append": {
             "label": "Action to append",
             "type": dict,
-            "value": None,
+            "value": {},
             "tooltip": """
             Similar to the action parameter.
             The steps of this actions will be appended in the inserted action
@@ -81,7 +96,7 @@ class InsertAction(CommandBase):
         },
         "label": {
             "label": "Action label",
-            "type": str,
+            "type": StringParameterMeta(),
             "value": "",
             "tooltip": "The label to append to the inserted action's label",
             "hide": True,
@@ -95,29 +110,43 @@ class InsertAction(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        action_type = parameters["action"]
-        label_key = parameters["label_key"]
-        value = parameters["value"]
-        parameter = parameters["parameter"]
-        hide_commands = parameters["hide_commands"]
+        name: str = parameters["definition"]
+        category: str = parameters["category"]
+        definition: dict = parameters["definition"]
+        prepend: dict = parameters["prepend"]
+        append: dict = parameters["append"]
+        action_input: Any = parameters["input"]
+        parameter_values: Dict[str, Any] = parameters["parameter"]
+        label: str = parameters["label"]
 
-        resolved_action = Config.get().resolve_action(
-            action_type, parameters["category"]
-        )
+        main_action = ActionQuery(name=name, category=category, definition=definition)
+        if not main_action:
+            raise Exception(f"Could not resolve the action {name}")
 
-        if resolved_action is None:
-            raise Exception(f"Could not resolve the action {action_type}")
+        # The user can pass action definitions to prepend or append to the inserted action.
+        # It can be used to customise the action dynamicaly
+        for index, insert_definition in enumerate([prepend, append]):
+            if not insert_definition:
+                continue
 
-        # Make sure the required action is in the config
-        if action_type not in resolved_action.keys():
-            raise Exception(
-                f"Could not resolve the action {action_type}: The root key should be the same as the config file name"
-            )
+            action_children = list(main_action.buffer.children.values())
 
-        action_name = f"{action_type}_{uuid.uuid4()}"
-        action_definition = resolved_action[action_type]
-        action_definition["name"] = action_name
-        action_definition["buffer_type"] = "actions"
+            # The index of the inserted definition is different if we prepend of append
+            insert_index = action_children[0].index - self.AUTO_INDEX_MARGIN
+            if index == 1:
+                insert_index = action_children[-1].index + self.AUTO_INDEX_MARGIN
+
+            insert_definition["index"] = insert_index
+            # We always need to make sure the inserted definitions does not override
+            # existing children, we use uuid as name to avoid that
+            insert_definition = {str(uuid.uuid4()): insert_definition}
+            main_action.buffer.deserialize({"children": insert_definition})
+
+        action_definition = main_action.buffer.serialize()
+
+        # If the name action is inserted multiple times we need to make sure
+        # this won't override existing actions
+        unique_name = f"{name}_{uuid.uuid4()}"
 
         current_action = self.command_buffer.get_parent("actions")
         current_step = self.command_buffer.get_parent("steps")

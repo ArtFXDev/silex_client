@@ -131,7 +131,21 @@ class Config:
         self, action_name: str, category: str = "action"
     ) -> Optional[dict]:
         """Resolve an action config from the given category"""
-        return self.resolve_config(action_name, self.get_actions(category))
+        resolved_action = self.resolve_config(action_name, self.get_actions(category))
+
+        if not resolved_action:
+            raise Exception(
+                f"Could not resolve the action {action_name}: The action definition is invalid",
+            )
+
+        # To force only one action definition per files, the first key of the action
+        # must be the same as the file
+        if action_name not in resolved_action.keys():
+            raise Exception(
+                f"Could not resolve the action {action_name}: The root key should be the same as the config file name",
+            )
+
+        return resolved_action
 
     def resolve_publish(self, action_name: str) -> Optional[dict]:
         """Resolve an action config from the publish category"""
