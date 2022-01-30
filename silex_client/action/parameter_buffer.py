@@ -40,8 +40,8 @@ class ParameterBuffer(BaseBuffer):
             self.hide = True
 
         # Get the default value from to the type
-        if self.data_in is None and isinstance(self.value_type, ParameterInputTypeMeta):
-            self.data_in = self.value_type.get_default()
+        if self.input is None and isinstance(self.value_type, ParameterInputTypeMeta):
+            self.input = self.value_type.get_default()
 
     def rebuild_type(self, *args, **kwargs):
         """
@@ -53,8 +53,8 @@ class ParameterBuffer(BaseBuffer):
         # Rebuild the parameter type
         self.value_type = self.value_type.rebuild(*args, **kwargs)
 
-        if self.data_in is None:
-            self.data_in = self.value_type.get_default()
+        if self.input is None:
+            self.input = self.value_type.get_default()
 
     @property
     def outdated_caches(self) -> bool:
@@ -69,7 +69,7 @@ class ParameterBuffer(BaseBuffer):
         Always use this method to get the output of the buffer
         Return the output after resolving connections
         """
-        return self.value_type(self._resolve_data_in_out(action_query, self.data_in))
+        return self.value_type(self._resolve_io(action_query, self.input))
 
     @classmethod
     def construct(
@@ -77,9 +77,9 @@ class ParameterBuffer(BaseBuffer):
         serialized_data: Dict[str, Any],
         parent: BaseBuffer = None,
     ) -> ParameterBuffer:
-        # "value" can be used as a shortcut to set the data_in
-        if "value" in serialized_data and "data_in" not in serialized_data:
-            serialized_data["data_in"] = serialized_data.pop("value")
+        # "value" can be used as a shortcut to set the input
+        if "value" in serialized_data and "input" not in serialized_data:
+            serialized_data["input"] = serialized_data.pop("value")
         # "type" can be used as a shortcut to set the value_type
         if "type" in serialized_data and "value_type" not in serialized_data:
             serialized_data["value_type"] = serialized_data.pop("type")

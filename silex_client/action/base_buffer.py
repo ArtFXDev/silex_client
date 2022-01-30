@@ -51,8 +51,8 @@ class BaseBuffer:
         "parent",
         "outdated_cache",
         "serialize_cache",
-        "data_in",
-        "data_out",
+        "input",
+        "output",
     ]
     #: The list of fields that should be ignored when deserializing this buffer to json
     READONLY_FIELDS = ["label"]
@@ -77,9 +77,9 @@ class BaseBuffer:
     #: A Unique ID to help differentiate multiple buffers
     uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
     #: The input can be connected to an other buffer output
-    data_in: Any = field(default=None, init=False)
+    input: Any = field(default=None, init=False)
     #: The output can be connected to an other buffer input
-    data_out: Any = field(default=None, init=False)
+    output: Any = field(default=None, init=False)
     #: Marquer to know if the serialize cache is outdated or not
     outdated_cache: bool = field(compare=False, repr=False, default=True)
     #: Cache the serialize output
@@ -195,7 +195,7 @@ class BaseBuffer:
             sorted(self.children.items(), key=lambda item: item[1].index)
         )
 
-    def _resolve_data_in_out(self, action_query: ActionQuery, data: Any) -> Any:
+    def _resolve_io(self, action_query: ActionQuery, data: Any) -> Any:
         """
         Resolve connection of the given value
         """
@@ -213,14 +213,14 @@ class BaseBuffer:
         Always use this method to get the intput of the buffer
         Return the input after resolving connections
         """
-        return self._resolve_data_in_out(action_query, self.data_in)
+        return self._resolve_io(action_query, self.input)
 
     def get_output(self, action_query: ActionQuery) -> Any:
         """
         Always use this method to get the output of the buffer
         Return the output after resolving connections
         """
-        return self._resolve_data_in_out(action_query, self.data_out)
+        return self._resolve_io(action_query, self.output)
 
     def skip_execution(self) -> bool:
         """

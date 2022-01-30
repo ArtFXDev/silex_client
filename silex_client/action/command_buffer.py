@@ -146,7 +146,7 @@ class CommandBuffer(BaseBuffer):
         if self.ask_user:
             return True
         if all(
-            parameter.data_in is not None or parameter.hide
+            parameter.input is not None or parameter.hide
             for parameter in self.children.values()
         ):
             return False
@@ -186,7 +186,7 @@ class CommandBuffer(BaseBuffer):
             # The parameters can be defined with <key>=<value> as a shortcut
             if not isinstance(serialized_parameters.get(parameter_name, {}), dict):
                 serialized_parameters[parameter_name] = {
-                    "data_in": serialized_parameters[parameter_name]
+                    "input": serialized_parameters[parameter_name]
                 }
 
             # Apply the parameters to the default parameters
@@ -210,7 +210,7 @@ class CommandParameters:
         return self.command.children[key].get_output(self.action_query)
 
     def __setitem__(self, key: str, value: Any):
-        self.command.children[key].data_in = value
+        self.command.children[key].input = value
 
     def get(self, key: str, default: GenericType = None) -> Union[Any, GenericType]:
         """
@@ -228,7 +228,7 @@ class CommandParameters:
         """
         if key not in self.command.children:
             return default
-        return self.command.children[key].data_in
+        return self.command.children[key].input
 
     def get_buffer(self, key) -> ParameterBuffer:
         """

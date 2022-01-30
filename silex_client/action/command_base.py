@@ -118,7 +118,7 @@ class CommandBase:
                 await action_query.async_update_websocket()
 
                 output = await func(command, parameters, action_query, logger)
-                command.command_buffer.data_out = output
+                command.command_buffer.output = output
 
                 await action_query.async_update_websocket()
                 return output

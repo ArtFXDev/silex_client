@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 class Connection:
     """
     Represent a connection between a buffer input and a buffer output.
-    It can be set to either the data_in or data_out field, so when the data
+    It can be set to either the input or output field, so when the data
     will be queried, the output of the buffer it leads to will be returned.
 
     The given path needs to be relative to the closest ActionBuffer parent we can't

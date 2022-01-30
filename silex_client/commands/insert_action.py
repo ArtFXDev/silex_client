@@ -168,7 +168,7 @@ class InsertAction(CommandBase):
         if label:
             action_definition["label"] += f" {label}"
         if action_input:
-            action_definition["data_in"] = action_input
+            action_definition["input"] = action_input
 
         # To insert the action between the existing children
         # we must shift the index of all the children that follow the current step
@@ -194,4 +194,4 @@ class InsertAction(CommandBase):
 
         # This command foward the output of the inserted action.
         # It is usually a connection to the output of one of the action's command
-        return main_action.buffer.data_out
+        return main_action.buffer.output
