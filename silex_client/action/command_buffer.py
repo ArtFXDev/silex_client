@@ -19,7 +19,7 @@ import jsondiff
 
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.command_base import CommandBase
-from silex_client.action.connection import Connection
+from silex_client.action.connection import ConnectionOut, ConnectionIn
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.network.websocket_log import RedirectWebsocketLogs
 from silex_client.utils.enums import Execution, Status
@@ -168,7 +168,7 @@ class CommandBuffer(BaseBuffer):
         """
         Create an command buffer from serialized data
         """
-        config = dacite_config.Config(cast=[Status, Connection])
+        config = dacite_config.Config(cast=[Status, ConnectionOut, ConnectionIn])
 
         # Initialize the buffer without the children, since the children needs special treatment
         filtered_data = copy.copy(serialized_data)

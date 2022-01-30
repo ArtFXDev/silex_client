@@ -50,7 +50,7 @@ tester:
           parameters:
             range_tester: 6
             range_tester_2:
-              value: !connection "parameter_tester.range_low"
+              value: !connect-out "parameter_tester.range_low"
               hide: true
           ask_user: true
         range_high:
@@ -70,7 +70,7 @@ tester:
               - "hello"
               - "bar"
             multiple_select_tester_2:
-              value: !connection "parameter_tester.multiple_select.multiple_select_tester"
+              value: !connect-out "parameter_tester.multiple_select.multiple_select_tester"
           ask_user: true
         radio_select:
           path: "silex_client.commands.tester.RadioSelectTester"

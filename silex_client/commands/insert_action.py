@@ -1,17 +1,12 @@
 from __future__ import annotations
 
-import copy
 import logging
 import typing
 import uuid
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
-import fileseq
-from tractor.api.author.base import StringListAttribute
-
-from silex_client.action.action_buffer import ActionBuffer
 from silex_client.action.command_base import CommandBase
-from silex_client.resolve.config import Config
+from silex_client.action.connection import ConnectionOut
 from silex_client.utils.parameter_types import AnyParameter, StringParameterMeta
 
 # Forward references

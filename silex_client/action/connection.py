@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from silex_client.action.base_buffer import BaseBuffer
 
 
-class Connection:
+class ConnectionOut:
     """
     Represent a connection between a buffer input and a buffer output.
     It can be set to either the input or output field, so when the data
@@ -56,6 +56,10 @@ class Connection:
 
         return buffer, self.SPLIT.join(path_left), self.SPLIT.join(path_left)
 
+    @staticmethod
+    def _get_buffer_io(buffer: BaseBuffer, action_query: ActionQuery) -> Any:
+        return buffer.get_output(action_query)
+
     def get_output(self, action_query: ActionQuery, prefix: str = "") -> Any:
         """
         Get the output of the buffer this connection leads to by recursively going throught
@@ -80,3 +84,13 @@ class Connection:
             buffer_output = buffer_output.get(path)
 
         return buffer_output
+
+class ConnectionIn(ConnectionOut):
+    """
+    Same as the ConnectionOut class, but returns the input of the buffer
+    that the path leads to
+    """
+
+    @staticmethod
+    def _get_buffer_io(buffer: BaseBuffer, action_query: ActionQuery) -> Any:
+        return buffer.get_input(action_query)

@@ -30,7 +30,7 @@ import dacite.core as dacite
 import jsondiff
 from dacite.types import is_union
 
-from silex_client.action.connection import Connection
+from silex_client.action.connection import ConnectionOut, ConnectionIn
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
 
@@ -199,7 +199,7 @@ class BaseBuffer:
         """
         Resolve connection of the given value
         """
-        if not isinstance(data, Connection):
+        if not isinstance(data, ConnectionOut):
             return data
 
         parent_action = self.get_parent(buffer_type="actions")
@@ -356,7 +356,7 @@ class BaseBuffer:
         serialized_data = jsondiff.patch(current_buffer_data, serialized_data)
 
         # Setup dacite to use our deserialize function has a type_hook to create the children
-        config_data: Dict[str, Union[list, dict]] = {"cast": [Status, Connection]}
+        config_data: Dict[str, Union[list, dict]] = {"cast": [Status, ConnectionOut, ConnectionIn]}
         if BaseBuffer not in self.get_child_types():
             config_data["type_hooks"] = {
                 child_type: partial(self._deserialize_child, child_type)
@@ -391,7 +391,7 @@ class BaseBuffer:
         The difference with deserialize and construct is that construct is used
         when the buffer is newly created, instead of updated
         """
-        config = dacite_config.Config(cast=[Status, Connection])
+        config = dacite_config.Config(cast=[Status, ConnectionOut, ConnectionIn])
 
         # Initialize the buffer without the children,
         # because the children needs special treatment
