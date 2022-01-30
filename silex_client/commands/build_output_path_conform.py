@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import logging
-import typing
 import pathlib
+import typing
 from typing import Any, Dict
+
 import fileseq
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import PathParameterMeta
 from silex_client.commands.build_output_path import BuildOutputPath
+from silex_client.utils.parameter_types import PathParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:

@@ -1,4 +1,4 @@
-vrscene:
+vray:
   label: "Submit V-Ray scene"
   steps:
     build_output_path:

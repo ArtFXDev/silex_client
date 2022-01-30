@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 import logging
-import typing
-from typing import Any, Dict, List
 import os
 import pathlib
 import shutil
+import typing
+from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.thread import execute_in_thread
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import (
     ListParameterMeta,
-    TextParameterMeta,
     RadioSelectParameterMeta,
+    TextParameterMeta,
 )
+from silex_client.utils.thread import execute_in_thread
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -79,16 +79,18 @@ class Move(CommandBase):
         if os.path.isdir(path):
             # clean tree
             shutil.rmtree(path)
-            os.makedirs(path)
 
         if os.path.isfile(path):
             os.remove(path)
 
     @staticmethod
     def move(src: str, dst: str):
-        # move folder or file
+
+        os.makedirs(dst, exist_ok=True)
+
+        # Move folder or file
         if os.path.isdir(src):
-            # move all file in dst folder
+            # Move all file in dst folder
             file_names = os.listdir(src)
             for file_name in file_names:
                 shutil.move(os.path.join(src, file_name), dst)
@@ -116,7 +118,9 @@ class Move(CommandBase):
                 raise Exception(f"{item} doesn't exist.")
 
             new_path = pathlib.Path(dst)
-            destination_path = os.path.join(dst, os.path.basename(item))
+            destination_path = dst
+            if not os.path.isdir(item):
+                destination_path = os.path.join(dst, os.path.basename(item))
             # Handle override of existing file
             if new_path.exists() and force:
                 await execute_in_thread(self.remove, destination_path)

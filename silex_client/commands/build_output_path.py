@@ -17,8 +17,8 @@ from silex_client.action.command_base import CommandBase
 from silex_client.utils.files import slugify
 from silex_client.utils.parameter_types import (
     SelectParameterMeta,
-    TaskParameterMeta,
     StringParameterMeta,
+    TaskParameterMeta,
 )
 
 # Forward references

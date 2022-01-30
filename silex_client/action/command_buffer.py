@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Dict, List
 import dacite.config as dacite_config
 import dacite.core as dacite
 import jsondiff
+
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer

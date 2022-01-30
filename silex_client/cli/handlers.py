@@ -11,6 +11,7 @@ import subprocess
 from concurrent import futures
 
 import gazu.files
+
 from silex_client.action.action_query import ActionQuery
 from silex_client.core.context import Context
 from silex_client.resolve.config import Config

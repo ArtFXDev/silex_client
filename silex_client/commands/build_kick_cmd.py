@@ -6,6 +6,7 @@ import typing
 from typing import Any, Dict, List
 
 import fileseq
+
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import frames
 from silex_client.utils.command import CommandBuilder
@@ -48,7 +49,7 @@ class KickCommand(CommandBase):
         """
 
         without_extension: pathlib.Path = file_path.parents[0] / file_path.stem
-        frame_pattern = f".{frame_range}#.{file_path.suffix}"
+        frame_pattern = f".{frame_range}#{file_path.suffix}"
 
         sequence = fileseq.FileSequence(
             without_extension.with_suffix(frame_pattern),
@@ -71,7 +72,7 @@ class KickCommand(CommandBase):
         task_size: int = parameters["task_size"]
 
         kick_cmd = (
-            CommandBuilder("powershell.exe", delimiter=None)
+            CommandBuilder("powershell.exe", delimiter=" ")
             .param("ExecutionPolicy", "Bypass")
             .param("NoProfile")
             .param("File", "\\\\prod.silex.artfx.fr\\rez\\windows\\render_kick_ass.ps1")
@@ -79,16 +80,14 @@ class KickCommand(CommandBase):
 
         kick_cmd.param("ExportFile", str(output_filename))
 
-        # Specify rez environement
-        if action_query.context_metadata["project"] is not None:
-            kick_cmd.add_rez_package(action_query.context_metadata["project"].lower())
-
         # Split frames by task
         frame_chunks = frames.split_frameset(frame_range, task_size)
         commands: Dict[str, CommandBuilder] = dict()
 
         # Create commands
         for chunk in frame_chunks:
+            chunk_cmd = kick_cmd.deepcopy()
+
             # Get ass sequence  using a specific frame_range
             ass_files: List[str] = self._find_sequence(
                 ass_file, fileseq.FrameSet(chunk), logger
@@ -97,9 +96,9 @@ class KickCommand(CommandBase):
             # Converting chunk back to a frame set
             task_name = chunk.frameRange()
 
+            chunk_cmd.param("AssFiles", ",".join(ass_files))
+
             # Add ass sequence to argument list
-            commands[task_name] = kick_cmd.param(
-                "AssFiles", ",".join(ass_files)
-            ).deepcopy()
+            commands[task_name] = chunk_cmd
 
         return {"commands": commands, "file_name": ass_file.stem}

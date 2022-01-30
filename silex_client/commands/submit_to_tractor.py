@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 
 import gazu.client
 import gazu.project
+
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.command import CommandBuilder
 from silex_client.utils.parameter_types import (
@@ -43,7 +44,7 @@ class TractorSubmiter(CommandBase):
         },
         "commands": {
             "label": "Commands list",
-            "type": DictParameterMeta(str, CommandBase),
+            "type": DictParameterMeta(str, CommandBuilder),
             "hide": True,
         },
         "pools": {
@@ -142,6 +143,12 @@ class TractorSubmiter(CommandBase):
 
             # Add every command to the task
             for index, command in enumerate(all_commands):
+                if "project" in action_query.context_metadata:
+                    # Add the project in the rez environment
+                    command.add_rez_package(
+                        action_query.context_metadata["project"].lower()
+                    )
+
                 # Generates a random uuid for every command
                 id = str(uuid.uuid4())
                 params = {"argv": command.as_argv(), "id": id}
@@ -184,6 +191,7 @@ class TractorSubmiter(CommandBase):
         # Build list of profile names to ignore
         PROFILE_IGNORE = [
             "DEV",
+            "BUG",
             "Windows10",
             "Linux64",
             "Linux32",
@@ -204,6 +212,9 @@ class TractorSubmiter(CommandBase):
             for profile in tractor_pools["BladeProfiles"]
             if profile.get("ProfileName") not in PROFILE_IGNORE
         ]
+
+        # Sort the pools
+        pools.sort()
 
         pool_parameter = self.command_buffer.parameters["pools"]
         project_parameter = self.command_buffer.parameters["project"]

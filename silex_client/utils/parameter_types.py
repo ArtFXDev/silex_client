@@ -277,7 +277,7 @@ def DictParameterMeta(key_type: Type, value_type: Type):
         # Cast the input value into the given type
         for key, value in input_value.items():
             if not isinstance(value, value_type):
-                input_value[key] = input_value.pop(key)
+                input_value[key] = value_type(input_value.pop(key))
 
         super(type(self), self).__init__(input_value)
 
