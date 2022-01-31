@@ -181,4 +181,4 @@ class Loader(yaml.SafeLoader):
 # Set the include method as a handler for the !include statement
 Loader.add_constructor("!inherit", Loader.inherit)
 Loader.add_constructor("!connect-out", Loader.connect_out)
-Loader.add_constructor("!connect-out", Loader.connect_in)
+Loader.add_constructor("!connect-in", Loader.connect_in)

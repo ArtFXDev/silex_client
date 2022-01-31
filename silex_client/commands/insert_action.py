@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 import logging
-import typing
 import uuid
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.connection import ConnectionOut
 from silex_client.utils.parameter_types import AnyParameter, StringParameterMeta
-
-# Forward references
-if typing.TYPE_CHECKING:
-    from silex_client.action.action_query import ActionQuery
+from silex_client.action.action_query import ActionQuery
 
 
 class InsertAction(CommandBase):
@@ -123,13 +119,13 @@ class InsertAction(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        name: str = parameters["definition"]
+        name: str = parameters["name"]
         category: str = parameters["category"]
         definition: dict = parameters["definition"]
         prepend_step: dict = parameters["prepend_step"]
         append_step: dict = parameters["append_step"]
         action_input: Any = parameters["input"]
-        parameter_overrides: Dict[str, Any] = parameters["parameter"]
+        parameter_overrides: Dict[str, Any] = parameters["parameters"]
         label: str = parameters["label"]
         index_shift: int = parameters["index_shift"]
 
@@ -157,7 +153,9 @@ class InsertAction(CommandBase):
 
         # The parameter values of the inserted action can be overriden
         for parameter_path, parameter_value in parameter_overrides.items():
-            parameter_value = self.command_buffer.resolve_io(action_query, parameter_value)
+            parameter_value = self.command_buffer.resolve_io(
+                action_query, parameter_value
+            )
             main_action.set_parameter(parameter_path, parameter_value)
 
         action_definition = main_action.buffer.serialize()
@@ -193,5 +191,5 @@ class InsertAction(CommandBase):
         # We need to build the path to the action's output
         current_command_path = self.command_buffer.get_path()
         parent_action_path = parent_action.get_path()
-        inserted_action_path =  current_command_path.replace(parent_action_path, "", 1)
-        return ConnectionOut(inserted_action_path + f"{ConnectionOut.SPLIT}{action_name}")
+        inserted_action_path = current_command_path.replace(parent_action_path, "", 1)
+        return ConnectionOut(inserted_action_path + ConnectionOut.SPLIT + action_name)

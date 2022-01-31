@@ -131,7 +131,7 @@ class BaseBuffer:
         parent: Optional[BaseBuffer] = self
 
         while parent is not None:
-            path = f"{parent.name}:{path}" if path else parent.name
+            path = f"{parent.name}{ConnectionOut.SPLIT}{path}" if path else parent.name
             parent = parent.parent
 
         return path
@@ -292,6 +292,7 @@ class BaseBuffer:
         # If the child already exists, we update it
         if child is not None:
             child.deserialize(child_data)
+            child.parent = self
             return child
 
         # If the given child is a new child we construct it

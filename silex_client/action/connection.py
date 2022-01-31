@@ -50,15 +50,22 @@ class ConnectionOut:
             if child is None:
                 # The traversal stoped before going throug the full path
                 # We must store the part of the path we didn't go trough to traverse the dict
-                path_left = full_path[index:]
+                path_left = full_path[index + 1 :]
                 break
             buffer = child
 
-        return buffer, self.SPLIT.join(path_left), self.SPLIT.join(path_left)
+        return buffer, self.SPLIT.join(path_left), self.SPLIT.join(full_path)
 
-    @staticmethod
-    def _get_buffer_io(buffer: BaseBuffer, action_query: ActionQuery) -> Any:
-        return buffer.get_output(action_query)
+    def get_dict(self, value: Any, path: str) -> Any:
+        """
+        Traverse the returned dict with the left path
+        """
+        for path_item in path.split(self.SPLIT):
+            if not isinstance(value, dict):
+                return value
+            value = value.get(path_item)
+
+        return value
 
     def get_value(self, action_query: ActionQuery, prefix: str = "") -> Any:
         """
@@ -77,13 +84,8 @@ class ConnectionOut:
             logger.error("Could not get the output of the connection %s", full_path)
             return buffer_output
 
-        # Traverse the returned dict with the left path
-        for path in path_left:
-            if not isinstance(buffer_output, dict):
-                return buffer_output
-            buffer_output = buffer_output.get(path)
+        return self.get_dict(buffer_output, path_left)
 
-        return buffer_output
 
 class ConnectionIn(ConnectionOut):
     """
@@ -91,6 +93,21 @@ class ConnectionIn(ConnectionOut):
     that the path leads to
     """
 
-    @staticmethod
-    def _get_buffer_io(buffer: BaseBuffer, action_query: ActionQuery) -> Any:
-        return buffer.get_input(action_query)
+    def get_value(self, action_query: ActionQuery, prefix: str = "") -> Any:
+        """
+        Get the output of the buffer this connection leads to by recursively going throught
+        the children. This also go recursively throught items of a dict if the output
+        of the buffer is a dictionary
+        """
+        buffer, path_left, full_path = self.get_buffer(action_query, prefix)
+        buffer_output = buffer.get_input(action_query)
+
+        # If we traversed the entire path, return the result directly
+        if not path_left:
+            return buffer_output
+
+        if path_left and not isinstance(buffer_output, dict):
+            logger.error("Could not get the input of the connection %s", full_path)
+            return buffer_output
+
+        return self.get_dict(buffer_output, path_left)

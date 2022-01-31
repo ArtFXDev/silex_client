@@ -1,8 +1,51 @@
 tester:
   steps:
-    parameter_tester:
-      index: 50
-      label: "Parameter Tester"
+    features:
+      index: 10
+      label: "Testing features"
+      commands:
+        traceback:
+          path: "silex_client.commands.tester.TracebackTester"
+          parameters:
+            raise_exception: false
+          ask_user: true
+        insert:
+          path: "silex_client.commands.insert_action.InsertAction"
+          parameters:
+            name: "testing_insert"
+            prepend_step:
+              value:
+                label: "Prepended step of inserted action"
+                commands:
+                  prepend_string:
+                    path: "silex_client.commands.tester.StringTester"
+                    parameters:
+                      string_tester: !connect-in "."
+                      string_tester_2: !connect-in "."
+            definition:
+              value:
+                label: "Testing insert"
+                steps:
+                  parameters:
+                    index: 10
+                    label: "Testing insert parameters"
+                    commands:
+                      insert_string:
+                        path: "silex_client.commands.tester.StringTester"
+                        parameters:
+                          string_tester: "This command has been inserted"
+                          string_tester_2: "This command has been inserted too"
+                        ask_user: true
+        #get_insert_output:
+          #path: "silex_client.commands.tester.StringTester"
+          #parameters:
+            #string_tester: !connect-out "features.insert"
+            #string_tester_2: !connect-out "features.insert"
+          #ask_user: true
+
+    parameters:
+      index: 20
+      label: "Testing parameters"
       commands:
         string:
           path: "silex_client.commands.tester.StringTester"
@@ -18,11 +61,6 @@ tester:
           path: "silex_client.commands.tester.BooleanTester"
           parameters:
             bool_tester: true
-          ask_user: true
-        traceback:
-          path: "silex_client.commands.tester.TracebackTester"
-          parameters:
-            raise_exception: false
           ask_user: true
         path:
           path: "silex_client.commands.tester.PathTester"
@@ -50,7 +88,7 @@ tester:
           parameters:
             range_tester: 6
             range_tester_2:
-              value: !connect-out "parameter_tester.range_low"
+              value: !connect-out "parameters.range_low"
               hide: true
           ask_user: true
         range_high:
@@ -70,7 +108,7 @@ tester:
               - "hello"
               - "bar"
             multiple_select_tester_2:
-              value: !connect-out "parameter_tester.multiple_select.multiple_select_tester"
+              value: !connect-out "parameters.multiple_select.multiple_select_tester"
           ask_user: true
         radio_select:
           path: "silex_client.commands.tester.RadioSelectTester"

@@ -128,7 +128,9 @@ class CommandBase:
         return decorator_conform_command
 
     async def prompt_user(
-        self, action_query: ActionQuery, new_parameters: dict[str, Union[ParameterBuffer, dict]]
+        self,
+        action_query: ActionQuery,
+        new_parameters: dict[str, Union[ParameterBuffer, dict]],
     ) -> CommandParameters:
         """
         Add the given parameters to to current command parameters and ask an update from the user
@@ -147,7 +149,9 @@ class CommandBase:
             if isinstance(parameter, ParameterBuffer):
                 parameter_buffers[key] = parameter
                 continue
-            parameter_buffers[key] = ParameterBuffer.construct(parameter, self.command_buffer)
+            parameter_buffers[key] = ParameterBuffer.construct(
+                parameter, self.command_buffer
+            )
 
         # Add the parameters to the command buffer's parameters
         self.command_buffer.parameters.update(parameter_buffers)
