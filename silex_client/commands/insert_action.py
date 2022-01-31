@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.command_buffer import CommandParameters
-from silex_client.action.connection import ConnectionOut
+from silex_client.action.connection import Connection
 from silex_client.utils.parameter_types import AnyParameter, StringParameterMeta
 from silex_client.action.action_query import ActionQuery
 
@@ -193,4 +193,4 @@ class InsertAction(CommandBase):
         parent_action.deserialize({"actions": {action_name: action_definition}})
 
         # This command foward the output of the inserted action.
-        return ConnectionOut(action_name)
+        return Connection(action_name + Connection.SPLIT + "output")

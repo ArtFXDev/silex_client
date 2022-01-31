@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from silex_client.action.base_buffer import BaseBuffer
 
 
-class ConnectionOut:
+class Connection:
     """
     Represent a connection between a buffer input and a buffer output.
     It can be set to either the input or output field, so when the data
@@ -67,31 +67,21 @@ class ConnectionOut:
 
         return value
 
-    def get_value(self, action_query: ActionQuery, prefix: str = "") -> Any:
+    def get_io(
+        self, action_query: ActionQuery, buffer: BaseBuffer, path: str
+    ) -> Tuple[Any, str]:
         """
-        Get the output of the buffer this connection leads to by recursively going throught
-        the children. This also go recursively throught items of a dict if the output
-        of the buffer is a dictionary
+        The user can specify if he wants to get the input or the output by
+        setting a key "input" or "output"
         """
-        buffer, path_left, full_path = self.get_buffer(action_query, prefix)
-        buffer_output = buffer.get_output(action_query)
+        path_split = path.split(self.SPLIT)
+        io_key = path_split[0]
+        if io_key == "input":
+            return buffer.get_input(action_query), self.SPLIT.join(path_split[1:])
+        if io_key == "output":
+            return buffer.get_output(action_query), self.SPLIT.join(path_split[1:])
 
-        # If we traversed the entire path, return the result directly
-        if not path_left:
-            return buffer_output
-
-        if path_left and not isinstance(buffer_output, dict):
-            logger.error("Could not get the output of the connection %s", full_path)
-            return buffer_output
-
-        return self.get_dict(buffer_output, path_left)
-
-
-class ConnectionIn(ConnectionOut):
-    """
-    Same as the ConnectionOut class, but returns the input of the buffer
-    that the path leads to
-    """
+        return None, path
 
     def get_value(self, action_query: ActionQuery, prefix: str = "") -> Any:
         """
@@ -100,14 +90,16 @@ class ConnectionIn(ConnectionOut):
         of the buffer is a dictionary
         """
         buffer, path_left, full_path = self.get_buffer(action_query, prefix)
-        buffer_output = buffer.get_input(action_query)
+        buffer_value, path_left = self.get_io(action_query, buffer, path_left)
 
         # If we traversed the entire path, return the result directly
         if not path_left:
-            return buffer_output
+            return buffer_value
 
-        if path_left and not isinstance(buffer_output, dict):
-            logger.error("Could not get the input of the connection %s", full_path)
-            return buffer_output
+        # If we didn't go throug the entire path and we cannot go deeper
+        # it means an error ocurred while getting the path's target
+        if path_left and not isinstance(buffer_value, dict):
+            logger.error("Could not get the target of the connection %s", full_path)
+            return None
 
-        return self.get_dict(buffer_output, path_left)
+        return self.get_dict(buffer_value, path_left)

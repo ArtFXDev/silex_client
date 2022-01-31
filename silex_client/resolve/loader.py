@@ -12,7 +12,7 @@ from typing import IO, Any, Callable, Dict, List, Union
 import jsondiff
 import yaml
 
-from silex_client.action.connection import ConnectionOut, ConnectionIn
+from silex_client.action.connection import Connection
 from silex_client.utils.log import logger
 
 
@@ -163,22 +163,15 @@ class Loader(yaml.SafeLoader):
 
         return jsondiff.patch(inherit_data, node_data)
 
-    def connect_out(self, node: yaml.Node) -> ConnectionOut:
+    def connect(self, node: yaml.Node) -> Connection:
         """
-        Contructor function to handle the !connect-out statement
-        The result will be a ConnectionOut object that will tell the ActionQuery object
+        Contructor function to handle the !connect statement
+        The result will be a Connection object that will tell the ActionQuery object
         to get the result from an other buffer
         """
-        return ConnectionOut(node.value)
-
-    def connect_in(self, node: yaml.Node) -> ConnectionIn:
-        """
-        Same as connect_out but returns a ConnectionIn object
-        """
-        return ConnectionIn(node.value)
+        return Connection(node.value)
 
 
 # Set the include method as a handler for the !include statement
 Loader.add_constructor("!inherit", Loader.inherit)
-Loader.add_constructor("!connect-out", Loader.connect_out)
-Loader.add_constructor("!connect-in", Loader.connect_in)
+Loader.add_constructor("!connect", Loader.connect)

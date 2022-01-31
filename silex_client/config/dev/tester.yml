@@ -21,8 +21,8 @@ tester:
                   prepend_string:
                     path: "silex_client.commands.tester.StringTester"
                     parameters:
-                      string_tester: !connect-in "."
-                      string_tester_2: !connect-in "."
+                      string_tester: !connect ".input"
+                      string_tester_2: !connect ".input"
             definition:
               value:
                 label: "Testing insert"
@@ -37,7 +37,6 @@ tester:
                         parameters:
                           string_tester: "This command has been inserted"
                           string_tester_2: "This command has been inserted too"
-                        ask_user: true
     features_2:
       index: 20
       label: "Testing features"
@@ -45,8 +44,8 @@ tester:
         get_insert_output:
           path: "silex_client.commands.tester.StringTester"
           parameters:
-            string_tester: !connect-out "features_1.insert"
-            string_tester_2: !connect-out "features_1.insert"
+            string_tester: !connect "features_1.insert.output"
+            string_tester_2: !connect "features_1.insert.output"
           ask_user: true
 
     parameters:
@@ -94,7 +93,7 @@ tester:
           parameters:
             range_tester: 6
             range_tester_2:
-              value: !connect-out "parameters.range_low"
+              value: !connect "parameters.range_low.output"
               hide: true
           ask_user: true
         range_high:
@@ -114,7 +113,7 @@ tester:
               - "hello"
               - "bar"
             multiple_select_tester_2:
-              value: !connect-out "parameters.multiple_select.multiple_select_tester"
+              value: !connect "parameters.multiple_select.multiple_select_tester.output"
           ask_user: true
         radio_select:
           path: "silex_client.commands.tester.RadioSelectTester"
