@@ -5,6 +5,7 @@ import uuid
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
+from silex_client.action.command_buffer import CommandParameters
 from silex_client.action.connection import ConnectionOut
 from silex_client.utils.parameter_types import AnyParameter, StringParameterMeta
 from silex_client.action.action_query import ActionQuery
@@ -26,7 +27,7 @@ class InsertAction(CommandBase):
         "name": {
             "label": "Name of the action to insert",
             "type": StringParameterMeta(),
-            "value": None,
+            "value": "",
             "tooltip": """
             Name of the action to insert.
             If the definition is empty, this name will be used to find
@@ -81,7 +82,7 @@ class InsertAction(CommandBase):
             "tooltip": "This value will be set to the newly inserted action's input",
             "hide": True,
         },
-        "parameters": {
+        "parameters_override": {
             "label": "Parameters to set on the action",
             "type": dict,
             "value": {},
@@ -115,7 +116,7 @@ class InsertAction(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandParameters,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -125,7 +126,7 @@ class InsertAction(CommandBase):
         prepend_step: dict = parameters["prepend_step"]
         append_step: dict = parameters["append_step"]
         action_input: Any = parameters["input"]
-        parameter_overrides: Dict[str, Any] = parameters["parameters"]
+        parameters_override: Dict[str, Any] = parameters["parameters_override"]
         label: str = parameters["label"]
         index_shift: int = parameters["index_shift"]
 
@@ -152,7 +153,7 @@ class InsertAction(CommandBase):
             main_action.buffer.deserialize({"steps": {str(uuid.uuid4()): insert_step}})
 
         # The parameter values of the inserted action can be overriden
-        for parameter_path, parameter_value in parameter_overrides.items():
+        for parameter_path, parameter_value in parameters_override.items():
             parameter_value = self.command_buffer.resolve_io(
                 action_query, parameter_value
             )

@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import logging
 import typing
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
+from silex_client.action.command_buffer import CommandParameters
 from silex_client.commands.insert_action import InsertAction
-from silex_client.utils.parameter_types import AnyParameter, ListParameterMeta
+from silex_client.utils.parameter_types import (
+    AnyParameter,
+    ListParameterMeta,
+    StringParameterMeta,
+)
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -15,56 +20,90 @@ if typing.TYPE_CHECKING:
 
 class IterateAction(InsertAction):
     """
-    Execute an action over a given list
+    Same as the InsertAction command.
+    All the parameters are now list of parameters, you can set a parameter with a
+    list of one item to use this value for all the iterations
     """
 
     parameters = {
-        "actions": {
-            "label": "Actions to execute",
-            "type": ListParameterMeta(str),
+        "iterations": {
+            "label": "Iteration count",
+            "type": int,
+            "value": 1,
+        },
+        "names": {
+            "label": "Name of the actions to insert",
+            "type": ListParameterMeta(StringParameterMeta()),
             "value": None,
-            "tooltip": "This action will be executed for each items in the given list",
+            "tooltip": """
+            Name of the actions to insert.
+            If the definition is empty, this name will be used to find
+            the definition in the config files
+            """,
         },
         "categories": {
-            "label": "Action category",
-            "type": ListParameterMeta(str),
-            "value": "action",
-            "tooltip": "Set the category of the action you want to execute",
+            "label": "Action categories",
+            "type": ListParameterMeta(StringParameterMeta()),
+            "value": ["action"],
+            "tooltip": """
+            If the actions to insert are action name
+            This define the category of the actions to resolve
+            """,
+        },
+        "definitions": {
+            "label": "Action definitions",
+            "type": ListParameterMeta(dict),
+            "value": [{}],
+            "tooltip": """
+            If you don't provide any action definitions, the definitions will be resolved
+            from the available action config files
+            """,
             "hide": True,
         },
-        "values": {
-            "label": "List to iterate over",
+        "prepend_steps": {
+            "label": "Steps to prepend",
+            "type": ListParameterMeta(dict),
+            "value": [{}],
+            "tooltip": """
+            You can provide step definitions to customize the inserted action
+            dynamically
+            These steps will be preprended in the inserted actions
+            """,
+            "hide": True,
+        },
+        "append_steps": {
+            "label": "Steps to append",
+            "type": ListParameterMeta(dict),
+            "value": [{}],
+            "tooltip": """
+            You can provide step definitions to customize the inserted action
+            dynamically
+            These steps will be appended in the inserted actions
+            """,
+            "hide": True,
+        },
+        "inputs": {
+            "label": "Action inputs value",
             "type": ListParameterMeta(AnyParameter),
-            "value": None,
-            "tooltip": "A new action will be appended for each items in this list",
+            "value": [{}],
+            "tooltip": "These values will be set to the newly inserted action's input",
             "hide": True,
         },
-        "parameter": {
-            "label": "Parameters to set on the action",
-            "type": str,
-            "value": "",
-            "tooltip": "Set wich parameter will be overriden by the item's value",
+        "parameters_overrides": {
+            "label": "Parameters to set on the actions",
+            "type": dict,
+            "value": [{}],
+            "tooltip": """
+            Dict of values to set on the parameters of the inserted action
+            The keys of the dict should look like <step>.<command>.<parameter>
+            """,
             "hide": True,
         },
-        "label_key": {
-            "label": "Value's key to set on the label",
-            "type": str,
-            "value": "",
-            "tooltip": "If the value is a dictionary, the value at that key will be set on the label",
-            "hide": True,
-        },
-        "output": {
-            "label": "The command to get the output from",
-            "type": str,
-            "value": "",
-            "tooltip": "The output of the given command will be returned",
-            "hide": True,
-        },
-        "hide_threshold": {
-            "label": "Hide command threshold",
-            "type": int,
-            "value": 40,
-            "tooltip": "If the number actions to add is superior to this threshold, the commands will be hidden",
+        "labels": {
+            "label": "Actions labels",
+            "type": ListParameterMeta(StringParameterMeta()),
+            "value": [""],
+            "tooltip": "The labels to append to the inserted actions's label",
             "hide": True,
         },
     }
@@ -72,35 +111,51 @@ class IterateAction(InsertAction):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandParameters,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        actions = parameters["actions"]
-        values = parameters["values"]
-        categories = parameters["categories"]
-        hide_threshold = parameters["hide_threshold"]
+        iterations: int = parameters["iterations"]
+        names: List[str] = parameters["names"]
+        categories: List[str] = parameters["categories"]
+        definitions: List[dict] = parameters["definitions"]
+        prepend_steps: List[dict] = parameters["prepend_steps"]
+        append_steps: List[dict] = parameters["append_steps"]
+        action_inputs: List[Any] = parameters["inputs"]
+        parameters_overrides: List[Dict[str, Any]] = parameters["parameters_overrides"]
+        labels: List[str] = parameters["labels"]
 
         outputs = []
-        label = self.command_buffer.label
 
-        hide_commands = len(values) > hide_threshold
-        if hide_commands:
-            label = f"{label} [optimized]"
+        logger.info("Inserting %s actions: %s", iterations, names)
+        for iteration in range(iterations):
+            # Every parameters are the same as the insert action but as list
+            # To allow users to not have to set multiple times the same values
+            # we use the modulo of the iteration to get the index of the value
+            name: str = names[len(names) % iteration]
+            category: str = categories[len(categories) % iteration]
+            definition: dict = definitions[len(definitions) % iteration]
+            prepend_step: dict = prepend_steps[len(prepend_steps) % iteration]
+            append_step: dict = append_steps[len(append_steps) % iteration]
+            action_input: Any = action_inputs[len(action_inputs) % iteration]
+            parameters_override: Dict[str, Any] = parameters_overrides[
+                len(parameters_overrides) % iteration
+            ]
+            label: str = labels[len(labels) % iteration]
 
-        logger.info(f"Inserting %s actions: {actions}", len(values))
-        for index, value in enumerate(values):
-            self.command_buffer.label = f"{label} ({index+1}/{len(values)})"
-            action = actions[index % len(actions)]
-            category = categories[index % len(categories)]
-
-            # Set the new values to the command
+            # When inheriting from an other command, our parameters are merges
+            # with the child command's parameters. We update our parameters with the
+            # values at the current index
             parameters.update(
                 {
-                    "action": action,
-                    "value": value,
+                    "name": name,
                     "category": category,
-                    "hide_commands": hide_commands,
+                    "definition": definition,
+                    "prepend_step": prepend_step,
+                    "append_step": append_step,
+                    "action_input": action_input,
+                    "parameters_override": parameters_override,
+                    "label": label,
                 }
             )
             output = await super().__call__(parameters, action_query, logger)
@@ -110,12 +165,14 @@ class IterateAction(InsertAction):
 
     async def setup(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandParameters,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
+        await super().setup(parameters, action_query, logger)
 
-        # Hide the parameters of the child classes
+        # By inheriting from an other class we also get all its parameters.
+        # We must hide them all since they will be overriden by the values in the lists parameters
         for key, _ in super().parameters.items():
             parameter = self.command_buffer.parameters.get(key)
             if parameter is not None:

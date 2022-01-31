@@ -11,7 +11,7 @@ import importlib
 import os
 import traceback
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Dict, List, TypeVar, Union, Tuple
 
 import dacite.config as dacite_config
 import dacite.core as dacite
@@ -247,9 +247,14 @@ class CommandParameters:
             for child in self.command.children.values()
         ]
 
-    def items(self) -> Dict[str, Any]:
+    def items(self) -> List[Tuple[str, Any]]:
         """Same method a the original dict"""
-        return {
-            name: child.get_output(self.action_query)
-            for name, child in self.command.children.items()
-        }
+        return [
+            (key, value.get_output(self.action_query))
+            for key, value in self.command.children.items()
+        ]
+
+    def update(self, values: Union[CommandParameters, Dict[str, Any]]):
+        """Update the values with the given dict"""
+        for key, value in values.items():
+            self[key] = value
