@@ -186,10 +186,10 @@ class InsertAction(CommandBase):
         for next_step in next_steps:
             next_step.index += index_shift * 2
 
-        logger.info("Inserting action: %s", name)
         # We always need to make sure the inserted definitions does not override
         # existing children, we use uuid as name to avoid that
         action_name = str(uuid.uuid4())
+        logger.info("Inserting action: %s", action_name)
         parent_action.deserialize({"actions": {action_name: action_definition}})
 
         # This command foward the output of the inserted action.

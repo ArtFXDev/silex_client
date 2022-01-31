@@ -34,7 +34,7 @@ class IterateAction(InsertAction):
         "names": {
             "label": "Name of the actions to insert",
             "type": ListParameterMeta(StringParameterMeta()),
-            "value": None,
+            "value": [""],
             "tooltip": """
             Name of the actions to insert.
             If the definition is empty, this name will be used to find
@@ -91,7 +91,7 @@ class IterateAction(InsertAction):
         },
         "parameters_overrides": {
             "label": "Parameters to set on the actions",
-            "type": dict,
+            "type": ListParameterMeta(dict),
             "value": [{}],
             "tooltip": """
             Dict of values to set on the parameters of the inserted action
@@ -132,16 +132,16 @@ class IterateAction(InsertAction):
             # Every parameters are the same as the insert action but as list
             # To allow users to not have to set multiple times the same values
             # we use the modulo of the iteration to get the index of the value
-            name: str = names[len(names) % iteration]
-            category: str = categories[len(categories) % iteration]
-            definition: dict = definitions[len(definitions) % iteration]
-            prepend_step: dict = prepend_steps[len(prepend_steps) % iteration]
-            append_step: dict = append_steps[len(append_steps) % iteration]
-            action_input: Any = action_inputs[len(action_inputs) % iteration]
+            name: str = names[iteration % len(names)]
+            category: str = categories[iteration % len(categories)]
+            definition: dict = definitions[iteration % len(definitions)]
+            prepend_step: dict = prepend_steps[iteration % len(prepend_steps)]
+            append_step: dict = append_steps[iteration % len(append_steps)]
+            action_input: Any = action_inputs[iteration % len(action_inputs)]
             parameters_override: Dict[str, Any] = parameters_overrides[
-                len(parameters_overrides) % iteration
+                iteration % len(parameters_overrides)
             ]
-            label: str = labels[len(labels) % iteration]
+            label: str = labels[iteration % len(labels)]
 
             # When inheriting from an other command, our parameters are merges
             # with the child command's parameters. We update our parameters with the
@@ -153,7 +153,7 @@ class IterateAction(InsertAction):
                     "definition": definition,
                     "prepend_step": prepend_step,
                     "append_step": append_step,
-                    "action_input": action_input,
+                    "input": action_input,
                     "parameters_override": parameters_override,
                     "label": label,
                 }

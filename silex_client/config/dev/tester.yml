@@ -10,33 +10,37 @@ tester:
             raise_exception: false
           ask_user: true
         insert:
-          path: "silex_client.commands.insert_action.InsertAction"
+          path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
-            name: "testing_insert"
-            input: "This is the input of the inserted action"
-            prepend_step:
+            iterations: 2
+            names: 
+              - "testing_insert"
+            inputs: 
+              - "This is the input of the first inserted action"
+              - "This is the input of the second inserted action"
+            prepend_steps:
               value:
-                label: "Prepended step of inserted action"
-                commands:
-                  prepend_string:
-                    path: "silex_client.commands.tester.StringTester"
+                - label: "Prepended step of inserted action"
+                  commands:
+                    prepend_string:
+                      path: "silex_client.commands.tester.StringTester"
+                      parameters:
+                        string_tester: !connect ".input"
+                        string_tester_2: !connect ".input"
+            definitions:
+              value:
+                - label: "Testing insert"
+                  output: "This is the output of the inserted actions"
+                  steps:
                     parameters:
-                      string_tester: !connect ".input"
-                      string_tester_2: !connect ".input"
-            definition:
-              value:
-                label: "Testing insert"
-                output: "This is the output of the inserted action"
-                steps:
-                  parameters:
-                    index: 10
-                    label: "Testing insert parameters"
-                    commands:
-                      insert_string:
-                        path: "silex_client.commands.tester.StringTester"
-                        parameters:
-                          string_tester: "This command has been inserted"
-                          string_tester_2: "This command has been inserted too"
+                      index: 10
+                      label: "Testing insert parameters"
+                      commands:
+                        insert_string:
+                          path: "silex_client.commands.tester.StringTester"
+                          parameters:
+                            string_tester: "This command has been inserted"
+                            string_tester_2: "This command has been inserted too"
     features_2:
       index: 20
       label: "Testing features"

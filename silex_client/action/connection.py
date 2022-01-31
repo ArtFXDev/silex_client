@@ -103,3 +103,9 @@ class Connection:
             return None
 
         return self.get_dict(buffer_value, path_left)
+
+    def __str__(self):
+        return self.path
+
+    def __repr__(self):
+        return f'Connection(path="{self.path}")'
