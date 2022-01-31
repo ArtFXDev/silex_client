@@ -192,8 +192,4 @@ class InsertAction(CommandBase):
         parent_action.deserialize({"actions": {action_name: action_definition}})
 
         # This command foward the output of the inserted action.
-        # We need to build the path to the action's output
-        current_command_path = self.command_buffer.get_path()
-        parent_action_path = parent_action.get_path()
-        inserted_action_path = current_command_path.replace(parent_action_path, "", 1)
-        return ConnectionOut(inserted_action_path + ConnectionOut.SPLIT + action_name)
+        return ConnectionOut(action_name)

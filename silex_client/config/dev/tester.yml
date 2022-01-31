@@ -1,6 +1,6 @@
 tester:
   steps:
-    features:
+    features_1:
       index: 10
       label: "Testing features"
       commands:
@@ -26,6 +26,7 @@ tester:
             definition:
               value:
                 label: "Testing insert"
+                output: "This is the output of the inserted action"
                 steps:
                   parameters:
                     index: 10
@@ -37,15 +38,19 @@ tester:
                           string_tester: "This command has been inserted"
                           string_tester_2: "This command has been inserted too"
                         ask_user: true
-        #get_insert_output:
-          #path: "silex_client.commands.tester.StringTester"
-          #parameters:
-            #string_tester: !connect-out "features.insert"
-            #string_tester_2: !connect-out "features.insert"
-          #ask_user: true
+    features_2:
+      index: 20
+      label: "Testing features"
+      commands:
+        get_insert_output:
+          path: "silex_client.commands.tester.StringTester"
+          parameters:
+            string_tester: !connect-out "features_1.insert"
+            string_tester_2: !connect-out "features_1.insert"
+          ask_user: true
 
     parameters:
-      index: 20
+      index: 30
       label: "Testing parameters"
       commands:
         string:

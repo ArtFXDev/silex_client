@@ -210,7 +210,7 @@ class BaseBuffer:
 
     def get_input(self, action_query: ActionQuery) -> Any:
         """
-        Always use this method to get the intput of the buffer
+        Always use this method to get the input of the buffer
         Return the input after resolving connections
         """
         return self.resolve_io(action_query, self.input)
