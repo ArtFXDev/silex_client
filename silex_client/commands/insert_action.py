@@ -158,11 +158,15 @@ class InsertAction(CommandBase):
             )
             main_action.set_parameter(parameter_path, parameter_value)
 
-        action_definition = main_action.buffer.serialize()
         if label:
-            action_definition["label"] += f" {label}"
+            action_label = main_action.buffer.label
+            main_action.buffer.label = (
+                f"{action_label} {label}" if action_label else label
+            )
         if action_input:
-            action_definition["input"] = action_input
+            main_action.buffer.input = action_input
+
+        action_definition = main_action.buffer.serialize()
 
         # To insert the action between the existing children
         # we must shift the index of all the children that follow the current step

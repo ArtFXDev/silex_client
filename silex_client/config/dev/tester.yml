@@ -13,6 +13,7 @@ tester:
           path: "silex_client.commands.insert_action.InsertAction"
           parameters:
             name: "testing_insert"
+            input: "This is the input of the inserted action"
             prepend_step:
               value:
                 label: "Prepended step of inserted action"
