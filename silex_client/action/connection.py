@@ -58,7 +58,8 @@ class Connection:
 
     def get_dict(self, value: Any, path: str) -> Any:
         """
-        Traverse the returned dict with the left path
+        If the returned value is a dict, this can be used to get nested values inside the
+        dict with the last part of the path
         """
         for path_item in path.split(self.SPLIT):
             if not isinstance(value, dict):
@@ -73,6 +74,9 @@ class Connection:
         """
         The user can specify if he wants to get the input or the output by
         setting a key "input" or "output"
+
+        WARNING: Because of this implementation, a step cannot be called "input" or "output"
+        otherwise the connection might have issues
         """
         path_split = path.split(self.SPLIT)
         io_key = path_split[0]

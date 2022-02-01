@@ -9,7 +9,7 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Union
 
 from silex_client.utils.enums import Status
 from silex_client.action.parameter_buffer import ParameterBuffer
@@ -44,6 +44,13 @@ class CommandBase:
             class_parameters = getattr(inherited_class, "parameters")
             if isinstance(class_parameters, dict):
                 self.parameters.update(class_parameters)
+
+        # To force the setting of a returned value, the __call__ commands must return a NamedTuple
+        # return_annotation = inspect.signature(self.__call__).return_annotation
+        # if not issubclass(return_annotation, tuple):
+            # raise Exception(
+                # "The command {command_buffer.name} is invalid: It must return a NamedTuple"
+            # )
 
     def check_parameters(
         self, parameters: CommandParameters, logger: logging.Logger
@@ -95,7 +102,7 @@ class CommandBase:
                 parameters: CommandParameters,
                 action_query: ActionQuery,
                 logger: logging.Logger,
-            ) -> None:
+            ) -> Any:
                 # Make sure the given parameters are valid
                 if not command.check_parameters(parameters, logger):
                     command.command_buffer.status = Status.INVALID
