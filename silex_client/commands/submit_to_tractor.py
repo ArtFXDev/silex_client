@@ -102,15 +102,6 @@ class TractorSubmiter(CommandBase):
                     project_dict["data"]["nas"],
                 ],
             )
-        else:
-            owner = "3d4"
-            mount_cmd.param(
-                "File",
-                [
-                    "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive_3d4.ps1",
-                    "marvin",
-                ],
-            )
 
         # Add the mount command
         precommands.append(mount_cmd)
