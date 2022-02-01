@@ -6,7 +6,6 @@ import typing
 from typing import Any, Dict, List
 
 from fileseq import FrameSet
-
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command, frames
 from silex_client.utils.command import CommandBuilder
@@ -71,10 +70,9 @@ class HoudiniCommand(CommandBase):
             "value": False,
         },
         "render_nodes": {
-            "label": "Render Nodes",
+            "label": "ROP node path (defaults to /out/...)",
             "type": SelectParameterMeta(),
             "value": None,
-            "tooltip": "Select Render Node",
         },
     }
 
