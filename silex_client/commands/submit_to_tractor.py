@@ -144,7 +144,14 @@ class TractorSubmiter(CommandBase):
 
                 # Generates a random uuid for every command
                 id = str(uuid.uuid4())
-                params = {"argv": command.as_argv(), "id": id}
+
+                params = {
+                    "argv": command.as_argv(),
+                    "id": id,
+                    # Limit tag with the executable
+                    # Useful when limiting the amout of vray jobs on the farm for example
+                    "tags": [command.executable],
+                }
 
                 # Every command refers to the previous one
                 if index > 0:
