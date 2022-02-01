@@ -8,7 +8,6 @@ from typing import Any, Dict, List
 
 import gazu.client
 import gazu.project
-
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.command import CommandBuilder
 from silex_client.utils.parameter_types import (
@@ -103,15 +102,6 @@ class TractorSubmiter(CommandBase):
                     project_dict["data"]["nas"],
                 ],
             )
-        else:
-            owner = "3d4"
-            mount_cmd.param(
-                "File",
-                [
-                    "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive_3d4.ps1",
-                    "marvin",
-                ],
-            )
 
         # Add the mount command
         precommands.append(mount_cmd)
@@ -143,6 +133,9 @@ class TractorSubmiter(CommandBase):
 
             # Add every command to the task
             for index, command in enumerate(all_commands):
+                # Copy the command
+                command = command.deepcopy()
+
                 if "project" in action_query.context_metadata:
                     # Add the project in the rez environment
                     command.add_rez_package(

@@ -91,10 +91,11 @@ class CommandBuilder:
                 else:
                     # If there's no value we append the key alone
                     # Eg: ls -l
-                    args.append(param)
+                    args.append(str(param))
             else:
-                # Add a single value without key
-                args.append(value)
+                if value is not None:
+                    # Add a single value without key
+                    args.append(str(value))
 
         command = ([self.executable] + args) if self.executable else args
 
