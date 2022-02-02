@@ -20,8 +20,7 @@ import jsondiff
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.command_base import CommandBase
 from silex_client.action.connection import Connection
-from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.action.io_buffer import IOBuffer
+from silex_client.action.io_buffer import IOBuffer, InputBuffer, OutputBuffer
 from silex_client.network.websocket_log import RedirectWebsocketLogs
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
@@ -50,8 +49,6 @@ class CommandBuffer(BaseBuffer):
 
     #: Type name to help differentiate the different buffer types
     buffer_type: str = field(default="commands")
-    #: Childs in the buffer hierarchy of buffer of the action
-    children: Dict[str, ParameterBuffer] = field(default_factory=dict)
     #: The path to the command's module
     path: str = field(default="")
     #: Specify if the parameters must be displayed by the UI or not
@@ -64,19 +61,16 @@ class CommandBuffer(BaseBuffer):
     executor: CommandBase = field(init=False)
     #: List of all the logs during the execution of that command
     logs: List[Dict[str, str]] = field(default_factory=list)
+    #: In the case of a command, the input is not a connection
+    input: Dict[str, InputBuffer] = field(default_factory=dict, init=False)
+    #: In the case of a command, the output is not a connection
+    output: Dict[str, OutputBuffer] = field(default_factory=dict, init=False)
 
     def __post_init__(self):
         super().__post_init__()
 
         # Get the executor
         self.executor = self._get_executor(self.path)
-
-    @property
-    def parameters(self) -> Dict[str, ParameterBuffer]:
-        """
-        Alias for children
-        """
-        return self.children
 
     def _get_executor(self, path: str) -> CommandBase:
         """
@@ -196,6 +190,19 @@ class CommandBuffer(BaseBuffer):
             )
 
         return super().construct(serialized_data, parent)
+
+    def get_input(self, action_query: ActionQuery, key: str) -> Any:
+        """
+        Always use this method to get the input of the buffer
+        Return the input after resolving connections
+        """
+        return self.input[key].get_output(action_query)
+
+    def get_output(self, action_query: ActionQuery, key: str) -> Any:
+        """
+        Since command's input and outputs are
+        """
+        return self.output[key].get_output(action_query)
 
 
 class CommandIO:

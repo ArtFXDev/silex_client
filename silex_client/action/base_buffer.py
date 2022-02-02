@@ -77,9 +77,9 @@ class BaseBuffer:
     #: A Unique ID to help differentiate multiple buffers
     uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
     #: The input can be connected to an other buffer output
-    input: Any = field(default=None, init=False)
+    input: Dict[str, Connection] = field(default_factory=dict, init=False)
     #: The output can be connected to an other buffer input
-    output: Any = field(default=None, init=False)
+    output: Dict[str, Connection] = field(default_factory=dict, init=False)
     #: Marquer to know if the serialize cache is outdated or not
     outdated_cache: bool = field(compare=False, repr=False, default=True)
     #: Cache the serialize output
@@ -195,32 +195,29 @@ class BaseBuffer:
             sorted(self.children.items(), key=lambda item: item[1].index)
         )
 
-    def resolve_io(self, action_query: ActionQuery, data: Any) -> Any:
+    def resolve_io(self, action_query: ActionQuery, data: Connection) -> Any:
         """
         Resolve connection of the given value
         """
-        if not isinstance(data, Connection):
-            return data
-
         parent_action = self.get_parent(buffer_type="actions")
         prefix = ""
         if parent_action is not None:
             prefix = parent_action.get_path()
         return data.get_value(action_query, prefix)
 
-    def get_input(self, action_query: ActionQuery) -> Any:
+    def get_input(self, action_query: ActionQuery, key: str) -> Any:
         """
         Always use this method to get the input of the buffer
         Return the input after resolving connections
         """
-        return self.resolve_io(action_query, self.input)
+        return self.resolve_io(action_query, self.input[key])
 
-    def get_output(self, action_query: ActionQuery) -> Any:
+    def get_output(self, action_query: ActionQuery, key: str) -> Any:
         """
         Always use this method to get the output of the buffer
         Return the output after resolving connections
         """
-        return self.resolve_io(action_query, self.output)
+        return self.resolve_io(action_query, self.output[key])
 
     def skip_execution(self) -> bool:
         """
