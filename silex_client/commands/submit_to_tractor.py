@@ -9,12 +9,13 @@ from typing import Any, Dict, List
 import gazu.client
 import gazu.project
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.command import CommandBuilder
+from silex_client.utils import command_builder
 from silex_client.utils.parameter_types import (
     DictParameterMeta,
     MultipleSelectParameterMeta,
     SelectParameterMeta,
 )
+
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -43,7 +44,7 @@ class TractorSubmiter(CommandBase):
         },
         "commands": {
             "label": "Commands list",
-            "type": DictParameterMeta(str, CommandBuilder),
+            "type": DictParameterMeta(str, DictParameterMeta(str, command_builder.CommandBuilder)),
             "hide": True,
         },
         "pools": {
@@ -69,8 +70,8 @@ class TractorSubmiter(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        precommands: List[CommandBuilder] = parameters["precommands"]
-        commands: Dict[str, CommandBuilder] = parameters["commands"]
+        precommands: List[command_builder.CommandBuilder] = parameters["precommands"]
+        commands: Dict[str, Dict[str, command_builder.CommandBuilder]] = parameters["commands"]
         pools: List[str] = parameters["pools"]
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
@@ -78,7 +79,7 @@ class TractorSubmiter(CommandBase):
 
         # This command will mount network drive
         mount_cmd = (
-            CommandBuilder("powershell.exe", delimiter=None)
+            command_builder.CommandBuilder("powershell.exe", delimiter=None)
             .param("ExecutionPolicy", "Bypass")
             .param("NoProfile")
         )
@@ -126,39 +127,28 @@ class TractorSubmiter(CommandBase):
             # Create task
             task: author.Task = author.Task(title=task_title)
 
-            # Add precommands to each task
-            all_commands = precommands + [task_argv]
+            for subtask_title, subtask_argv in task_argv.items():
 
-            last_id = None
+                subtask: author.subtask = author.Task(title=subtask_title)
+                # Add precommands to each subtask
+                all_commands = precommands + [subtask_argv]
 
-            # Add every command to the task
-            for index, command in enumerate(all_commands):
-                # Copy the command
-                command = command.deepcopy()
+                last_id = None
 
-                if "project" in action_query.context_metadata:
-                    # Add the project in the rez environment
-                    command.add_rez_package(
-                        action_query.context_metadata["project"].lower()
-                    )
+                # Add every command to the subtask
+                for index, command in enumerate(all_commands):
+                    # Generates a random uuid for every command
+                    id = str(uuid.uuid4())
+                    params = {"argv": command.as_argv(), "id": id}
 
-                # Generates a random uuid for every command
-                id = str(uuid.uuid4())
+                    # Every command refers to the previous one
+                    if index > 0:
+                        params["refersto"] = last_id
 
-                params = {
-                    "argv": command.as_argv(),
-                    "id": id,
-                    # Limit tag with the executable
-                    # Useful when limiting the amout of vray jobs on the farm for example
-                    "tags": [command.executable],
-                }
+                    subtask.addCommand(author.Command(**params))
+                    last_id = id
 
-                # Every command refers to the previous one
-                if index > 0:
-                    params["refersto"] = last_id
-
-                task.addCommand(author.Command(**params))
-                last_id = id
+                    task.addChild(subtask)
 
             # Add the task as child
             job.addChild(task)
