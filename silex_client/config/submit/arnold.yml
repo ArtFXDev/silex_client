@@ -46,7 +46,7 @@ arnold:
           label: "Arnold job parameters"
           ask_user: true
           parameters:
-            output_filename:
+            output_path:
               value: !command-output "build_output_path:build_output_path:full_path"
 
         submit_to_tractor:

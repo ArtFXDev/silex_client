@@ -36,7 +36,6 @@ class CommandBuilder:
     def value(self, value: Any):
         """
         Add a single value to the command
-
         Examples:
             CommandBuilder("python").value("test.py") -> "python test.py"
         """
@@ -46,7 +45,6 @@ class CommandBuilder:
     def disable(self, keys: List[str], false_value: Union[int, bool] = 0):
         """
         Set multiple keys with a false value
-
         Examples:
             CommandBuilder("vray").disable(["display", "progressUseColor"]) -> "vray -display=0 -progressUseColor=0"
         """
@@ -57,7 +55,6 @@ class CommandBuilder:
     def add_rez_package(self, package: str):
         """
         Add one rez package that will be added to the final command
-
         Examples:
             CommandBuilder("maya", rez_packages=["maya", "python3"]) -> "rez env maya python3 -- maya"
         """
@@ -66,7 +63,6 @@ class CommandBuilder:
     def as_argv(self) -> List[str]:
         """
         Return the full command as a list of string tokens
-
         Examples:
             CommandBuilder("du", dashes="-", delimiter=" ").param("d", 1).param("h") -> ["du", "-d", "1", "-h"]
         """
@@ -113,4 +109,5 @@ class CommandBuilder:
         return copy.deepcopy(self)
 
     def __repr__(self) -> str:
+        
         return " ".join(self.as_argv())
