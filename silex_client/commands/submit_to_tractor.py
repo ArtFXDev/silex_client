@@ -132,6 +132,7 @@ class TractorSubmiter(CommandBase):
 
             for subtask_title, subtask_argv in task_argv.items():
                 subtask: author.Task = author.Task(title=subtask_title)
+
                 # Add precommands to each subtask
                 all_commands = precommands + [subtask_argv]
 
@@ -150,7 +151,7 @@ class TractorSubmiter(CommandBase):
                     subtask.addCommand(author.Command(**params))
                     last_id = id
 
-                    task.addChild(subtask)
+                task.addChild(subtask)
 
             # Add the task as child
             job.addChild(task)
