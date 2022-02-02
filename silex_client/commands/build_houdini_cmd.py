@@ -53,6 +53,17 @@ class HoudiniCommand(CommandBase):
             "hide": True,
         },
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
+        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
+        "rop_from_hip": {
+            "label": "Get ROP node list from scene file (can take some time)",
+            "type": bool,
+            "value": False,
+        },
+        "render_nodes": {
+            "label": "ROP node path (defaults to /out/...)",
+            "type": SelectParameterMeta(),
+            "value": None,
+        },
         "parameter_overrides": {
             "type": bool,
             "label": "Parameter overrides",
@@ -63,16 +74,6 @@ class HoudiniCommand(CommandBase):
             "type": IntArrayParameterMeta(2),
             "value": [1920, 1080],
             "hide": True,
-        },
-        "rop_from_hip": {
-            "label": "Get ROP node list from scene file (can take some time)",
-            "type": bool,
-            "value": False,
-        },
-        "render_nodes": {
-            "label": "ROP node path (defaults to /out/...)",
-            "type": SelectParameterMeta(),
-            "value": None,
         },
     }
 
@@ -87,7 +88,7 @@ class HoudiniCommand(CommandBase):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
-        # skip_existing = int(parameters["skip_existing"]) todo
+        skip_existing = parameters["skip_existing"]
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
         render_node: str = parameters["render_nodes"]
@@ -107,6 +108,7 @@ class HoudiniCommand(CommandBase):
         houdini_cmd.param("o", str(output_file))
         # Verbose mode
         houdini_cmd.param("v")
+        houdini_cmd.param("S", condition=skip_existing)
 
         if parameter_overrides:
             houdini_cmd.param("w", resolution[0])
@@ -120,12 +122,7 @@ class HoudiniCommand(CommandBase):
             chunk_cmd = houdini_cmd.deepcopy()
             task_title = chunk.frameRange()
 
-            if len(chunk) > 1:
-                chunk_cmd.param("e")
-                # Add the frames argument
-                chunk_cmd.param("f", str(chunk).split("-"))
-            else:
-                chunk_cmd.param("F", chunk[0])
+            chunk_cmd.param("f", ";".join(map(str, list(chunk))))
 
             commands[task_title] = chunk_cmd
 
