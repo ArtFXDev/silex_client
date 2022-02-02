@@ -7,7 +7,7 @@ from typing import Any, Dict
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.command import CommandBuilder
+from silex_client.utils import command_builder
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import (
     PathParameterMeta,
@@ -65,7 +65,7 @@ class BlenderCommand(CommandBase):
         output_extension = self.EXTENSIONS_MAPPING[parameters["output_extension"]]
 
         # Build the Blender command
-        blender_cmd = CommandBuilder(
+        blender_cmd = command_builder.CommandBuilder(
             "blender", rez_packages=["blender"], delimiter=" ", dashes="--"
         )
         blender_cmd.param("background")
@@ -76,7 +76,7 @@ class BlenderCommand(CommandBase):
         blender_cmd.param("render-output", parameters["output_filename"])
         blender_cmd.param("log-level", 0)
 
-        commands: Dict[str, CommandBuilder] = {}
+        commands: Dict[str, command_builder.CommandBuilder] = {}
 
         # Split frames by task size
         frame_chunks = split_frameset(frame_range, task_size)
