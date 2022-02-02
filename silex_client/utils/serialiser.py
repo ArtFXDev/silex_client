@@ -11,7 +11,7 @@ import jsondiff
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.action.command_buffer import CommandBuffer
-from silex_client.utils.parameter_types import ParameterInputTypeMeta
+from silex_client.utils.io_types import IOTypeMeta
 
 
 def silex_encoder(obj):
@@ -31,7 +31,7 @@ def silex_encoder(obj):
         return obj.serialize()
 
     # Use the serialize method for command parameters
-    if isinstance(obj, ParameterInputTypeMeta):
+    if isinstance(obj, IOTypeMeta):
         return obj.serialize()
 
     # Convert frameset to string

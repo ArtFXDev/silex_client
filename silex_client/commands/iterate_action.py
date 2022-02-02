@@ -7,10 +7,10 @@ from typing import Any, Dict, List
 from silex_client.action.command_base import CommandBase
 from silex_client.action.command_buffer import CommandParameters
 from silex_client.commands.insert_action import InsertAction
-from silex_client.utils.parameter_types import (
-    AnyParameter,
-    ListParameterMeta,
-    StringParameterMeta,
+from silex_client.utils.io_types import (
+    AnyType,
+    ListType,
+    StringType,
 )
 
 # Forward references
@@ -33,7 +33,7 @@ class IterateAction(InsertAction):
         },
         "names": {
             "label": "Name of the actions to insert",
-            "type": ListParameterMeta(StringParameterMeta()),
+            "type": ListType(StringType()),
             "value": [""],
             "tooltip": """
             Name of the actions to insert.
@@ -43,7 +43,7 @@ class IterateAction(InsertAction):
         },
         "categories": {
             "label": "Action categories",
-            "type": ListParameterMeta(StringParameterMeta()),
+            "type": ListType(StringType()),
             "value": ["action"],
             "tooltip": """
             If the actions to insert are action name
@@ -52,7 +52,7 @@ class IterateAction(InsertAction):
         },
         "definitions": {
             "label": "Action definitions",
-            "type": ListParameterMeta(dict),
+            "type": ListType(dict),
             "value": [{}],
             "tooltip": """
             If you don't provide any action definitions, the definitions will be resolved
@@ -62,7 +62,7 @@ class IterateAction(InsertAction):
         },
         "prepend_steps": {
             "label": "Steps to prepend",
-            "type": ListParameterMeta(dict),
+            "type": ListType(dict),
             "value": [{}],
             "tooltip": """
             You can provide step definitions to customize the inserted action
@@ -73,7 +73,7 @@ class IterateAction(InsertAction):
         },
         "append_steps": {
             "label": "Steps to append",
-            "type": ListParameterMeta(dict),
+            "type": ListType(dict),
             "value": [{}],
             "tooltip": """
             You can provide step definitions to customize the inserted action
@@ -84,14 +84,14 @@ class IterateAction(InsertAction):
         },
         "inputs": {
             "label": "Action inputs value",
-            "type": ListParameterMeta(AnyParameter),
+            "type": ListType(AnyType),
             "value": [{}],
             "tooltip": "These values will be set to the newly inserted action's input",
             "hide": True,
         },
         "parameters_overrides": {
             "label": "Parameters to set on the actions",
-            "type": ListParameterMeta(dict),
+            "type": ListType(dict),
             "value": [{}],
             "tooltip": """
             Dict of values to set on the parameters of the inserted action
@@ -101,7 +101,7 @@ class IterateAction(InsertAction):
         },
         "labels": {
             "label": "Actions labels",
-            "type": ListParameterMeta(StringParameterMeta()),
+            "type": ListType(StringType()),
             "value": [""],
             "tooltip": "The labels to append to the inserted actions's label",
             "hide": True,

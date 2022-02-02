@@ -15,7 +15,7 @@ from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.action.step_buffer import StepBuffer
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
-from silex_client.utils.parameter_types import AnyParameter
+from silex_client.utils.io_types import AnyType
 
 TBaseBuffer = TypeVar("TBaseBuffer", bound="BaseBuffer")
 
@@ -130,7 +130,7 @@ class ActionBuffer(BaseBuffer):
             return
 
         # Check if the given value is the right type
-        if not isinstance(value, parameter.type) and parameter.type is not AnyParameter:
+        if not isinstance(value, parameter.type) and parameter.type is not AnyType:
             try:
                 value = parameter.type(value)
             except TypeError:

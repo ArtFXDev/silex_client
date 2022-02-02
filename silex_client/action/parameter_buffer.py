@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any, Union, TYPE_CHECKING, Dict
 
 from silex_client.action.base_buffer import BaseBuffer
-from silex_client.utils.parameter_types import AnyParameter, ParameterInputTypeMeta
+from silex_client.utils.io_types import AnyType, IOTypeMeta
 
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -31,23 +31,23 @@ class ParameterBuffer(BaseBuffer):
     #: Type name to help differentiate the different buffer types
     buffer_type: str = field(default="parameters")
     #: The type of the parameter, must be a class definition or a CommandParameterMeta instance
-    type: Union[TypeAlias, ParameterInputTypeMeta] = field(default=TypeAlias(None))
+    type: Union[TypeAlias, IOTypeMeta] = field(default=TypeAlias(None))
 
     def __post_init__(self):
         super().__post_init__()
         # The AnyParameter type does not have any widget in the frontend
-        if self.type is AnyParameter:
+        if self.type is AnyType:
             self.hide = True
 
         # Get the default value from to the type
-        if self.input is None and isinstance(self.type, ParameterInputTypeMeta):
+        if self.input is None and isinstance(self.type, IOTypeMeta):
             self.input = self.type.get_default()
 
     def rebuild_type(self, *args, **kwargs):
         """
         Allows changing the options of the parameter by rebuilding the type
         """
-        if not isinstance(self.type, ParameterInputTypeMeta):
+        if not isinstance(self.type, IOTypeMeta):
             return
 
         # Rebuild the parameter type

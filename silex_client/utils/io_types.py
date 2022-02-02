@@ -11,7 +11,7 @@ import pathlib
 from typing import Any, Dict, List, Type
 
 
-class ParameterInputTypeMeta(type):
+class IOTypeMeta(type):
     """
     Every parameter have an input type.
     The input type can either be a regular class definition or an instance of
@@ -38,7 +38,7 @@ class ParameterInputTypeMeta(type):
         """
         return None
 
-    def rebuild(cls) -> ParameterInputTypeMeta:
+    def rebuild(cls) -> IOTypeMeta:
         """
         Parameter types definitions are immutable
         To change their attributes, you can use this method to rebuild it
@@ -46,16 +46,15 @@ class ParameterInputTypeMeta(type):
         return cls("InvalidParameter", (type(None),), {})
 
 
-class AnyParameter(object):
+class AnyType(object):
     """
-    Parameter type that allows any value to be passed through
+    Data type that allows any value to be passed through
     """
 
     def __new__(cls, value):
         return value
 
-
-def TaskParameterMeta():
+def TaskType():
     """
     Builds a parameter type that returns a task id as a string
     In the UI, this parameter is a task selector on the current project
@@ -72,12 +71,12 @@ def TaskParameterMeta():
     attributes = {
         "serialize": serialize,
         "get_default": get_default,
-        "rebuild": TaskParameterMeta,
+        "rebuild": TaskType,
     }
-    return ParameterInputTypeMeta("TaskParameter", (str,), attributes)
+    return IOTypeMeta("TaskParameter", (str,), attributes)
 
 
-def IntArrayParameterMeta(size: int):
+def IntArrayType(size: int):
     """
     Builds a parameter type that returns a list of integers with the given lenght
     In the UI, this parameter is multiple integer fields
@@ -110,12 +109,12 @@ def IntArrayParameterMeta(size: int):
         "__init__": __init__,
         "serialize": serialize,
         "get_default": get_default,
-        "rebuild": IntArrayParameterMeta,
+        "rebuild": IntArrayType,
     }
-    return ParameterInputTypeMeta("IntArrayParameter", (list,), attributes)
+    return IOTypeMeta("IntArrayParameter", (list,), attributes)
 
 
-def RangeParameterMeta(start: int, end: int, increment: int = 1):
+def RangeType(start: int, end: int, increment: int = 1):
     """
     Builds a parameter type that returns an integer clipped in the given range
     In the UI, this parameter is a slider with the given limits
@@ -145,12 +144,12 @@ def RangeParameterMeta(start: int, end: int, increment: int = 1):
         "__new__": __new__,
         "serialize": serialize,
         "get_default": get_default,
-        "rebuild": RangeParameterMeta,
+        "rebuild": RangeType,
     }
-    return ParameterInputTypeMeta("RangeParameter", (int,), attributes)
+    return IOTypeMeta("RangeParameter", (int,), attributes)
 
 
-def RadioSelectParameterMeta(*list_options, **options):
+def RadioSelectType(*list_options, **options):
     """
     Builds a parameter type that returns a string in the given options
     In the UI, this parameter is a radio select to pick an option
@@ -178,12 +177,12 @@ def RadioSelectParameterMeta(*list_options, **options):
         "__new__": __new__,
         "serialize": serialize,
         "get_default": get_default,
-        "rebuild": RadioSelectParameterMeta,
+        "rebuild": RadioSelectType,
     }
-    return ParameterInputTypeMeta("RadioSelectParameter", (str,), attributes)
+    return IOTypeMeta("RadioSelectParameter", (str,), attributes)
 
 
-def SelectParameterMeta(*list_options, **options):
+def SelectType(*list_options, **options):
     """
     Builds a parameter type that returns a string in the given options
     In the UI, this parameter is a dropdown menu.
@@ -211,12 +210,12 @@ def SelectParameterMeta(*list_options, **options):
         "__new__": __new__,
         "serialize": serialize,
         "get_default": get_default,
-        "rebuild": SelectParameterMeta,
+        "rebuild": SelectType,
     }
-    return ParameterInputTypeMeta("SelectParameter", (str,), attributes)
+    return IOTypeMeta("SelectParameter", (str,), attributes)
 
 
-def MultipleSelectParameterMeta(*list_options, **options):
+def MultipleSelectType(*list_options, **options):
     """
     Build same parameter as SelectParameterMeta but return a list of strings
     In the UI, the user can select multiple options
@@ -247,12 +246,12 @@ def MultipleSelectParameterMeta(*list_options, **options):
         "__ini__": __init__,
         "serialize": serialize,
         "get_default": get_default,
-        "rebuild": MultipleSelectParameterMeta,
+        "rebuild": MultipleSelectType,
     }
-    return ParameterInputTypeMeta("SelectParameter", (list,), attributes)
+    return IOTypeMeta("SelectParameter", (list,), attributes)
 
 
-def PathParameterMeta(extensions: List[str] = None, multiple: bool = False):
+def PathType(extensions: List[str] = None, multiple: bool = False):
     """
     Builds a parameter type that returns a pathlib path
     In the UI, this parameter is a file selector
@@ -282,17 +281,17 @@ def PathParameterMeta(extensions: List[str] = None, multiple: bool = False):
     attributes = {
         "serialize": serialize,
         "get_default": get_default,
-        "rebuild": PathParameterMeta,
+        "rebuild": PathType,
     }
 
     if multiple:
         attributes["__init__"] = __init__
-        return ParameterInputTypeMeta("PathParameter", (list,), attributes)
+        return IOTypeMeta("PathParameter", (list,), attributes)
 
-    return ParameterInputTypeMeta("PathParameter", (type(pathlib.Path()),), attributes)
+    return IOTypeMeta("PathParameter", (type(pathlib.Path()),), attributes)
 
 
-def TextParameterMeta(color=None):
+def TextType(color=None):
     """
     Builds a parameter type that return a string
     In the UI, this parameter display the string with the given color
@@ -307,13 +306,13 @@ def TextParameterMeta(color=None):
     attributes = {
         "serialize": serialize,
         "get_default": get_default,
-        "rebuild": TextParameterMeta,
+        "rebuild": TextType,
     }
 
-    return ParameterInputTypeMeta("ListParameter", (str,), attributes)
+    return IOTypeMeta("ListParameter", (str,), attributes)
 
 
-def StringParameterMeta(
+def StringType(
     multiline: bool = False, max_lenght: int = 1000, readonly: bool = False
 ):
     """
@@ -342,13 +341,13 @@ def StringParameterMeta(
         "__new__": __new__,
         "serialize": serialize,
         "get_default": get_default,
-        "rebuild": StringParameterMeta,
+        "rebuild": StringType,
     }
 
-    return ParameterInputTypeMeta("StringParameter", (str,), attributes)
+    return IOTypeMeta("StringParameter", (str,), attributes)
 
 
-def ListParameterMeta(parameter_type: Type):
+def ListType(parameter_type: Type):
     """
     This parameter takes an other parameter as option
     Builds a parameter type that return a list of the given type
@@ -368,7 +367,7 @@ def ListParameterMeta(parameter_type: Type):
         item_type = None
 
         item_type = {"name": parameter_type.__name__}
-        if isinstance(parameter_type, ParameterInputTypeMeta):
+        if isinstance(parameter_type, IOTypeMeta):
             item_type = parameter_type.serialize()
 
         return {"name": "list", "itemType": item_type}
@@ -380,13 +379,13 @@ def ListParameterMeta(parameter_type: Type):
         "__init__": __init__,
         "serialize": serialize,
         "get_default": get_default,
-        "rebuild": ListParameterMeta,
+        "rebuild": ListType,
     }
 
-    return ParameterInputTypeMeta("ListParameter", (list,), attributes)
+    return IOTypeMeta("ListParameter", (list,), attributes)
 
 
-def DictParameterMeta(key_type: Type, value_type: Type):
+def DictType(key_type: Type, value_type: Type):
     """
     This parameter takes other parameters as options
     Builds a parameter type that return a dict of the given types
@@ -411,11 +410,11 @@ def DictParameterMeta(key_type: Type, value_type: Type):
 
     def serialize():
         key_serialized = {"name": key_type.__name__}
-        if isinstance(key_type, ParameterInputTypeMeta):
+        if isinstance(key_type, IOTypeMeta):
             key_serialized = key_type.serialize()
 
         value_serialized = {"name": value_type.__name__}
-        if isinstance(value_type, ParameterInputTypeMeta):
+        if isinstance(value_type, IOTypeMeta):
             value_serialized = value_type.serialize()
 
         return {"name": "dict", "key": key_serialized, "value": value_serialized}
@@ -427,13 +426,13 @@ def DictParameterMeta(key_type: Type, value_type: Type):
         "__init__": __init__,
         "serialize": serialize,
         "get_default": get_default,
-        "rebuild": DictParameterMeta,
+        "rebuild": DictType,
     }
 
-    return ParameterInputTypeMeta("ListParameter", (dict,), attributes)
+    return IOTypeMeta("ListParameter", (dict,), attributes)
 
 
-def UnionParameterMeta(parameter_types: List[Type]):
+def UnionType(parameter_types: List[Type]):
     """
     This parameter takes other parameters as options
     Builds a parameter type that return a dict of the given types
@@ -460,7 +459,7 @@ def UnionParameterMeta(parameter_types: List[Type]):
         serialized_parameter_types = []
         for parameter_type in parameter_types:
             serialized_parameter_type = {"name": parameter_type.__name__}
-            if isinstance(parameter_type, ParameterInputTypeMeta):
+            if isinstance(parameter_type, IOTypeMeta):
                 serialized_parameter_type = parameter_type.serialize()
 
             serialized_parameter_types.append(serialized_parameter_type)
@@ -469,7 +468,7 @@ def UnionParameterMeta(parameter_types: List[Type]):
         return {"name": "union", "types": serialized_parameter_types}
 
     def get_default():
-        if parameter_types and isinstance(parameter_types[0], ParameterInputTypeMeta):
+        if parameter_types and isinstance(parameter_types[0], IOTypeMeta):
             return parameter_types[0].get_default()
         return None
 
@@ -477,7 +476,7 @@ def UnionParameterMeta(parameter_types: List[Type]):
         "__new__": __new__,
         "serialize": serialize,
         "get_default": get_default,
-        "rebuild": UnionParameterMeta,
+        "rebuild": UnionType,
     }
 
-    return ParameterInputTypeMeta("ListParameter", (object,), attributes)
+    return IOTypeMeta("ListParameter", (object,), attributes)

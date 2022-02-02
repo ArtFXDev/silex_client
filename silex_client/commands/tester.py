@@ -8,15 +8,15 @@ from fileseq import FrameSet
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.command_buffer import CommandParameters
-from silex_client.utils.parameter_types import (
-    IntArrayParameterMeta,
-    MultipleSelectParameterMeta,
-    PathParameterMeta,
-    RadioSelectParameterMeta,
-    RangeParameterMeta,
-    SelectParameterMeta,
-    TaskParameterMeta,
-    TextParameterMeta,
+from silex_client.utils.io_types import (
+    IntArrayType,
+    MultipleSelectType,
+    PathType,
+    RadioSelectType,
+    RangeType,
+    SelectType,
+    TaskType,
+    TextType,
 )
 
 # Forward references
@@ -165,23 +165,23 @@ class PathTester(CommandBase):
     parameters = {
         "path_tester": {
             "label": "Path Tester",
-            "type": PathParameterMeta(),
+            "type": PathType(),
             "value": None,
             "tooltip": "Testing the path parameters",
         },
         "path_tester_multiple": {
             "label": "Path Tester Multiple",
-            "type": PathParameterMeta(multiple=True),
+            "type": PathType(multiple=True),
             "value": None,
         },
         "path_tester_extensions": {
             "label": "Path Tester extensions .abc, .obj, .fbx",
-            "type": PathParameterMeta(extensions=[".abc", ".obj", ".fbx"]),
+            "type": PathType(extensions=[".abc", ".obj", ".fbx"]),
             "value": None,
         },
         "path_tester_multiple_extensions": {
             "label": "Path Tester multiple files and extensions (.png, .jpg, .jpeg)",
-            "type": PathParameterMeta(
+            "type": PathType(
                 extensions=[".png", ".jpg", ".jpeg"], multiple=True
             ),
             "value": None,
@@ -226,13 +226,13 @@ class SelectTester(CommandBase):
     parameters = {
         "select_tester": {
             "label": "Select Tester",
-            "type": SelectParameterMeta("hello", "world", "foo", "bar"),
+            "type": SelectType("hello", "world", "foo", "bar"),
             "value": None,
             "tooltip": "Testing the select parameters",
         },
         "select_tester_2": {
             "label": "Select Tester 2",
-            "type": SelectParameterMeta(
+            "type": SelectType(
                 **{
                     "Hello Label": "hello",
                     "World Label": "world",
@@ -273,13 +273,13 @@ class RangeTesterLow(CommandBase):
     parameters = {
         "range_tester": {
             "label": "Range Tester",
-            "type": RangeParameterMeta(1, 475, 1),
+            "type": RangeType(1, 475, 1),
             "value": None,
             "tooltip": "Testing the range parameters",
         },
         "range_tester_2": {
             "label": "Range Tester 2",
-            "type": RangeParameterMeta(1, 475, 1),
+            "type": RangeType(1, 475, 1),
             "value": 300,
             "tooltip": "Testing the range parameters",
         },
@@ -313,13 +313,13 @@ class RangeTesterMid(CommandBase):
     parameters = {
         "range_tester": {
             "label": "Range Tester",
-            "type": RangeParameterMeta(1, 30, 5),
+            "type": RangeType(1, 30, 5),
             "value": None,
             "tooltip": "Testing the range parameters",
         },
         "range_tester_2": {
             "label": "Range Tester 2",
-            "type": RangeParameterMeta(1, 30, 5),
+            "type": RangeType(1, 30, 5),
             "value": None,
             "tooltip": "Testing the range parameters",
         },
@@ -361,13 +361,13 @@ class RangeTesterHigh(CommandBase):
     parameters = {
         "range_tester": {
             "label": "Range Tester",
-            "type": RangeParameterMeta(1000, 10000, 100),
+            "type": RangeType(1000, 10000, 100),
             "value": None,
             "tooltip": "Testing the range parameters",
         },
         "range_tester_2": {
             "label": "Range Tester 2",
-            "type": RangeParameterMeta(1000, 10000, 100),
+            "type": RangeType(1000, 10000, 100),
             "value": 5500,
             "tooltip": "Testing the range parameters",
         },
@@ -401,13 +401,13 @@ class EntityTester(CommandBase):
     parameters = {
         "entity_tester": {
             "label": "Entity Tester",
-            "type": TaskParameterMeta(),
+            "type": TaskType(),
             "value": None,
             "tooltip": "Testing the entity parameters",
         },
         "entity_tester_2": {
             "label": "Entity Tester 2",
-            "type": TaskParameterMeta(),
+            "type": TaskType(),
             "value": None,
             "tooltip": "Testing the entity parameters",
         },
@@ -441,13 +441,13 @@ class MultipleSelectTester(CommandBase):
     parameters = {
         "multiple_select_tester": {
             "label": "MultipleSelect Tester",
-            "type": MultipleSelectParameterMeta("foo", "bar", "hello", "world"),
+            "type": MultipleSelectType("foo", "bar", "hello", "world"),
             "value": None,
             "tooltip": "Testing the multiple_select parameters",
         },
         "multiple_select_tester_2": {
             "label": "MultipleSelect Tester 2",
-            "type": MultipleSelectParameterMeta("foo", "bar", "hello", "world"),
+            "type": MultipleSelectType("foo", "bar", "hello", "world"),
             "value": None,
             "tooltip": "Testing the multiple_select parameters",
         },
@@ -481,13 +481,13 @@ class RadioSelectTester(CommandBase):
     parameters = {
         "radio_select_tester": {
             "label": "RadioSelect Tester",
-            "type": RadioSelectParameterMeta("foo", "bar", "hello", "world"),
+            "type": RadioSelectType("foo", "bar", "hello", "world"),
             "value": None,
             "tooltip": "Testing the radio_select parameters",
         },
         "radio_select_tester_2": {
             "label": "RadioSelect Tester 2",
-            "type": RadioSelectParameterMeta("foo", "bar", "hello", "world"),
+            "type": RadioSelectType("foo", "bar", "hello", "world"),
             "value": "world",
             "tooltip": "Testing the radio_select parameters",
         },
@@ -521,13 +521,13 @@ class IntArrayTester(CommandBase):
     parameters = {
         "int_array_tester": {
             "label": "IntArray Tester",
-            "type": IntArrayParameterMeta(2),
+            "type": IntArrayType(2),
             "value": None,
             "tooltip": "Testing the int_array parameters",
         },
         "int_array_tester_2": {
             "label": "IntArray Tester 2",
-            "type": IntArrayParameterMeta(6),
+            "type": IntArrayType(6),
             "value": [3, 4, 2, 39, 204, 3],
             "tooltip": "Testing the int_array parameters",
         },
@@ -561,39 +561,39 @@ class TextTester(CommandBase):
     parameters = {
         "text_tester": {
             "label": "Text Tester",
-            "type": TextParameterMeta(),
+            "type": TextType(),
             "value": None,
             "tooltip": "Testing the text parameters",
         },
         "text_tester_2": {
             "label": "Text Tester 2",
-            "type": TextParameterMeta(),
+            "type": TextType(),
             "value": "Lorem ipsum dolor sit amet",
             "tooltip": "Testing the text parameters",
         },
         "text_tester_with_returns": {
             "label": "Text Tester with returns",
-            "type": TextParameterMeta(),
+            "type": TextType(),
             "value": "First line\nSecond line\nThird line\n\nEnd",
         },
         "text_tester_info": {
             "label": "Text Tester Info",
-            "type": TextParameterMeta(color="info"),
+            "type": TextType(color="info"),
             "value": "You are doing well! ℹ️",
         },
         "text_tester_success": {
             "label": "Text Tester Success",
-            "type": TextParameterMeta(color="success"),
+            "type": TextType(color="success"),
             "value": "You are doing well! ✅",
         },
         "text_tester_warning": {
             "label": "Text Tester Warning",
-            "type": TextParameterMeta(color="warning"),
+            "type": TextType(color="warning"),
             "value": "Be careful... ⚠️",
         },
         "text_tester_error": {
             "label": "Text Tester Error",
-            "type": TextParameterMeta(color="error"),
+            "type": TextType(color="error"),
             "value": "Something went wrong! 🚫",
         },
     }

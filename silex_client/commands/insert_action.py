@@ -7,7 +7,7 @@ from typing import Any, Dict
 from silex_client.action.command_base import CommandBase
 from silex_client.action.command_buffer import CommandParameters
 from silex_client.action.connection import Connection
-from silex_client.utils.parameter_types import AnyParameter, StringParameterMeta
+from silex_client.utils.io_types import AnyType, StringType
 from silex_client.action.action_query import ActionQuery
 
 
@@ -26,7 +26,7 @@ class InsertAction(CommandBase):
     parameters = {
         "name": {
             "label": "Name of the action to insert",
-            "type": StringParameterMeta(),
+            "type": StringType(),
             "value": "",
             "tooltip": """
             Name of the action to insert.
@@ -36,7 +36,7 @@ class InsertAction(CommandBase):
         },
         "category": {
             "label": "Action category",
-            "type": StringParameterMeta(),
+            "type": StringType(),
             "value": "action",
             "tooltip": """
             If the action to insert is an action name
@@ -77,7 +77,7 @@ class InsertAction(CommandBase):
         },
         "input": {
             "label": "Action input value",
-            "type": AnyParameter,
+            "type": AnyType,
             "value": {},
             "tooltip": "This value will be set to the newly inserted action's input",
             "hide": True,
@@ -94,7 +94,7 @@ class InsertAction(CommandBase):
         },
         "label": {
             "label": "Action label",
-            "type": StringParameterMeta(),
+            "type": StringType(),
             "value": "",
             "tooltip": "The label to append to the inserted action's label",
             "hide": True,
