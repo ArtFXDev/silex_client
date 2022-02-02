@@ -21,6 +21,7 @@ from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.command_base import CommandBase
 from silex_client.action.connection import Connection
 from silex_client.action.parameter_buffer import ParameterBuffer
+from silex_client.action.io_buffer import IOBuffer
 from silex_client.network.websocket_log import RedirectWebsocketLogs
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
@@ -115,7 +116,7 @@ class CommandBuffer(BaseBuffer):
         if self.skip_execution():
             logger.debug("Skipping command %s", self.name)
         else:
-            parameters = CommandParameters(action_query, self)
+            parameters = CommandInput(action_query, self)
             logger.debug("Executing command %s", self.name)
             async with RedirectWebsocketLogs(action_query, self) as log:
                 # Set the status to processing
@@ -157,7 +158,7 @@ class CommandBuffer(BaseBuffer):
         Call the setup of the command, the setup method is used to edit the command attributes
         dynamically (parameters, states...)
         """
-        parameters = CommandParameters(action_query, self)
+        parameters = CommandInput(action_query, self)
         async with RedirectWebsocketLogs(action_query, self) as log:
             await self.executor.setup(parameters, action_query, log)
 
@@ -197,27 +198,33 @@ class CommandBuffer(BaseBuffer):
         return super().construct(serialized_data, parent)
 
 
-class CommandParameters:
+class CommandIO:
     """
     Helper to get and set the parameters values of a command quickly
     """
 
-    def __init__(self, action_query: ActionQuery, command: CommandBuffer):
+    def __init__(
+        self,
+        action_query: ActionQuery,
+        command: CommandBuffer,
+        data: Dict[str, IOBuffer],
+    ):
         self.action_query = action_query
         self.command = command
+        self.data = data
 
     def __getitem__(self, key: str):
-        return self.command.children[key].get_output(self.action_query)
+        return self.data[key].get_output(self.action_query)
 
     def __setitem__(self, key: str, value: Any):
-        self.command.children[key].input = value
+        self.data[key].input = value
 
     def get(self, key: str, default: GenericType = None) -> Union[Any, GenericType]:
         """
         Return the parameter's value.
         Return the default if the parametr does not exists
         """
-        if key not in self.command.children:
+        if key not in self.data:
             return default
         return self.__getitem__(key)
 
@@ -226,35 +233,46 @@ class CommandParameters:
         Return the parameter's value without casting it to the expected type
         Return the default if the parametr does not exists
         """
-        if key not in self.command.children:
+        if key not in self.data:
             return default
-        return self.command.children[key].input
+        return self.data[key].input
 
-    def get_buffer(self, key) -> ParameterBuffer:
+    def get_buffer(self, key) -> IOBuffer:
         """
         Return the parameter buffer directly
         """
-        return self.command.children[key]
+        return self.data[key]
 
     def keys(self) -> List[str]:
         """Same method a the original dict"""
-        return list(self.command.children.keys())
+        return list(self.data.keys())
 
     def values(self) -> List[Any]:
         """Same method a the original dict"""
-        return [
-            child.get_output(self.action_query)
-            for child in self.command.children.values()
-        ]
+        return [child.get_output(self.action_query) for child in self.data.values()]
 
     def items(self) -> List[Tuple[str, Any]]:
         """Same method a the original dict"""
         return [
             (key, value.get_output(self.action_query))
-            for key, value in self.command.children.items()
+            for key, value in self.data.items()
         ]
 
-    def update(self, values: Union[CommandParameters, Dict[str, Any]]):
+    def update(self, values: Union[CommandIO, Dict[str, Any]]):
         """Update the values with the given dict"""
         for key, value in values.items():
             self[key] = value
+
+
+class CommandInput(CommandIO):
+    def __init__(self, action_query: ActionQuery, command: CommandBuffer):
+        self.action_query = action_query
+        self.command = command
+        self.data = command.input
+
+
+class CommandOutput(CommandIO):
+    def __init__(self, action_query: ActionQuery, command: CommandBuffer):
+        self.action_query = action_query
+        self.command = command
+        self.data = command.output
