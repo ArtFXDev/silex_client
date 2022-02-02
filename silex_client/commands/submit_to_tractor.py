@@ -16,7 +16,6 @@ from silex_client.utils.parameter_types import (
     SelectParameterMeta,
 )
 
-
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -44,7 +43,9 @@ class TractorSubmiter(CommandBase):
         },
         "commands": {
             "label": "Commands list",
-            "type": DictParameterMeta(str, DictParameterMeta(str, command_builder.CommandBuilder)),
+            "type": DictParameterMeta(
+                str, DictParameterMeta(str, command_builder.CommandBuilder)
+            ),
             "hide": True,
         },
         "pools": {
@@ -71,7 +72,9 @@ class TractorSubmiter(CommandBase):
         logger: logging.Logger,
     ):
         precommands: List[command_builder.CommandBuilder] = parameters["precommands"]
-        commands: Dict[str, Dict[str, command_builder.CommandBuilder]] = parameters["commands"]
+        commands: Dict[str, Dict[str, command_builder.CommandBuilder]] = parameters[
+            "commands"
+        ]
         pools: List[str] = parameters["pools"]
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
@@ -128,8 +131,7 @@ class TractorSubmiter(CommandBase):
             task: author.Task = author.Task(title=task_title)
 
             for subtask_title, subtask_argv in task_argv.items():
-
-                subtask: author.subtask = author.Task(title=subtask_title)
+                subtask: author.Task = author.Task(title=subtask_title)
                 # Add precommands to each subtask
                 all_commands = precommands + [subtask_argv]
 

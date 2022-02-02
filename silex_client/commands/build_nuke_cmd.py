@@ -6,7 +6,6 @@ import typing
 from typing import Any, Dict
 
 from fileseq import FrameSet
-
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder
 from silex_client.utils.frames import split_frameset
@@ -62,4 +61,7 @@ class BuildNukeCommand(CommandBase):
 
             commands[chunk.frameRange()] = chunk_cmd
 
-        return {"commands": commands, "file_name": scene.stem}
+        return {
+            "commands": {f"Script: {scene.stem}": commands},
+            "file_name": scene.stem,
+        }
