@@ -7,10 +7,7 @@ from typing import Any, Dict, List
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import frames
-from silex_client.utils import command_builder
-
-from silex_client.utils.command import CommandBuilder
+from silex_client.utils import command_builder, frames
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
     PathParameterMeta,
@@ -102,7 +99,9 @@ class HoudiniCommand(CommandBase):
         )
 
         # Build the render command
-        houdini_cmd = command_builder.CommandBuilder("hython", rez_packages=["houdini"], delimiter=" ")
+        houdini_cmd = command_builder.CommandBuilder(
+            "hython", rez_packages=["houdini"], delimiter=" "
+        )
         houdini_cmd.param("m", "hrender")
         houdini_cmd.value(str(scene))
         houdini_cmd.param("d", render_node)
@@ -116,7 +115,7 @@ class HoudiniCommand(CommandBase):
             houdini_cmd.param("h", resolution[1])
 
         frame_chunks = frames.split_frameset(frame_range, task_size)
-        commands: Dict[str, CommandBuilder] = {}
+        commands: Dict[str, command_builder.CommandBuilder] = {}
 
         # Create commands
         for chunk in frame_chunks:
@@ -128,7 +127,9 @@ class HoudiniCommand(CommandBase):
             commands[task_title] = chunk_cmd
 
         # Format "commands" output to match the input type in the submiter
-        node_cmd: Dict[str, Dict[str, command_builder.CommandBuilder]] = {f'Render node: {render_node}': commands}
+        node_cmd: Dict[str, Dict[str, command_builder.CommandBuilder]] = {
+            f"ROP node: {render_node}": commands
+        }
 
         logger.info(f"final commands: {commands}")
         return {"commands": node_cmd, "file_name": scene.stem}

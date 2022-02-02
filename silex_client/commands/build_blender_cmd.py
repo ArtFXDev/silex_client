@@ -92,4 +92,4 @@ class BlenderCommand(CommandBase):
             # Add the frames argument
             commands[task_title] = chunk_cmd.param("render-frame", fmt_frames)
 
-        return {"commands": commands, "file_name": scene.stem}
+        return {"commands": {f"Scene: {scene.stem}": commands}, "file_name": scene.stem}
