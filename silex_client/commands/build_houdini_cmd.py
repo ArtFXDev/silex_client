@@ -120,12 +120,7 @@ class HoudiniCommand(CommandBase):
             chunk_cmd = houdini_cmd.deepcopy()
             task_title = chunk.frameRange()
 
-            if len(chunk) > 1:
-                chunk_cmd.param("e")
-                # Add the frames argument
-                chunk_cmd.param("f", str(chunk).split("-"))
-            else:
-                chunk_cmd.param("F", chunk[0])
+            chunk_cmd.param("f", ";".join(map(str, list(chunk))))
 
             commands[task_title] = chunk_cmd
 
