@@ -1,7 +1,7 @@
 # pylint: disable=C0103
 
 import pathlib
-from typing import List, Type
+from typing import Dict, List, Optional, Type, Union
 
 from silex_client.utils.log import logger
 
@@ -225,9 +225,11 @@ def ListParameterMeta(parameter_type: Type):
     return CommandParameterMeta("ListParameter", (list,), attributes)
 
 
-def TextParameterMeta(color=None):
+def TextParameterMeta(
+    color=None, progress: Optional[Dict[str, Union[str, int]]] = None
+):
     def serialize():
-        return {"name": "text", "color": color}
+        return {"name": "text", "color": color, "progress": progress}
 
     def get_default():
         return ""

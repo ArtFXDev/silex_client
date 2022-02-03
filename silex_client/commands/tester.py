@@ -7,6 +7,8 @@ from typing import Any, Dict
 
 from fileseq import FrameSet
 
+
+from silex_client.utils.enums import Status
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
@@ -303,54 +305,6 @@ class RangeTesterLow(CommandBase):
         return parameters["range_tester"]
 
 
-class RangeTesterMid(CommandBase):
-    """
-    Testing the range parameters
-    """
-
-    parameters = {
-        "range_tester": {
-            "label": "Range Tester",
-            "type": RangeParameterMeta(1, 30, 5),
-            "value": None,
-            "tooltip": "Testing the range parameters",
-        },
-        "range_tester_2": {
-            "label": "Range Tester 2",
-            "type": RangeParameterMeta(1, 30, 5),
-            "value": None,
-            "tooltip": "Testing the range parameters",
-        },
-    }
-
-    @CommandBase.conform_command()
-    async def __call__(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
-    ):
-        logger.info(
-            "Range parameter tester: %s, %s",
-            parameters["range_tester"],
-            type(parameters["range_tester"]),
-        )
-        logger.info(
-            "Range parameter tester: %s, %s",
-            parameters["range_tester_2"],
-            type(parameters["range_tester_2"]),
-        )
-
-        await asyncio.sleep(1)
-        logger.info("Pretending to work")
-        await asyncio.sleep(1)
-        logger.info("Keep pretending to work")
-        await asyncio.sleep(1)
-        logger.info("Work done")
-        await asyncio.sleep(1)
-        return parameters["range_tester"]
-
-
 class RangeTesterHigh(CommandBase):
     """
     Testing the range parameters
@@ -366,7 +320,7 @@ class RangeTesterHigh(CommandBase):
         "range_tester_2": {
             "label": "Range Tester 2",
             "type": RangeParameterMeta(1000, 10000, 100),
-            "value": None,
+            "value": 5000,
             "tooltip": "Testing the range parameters",
         },
     }
@@ -590,6 +544,50 @@ class IntArrayTesterHigh(CommandBase):
         )
 
         return parameters["int_array_tester"]
+
+
+class ProgressTester(CommandBase):
+    """
+    Testing the progress on info parameters
+    """
+
+    parameters = {
+        "progress_tester": {
+            "label": "Progress Tester",
+            "type": TextParameterMeta(color="info", progress={"variant": "indeterminate"}),
+            "value": "This command will take time to execute and show its progress",
+            "tooltip": "Testing the range parameters",
+        },
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        progress_parameter = self.command_buffer.parameters["progress_tester"]
+        self.command_buffer.status = Status.WAITING_FOR_RESPONSE
+
+        progress_parameter.rebuild_type(color="info", progress={"variant": "determinate", "value": 0})
+        action_query.update_websocket()
+        await asyncio.sleep(1)
+        logger.info("Pretending to work")
+        progress_parameter.rebuild_type(color="info", progress={"variant": "determinate", "value": 33})
+        progress_parameter.value = "Pretending to work"
+        action_query.update_websocket()
+        await asyncio.sleep(1)
+        logger.info("Keep pretending to work")
+        progress_parameter.rebuild_type(color="info", progress={"variant": "determinate", "value": 66})
+        progress_parameter.value = "Keep pretending to work"
+        action_query.update_websocket()
+        logger.info("Work done")
+        await asyncio.sleep(1)
+        progress_parameter.rebuild_type(color="info", progress={"variant": "determinate", "value": 100})
+        progress_parameter.value = "Work done"
+        action_query.update_websocket()
+        await asyncio.sleep(1)
 
 
 class TextTester(CommandBase):
