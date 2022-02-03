@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import copy
 import importlib
+from functools import partial
 import os
 import traceback
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, TypeVar, Union, Tuple
+from dataclasses import dataclass, field, fields
+from typing import TYPE_CHECKING, Any, Dict, List, TypeVar, Union, Tuple, Type
 
 import dacite.config as dacite_config
 import dacite.core as dacite
@@ -156,6 +157,93 @@ class CommandBuffer(BaseBuffer):
         async with RedirectWebsocketLogs(action_query, self) as log:
             await self.executor.setup(parameters, action_query, log)
 
+    def serialize(self, ignore_fields: List[str] = None) -> Dict[str, Any]:
+        """
+        Convert the buffer's data into json so it can be sent to the UI
+        """
+        if not self.outdated_caches:
+            return self.serialize_cache
+
+        if ignore_fields is None:
+            ignore_fields = self.PRIVATE_FIELDS
+
+        result = []
+
+        for buffer_field in fields(self):
+            if buffer_field.name in ignore_fields:
+                continue
+            if buffer_field.name in [
+                io_type.buffer_type for io_type in self.get_child_types()
+            ]:
+                children = getattr(self, buffer_field.name)
+                children_value = {}
+                for child_name, child in children.items():
+                    if self.ALLOW_HIDE_CHILDS and child.hide:
+                        continue
+                    children_value[child_name] = child.serialize()
+                result.append((buffer_field.name, children_value))
+                continue
+
+            result.append((buffer_field.name, getattr(self, buffer_field.name)))
+
+        self.serialize_cache = copy.deepcopy(dict(result))
+        self.outdated_cache = False
+        return self.serialize_cache
+
+    @classmethod
+    def get_child_types(cls) -> List[Type[IOBuffer]]:
+        """
+        The childs type are the possible classes that this buffer can have as children
+        """
+        return [InputBuffer, OutputBuffer]
+
+    def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
+        # Don't take the modifications of the hidden commands
+        if self.hide and not force:
+            return
+
+        current_buffer_data = self.serialize()
+        for io_type in self.get_child_types():
+            serialized_data.setdefault(io_type.buffer_type, {})
+
+            # If a io update some existing io, it inherit from its buffer type
+            for io_name, io_data in serialized_data[io_type.buffer_type].items():
+                io_data["name"] = io_name
+                current_io_data = current_buffer_data.get(io_type.buffer_type, {})
+                existing_io_data = current_io_data.get(io_name)
+                if existing_io_data is not None:
+                    io_data["buffer_type"] = existing_io_data["buffer_type"]
+
+        # Patch the current buffer's data
+        serialized_data = jsondiff.patch(current_buffer_data, serialized_data)
+
+        # Setup dacite to use our deserialize function has a type_hook to create the children
+        config_data: Dict[str, Union[list, dict]] = {"cast": [Status, Connection]}
+        if BaseBuffer not in self.get_child_types():
+            config_data["type_hooks"] = {
+                child_type: partial(self._deserialize_child, child_type)
+                for child_type in self.get_child_types()
+            }
+        config = dacite_config.Config(**config_data)
+
+        # Create a new buffer with the patched serialized data
+        new_buffer = dacite.from_dict(type(self), serialized_data, config)
+
+        # Keep the current value for the private and readonly fields
+        for private_field in self.PRIVATE_FIELDS + self.READONLY_FIELDS:
+            setattr(new_buffer, private_field, getattr(self, private_field))
+
+        # Update the current fields value with the new buffer's values
+        new_buffer_data = new_buffer.__dict__
+        for io_type in self.get_child_types():
+            getattr(self, io_type.buffer_type).update(
+                new_buffer_data[io_type.buffer_type]
+            )
+            del new_buffer_data[io_type.buffer_type]
+        self.__dict__.update(new_buffer_data)
+
+        self.outdated_cache = True
+
     @classmethod
     def construct(
         cls, serialized_data: Dict[str, Any], parent: BaseBuffer = None
@@ -168,13 +256,13 @@ class CommandBuffer(BaseBuffer):
         # Initialize the buffer without the children, since the children needs special treatment
         filtered_data = copy.copy(serialized_data)
         filtered_data["parent"] = parent
-        for child_type in cls.get_child_types():
-            filtered_data.pop(child_type.buffer_type, None)
+        for io_type in cls.get_child_types():
+            filtered_data.pop(io_type.buffer_type, None)
         command = dacite.from_dict(cls, filtered_data, config)
 
         # Get the default data from the executor and patch it with the serialized data
         executor_parameters = copy.deepcopy(command.executor.parameters)
-        serialized_parameters = serialized_data.get("parameters", {})
+        serialized_parameters = serialized_data.get("input", {})
         for parameter_name, parameter in executor_parameters.items():
             parameter["name"] = parameter_name
 
@@ -185,7 +273,7 @@ class CommandBuffer(BaseBuffer):
                 }
 
             # Apply the parameters to the default parameters
-            serialized_data["parameters"] = jsondiff.patch(
+            serialized_data["input"] = jsondiff.patch(
                 executor_parameters, serialized_parameters
             )
 

@@ -36,9 +36,9 @@ class IOBuffer(BaseBuffer):
     #: The type of the io, must be a class definition or a BufferIOMeta instance
     type: Union[TypeAlias, IOTypeMeta] = field(default=TypeAlias(None))
     #: The input store the raw value passed in
-    input: Any = field(default_factory=dict, init=False)
+    input: Any = field(default=None, init=False)
     #: The output store the cache of the casted value
-    output: Any = field(default_factory=dict, init=False)
+    output: Any = field(default=None, init=False)
 
     def __post_init__(self):
         super().__post_init__()

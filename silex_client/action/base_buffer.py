@@ -18,7 +18,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -104,14 +103,14 @@ class BaseBuffer:
             self.tooltip = textwrap.dedent(self.tooltip)
 
     @classmethod
-    def get_child_types(cls) -> Tuple[Type[BaseBuffer]]:
+    def get_child_types(cls) -> List[Type[BaseBuffer]]:
         """
         The childs type are the possible classes that this buffer can have as children
         """
         children_type = get_type_hints(cls)["children"].__args__[1]
         if is_union(children_type):
             return children_type.__args__
-        return (children_type,)
+        return [children_type]
 
     @property
     def outdated_caches(self) -> bool:

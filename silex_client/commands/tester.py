@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, NamedTuple, Any
 from fileseq import FrameSet
 
 from silex_client.action.command_base import CommandBase
-from silex_client.action.command_buffer import CommandParameters
+from silex_client.action.command_buffer import CommandInput
 from silex_client.utils.io_types import (
     IntArrayType,
     MultipleSelectType,
@@ -49,7 +49,7 @@ class StringTester(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -89,7 +89,7 @@ class IntegerTester(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -129,7 +129,7 @@ class BooleanTester(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -147,14 +147,14 @@ class BooleanTester(CommandBase):
 
     async def setup(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
         if not parameters["bool_tester"]:
-            self.command_buffer.parameters["bool_tester_2"].hide = True
+            self.command_buffer.input["bool_tester_2"].hide = True
         else:
-            self.command_buffer.parameters["bool_tester_2"].hide = False
+            self.command_buffer.input["bool_tester_2"].hide = False
 
 
 class PathTester(CommandBase):
@@ -191,7 +191,7 @@ class PathTester(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -248,7 +248,7 @@ class SelectTester(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -288,7 +288,7 @@ class RangeTesterLow(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -328,7 +328,7 @@ class RangeTesterMid(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -376,7 +376,7 @@ class RangeTesterHigh(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -416,7 +416,7 @@ class EntityTester(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -456,7 +456,7 @@ class MultipleSelectTester(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -496,7 +496,7 @@ class RadioSelectTester(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -536,7 +536,7 @@ class IntArrayTester(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -601,7 +601,7 @@ class TextTester(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -642,7 +642,7 @@ class FrameSetTester(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -677,7 +677,7 @@ class TracebackTester(CommandBase):
     @CommandBase.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandInput,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
