@@ -8,12 +8,9 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import (
-    ListParameterMeta,
-    RadioSelectParameterMeta,
-    TextParameterMeta,
-)
+from silex_client.utils.datatypes import SharedVariable
+from silex_client.utils.prompt import prompt_override, UpdateProgress
+from silex_client.utils.parameter_types import ListParameterMeta
 from silex_client.utils.thread import execute_in_thread
 
 if typing.TYPE_CHECKING:
@@ -43,36 +40,6 @@ class Move(CommandBase):
             "tooltip": "If a file already exists, it will be overriden without prompt",
         },
     }
-
-    async def _prompt_override(
-        self, file_path: pathlib.Path, action_query: ActionQuery
-    ) -> str:
-        """
-        Helper to prompt the user for a new conform type and wait for its response
-        """
-        # Create a new parameter to prompt for the new file path
-        info_parameter = ParameterBuffer(
-            type=TextParameterMeta("info"),
-            name="info",
-            label="Info",
-            value=f"The path:\n{file_path}\nAlready exists",
-        )
-        new_parameter = ParameterBuffer(
-            type=RadioSelectParameterMeta(
-                "Override", "Keep existing", "Always override", "Always keep existing"
-            ),
-            name="existing_file",
-            label="Existing file",
-        )
-        # Prompt the user to get the new path
-        response = await self.prompt_user(
-            action_query,
-            {
-                "info": info_parameter,
-                "existing_file": new_parameter,
-            },
-        )
-        return response["existing_file"]
 
     @staticmethod
     def remove(path: str):
@@ -112,30 +79,43 @@ class Move(CommandBase):
         if not os.path.exists(dst):
             raise Exception(f"{dst} doesn't exist.")
 
-        for item in src:
-            # Check for file to copy
-            if not os.path.exists(item):
-                raise Exception(f"{item} doesn't exist.")
+        label = self.command_buffer.label
+        progress = SharedVariable(0)
+        async with UpdateProgress(
+            self.command_buffer,
+            action_query,
+            progress,
+            SharedVariable(len(src)),
+            0.2,
+        ):
+            for index, item in enumerate(src):
+                progress.value = index + 1
+                self.command_buffer.label = f"{label} ({index+1}/{len(src)})"
 
-            new_path = pathlib.Path(dst)
-            destination_path = dst
-            if not os.path.isdir(item):
-                destination_path = os.path.join(dst, os.path.basename(item))
-            # Handle override of existing file
-            if new_path.exists() and force:
-                await execute_in_thread(self.remove, destination_path)
-            elif new_path.exists():
-                response = action_query.store.get("move_override")
-                if response is None:
-                    response = await self._prompt_override(new_path, action_query)
-                if response in ["Always override", "Always keep existing"]:
-                    action_query.store["move_override"] = response
-                if response in ["Override", "Always override"]:
-                    force = True
+                # Check for file to copy
+                if not os.path.exists(item):
+                    raise Exception(f"{item} doesn't exist.")
+
+                new_path = pathlib.Path(dst)
+                destination_path = dst
+                if not os.path.isdir(item):
+                    destination_path = os.path.join(dst, os.path.basename(item))
+                # Handle override of existing file
+                if new_path.exists() and force:
                     await execute_in_thread(self.remove, destination_path)
-                if response in ["Keep existing", "Always keep existing"]:
-                    await execute_in_thread(self.remove, item)
-                    continue
+                elif new_path.exists():
+                    response = action_query.store.get("file_conflict_policy")
+                    if response is None:
+                        response = await prompt_override(self, new_path, action_query)
+                    if response in ["Always override", "Always keep existing"]:
+                        action_query.store["file_conflict_policy"] = response
+                    if response in ["Override", "Always override"]:
+                        force = True
+                        await execute_in_thread(self.remove, destination_path)
+                    if response in ["Keep existing", "Always keep existing"]:
+                        await execute_in_thread(self.remove, item)
+                        continue
 
-            logger.info(f"Moving file from {item} to {dst}")
-            await execute_in_thread(self.move, item, dst)
+                logger.info(f"Moving file from {item} to {dst}")
+                await execute_in_thread(self.move, item, dst)
+
