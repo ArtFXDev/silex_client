@@ -12,7 +12,7 @@ import os
 import traceback
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import dacite.config as dacite_config
 import dacite.core as dacite
@@ -66,6 +66,8 @@ class CommandBuffer(BaseBuffer):
     logs: List[Dict[str, str]] = field(default_factory=list)
     #: Defines if the command must be executed or not
     skip: bool = field(default=False)
+    #: The progress is only infomational, it should go from 0 to 100
+    progress: Optional[int] = field(default=None)
 
     def __post_init__(self):
         super().__post_init__()

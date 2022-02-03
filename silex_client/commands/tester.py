@@ -8,7 +8,6 @@ from typing import Any, Dict
 from fileseq import FrameSet
 
 
-from silex_client.utils.enums import Status
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
@@ -567,25 +566,19 @@ class ProgressTester(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        progress_parameter = self.command_buffer.parameters["progress_tester"]
-        self.command_buffer.status = Status.WAITING_FOR_RESPONSE
-
-        progress_parameter.rebuild_type(color="info", progress={"variant": "determinate", "value": 0})
+        self.command_buffer.progress = 0
         action_query.update_websocket()
         await asyncio.sleep(1)
         logger.info("Pretending to work")
-        progress_parameter.rebuild_type(color="info", progress={"variant": "determinate", "value": 33})
-        progress_parameter.value = "Pretending to work"
+        self.command_buffer.progress = 33
         action_query.update_websocket()
         await asyncio.sleep(1)
         logger.info("Keep pretending to work")
-        progress_parameter.rebuild_type(color="info", progress={"variant": "determinate", "value": 66})
-        progress_parameter.value = "Keep pretending to work"
+        self.command_buffer.progress = 66
         action_query.update_websocket()
         logger.info("Work done")
         await asyncio.sleep(1)
-        progress_parameter.rebuild_type(color="info", progress={"variant": "determinate", "value": 100})
-        progress_parameter.value = "Work done"
+        self.command_buffer.progress = 100
         action_query.update_websocket()
         await asyncio.sleep(1)
 

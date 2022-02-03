@@ -24,6 +24,9 @@ tester:
           parameters:
             raise_exception: false
           ask_user: True
+        path:
+          path: "silex_client.commands.tester.PathTester"
+          ask_user: True
         select:
           path: "silex_client.commands.tester.SelectTester"
           parameters:
