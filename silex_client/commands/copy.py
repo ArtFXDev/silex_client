@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 import fileseq
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.prompt import UpdateProgress
+from silex_client.utils.prompt import UpdateProgress, prompt_override
 from silex_client.utils.parameter_types import PathParameterMeta
 from silex_client.utils.thread import execute_in_thread
 from silex_client.utils.datatypes import SharedVariable
@@ -46,9 +46,6 @@ class Copy(CommandBase):
         with poor copy performances on windows. This is an equivalent of the copy with
         a bigger chunk size and progress information
         """
-        if dst.is_dir():
-            dst = dst / src.name
-
         with open(src, "rb") as fsrc:
             with open(dst, "wb") as fdst:
                 while 1:
@@ -94,7 +91,27 @@ class Copy(CommandBase):
                 if not source_path.exists():
                     raise Exception(f"Source path {source_path} does not exists")
 
-                # Copy only if the files does not already exists
+                destination = destination_dir
+                if destination_dir.is_dir():
+                    destination = destination_dir / source_path.name
+                # Handle override of existing file
+                if destination.exists() and force:
+                    await execute_in_thread(os.remove, destination)
+                elif destination.exists():
+                    response = action_query.store.get("file_conflict_policy")
+                    if response is None:
+                        response = await prompt_override(
+                            self, destination, action_query
+                        )
+                    if response in ["Always override", "Always keep existing"]:
+                        action_query.store["file_conflict_policy"] = response
+                    if response in ["Override", "Always override"]:
+                        force = True
+                        await execute_in_thread(os.remove, destination)
+                    if response in ["Keep existing", "Always keep existing"]:
+                        await execute_in_thread(os.remove, source_path)
+                        continue
+
                 os.makedirs(str(destination_dir), exist_ok=True)
                 await execute_in_thread(
                     self.copy, source_path, destination_dir, progress
