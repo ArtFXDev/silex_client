@@ -170,6 +170,6 @@ class VrayCommand(CommandBase):
 
         # Taking into acount people working out of silex ( Rebels ! terrosists !! )
         if scene_name is None or scene_name == '':
-            scene_name = first_key
+            scene_name = first_key.stem
 
         return {"commands": render_layers_cmd, "file_name": scene_name}
