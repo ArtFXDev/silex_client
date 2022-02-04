@@ -98,6 +98,7 @@ class Copy(CommandBase):
 
                 if dst_path.is_dir():
                     dst_path = dst_path / src_path.name
+                    dst_paths[index] = dst_path
 
                 # Handle override of existing file
                 if dst_path.exists() and force:
@@ -107,29 +108,34 @@ class Copy(CommandBase):
                         "file_conflict_behaviour"
                     )
                     if conflict_behaviour is None:
-                        response = await prompt_override(self, dst_path, action_query)
-                    if response in [
+                        conflict_behaviour = await prompt_override(
+                            self, dst_path, action_query
+                        )
+                    if conflict_behaviour in [
                         ConflictBehaviour.ALWAYS_OVERRIDE,
                         ConflictBehaviour.ALWAYS_KEEP_EXISTING,
                     ]:
-                        action_query.store["file_conflict_behaviour"] = response
-                    if response in [
+                        action_query.store[
+                            "file_conflict_behaviour"
+                        ] = conflict_behaviour
+                    if conflict_behaviour in [
                         ConflictBehaviour.OVERRIDE,
                         ConflictBehaviour.ALWAYS_OVERRIDE,
                     ]:
                         force = True
                         await execute_in_thread(os.remove, dst_path)
-                    if response in [
+                    if conflict_behaviour in [
                         ConflictBehaviour.KEEP_EXISTING,
                         ConflictBehaviour.ALWAYS_KEEP_EXISTING,
                     ]:
                         await execute_in_thread(os.remove, src_path)
                         continue
 
-                os.makedirs(str(dst_path), exist_ok=True)
+                os.makedirs(str(dst_path.parent), exist_ok=True)
                 await execute_in_thread(self.copy, src_path, dst_path, progress)
 
         return {
             "source_paths": src_paths,
-            "destination_dirs": dst_paths,
+            "destination_dirs": [dst_path.parent for dst_path in dst_paths],
+            "destination_paths": dst_paths,
         }

@@ -47,7 +47,7 @@ async def prompt_override(
             "conflict_behaviour": new_parameter,
         },
     )
-    return ConflictBehaviour(response["conflict_behaviour"])
+    return ConflictBehaviour(int(response["conflict_behaviour"]))
 
 
 class UpdateProgress:

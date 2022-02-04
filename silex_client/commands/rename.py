@@ -102,19 +102,23 @@ class Rename(CommandBase):
                         "file_conflict_behaviour"
                     )
                     if conflict_behaviour is None:
-                        response = await prompt_override(self, new_path, action_query)
-                    if response in [
+                        conflict_behaviour = await prompt_override(
+                            self, new_path, action_query
+                        )
+                    if conflict_behaviour in [
                         ConflictBehaviour.ALWAYS_OVERRIDE,
                         ConflictBehaviour.ALWAYS_KEEP_EXISTING,
                     ]:
-                        action_query.store["file_conflict_behaviour"] = response
-                    if response in [
+                        action_query.store[
+                            "file_conflict_behaviour"
+                        ] = conflict_behaviour
+                    if conflict_behaviour in [
                         ConflictBehaviour.OVERRIDE,
                         ConflictBehaviour.ALWAYS_OVERRIDE,
                     ]:
                         force = True
                         await execute_in_thread(os.remove, new_path)
-                    if response in [
+                    if conflict_behaviour in [
                         ConflictBehaviour.KEEP_EXISTING,
                         ConflictBehaviour.ALWAYS_KEEP_EXISTING,
                     ]:

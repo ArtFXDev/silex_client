@@ -47,7 +47,6 @@ class Move(CommandBase):
     @staticmethod
     def remove(path: str):
         if os.path.isdir(path):
-            # clean tree
             shutil.rmtree(path)
 
         if os.path.isfile(path):
@@ -107,31 +106,35 @@ class Move(CommandBase):
 
                 # Handle override of existing file
                 if new_path.exists() and force:
-                    await execute_in_thread(os.remove, new_path)
+                    await execute_in_thread(self.remove, new_path)
                 elif new_path.exists():
 
                     conflict_behaviour = action_query.store.get(
                         "file_conflict_behaviour"
                     )
                     if conflict_behaviour is None:
-                        response = await prompt_override(self, new_path, action_query)
-                    if response in [
+                        conflict_behaviour = await prompt_override(
+                            self, new_path, action_query
+                        )
+                    if conflict_behaviour in [
                         ConflictBehaviour.ALWAYS_OVERRIDE,
                         ConflictBehaviour.ALWAYS_KEEP_EXISTING,
                     ]:
-                        action_query.store["file_conflict_behaviour"] = response
-                    if response in [
+                        action_query.store[
+                            "file_conflict_behaviour"
+                        ] = conflict_behaviour
+                    if conflict_behaviour in [
                         ConflictBehaviour.OVERRIDE,
                         ConflictBehaviour.ALWAYS_OVERRIDE,
                     ]:
                         force = True
-                        await execute_in_thread(os.remove, new_path)
-                    if response in [
+                        await execute_in_thread(self.remove, new_path)
+                    if conflict_behaviour in [
                         ConflictBehaviour.KEEP_EXISTING,
                         ConflictBehaviour.ALWAYS_KEEP_EXISTING,
                     ]:
-                        await execute_in_thread(os.remove, src_path)
+                        await execute_in_thread(self.remove, src_path)
                         continue
 
                 logger.info(f"Moving file from {src_path} to {dst_path}")
-                await execute_in_thread(self.move, src_path, dst_path)
+                await execute_in_thread(self.move, str(src_path), str(dst_path))
