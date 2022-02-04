@@ -168,4 +168,8 @@ class VrayCommand(CommandBase):
         first_key = next(iter(scene_to_layer_dict))
         scene_name = (first_key.stem).strip( scene_to_layer_dict[first_key] )
 
+        # Taking into acount people working out of silex ( Rebels ! terrosists !! )
+        if scene_name is None or scene_name == '':
+            scene_name = first_key
+
         return {"commands": render_layers_cmd, "file_name": scene_name}
