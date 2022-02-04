@@ -79,6 +79,7 @@ class Copy(CommandBase):
         dst_sequences = fileseq.findSequencesInList(dst_paths)
         logger.info("Copying %s to %s", src_sequences, dst_sequences)
 
+        full_dst_path = []
         label = self.command_buffer.label
         total_file_size = SharedVariable(
             sum(os.path.getsize(path) for path in src_paths)
@@ -98,7 +99,8 @@ class Copy(CommandBase):
 
                 if dst_path.is_dir():
                     dst_path = dst_path / src_path.name
-                    dst_paths[index] = dst_path
+
+                full_dst_path.append(dst_path)
 
                 # Handle override of existing file
                 if dst_path.exists() and force:
@@ -136,6 +138,6 @@ class Copy(CommandBase):
 
         return {
             "source_paths": src_paths,
-            "destination_dirs": [dst_path.parent for dst_path in dst_paths],
-            "destination_paths": dst_paths,
+            "destination_dirs": [dst_path.parent for dst_path in full_dst_path],
+            "destination_paths": full_dst_path,
         }
