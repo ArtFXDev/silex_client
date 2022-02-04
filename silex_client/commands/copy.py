@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 import fileseq
 
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.enums import ConflictBehaviour
 from silex_client.utils.prompt import UpdateProgress, prompt_override
 from silex_client.utils.parameter_types import PathParameterMeta
 from silex_client.utils.thread import execute_in_thread
@@ -36,6 +37,12 @@ class Copy(CommandBase):
             "type": PathParameterMeta(multiple=True),
             "value": None,
             "tooltip": "Select the directory in wich you want to copy you file(s)",
+        },
+        "force": {
+            "label": "Force override existing files",
+            "type": bool,
+            "value": True,
+            "tooltip": "If a file already exists, it will be overriden without prompt",
         },
     }
 
@@ -64,63 +71,65 @@ class Copy(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        source_paths: List[pathlib.Path] = parameters["src"]
-        destination_dirs: List[pathlib.Path] = parameters["dst"]
+        src_paths: List[pathlib.Path] = parameters["src"]
+        dst_paths: List[pathlib.Path] = parameters["dst"]
+        force: bool = parameters["force"]
 
-        destination_paths = []
+        src_sequences = fileseq.findSequencesInList(src_paths)
+        dst_sequences = fileseq.findSequencesInList(dst_paths)
+        logger.info("Copying %s to %s", src_sequences, dst_sequences)
 
-        source_sequences = fileseq.findSequencesInList(source_paths)
-        destination_sequences = fileseq.findSequencesInList(destination_dirs)
-        logger.info("Copying %s to %s", source_sequences, destination_sequences)
-
-        # Loop over all the files to copy
         label = self.command_buffer.label
         total_file_size = SharedVariable(
-            sum(os.path.getsize(path) for path in source_paths)
+            sum(os.path.getsize(path) for path in src_paths)
         )
-
         progress: SharedVariable = SharedVariable(0)
+
         async with UpdateProgress(
             self.command_buffer, action_query, progress, total_file_size, 0.2
         ):
-            for index, source_path in enumerate(source_paths):
-                self.command_buffer.label = f"{label} ({index+1}/{len(source_paths)})"
-                # If only one directory is given, this will still work thanks to the modulo
-                destination_dir = destination_dirs[index % len(destination_dirs)]
-                # Check the file to copy
-                if not source_path.exists():
-                    raise Exception(f"Source path {source_path} does not exists")
+            for index, src_path in enumerate(src_paths):
+                self.command_buffer.label = f"{label} ({index+1}/{len(src_paths)})"
 
-                destination = destination_dir
-                if destination_dir.is_dir():
-                    destination = destination_dir / source_path.name
+                dst_path = dst_paths[index % len(dst_paths)]
+
+                if not src_path.exists():
+                    raise Exception(f"Source path {src_path} does not exists")
+
+                if dst_path.is_dir():
+                    dst_path = dst_path / src_path.name
+
                 # Handle override of existing file
-                if destination.exists() and force:
-                    await execute_in_thread(os.remove, destination)
-                elif destination.exists():
-                    response = action_query.store.get("file_conflict_policy")
-                    if response is None:
-                        response = await prompt_override(
-                            self, destination, action_query
-                        )
-                    if response in ["Always override", "Always keep existing"]:
-                        action_query.store["file_conflict_policy"] = response
-                    if response in ["Override", "Always override"]:
+                if dst_path.exists() and force:
+                    await execute_in_thread(os.remove, dst_path)
+                elif dst_path.exists():
+                    conflict_behaviour = action_query.store.get(
+                        "file_conflict_behaviour"
+                    )
+                    if conflict_behaviour is None:
+                        response = await prompt_override(self, dst_path, action_query)
+                    if response in [
+                        ConflictBehaviour.ALWAYS_OVERRIDE,
+                        ConflictBehaviour.ALWAYS_KEEP_EXISTING,
+                    ]:
+                        action_query.store["file_conflict_behaviour"] = response
+                    if response in [
+                        ConflictBehaviour.OVERRIDE,
+                        ConflictBehaviour.ALWAYS_OVERRIDE,
+                    ]:
                         force = True
-                        await execute_in_thread(os.remove, destination)
-                    if response in ["Keep existing", "Always keep existing"]:
-                        await execute_in_thread(os.remove, source_path)
+                        await execute_in_thread(os.remove, dst_path)
+                    if response in [
+                        ConflictBehaviour.KEEP_EXISTING,
+                        ConflictBehaviour.ALWAYS_KEEP_EXISTING,
+                    ]:
+                        await execute_in_thread(os.remove, src_path)
                         continue
 
-                os.makedirs(str(destination_dir), exist_ok=True)
-                await execute_in_thread(
-                    self.copy, source_path, destination_dir, progress
-                )
-
-                destination_paths.append(destination_dir / source_path.name)
+                os.makedirs(str(dst_path), exist_ok=True)
+                await execute_in_thread(self.copy, src_path, dst_path, progress)
 
         return {
-            "source_paths": source_paths,
-            "destination_dirs": destination_dirs,
-            "destination_paths": destination_paths,
+            "source_paths": src_paths,
+            "destination_dirs": dst_paths,
         }

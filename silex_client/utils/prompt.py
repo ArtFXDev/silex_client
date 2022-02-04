@@ -7,6 +7,7 @@ from silex_client.action.action_query import ActionQuery
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.datatypes import SharedVariable
+from silex_client.utils.enums import ConflictBehaviour
 from silex_client.utils.parameter_types import (
     TextParameterMeta,
     RadioSelectParameterMeta,
@@ -15,7 +16,7 @@ from silex_client.utils.parameter_types import (
 
 async def prompt_override(
     command_base: CommandBase, file_path: pathlib.Path, action_query: ActionQuery
-) -> str:
+) -> ConflictBehaviour:
     """
     Helper to prompt the user for cases when we must override a file and wait for its response
     """
@@ -28,7 +29,12 @@ async def prompt_override(
     )
     new_parameter = ParameterBuffer(
         type=RadioSelectParameterMeta(
-            "Override", "Keep existing", "Always override", "Always keep existing"
+            **{
+                "Override": 0,
+                "Keep existing": 2,
+                "Always override": 1,
+                "Always keep existing": 3,
+            }
         ),
         name="conflict_behaviour",
         label="Conflict behaviour",
@@ -41,7 +47,7 @@ async def prompt_override(
             "conflict_behaviour": new_parameter,
         },
     )
-    return response["conflict_behaviour"]
+    return ConflictBehaviour(response["conflict_behaviour"])
 
 
 class UpdateProgress:
