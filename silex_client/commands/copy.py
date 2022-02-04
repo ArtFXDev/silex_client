@@ -130,7 +130,6 @@ class Copy(CommandBase):
                         ConflictBehaviour.KEEP_EXISTING,
                         ConflictBehaviour.ALWAYS_KEEP_EXISTING,
                     ]:
-                        await execute_in_thread(os.remove, src_path)
                         continue
 
                 os.makedirs(str(dst_path.parent), exist_ok=True)
