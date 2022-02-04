@@ -10,7 +10,9 @@ import fileseq
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.datatypes import SharedVariable
+from silex_client.utils.enums import ConflictBehaviour
 from silex_client.utils.prompt import prompt_override, UpdateProgress
+from silex_client.utils.files import find_sequence_from_path
 from silex_client.utils.parameter_types import (
     ListParameterMeta,
     PathParameterMeta,
@@ -54,16 +56,16 @@ class Rename(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        source_paths: List[pathlib.Path] = parameters["src"]
+        src_paths: List[pathlib.Path] = parameters["src"]
         new_names: List[str] = parameters["name"]
         force: bool = parameters["force"]
 
-        new_paths = []
-
-        source_sequences = fileseq.findSequencesInList(source_paths)
+        src_sequences = fileseq.findSequencesInList(src_paths)
         name_sequences = fileseq.findSequencesInList(new_names)
+        logger.info("Renaming %s to %s", src_sequences, name_sequences)
+
+        new_paths = []
         label = self.command_buffer.label
-        logger.info("Renaming %s to %s", source_sequences, name_sequences)
         progress = SharedVariable(0)
 
         # Loop over all the files to rename
@@ -71,52 +73,58 @@ class Rename(CommandBase):
             self.command_buffer,
             action_query,
             progress,
-            SharedVariable(len(source_paths)),
+            SharedVariable(len(src_paths)),
             0.2,
         ):
-            for index, source_path in enumerate(source_paths):
+            for index, src_path in enumerate(src_paths):
                 progress.value = index + 1
-                self.command_buffer.label = f"{label} ({index+1}/{len(source_paths)})"
-                # If only one new name is given, this will still work thanks to the modulo
+                self.command_buffer.label = f"{label} ({index+1}/{len(src_paths)})"
+
                 new_name = new_names[index % len(new_names)]
-                # Check the file to rename
-                if not os.path.exists(source_path):
-                    raise Exception(f"Source path {source_path} does not exists")
+
+                if not src_path.exists():
+                    raise Exception(f"Source path {src_path} does not exists")
 
                 # Find the sequence this file belongs to
-                sequence = next(
-                    sequence
-                    for sequence in source_sequences
-                    if source_path
-                    in [pathlib.Path(str(file_path)) for file_path in sequence]
-                )
+                src_sequence = find_sequence_from_path(src_path)
 
                 # Construct the new name
-                extension = str(sequence.extension())
+                extension = str(src_sequence.extension())
                 new_name = os.path.splitext(new_name)[0] + extension
-                new_path = source_path.parent / new_name
+                new_path = src_path.parent / new_name
 
                 # Handle override of existing file
                 if new_path.exists() and force:
                     await execute_in_thread(os.remove, new_path)
                 elif new_path.exists():
-                    response = action_query.store.get("file_conflict_policy")
-                    if response is None:
+
+                    conflict_behaviour = action_query.store.get(
+                        "file_conflict_behaviour"
+                    )
+                    if conflict_behaviour is None:
                         response = await prompt_override(self, new_path, action_query)
-                    if response in ["Always override", "Always keep existing"]:
-                        action_query.store["file_conflict_policy"] = response
-                    if response in ["Override", "Always override"]:
+                    if response in [
+                        ConflictBehaviour.ALWAYS_OVERRIDE,
+                        ConflictBehaviour.ALWAYS_KEEP_EXISTING,
+                    ]:
+                        action_query.store["file_conflict_behaviour"] = response
+                    if response in [
+                        ConflictBehaviour.OVERRIDE,
+                        ConflictBehaviour.ALWAYS_OVERRIDE,
+                    ]:
                         force = True
                         await execute_in_thread(os.remove, new_path)
-                    if response in ["Keep existing", "Always keep existing"]:
-                        await execute_in_thread(os.remove, source_path)
-                        new_paths.append(new_path)
+                    if response in [
+                        ConflictBehaviour.KEEP_EXISTING,
+                        ConflictBehaviour.ALWAYS_KEEP_EXISTING,
+                    ]:
+                        await execute_in_thread(os.remove, src_path)
                         continue
 
-                await execute_in_thread(os.rename, source_path, new_path)
+                await execute_in_thread(os.rename, src_path, new_path)
                 new_paths.append(new_path)
 
         return {
-            "source_paths": source_paths,
+            "source_paths": src_paths,
             "new_paths": new_paths,
         }
