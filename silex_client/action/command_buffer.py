@@ -36,7 +36,7 @@ class CommandBuffer(BaseBuffer):
     """
 
     PRIVATE_FIELDS = [
-        "defintion",
+        "definition",
         "parent",
         "outdated_cache",
         "serialize_cache",
@@ -56,6 +56,10 @@ class CommandBuffer(BaseBuffer):
     definition: CommandDefinition = field(init=False)
     #: List of all the logs during the execution of that command
     logs: List[Dict[str, str]] = field(default_factory=list)
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.definition = self._get_definition()
 
     def _get_definition(self) -> CommandDefinition:
         """
@@ -149,10 +153,13 @@ class CommandBuffer(BaseBuffer):
             raise Exception("Could not create command buffer: The definition path is required")
 
         buffer = cls(definition_path=serialized_data["definition_path"], parent=parent)
-        command_definition = buffer._get_definition()
 
         for socket in ["inputs", "outputs"]:
-            socket_definition = getattr(command_definition, socket)
+            socket_definition = getattr(buffer.definition, socket)
+            if socket not in serialized_data:
+                serialized_data[socket] = socket_definition
+                continue
+
             socket_serialized = serialized_data[socket]
 
             for socket_name, socket_data in socket_definition.items():
@@ -169,7 +176,8 @@ class CommandBuffer(BaseBuffer):
 
             serialized_data[socket] = socket_definition
 
-        return super().construct(serialized_data, parent)
+        buffer.deserialize(serialized_data, force=True)
+        return buffer
 
     def get_inputs_helper(self, action_query: ActionQuery) -> CommandSockets:
         """

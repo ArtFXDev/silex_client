@@ -233,14 +233,14 @@ class BaseBuffer:
         for buffer_field in fields(self):
             if buffer_field.name in ignore_fields:
                 continue
-            if buffer_field.name == "children":
+            if buffer_field.name in ["children", "inputs", "outputs"]:
                 children = getattr(self, buffer_field.name)
                 children_value = {}
                 for child_name, child in children.items():
                     if child.hide:
                         continue
                     children_value[child_name] = child.serialize()
-                result.append(("children", children_value))
+                result.append((buffer_field.name, children_value))
                 continue
 
             result.append((buffer_field.name, getattr(self, buffer_field.name)))
@@ -389,7 +389,14 @@ class BaseBuffer:
         The difference with deserialize and construct is that construct is used
         when the buffer is newly created, instead of updated
         """
-        buffer = cls(parent=parent)
+        # The private and readonly fields must be initialized in the construct
+        buffer_options = {
+            field_name: serialized_data[field_name]
+            for field_name in [*cls.PRIVATE_FIELDS, *cls.READONLY_FIELDS]
+            if field_name in serialized_data
+        }
+        buffer_options["parent"] = parent
+        buffer = cls(**buffer_options)
 
         # Deserialize the newly created buffer to apply the children
         buffer.deserialize(serialized_data, force=True)

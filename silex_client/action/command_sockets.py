@@ -57,7 +57,7 @@ class CommandSockets:
 
     def get_buffer(self, key) -> AbstractSocketBuffer:
         """
-        Return the parameter buffer directly
+        Return the socket buffer directly
         """
         return self.data[key]
 

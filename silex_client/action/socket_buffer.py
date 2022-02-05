@@ -34,7 +34,6 @@ class SocketBuffer(BaseBuffer, AbstractSocketBuffer):
         "outputs",
         "output",
         "children",
-        "status",
         "buffer_type",
     ]
     READONLY_FIELDS = ["type", "buffer_type"]
