@@ -18,95 +18,71 @@ if TYPE_CHECKING:
 
 class Connection:
     """
-    Represent a connection between a buffer input and a buffer output.
+    Represent a connection between two sockets
     It can be set to either the input or output field, so when the data
-    will be queried, the output of the buffer it leads to will be returned.
+    will be queried, the output of the socket it leads to will be returned.
 
-    The given path needs to be relative to the closest ActionBuffer parent we can't
-    connect two buffers that don't have the same ActionBuffer parent
+    In the yaml definition of an action, a connection can be created with the
+    tag !connection plus the path to the socket you want. That path must be 
+    relative to the closest ActionBuffer parent.
     """
 
     SPLIT = "."
 
     def __init__(self, path: str):
-        self.path = path.strip(self.SPLIT)
+        self.path = path.strip(self.SPLIT).split(self.SPLIT)
 
-    def get_buffer(
-        self, action_query: ActionQuery, prefix: str = ""
-    ) -> Tuple[BaseBuffer, str, str]:
+    @staticmethod
+    def get_buffer(action_query: ActionQuery, path: List[str]) -> Tuple[BaseBuffer, List[str]]:
         """
-        Get the buffer this connection is leading to by traversing the children
-        If the path is too long, the part of the path that has not been traversed is returned
-        """
-        # Add the path prefix to the original path
-        path_prefix = prefix.strip(self.SPLIT)
-        full_path = self.SPLIT.join([path_prefix, self.path]).split(self.SPLIT)
+        Get the buffer this connection is leading to by traversing the outputs
+        If the given path leads to a dead end, the remaining path is returned
 
-        path_left: List[str] = []
+        Example:
+            If a path ["foo", "bar", "john", "doe"] is given,
+            but <bar> does not have a <john> children, this method will
+            return <bar> as a result and ["john", "doe"] as a remaining path
+        """
+        remaining_path: List[str] = []
         buffer: BaseBuffer = action_query.buffer
+
         # Traverse recursively the children of the buffers
-        for index, path in enumerate(full_path[1:]):
-            child = buffer.children.get(path)
+        for index, child_name in enumerate(path[1:]):
+            child = buffer.children.get(child_name)
             if child is None:
                 # The traversal stoped before going throug the full path
-                # We must store the part of the path we didn't go trough to traverse the dict
-                path_left = full_path[index + 1 :]
+                # We must store the remaining part of the path we couldn't go trough
+                remaining_path = path[index + 1 :]
                 break
             buffer = child
 
-        return buffer, self.SPLIT.join(path_left), self.SPLIT.join(full_path)
+        return buffer, remaining_path
 
-    def get_dict(self, value: Any, path: str) -> Any:
+    def resolve(self, action_query: ActionQuery, prefix: str = "") -> Any:
         """
-        If the returned value is a dict, this can be used to get nested values inside the
-        dict with the last part of the path
+        Get the output of the socket this connection leads to by recursively going throught
+        the connections.
         """
-        for path_item in path.split(self.SPLIT):
-            if not isinstance(value, dict):
-                return value
-            value = value.get(path_item)
+        full_path = [*prefix.strip(self.SPLIT).split(self.SPLIT), *self.path]
 
-        return value
-
-    def get_io(
-        self, action_query: ActionQuery, buffer: BaseBuffer, path: str
-    ) -> Tuple[Any, str]:
-        """
-        The user can specify if he wants to get the input or the output by
-        setting a key "input" or "output"
-
-        WARNING: Because of this implementation, a step cannot be called "input" or "output"
-        otherwise the connection might have issues
-        """
-        path_split = path.split(self.SPLIT)
-        io_key = path_split[0]
-        if io_key == "input":
-            return buffer.get_input(action_query), self.SPLIT.join(path_split[1:])
-        if io_key == "output":
-            return buffer.get_output(action_query), self.SPLIT.join(path_split[1:])
-
-        return None, path
-
-    def get_value(self, action_query: ActionQuery, prefix: str = "") -> Any:
-        """
-        Get the output of the buffer this connection leads to by recursively going throught
-        the children. This also go recursively throught items of a dict if the output
-        of the buffer is a dictionary
-        """
-        buffer, path_left, full_path = self.get_buffer(action_query, prefix)
-        buffer_value, path_left = self.get_io(action_query, buffer, path_left)
-
-        # If we traversed the entire path, return the result directly
-        if not path_left:
-            return buffer_value
-
-        # If we didn't go throug the entire path and we cannot go deeper
-        # it means an error ocurred while getting the path's target
-        if path_left and not isinstance(buffer_value, dict):
-            logger.error("Could not get the target of the connection %s", full_path)
+        if len(full_path) < 2:
+            logger.error("Could not resolve the connection %s: Please specify at least input/output and a key", full_path)
             return None
 
-        return self.get_dict(buffer_value, path_left)
+        (*buffer_path, key, socket) = full_path
+        buffer, remaining_path = self.get_buffer(action_query, buffer_path)
+
+        if remaining_path:
+            logger.error("Could not resolve the connection %s: the buffer %s has not %s child", full_path, buffer, remaining_path[0])
+            return None
+
+        if socket == "input":
+            return buffer.eval_input(action_query, key)
+        if socket == "output":
+            return buffer.eval_output(action_query, key)
+
+        logger.error("Could not resolve the connection %s: Please specify input or output", full_path)
+        return None
 
     def __str__(self):
         return self.path

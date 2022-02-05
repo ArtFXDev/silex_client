@@ -1,7 +1,6 @@
 """
 @author: TD gang
-
-Dataclass that all the buffers of a command must inherit from
+@github: https://github.com/ArtFXDev
 """
 
 from __future__ import annotations
@@ -20,7 +19,6 @@ from typing import (
     Optional,
     Type,
     TypeVar,
-    Union,
     get_type_hints,
 )
 
@@ -30,8 +28,10 @@ import jsondiff
 from dacite.types import is_union
 
 from silex_client.action.connection import Connection
+from silex_client.action.socket_buffer import InputBuffer, OutputBuffer
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
+from silex_client.utils.files import slugify
 
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -43,6 +43,10 @@ TBaseBuffer = TypeVar("TBaseBuffer", bound="BaseBuffer")
 class BaseBuffer:
     """
     Store the data of a buffer, it is used as a comunication payload with the UI
+
+    A buffer can be serialized and deserialized to json format. It has a children
+    field that stores a dict of other BaseBuffer instances, wich make the process
+    of serialization and deserialization recursive
     """
 
     #: The list of fields that should be ignored when serializing this buffer to json
@@ -75,10 +79,10 @@ class BaseBuffer:
     tooltip: Optional[str] = field(compare=False, repr=False, default=None)
     #: A Unique ID to help differentiate multiple buffers
     uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
-    #: The input can be connected to an other buffer output
-    input: Dict[str, Connection] = field(default_factory=dict, init=False)
-    #: The output can be connected to an other buffer input
-    output: Dict[str, Connection] = field(default_factory=dict, init=False)
+    #: The inputs can be connected to an other buffer output or hold a raw value
+    inputs: Dict[str, InputBuffer] = field(default_factory=dict, init=False)
+    #: The outputs can be connected to an other buffer output or hold a raw value
+    outputs: Dict[str, OutputBuffer] = field(default_factory=dict, init=False)
     #: Marquer to know if the serialize cache is outdated or not
     outdated_cache: bool = field(compare=False, repr=False, default=True)
     #: Cache the serialize output
@@ -93,11 +97,14 @@ class BaseBuffer:
         super().__setattr__(name, value)
 
     def __post_init__(self):
-        slugify_pattern = re.compile("[^A-Za-z0-9]")
+        self.name = slugify(self.name)
+
+        deslugify_pattern = re.compile("[^A-Za-z0-9]")
         # Set the command label
         if self.label is None:
-            self.label = slugify_pattern.sub(" ", self.name)
+            self.label = deslugify_pattern.sub(" ", self.name)
             self.label = self.label.title()
+
         # Detend the tooltip for multiline tooltips
         if self.tooltip is not None:
             self.tooltip = textwrap.dedent(self.tooltip)
@@ -140,7 +147,7 @@ class BaseBuffer:
     ) -> Optional[TBaseBuffer]:
         """
         Helper to get a child that belong to this action from a path
-        The data is quite nested, this is just for conveniance
+        The data is nested, this is just for conveniance
         """
         if not child_path:
             logger.error("Could not get the child %s: Invalid path", child_path)
@@ -149,16 +156,12 @@ class BaseBuffer:
         child = self
         for key in child_path:
             if not isinstance(child, BaseBuffer):
-                logger.error(
-                    "Could not get the child %s: Invalid path",
-                    child_path,
-                )
-                return None
+                break
             child = child.children.get(key)
 
         if not isinstance(child, child_type):
             logger.error(
-                "Could not get the child %s: %s is not of type %s",
+                "Could not get the child at %s: %s is not of type %s",
                 child_path,
                 child,
                 child_type,
@@ -194,29 +197,19 @@ class BaseBuffer:
             sorted(self.children.items(), key=lambda item: item[1].index)
         )
 
-    def resolve_io(self, action_query: ActionQuery, data: Connection) -> Any:
-        """
-        Resolve connection of the given value
-        """
-        parent_action = self.get_parent(buffer_type="actions")
-        prefix = ""
-        if parent_action is not None:
-            prefix = parent_action.get_path()
-        return data.get_value(action_query, prefix)
-
-    def get_input(self, action_query: ActionQuery, key: str) -> Any:
+    def eval_input(self, action_query: ActionQuery, key: str) -> Any:
         """
         Always use this method to get the input of the buffer
-        Return the input after resolving connections
+        Return the input after resolving connections, and evaluating the output
         """
-        return self.resolve_io(action_query, self.input[key])
+        return self.inputs[key].eval(action_query)
 
-    def get_output(self, action_query: ActionQuery, key: str) -> Any:
+    def eval_output(self, action_query: ActionQuery, key: str) -> Any:
         """
         Always use this method to get the output of the buffer
-        Return the output after resolving connections
+        Return the input after resolving connections, and evaluating the output
         """
-        return self.resolve_io(action_query, self.output[key])
+        return self.outputs[key].eval(action_query)
 
     def skip_execution(self) -> bool:
         """
@@ -353,12 +346,14 @@ class BaseBuffer:
         serialized_data = jsondiff.patch(current_buffer_data, serialized_data)
 
         # Setup dacite to use our deserialize function has a type_hook to create the children
-        config_data: Dict[str, Union[list, dict]] = {"cast": [Status, Connection]}
+        config_data: Dict[str, Any] = {"cast": [Status, Connection], "type_hooks": {}}
         if BaseBuffer not in self.get_child_types():
             config_data["type_hooks"] = {
                 child_type: partial(self._deserialize_child, child_type)
                 for child_type in self.get_child_types()
             }
+        # The inputs and the outputs has the same treatment as the childrens
+        config_data["type_hooks"].update({InputBuffer: partial(self._deserialize_child, InputBuffer), OutputBuffer: partial(self._deserialize_child, OutputBuffer)})
         config = dacite_config.Config(**config_data)
 
         # Create a new buffer with the patched serialized data
@@ -369,11 +364,16 @@ class BaseBuffer:
             setattr(new_buffer, private_field, getattr(self, private_field))
 
         # Update the current fields value with the new buffer's values
-        self.children.update(new_buffer.children)
         new_buffer_data = new_buffer.__dict__
-        del new_buffer_data["children"]
+
+        for buffer_field in ["children", "inputs", "outputs"]:
+            getattr(self, buffer_field).update(getattr(new_buffer, buffer_field))
+            del new_buffer_data[buffer_field]
+
         self.__dict__.update(new_buffer_data)
 
+        # The trick of overriding __setattr__ does not work for every cases
+        # When updating an value of a container __setattr__ is not called
         self.outdated_cache = True
 
     @classmethod

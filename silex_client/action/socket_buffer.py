@@ -50,6 +50,9 @@ class SocketBuffer(BaseBuffer):
         if self.input is None and isinstance(self.type, SocketTypeMeta):
             self.input = self.type.get_default()
 
+        # Sockets buffers cannot have children
+        self.children = {}
+
     def rebuild_type(self, *args, **kwargs):
         """
         Allows changing the options of the parameter by rebuilding the type
@@ -63,7 +66,7 @@ class SocketBuffer(BaseBuffer):
         if self.input is None:
             self.input = self.type.get_default()
 
-    def resolve_io(self, action_query: ActionQuery, data: Connection) -> Any:
+    def resolve_connection(self, action_query: ActionQuery, connection: Connection) -> Any:
         """
         Resolve connection of the given value
         """
@@ -71,34 +74,35 @@ class SocketBuffer(BaseBuffer):
         prefix = ""
         if parent_action is not None:
             prefix = parent_action.get_path()
-        return data.get_value(action_query, prefix)
+        return connection.resolve(action_query, prefix)
 
-
-    def eval_input(self, action_query: ActionQuery) -> Any:
-        """
-        The input of an IO buffer can be a Connetion or anything
-        """
-        if isinstance(self.input, Connection):
-            return self.resolve_io(action_query, self.input)
-        return self.input
-
-    def eval_output(self, action_query: ActionQuery) -> Any:
+    def eval(self, action_query: ActionQuery) -> Any:
         """
         The output of an IO buffer is the result of the input casted to the desired type
         """
-        # TODO: Cache the result in the output field
-        return self.type(self.eval_input(action_query))
+        raw_input = self.input
+        if isinstance(raw_input, Connection):
+            raw_input = self.resolve_connection(action_query, raw_input)
+
+        return self.type(raw_input)
+
+    def is_connected(self) -> bool:
+        """
+        Helper to know if the input is linked to an other SocketBuffer
+        """
+        return isinstance(self.input, Connection)
+
 
 
 @dataclass()
-class InputBuffer(BaseBuffer):
+class InputBuffer(SocketBuffer):
     """Helper to differentiate the SocketBuffers for input"""
 
     buffer_type: str = field(default="input")
 
 
 @dataclass()
-class OutputBuffer(BaseBuffer):
+class OutputBuffer(SocketBuffer):
     """Helper to differentiate the SocketBuffers for output"""
 
     buffer_type: str = field(default="output")
