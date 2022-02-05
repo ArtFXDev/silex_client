@@ -1,4 +1,7 @@
 """
+@author: TD gang
+@github: https://github.com/ArtFXDev
+
 Defintions of all the available socket types.
 Socket's types can also be a regular class definition but these
 constructors gives more control

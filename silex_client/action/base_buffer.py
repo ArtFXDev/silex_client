@@ -1,6 +1,8 @@
 """
 @author: TD gang
 @github: https://github.com/ArtFXDev
+
+Class definition of BaseBuffer
 """
 
 from __future__ import annotations

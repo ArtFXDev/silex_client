@@ -1,6 +1,8 @@
 """
 @author: TD gang
 @github: https://github.com/ArtFXDev
+
+Class definition of ActionBuffer
 """
 
 from __future__ import annotations
@@ -37,11 +39,9 @@ class ActionBuffer(BaseBuffer):
     simplify: bool = field(compare=False, repr=False, default=False)
     #: The status is readonly, it is computed from the commands's status
     status: Status = field(init=False)  # type: ignore
-    #: The way this action is executed (backward, forward, paused...)
-    execution_type: Execution = field(default=Execution.FORWARD)
     #: The status of the action, this value is readonly, it is computed from the commands's status
     thumbnail: Optional[str] = field(default=None)
-    #: A dict of steps that will contain the commands
+    #: An action can have other actions or steps as children
     children: Dict[str, Union[StepBuffer, ActionBuffer]] = field(default_factory=dict)
     #: Dict of variables that are global to all the commands of this action
     store: Dict[str, Any] = field(compare=False, default_factory=dict)

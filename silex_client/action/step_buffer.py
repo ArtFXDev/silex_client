@@ -1,7 +1,8 @@
 """
 @author: TD gang
+@github: https://github.com/ArtFXDev
 
-Dataclass used to store the data related to a step
+Class definition of StepBuffer
 """
 
 from __future__ import annotations
@@ -17,24 +18,21 @@ from silex_client.utils.enums import Status
 @dataclass()
 class StepBuffer(BaseBuffer):
     """
-    Store the data of a step, it is used as a comunication payload with the UI
+    Store the data of a step. A step is only for grouping commands into categories, it helps
+    for readability, and allows to hide/skip... multiple commands at once
     """
-
-    #: The list of fields that should be ignored when serializing this buffer to json
-    PRIVATE_FIELDS = ["outdated_cache", "serialize_cache", "parent"]
-    READONLY_FIELDS = ["label"]
 
     #: Type name to help differentiate the different buffer types
     buffer_type: str = field(default="steps")
     #: The status is readonly, it is computed from the commands's status
     status: Status = field(init=False)  # type: ignore
-    #: Dict that represent the parameters of the command, their type, value, name...
+    #: A step can only have commands as children
     children: Dict[str, CommandBuffer] = field(default_factory=dict)
 
     @property
     def commands(self) -> List[CommandBuffer]:
         """
-        Alias for children
+        Alias for children as a list
         """
         return list(self.children.values())
 
