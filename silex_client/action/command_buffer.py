@@ -90,7 +90,7 @@ class CommandBuffer(BaseBuffer):
         if self.skip_execution():
             logger.debug("Skipping command %s", self.name)
         else:
-            parameters = CommandInputsHelper(action_query, self)
+            parameters = self.get_inputs_helper(action_query)
             logger.debug("Executing command %s", self.name)
             async with RedirectWebsocketLogs(action_query, self) as log:
                 # Set the status to processing
@@ -132,7 +132,7 @@ class CommandBuffer(BaseBuffer):
         Call the setup of the command, the setup method is used to edit the command attributes
         dynamically (parameters, states...)
         """
-        parameters = CommandInputsHelper(action_query, self)
+        parameters = self.get_inputs_helper(action_query)
         async with RedirectWebsocketLogs(action_query, self) as log:
             await self.definition.setup(parameters, action_query, log)
 
@@ -170,6 +170,18 @@ class CommandBuffer(BaseBuffer):
             serialized_data[socket] = socket_definition
 
         return super().construct(serialized_data, parent)
+
+    def get_inputs_helper(self, action_query: ActionQuery) -> CommandSocketsHelper:
+        """
+        Helper to get and set the input values easly
+        """
+        return CommandSocketsHelper(action_query, self, self.inputs)
+
+    def get_outputs_helper(self, action_query: ActionQuery) -> CommandSocketsHelper:
+        """
+        Helper to get and set the output values easly
+        """
+        return CommandSocketsHelper(action_query, self, self.outputs)
 
 class CommandSocketsHelper:
     """
@@ -236,21 +248,3 @@ class CommandSocketsHelper:
         """Update the values with the given dict"""
         for key, value in values.items():
             self[key] = value
-
-
-class CommandInputsHelper(CommandSocketsHelper):
-    """
-    Helper to get and set the input values of a command quickly.
-    Act like a dictionary
-    """
-    def __init__(self, action_query: ActionQuery, command: CommandBuffer):
-        super().__init__(action_query, command, command.inputs)
-
-
-class CommandOutputsHelper(CommandSocketsHelper):
-    """
-    Helper to get and set the output values of a command quickly.
-    Act like a dictionary
-    """
-    def __init__(self, action_query: ActionQuery, command: CommandBuffer):
-        super().__init__(action_query, command, command.outputs)
