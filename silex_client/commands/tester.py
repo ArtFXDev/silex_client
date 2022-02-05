@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, NamedTuple, Any
+from typing import TYPE_CHECKING, Any
 
 from fileseq import FrameSet
 
-from silex_client.action.command_base import CommandBase
-from silex_client.action.command_buffer import CommandInput
-from silex_client.utils.io_types import (
+from silex_client.action.command_definition import CommandDefinition
+from silex_client.action.command_buffer import CommandSocketsHelper
+from silex_client.utils.socket_types import (
     IntArrayType,
     MultipleSelectType,
     PathType,
@@ -23,10 +23,7 @@ from silex_client.utils.io_types import (
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-class TesterOutput(NamedTuple):
-    output: Any
-
-class StringTester(CommandBase):
+class StringTester(CommandDefinition):
     """
     Testing the string parameters
     """

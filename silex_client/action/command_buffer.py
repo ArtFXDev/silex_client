@@ -9,13 +9,13 @@ from __future__ import annotations
 
 import importlib
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, TypeVar, Union, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, TypeVar
 
 import jsondiff
 
 from silex_client.action.base_buffer import BaseBuffer
-from silex_client.action.abstract_socket import AbstractSocketBuffer
 from silex_client.action.command_definition import CommandDefinition
+from silex_client.action.command_sockets import CommandSockets
 from silex_client.network.websocket_log import RedirectWebsocketLogs
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
@@ -78,7 +78,7 @@ class CommandBuffer(BaseBuffer):
 
             return definition(self)
 
-        except (ImportError, AttributeError, ModuleNotFoundError) as exception:
+        except (ImportError, AttributeError, ModuleNotFoundError, ValueError) as exception:
             raise Exception(f"Invalid command path: {self.definition_path}") from exception
 
     async def execute(
@@ -171,80 +171,14 @@ class CommandBuffer(BaseBuffer):
 
         return super().construct(serialized_data, parent)
 
-    def get_inputs_helper(self, action_query: ActionQuery) -> CommandSocketsHelper:
+    def get_inputs_helper(self, action_query: ActionQuery) -> CommandSockets:
         """
         Helper to get and set the input values easly
         """
-        return CommandSocketsHelper(action_query, self, self.inputs)
+        return CommandSockets(action_query, self, self.inputs)
 
-    def get_outputs_helper(self, action_query: ActionQuery) -> CommandSocketsHelper:
+    def get_outputs_helper(self, action_query: ActionQuery) -> CommandSockets:
         """
         Helper to get and set the output values easly
         """
-        return CommandSocketsHelper(action_query, self, self.outputs)
-
-class CommandSocketsHelper:
-    """
-    Helper to get and set the input/output values of a command quickly.
-    Act like a dictionary
-    """
-
-    def __init__(
-        self,
-        action_query: ActionQuery,
-        command: CommandBuffer,
-        data: Dict[str, AbstractSocketBuffer],
-    ):
-        self.action_query = action_query
-        self.command = command
-        self.data = data
-
-    def __getitem__(self, key: str):
-        return self.data[key].eval(self.action_query)
-
-    def __setitem__(self, key: str, value: Any):
-        self.data[key].input = value
-
-    def get(self, key: str, default: GenericType = None) -> Union[Any, GenericType]:
-        """
-        Return the parameter's value.
-        Return the default if the parametr does not exists
-        """
-        if key not in self.data:
-            return default
-        return self.__getitem__(key)
-
-    def get_raw(self, key, default: GenericType = None) -> Union[Any, GenericType]:
-        """
-        Return the parameter's value without casting it to the expected type
-        Return the default if the parametr does not exists
-        """
-        if key not in self.data:
-            return default
-        return self.data[key].input
-
-    def get_buffer(self, key) -> AbstractSocketBuffer:
-        """
-        Return the parameter buffer directly
-        """
-        return self.data[key]
-
-    def keys(self) -> List[str]:
-        """Same method a the original dict"""
-        return list(self.data.keys())
-
-    def values(self) -> List[Any]:
-        """Same method a the original dict"""
-        return [child.eval(self.action_query) for child in self.data.values()]
-
-    def items(self) -> List[Tuple[str, Any]]:
-        """Same method a the original dict"""
-        return [
-            (key, value.eval(self.action_query))
-            for key, value in self.data.items()
-        ]
-
-    def update(self, values: Union[CommandSocketsHelper, Dict[str, Any]]):
-        """Update the values with the given dict"""
-        for key, value in values.items():
-            self[key] = value
+        return CommandSockets(action_query, self, self.outputs)

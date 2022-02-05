@@ -18,7 +18,8 @@ from silex_client.utils.enums import Status
 # Forward references
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
-    from silex_client.action.command_buffer import CommandBuffer, CommandSocketsHelper
+    from silex_client.action.command_sockets import CommandSockets
+    from silex_client.action.command_buffer import CommandBuffer
 
 
 class CommandDefinition:
@@ -68,7 +69,9 @@ class CommandDefinition:
 
     @staticmethod
     def check_sockets(
-        expected_sockets: Dict[str, dict], sockets: CommandSocketsHelper, logger: logging.Logger
+        expected_sockets: Dict[str, dict],
+        sockets: CommandSockets,
+        logger: logging.Logger,
     ) -> bool:
         """
         Check the if the input/output values are all present and if their values
@@ -107,7 +110,7 @@ class CommandDefinition:
         """
         Helper decorator that makes sure all the parameter can be casted to the expected types,
         and the required metadata are present.
-        By using this decorator, you make sure that invalid inputs/outputs will return 
+        By using this decorator, you make sure that invalid inputs/outputs will return
         a clear error before the execution of the command.
         """
 
@@ -115,12 +118,16 @@ class CommandDefinition:
             @functools.wraps(func)
             async def wrapper_conform_command(
                 command: CommandDefinition,
-                inputs: CommandSocketsHelper,
+                inputs: CommandSockets,
                 action_query: ActionQuery,
                 logger: logging.Logger,
             ) -> Any:
                 # Make sure the given parameters are valid
-                if not command.check_sockets(command.inputs, command.buffer.get_inputs_helper(action_query), logger):
+                if not command.check_sockets(
+                    command.inputs,
+                    command.buffer.get_inputs_helper(action_query),
+                    logger,
+                ):
                     command.buffer.status = Status.INVALID
                     logger.error(
                         "Could not execute the command %s: Some parameters are invalid",
@@ -144,7 +151,11 @@ class CommandDefinition:
                 command.buffer.output = output
 
                 # Make sure the returned output is valid
-                if not command.check_sockets(command.outputs, command.buffer.get_outputs_helper(action_query), logger):
+                if not command.check_sockets(
+                    command.outputs,
+                    command.buffer.get_outputs_helper(action_query),
+                    logger,
+                ):
                     command.buffer.status = Status.INVALID
                     logger.error(
                         "Error during the execution of the command %s: Invalid retured values %s",
@@ -164,7 +175,7 @@ class CommandDefinition:
         self,
         action_query: ActionQuery,
         new_inputs: dict[str, Union[SocketBuffer, dict]],
-    ) -> CommandSocketsHelper:
+    ) -> CommandSockets:
         """
         Add the given parameters to to current command parameters and ask an update from the user
         """
@@ -193,7 +204,7 @@ class CommandDefinition:
 
     async def __call__(
         self,
-        parameters: CommandSocketsHelper,
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ) -> Any:
@@ -201,7 +212,7 @@ class CommandDefinition:
 
     async def undo(
         self,
-        parameters: CommandSocketsHelper,
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ) -> Any:
@@ -209,7 +220,7 @@ class CommandDefinition:
 
     async def setup(
         self,
-        parameters: CommandSocketsHelper,
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ) -> Any:
