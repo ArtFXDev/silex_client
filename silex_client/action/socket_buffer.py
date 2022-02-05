@@ -27,8 +27,17 @@ class SocketBuffer(BaseBuffer):
     then cache the result in the output.
     """
 
-    PRIVATE_FIELDS = ["outdated_cache", "serialize_cache", "parent", "output"]
-    READONLY_FIELDS = ["type"]
+    PRIVATE_FIELDS = [
+        "parent",
+        "outdated_cache",
+        "serialize_cache",
+        "inputs",
+        "outputs",
+        "output",
+        "children"
+        "status"
+    ]
+    READONLY_FIELDS = ["type", "buffer_type"]
 
     #: Type name to help differentiate the different buffer types
     buffer_type: str = field(default="socket")

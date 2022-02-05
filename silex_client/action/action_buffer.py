@@ -1,7 +1,6 @@
 """
 @author: TD gang
-
-Dataclass used to store the data related to an action
+@github: https://github.com/ArtFXDev
 """
 
 from __future__ import annotations
@@ -11,11 +10,8 @@ from typing import Any, Dict, List, Optional, TypeVar, Union
 
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.command_buffer import CommandBuffer
-from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.action.step_buffer import StepBuffer
 from silex_client.utils.enums import Execution, Status
-from silex_client.utils.log import logger
-from silex_client.utils.io_types import AnyType
 
 TBaseBuffer = TypeVar("TBaseBuffer", bound="BaseBuffer")
 
@@ -23,7 +19,9 @@ TBaseBuffer = TypeVar("TBaseBuffer", bound="BaseBuffer")
 @dataclass()
 class ActionBuffer(BaseBuffer):
     """
-    Store the state of an action, it is used as a comunication payload with the UI
+    Store the data of an action, an action can have a step or an other actions as children.
+    It could be compared to a function, it can be inserted in other actions, and store a series
+    of commands to execute, grouped into steps.
     """
 
     PRIVATE_FIELDS = [
@@ -32,7 +30,6 @@ class ActionBuffer(BaseBuffer):
         "outdated_cache",
         "serialize_cache",
     ]
-    READONLY_FIELDS = ["label"]
 
     #: Type name to help differentiate the different buffer types
     buffer_type: str = field(default="actions")
@@ -50,13 +47,6 @@ class ActionBuffer(BaseBuffer):
     store: Dict[str, Any] = field(compare=False, default_factory=dict)
     #: Snapshot of the context's metadata when this buffer is created
     context_metadata: Dict[str, Any] = field(default_factory=dict)
-
-    @property
-    def steps(self) -> Dict[str, Union[StepBuffer, ActionBuffer]]:
-        """
-        Alias for children
-        """
-        return self.children
 
     def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
         super().deserialize(serialized_data, True)
@@ -90,9 +80,7 @@ class ActionBuffer(BaseBuffer):
     def commands(self) -> List[CommandBuffer]:
         """
         Helper to get the commands of the actions
-        The data is quite nested, this is just for conveniance
         """
-
         def flatten(nested_list: List[Union[StepBuffer, ActionBuffer, CommandBuffer]]):
             for item in sorted(nested_list, key=lambda x: x.index):
                 if isinstance(item, CommandBuffer):
@@ -105,50 +93,5 @@ class ActionBuffer(BaseBuffer):
     def get_command(self, command_path: List[str]) -> Optional[CommandBuffer]:
         """
         Helper to get a parameter of a command that belong to this action
-        The data is quite nested, this is just for conveniance
         """
         return self.get_child(command_path, CommandBuffer)
-
-    def get_parameter(self, parameter_path: List[str]) -> Optional[ParameterBuffer]:
-        """
-        Helper to get a parameter of a command that belong to this action
-        The data is quite nested, this is just for conveniance
-        """
-        return self.get_child(parameter_path, ParameterBuffer)
-
-    def set_parameter(self, parameter_path: List[str], value: Any, **kwargs) -> None:
-        """
-        Helper to set a parameter of a command that belong to this action
-        The data is quite nested, this is just for conveniance
-        """
-        parameter = self.get_parameter(parameter_path)
-        if parameter is None:
-            logger.error(
-                "Could not set parameter %s: The parameter does not exists",
-                parameter_path,
-            )
-            return
-
-        # Check if the given value is the right type
-        if not isinstance(value, parameter.type) and parameter.type is not AnyType:
-            try:
-                value = parameter.type(value)
-            except TypeError:
-                logger.error(
-                    "Could not set parameter %s: Invalid value (%s)",
-                    parameter_path,
-                    value,
-                )
-                return
-
-        parameter.value = value
-
-        for attribute_name, attribute_value in kwargs.items():
-            if not hasattr(parameter, attribute_name):
-                logger.warning(
-                    "Could not set the attribute %s on the parameter %s: The attribute does not exists",
-                    attribute_name,
-                    parameter,
-                )
-                continue
-            setattr(parameter, attribute_name, attribute_value)

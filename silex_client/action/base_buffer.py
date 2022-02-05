@@ -54,11 +54,9 @@ class BaseBuffer:
         "parent",
         "outdated_cache",
         "serialize_cache",
-        "input",
-        "output",
     ]
     #: The list of fields that should be ignored when deserializing this buffer to json
-    READONLY_FIELDS = ["label"]
+    READONLY_FIELDS = ["status", "buffer_type"]
 
     #: Specify if the childs can be hidden or not
     ALLOW_HIDE_CHILDS = True
