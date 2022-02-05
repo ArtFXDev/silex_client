@@ -8,21 +8,19 @@ Class definition of SocketBuffer
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Union, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 from silex_client.action.base_buffer import BaseBuffer
 
 from silex_client.action.connection import Connection
+from silex_client.action.abstract_socket import AbstractSocketBuffer
 from silex_client.utils.socket_types import AnyType, SocketTypeMeta
 
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-# Alias the metaclass type, to avoid clash with the type attribute
-TypeAlias = type
-
 
 @dataclass()
-class SocketBuffer(BaseBuffer):
+class SocketBuffer(BaseBuffer, AbstractSocketBuffer):
     """
     Store the data of an input or output of an other buffer.
     This buffer is responsible to cast the input values into the desired type, and
@@ -36,19 +34,14 @@ class SocketBuffer(BaseBuffer):
         "inputs",
         "outputs",
         "output",
-        "children"
-        "status"
+        "children",
+        "status",
+        "buffer_type",
     ]
     READONLY_FIELDS = ["type", "buffer_type"]
 
     #: Type name to help differentiate the different buffer types
-    buffer_type: str = field(default="socket")
-    #: The expected type in the output, the input will be casted in to this type
-    type: Union[TypeAlias, SocketTypeMeta] = field(default=TypeAlias(None))
-    #: The input store the raw value passed in
-    input: Any = field(default=None, init=False)
-    #: The output store the cache of the casted value
-    output: Any = field(default=None, init=False)
+    buffer_type: None = field(default=None)
 
     def __post_init__(self):
         super().__post_init__()
@@ -89,7 +82,7 @@ class SocketBuffer(BaseBuffer):
 
     def eval(self, action_query: ActionQuery) -> Any:
         """
-        The output of an IO buffer is the result of the input casted to the desired type
+        The output of a socket buffer is the result of the input casted to the desired type
         """
         raw_input = self.input
         if isinstance(raw_input, Connection):
@@ -102,18 +95,3 @@ class SocketBuffer(BaseBuffer):
         Helper to know if the input is linked to an other SocketBuffer
         """
         return isinstance(self.input, Connection)
-
-
-
-@dataclass()
-class InputBuffer(SocketBuffer):
-    """Helper to differentiate the SocketBuffers for input"""
-
-    buffer_type: str = field(default="input")
-
-
-@dataclass()
-class OutputBuffer(SocketBuffer):
-    """Helper to differentiate the SocketBuffers for output"""
-
-    buffer_type: str = field(default="output")

@@ -1,7 +1,8 @@
 """
 @author: TD gang
+@github: https://github.com/ArtFXDev
 
-Base class that every command should inherit from
+Class definition of CommandDefinition
 """
 
 from __future__ import annotations
@@ -17,10 +18,10 @@ from silex_client.action.parameter_buffer import ParameterBuffer
 # Forward references
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
-    from silex_client.action.command_buffer import CommandBuffer, CommandParameters
+    from silex_client.action.command_buffer import CommandBuffer
 
 
-class CommandBase:
+class CommandDefinition:
     """
     Base class that every command should inherit from
     """

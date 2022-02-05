@@ -30,10 +30,9 @@ import jsondiff
 from dacite.types import is_union
 
 from silex_client.action.connection import Connection
-from silex_client.action.socket_buffer import InputBuffer, OutputBuffer
+from silex_client.action.abstract_socket import AbstractSocketBuffer
 from silex_client.utils.enums import Status
 from silex_client.utils.log import logger
-from silex_client.utils.files import slugify
 
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -60,9 +59,6 @@ class BaseBuffer:
     #: The list of fields that should be ignored when deserializing this buffer to json
     READONLY_FIELDS = ["status", "buffer_type"]
 
-    #: Specify if the childs can be hidden or not
-    ALLOW_HIDE_CHILDS = True
-
     #: Name of the buffer, must have no space or special characters
     name: str = field(default="unnamed")
     #: The name of the buffer, meant to be displayed
@@ -80,9 +76,9 @@ class BaseBuffer:
     #: A Unique ID to help differentiate multiple buffers
     uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
     #: The inputs can be connected to an other buffer output or hold a raw value
-    inputs: Dict[str, InputBuffer] = field(default_factory=dict, init=False)
+    inputs: Dict[str, AbstractSocketBuffer] = field(default_factory=dict, init=False)
     #: The outputs can be connected to an other buffer output or hold a raw value
-    outputs: Dict[str, OutputBuffer] = field(default_factory=dict, init=False)
+    outputs: Dict[str, AbstractSocketBuffer] = field(default_factory=dict, init=False)
     #: Marquer to know if the serialize cache is outdated or not
     outdated_cache: bool = field(compare=False, repr=False, default=True)
     #: Cache the serialize output
@@ -97,8 +93,6 @@ class BaseBuffer:
         super().__setattr__(name, value)
 
     def __post_init__(self):
-        self.name = slugify(self.name)
-
         deslugify_pattern = re.compile("[^A-Za-z0-9]")
         # Set the command label
         if self.label is None:
@@ -243,7 +237,7 @@ class BaseBuffer:
                 children = getattr(self, buffer_field.name)
                 children_value = {}
                 for child_name, child in children.items():
-                    if self.ALLOW_HIDE_CHILDS and child.hide:
+                    if child.hide:
                         continue
                     children_value[child_name] = child.serialize()
                 result.append(("children", children_value))
@@ -346,14 +340,21 @@ class BaseBuffer:
         serialized_data = jsondiff.patch(current_buffer_data, serialized_data)
 
         # Setup dacite to use our deserialize function has a type_hook to create the children
-        config_data: Dict[str, Any] = {"cast": [Status, Connection], "type_hooks": {}}
+        # The inputs and the output has the same treatment as the children for deserialization
+        from silex_client.action.socket_buffer import SocketBuffer
+
+        config_data: Dict[str, Any] = {
+            "cast": [Status, Connection],
+            "type_hooks": {
+                AbstractSocketBuffer: partial(self._deserialize_child, SocketBuffer)
+            },
+        }
+
         if BaseBuffer not in self.get_child_types():
             config_data["type_hooks"] = {
                 child_type: partial(self._deserialize_child, child_type)
                 for child_type in self.get_child_types()
             }
-        # The inputs and the outputs has the same treatment as the childrens
-        config_data["type_hooks"].update({InputBuffer: partial(self._deserialize_child, InputBuffer), OutputBuffer: partial(self._deserialize_child, OutputBuffer)})
         config = dacite_config.Config(**config_data)
 
         # Create a new buffer with the patched serialized data
@@ -383,20 +384,12 @@ class BaseBuffer:
         parent: BaseBuffer = None,
     ) -> TBaseBuffer:
         """
-        Create an command buffer from serialized data
+        Create an buffer from serialized data
 
         The difference with deserialize and construct is that construct is used
         when the buffer is newly created, instead of updated
         """
-        config = dacite_config.Config(cast=[Status, Connection])
-
-        # Initialize the buffer without the children,
-        # because the children needs special treatment
-        filtered_data = copy.copy(serialized_data)
-        filtered_data["parent"] = parent
-        for child_type in cls.get_child_types():
-            filtered_data.pop(child_type.buffer_type, None)
-        buffer = dacite.from_dict(cls, filtered_data, config)
+        buffer = cls(parent=parent)
 
         # Deserialize the newly created buffer to apply the children
         buffer.deserialize(serialized_data, force=True)
