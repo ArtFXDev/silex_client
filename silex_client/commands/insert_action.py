@@ -125,7 +125,7 @@ class InsertAction(CommandDefinition):
             "label": "Action's output",
             "type": dict,
             "value": {},
-            "tooltip": "The outputs of the action can be retrieved here"
+            "tooltip": "The outputs of the action can be retrieved here",
         }
     }
 
@@ -171,7 +171,9 @@ class InsertAction(CommandDefinition):
         # The parameter values of the inserted action can be overriden
         for input_path, input_value in inputs_override.items():
             input_buffer = SocketBuffer(value=input_value, parent=self.buffer)
-            main_action.buffer.set_input_value(input_path, input_buffer.eval(action_query))
+            main_action.buffer.set_input_value(
+                input_path, input_buffer.eval(action_query)
+            )
 
         if label:
             action_label = main_action.buffer.label
@@ -210,5 +212,7 @@ class InsertAction(CommandDefinition):
         # This command foward the output of the inserted action.
         outputs = {}
         for output_name in main_action.buffer.outputs:
-            outputs[output_name] = Connection(Connection.SPLIT.join([action_name, output_name, "output"]))
+            outputs[output_name] = Connection(
+                Connection.SPLIT.join([action_name, output_name, "output"])
+            )
         return {"action_output": outputs}

@@ -81,6 +81,7 @@ class ActionBuffer(BaseBuffer):
         """
         Helper to get the commands of the actions
         """
+
         def flatten(nested_list: List[Union[StepBuffer, ActionBuffer, CommandBuffer]]):
             for item in sorted(nested_list, key=lambda x: x.index):
                 if isinstance(item, CommandBuffer):

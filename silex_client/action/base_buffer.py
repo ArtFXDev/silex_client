@@ -209,7 +209,6 @@ class BaseBuffer:
         if child is not None:
             child.inputs[key].value = value
 
-
     def eval_input(self, action_query: ActionQuery, key: str) -> Any:
         """
         Always use this method to get the input of the buffer
@@ -374,10 +373,12 @@ class BaseBuffer:
         }
 
         if BaseBuffer not in self.get_child_types():
-            config_data["type_hooks"].update({
-                child_type: partial(self._deserialize_child, child_type)
-                for child_type in self.get_child_types()
-            })
+            config_data["type_hooks"].update(
+                {
+                    child_type: partial(self._deserialize_child, child_type)
+                    for child_type in self.get_child_types()
+                }
+            )
         config = dacite_config.Config(**config_data)
 
         # Create a new buffer with the patched serialized data

@@ -66,7 +66,9 @@ class SocketBuffer(BaseBuffer, AbstractSocketBuffer):
         if self.value is None:
             self.value = self.type.get_default()
 
-    def resolve_connection(self, action_query: ActionQuery, connection: Connection) -> Any:
+    def resolve_connection(
+        self, action_query: ActionQuery, connection: Connection
+    ) -> Any:
         """
         Resolve connection of the given value
         """
@@ -87,8 +89,10 @@ class SocketBuffer(BaseBuffer, AbstractSocketBuffer):
         try:
             return self.type(raw_value)
         except TypeError as exception:
-            raise TypeError(f"Could not cast {raw_value} of the socket {self.name} " +
-                f"to {self.type}") from exception
+            raise TypeError(
+                f"Could not cast {raw_value} of the socket {self.name} "
+                + f"to {self.type}"
+            ) from exception
 
     def is_connected(self) -> bool:
         """

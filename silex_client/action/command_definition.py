@@ -158,7 +158,7 @@ class CommandDefinition:
                     logger.error(
                         "Error during the execution of the command %s: %s is not a dict",
                         command.buffer.name,
-                        output
+                        output,
                     )
                     return output
 

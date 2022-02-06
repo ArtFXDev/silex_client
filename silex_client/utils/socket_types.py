@@ -57,6 +57,7 @@ class AnyType:
     def __new__(cls, value):
         return value
 
+
 def TaskType():
     """
     Builds a socket type that returns a task id as a string
@@ -315,9 +316,7 @@ def TextType(color=None):
     return SocketTypeMeta("ListParameter", (str,), attributes)
 
 
-def StringType(
-    multiline: bool = False, max_lenght: int = 1000, readonly: bool = False
-):
+def StringType(multiline: bool = False, max_lenght: int = 1000, readonly: bool = False):
     """
     Builds a socket type that return a string that will be trimed if too long
     In the UI, this socket display a string field

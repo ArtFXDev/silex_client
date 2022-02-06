@@ -118,7 +118,7 @@ class IterateAction(InsertAction):
             "label": "Actions's output",
             "type": ListType(dict),
             "value": [{}],
-            "tooltip": "The outputs of the actions can be retrieved here"
+            "tooltip": "The outputs of the actions can be retrieved here",
         }
     }
 

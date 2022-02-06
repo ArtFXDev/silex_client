@@ -29,6 +29,7 @@ from silex_client.utils.socket_types import (
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
+
 class StringTester(CommandDefinition):
     """
     Testing the string parameters
@@ -178,9 +179,7 @@ class PathTester(CommandDefinition):
         },
         "path_tester_multiple_extensions": {
             "label": "Path Tester multiple files and extensions (.png, .jpg, .jpeg)",
-            "type": PathType(
-                extensions=[".png", ".jpg", ".jpeg"], multiple=True
-            ),
+            "type": PathType(extensions=[".png", ".jpg", ".jpeg"], multiple=True),
             "value": None,
         },
     }

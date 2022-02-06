@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 GenericType = TypeVar("GenericType")
 
+
 class CommandSockets:
     """
     Helper to get and set the input/output values of a command quickly.
@@ -72,8 +73,7 @@ class CommandSockets:
     def items(self) -> List[Tuple[str, Any]]:
         """Same method a the original dict"""
         return [
-            (key, value.eval(self.action_query))
-            for key, value in self.data.items()
+            (key, value.eval(self.action_query)) for key, value in self.data.items()
         ]
 
     def update(self, values: Union[CommandSockets, Dict[str, Any]]):

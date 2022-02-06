@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 # Alias the metaclass type, to avoid clash with the type attribute
 TypeAlias = type
 
+
 @dataclass()
 class AbstractSocketBuffer(ABC):
     """

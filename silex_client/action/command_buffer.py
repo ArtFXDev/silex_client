@@ -87,8 +87,15 @@ class CommandBuffer(BaseBuffer):
 
             return definition(self)
 
-        except (ImportError, AttributeError, ModuleNotFoundError, ValueError) as exception:
-            raise Exception(f"Invalid command path: {self.definition_path}") from exception
+        except (
+            ImportError,
+            AttributeError,
+            ModuleNotFoundError,
+            ValueError,
+        ) as exception:
+            raise Exception(
+                f"Invalid command path: {self.definition_path}"
+            ) from exception
 
     async def execute(
         self, action_query: ActionQuery, execution_type: Execution = Execution.FORWARD
@@ -155,7 +162,9 @@ class CommandBuffer(BaseBuffer):
         by the input data
         """
         if "definition_path" not in serialized_data:
-            raise Exception("Could not create command buffer: The definition path is required")
+            raise Exception(
+                "Could not create command buffer: The definition path is required"
+            )
 
         # The private and readonly fields must be initialized in the construct
         buffer_options = {
@@ -180,7 +189,8 @@ class CommandBuffer(BaseBuffer):
 
                 # Apply the serialied socket to override the default values in the socket definition
                 socket_definition[socket_name] = jsondiff.patch(
-                    socket_definition[socket_name], socket_serialized.get(socket_name, {})
+                    socket_definition[socket_name],
+                    socket_serialized.get(socket_name, {}),
                 )
 
             serialized_data[socket] = socket_definition

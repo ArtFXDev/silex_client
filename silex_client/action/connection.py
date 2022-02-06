@@ -33,7 +33,9 @@ class Connection:
         self.path = path.strip(self.SPLIT).split(self.SPLIT)
 
     @staticmethod
-    def get_buffer(action_query: ActionQuery, path: List[str]) -> Tuple[BaseBuffer, List[str]]:
+    def get_buffer(
+        action_query: ActionQuery, path: List[str]
+    ) -> Tuple[BaseBuffer, List[str]]:
         """
         Get the buffer this connection is leading to by traversing the outputs
         If the given path leads to a dead end, the remaining path is returned
@@ -66,33 +68,61 @@ class Connection:
         full_path = [*prefix.strip(self.SPLIT).split(self.SPLIT), *self.path]
 
         if len(full_path) < 2:
-            logger.error(("Could not resolve the connection %s: ",
-            "Please specify at least input/output and a key"), full_path)
+            logger.error(
+                (
+                    "Could not resolve the connection %s: ",
+                    "Please specify at least input/output and a key",
+                ),
+                full_path,
+            )
             return None
 
         (*buffer_path, socket, key) = full_path
         buffer, remaining_path = self.get_buffer(action_query, buffer_path)
 
         if remaining_path:
-            logger.error(("Could not resolve the connection %s: ",
-                "the buffer %s has not %s child"), full_path, buffer.name, remaining_path[0])
+            logger.error(
+                (
+                    "Could not resolve the connection %s: ",
+                    "the buffer %s has not %s child",
+                ),
+                full_path,
+                buffer.name,
+                remaining_path[0],
+            )
             return None
 
         if socket == "input":
             if key not in buffer.inputs:
-                logger.error(("Could not resolve the connection %s: ",
-                    "the buffer %s has no input %s"), full_path, buffer.name, key)
+                logger.error(
+                    (
+                        "Could not resolve the connection %s: ",
+                        "the buffer %s has no input %s",
+                    ),
+                    full_path,
+                    buffer.name,
+                    key,
+                )
                 return None
             return buffer.eval_input(action_query, key)
         if socket == "output":
             if key not in buffer.outputs:
-                logger.error(("Could not resolve the connection %s: ",
-                    "the buffer %s has no output %s"), full_path, buffer.name, key)
+                logger.error(
+                    (
+                        "Could not resolve the connection %s: ",
+                        "the buffer %s has no output %s",
+                    ),
+                    full_path,
+                    buffer.name,
+                    key,
+                )
                 return None
             return buffer.eval_output(action_query, key)
 
-        logger.error(("Could not resolve the connection %s: ",
-            "Please specify input or output"), full_path)
+        logger.error(
+            ("Could not resolve the connection %s: ", "Please specify input or output"),
+            full_path,
+        )
         return None
 
     def __str__(self):

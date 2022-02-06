@@ -46,7 +46,7 @@ class ActionQuery:
         definition: Optional[dict] = None,
         category="action",
         simplify=False,
-        register=True
+        register=True,
     ):
         context = Context.get()
 
@@ -60,7 +60,6 @@ class ActionQuery:
             resolved_definition = Config.get().resolve_action(name, category)
             if resolved_definition is not None:
                 definition = resolved_definition[name]
-            
 
         self.event_loop: EventLoop = context.event_loop
         self.ws_connection: WebsocketConnection = context.ws_connection
@@ -76,9 +75,7 @@ class ActionQuery:
         self.closed = futures.Future()
 
         definition = {} if definition is None else definition
-        self._initialize_buffer(
-            definition, {"context_metadata": metadata_snapshot}
-        )
+        self._initialize_buffer(definition, {"context_metadata": metadata_snapshot})
 
         # TODO: This should be done in the construct static method of buffers
         if simplify or os.getenv("SILEX_SIMPLE_MODE"):
@@ -114,7 +111,10 @@ class ActionQuery:
                 break
 
             # If the command requires an input from user, wait for the response
-            if command.require_prompt(self) and self.execution_type is Execution.FORWARD:
+            if (
+                command.require_prompt(self)
+                and self.execution_type is Execution.FORWARD
+            ):
                 await self.prompt_commands()
 
             # Setup the command
@@ -386,7 +386,7 @@ class ActionQuery:
 class CommandIterator(Iterator):
     """
     Iterator for the commands of an action_buffer.
-    It acts as a pointer to a command index and uses the attribute 
+    It acts as a pointer to a command index and uses the attribute
     <execution_type> of the action query to determine the next command
     """
 
