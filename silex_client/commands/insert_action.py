@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+@github: https://github.com/ArtFXDev
+
+Class definition of the InsertAction command
+"""
 from __future__ import annotations
 
 import logging
@@ -7,7 +13,8 @@ from typing import Any, Dict
 from silex_client.action.command_definition import CommandDefinition
 from silex_client.action.command_sockets import CommandSockets
 from silex_client.action.connection import Connection
-from silex_client.utils.socket_types import AnyType, StringType
+from silex_client.action.socket_buffer import SocketBuffer
+from silex_client.utils.socket_types import StringType
 from silex_client.action.action_query import ActionQuery
 
 
@@ -77,18 +84,18 @@ class InsertAction(CommandDefinition):
         },
         "input": {
             "label": "Action input value",
-            "type": AnyType,
+            "type": dict,
             "value": {},
             "tooltip": "This value will be set to the newly inserted action's input",
             "hide": True,
         },
-        "parameters_override": {
-            "label": "Parameters to set on the action",
+        "inputs_override": {
+            "label": "Inputs to set on the action",
             "type": dict,
             "value": {},
             "tooltip": """
-            Dict of values to set on the parameters of the inserted action
-            The keys of the dict should look like <step>.<command>.<parameter>
+            Dict of values to set on the inputs of the inserted action
+            The keys of the dict should look like <step>.<command>.<input>
             """,
             "hide": True,
         },
@@ -113,7 +120,16 @@ class InsertAction(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    outputs = {
+        "action_output": {
+            "label": "Action's output",
+            "type": dict,
+            "value": {},
+            "tooltip": "The outputs of the action can be retrieved here"
+        }
+    }
+
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -125,8 +141,8 @@ class InsertAction(CommandDefinition):
         definition: dict = parameters["definition"]
         prepend_step: dict = parameters["prepend_step"]
         append_step: dict = parameters["append_step"]
-        action_input: Any = parameters["input"]
-        parameters_override: Dict[str, Any] = parameters["parameters_override"]
+        action_input: Dict[str, Any] = parameters["input"]
+        inputs_override: Dict[str, Any] = parameters["inputs_override"]
         label: str = parameters["label"]
         index_shift: int = parameters["index_shift"]
 
@@ -153,19 +169,18 @@ class InsertAction(CommandDefinition):
             main_action.buffer.deserialize({"steps": {str(uuid.uuid4()): insert_step}})
 
         # The parameter values of the inserted action can be overriden
-        for parameter_path, parameter_value in parameters_override.items():
-            parameter_value = self.buffer.resolve_connect(
-                action_query, parameter_value
-            )
-            main_action.set_parameter(parameter_path, parameter_value)
+        for input_path, input_value in inputs_override.items():
+            input_buffer = SocketBuffer(value=input_value, parent=self.buffer)
+            main_action.buffer.set_input_value(input_path, input_buffer.eval(action_query))
 
         if label:
             action_label = main_action.buffer.label
             main_action.buffer.label = (
                 f"{action_label} {label}" if action_label else label
             )
-        if action_input:
-            main_action.buffer.input = action_input
+        for input_key, input_value in action_input.items():
+            if isinstance(main_action.buffer.inputs.get(input_key), SocketBuffer):
+                main_action.buffer.inputs[input_key].value = input_value
 
         action_definition = main_action.buffer.serialize()
 
@@ -193,4 +208,7 @@ class InsertAction(CommandDefinition):
         parent_action.deserialize({"actions": {action_name: action_definition}})
 
         # This command foward the output of the inserted action.
-        return Connection(action_name + Connection.SPLIT + "output")
+        outputs = {}
+        for output_name in main_action.buffer.outputs:
+            outputs[output_name] = Connection(Connection.SPLIT.join([action_name, output_name, "output"]))
+        return {"action_output": outputs}

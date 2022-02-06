@@ -42,7 +42,7 @@ class CommandBuffer(BaseBuffer):
         "serialize_cache",
     ]
 
-    READONLY_FIELDS = ["status", "buffer_type", "logs"]
+    READONLY_FIELDS = ["status", "buffer_type", "logs", "name"]
 
     #: Type name to help differentiate the different buffer types
     buffer_type: str = field(default="commands")
@@ -51,7 +51,7 @@ class CommandBuffer(BaseBuffer):
     #: Specify if the command should be asking to the UI a user input
     prompt: bool = field(compare=False, repr=False, default=False)
     #: The status of the command, to keep track of the progression, specify the errors
-    status: Status = field(default=Status.INITIALIZED, init=False)
+    status: Status = field(default=Status.INITIALIZED)
     #: The definition of the code to execute when the command is executed
     definition: CommandDefinition = field(init=False)
     #: List of all the logs during the execution of that command
@@ -157,7 +157,15 @@ class CommandBuffer(BaseBuffer):
         if "definition_path" not in serialized_data:
             raise Exception("Could not create command buffer: The definition path is required")
 
-        buffer = cls(definition_path=serialized_data["definition_path"], parent=parent)
+        # The private and readonly fields must be initialized in the construct
+        buffer_options = {
+            field_name: serialized_data[field_name]
+            for field_name in [*cls.PRIVATE_FIELDS, *cls.READONLY_FIELDS]
+            if field_name in serialized_data
+        }
+        buffer_options["parent"] = parent
+        buffer_options["definition_path"] = serialized_data["definition_path"]
+        buffer = cls(**buffer_options)
 
         for socket in ["inputs", "outputs"]:
             socket_definition = getattr(buffer.definition, socket)
@@ -169,10 +177,6 @@ class CommandBuffer(BaseBuffer):
 
             for socket_name, socket_data in socket_definition.items():
                 socket_data["name"] = socket_name
-
-                # The socket can be defined with <key>=<value> directly as a shortcut
-                if not isinstance(socket_serialized.get(socket_name, {}), dict):
-                    socket_serialized[socket_name] = {"value": socket_serialized[socket_name]}
 
                 # Apply the serialied socket to override the default values in the socket definition
                 socket_definition[socket_name] = jsondiff.patch(

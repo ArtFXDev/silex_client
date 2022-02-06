@@ -1,56 +1,75 @@
 tester:
   steps:
-    # features_1:
-    #   index: 10
-    #   label: "Testing features"
-    #   commands:
-    #     traceback:
-    #       definition_path: "silex_client.commands.tester.TracebackTester"
-    #       inputs:
-    #         raise_exception: false
-    #       ask_user: true
-    #     insert:
-    #       definition_path: "silex_client.commands.iterate_action.IterateAction"
-    #       inputs:
-    #         iterations: 2
-    #         names:
-    #           - "testing_insert"
-    #         inputs:
-    #           - "This is the input of the first inserted action"
-    #           - "This is the input of the second inserted action"
-    #         prepend_steps:
-    #           value:
-    #             - label: "Prepended step of inserted action"
-    #               commands:
-    #                 prepend_string:
-    #                   definition_path: "silex_client.commands.tester.StringTester"
-    #                   inputs:
-    #                     string_tester: !connect ".input"
-    #                     string_tester_2: !connect ".input"
-    #         definitions:
-    #           value:
-    #             - label: "Testing insert"
-    #               output: "This is the output of the inserted actions"
-    #               steps:
-    #                 inputs:
-    #                   index: 10
-    #                   label: "Testing insert parameters"
-    #                   commands:
-    #                     insert_string:
-    #                       definition_path: "silex_client.commands.tester.StringTester"
-    #                       inputs:
-    #                         string_tester: "This command has been inserted"
-    #                         string_tester_2: "This command has been inserted too"
-    # features_2:
-    #   index: 20
-    #   label: "Testing features"
-    #   commands:
-    #     get_insert_output:
-    #       definition_path: "silex_client.commands.tester.StringTester"
-    #       inputs:
-    #         string_tester: !connect "features_1.insert.output"
-    #         string_tester_2: !connect "features_1.insert.output"
-    #       ask_user: true
+    features_1:
+      index: 10
+      label: "Testing features"
+      commands:
+        traceback:
+          definition_path: "silex_client.commands.tester.TracebackTester"
+          inputs:
+            raise_exception:
+              value: false
+          ask_user: true
+        insert:
+          definition_path: "silex_client.commands.iterate_action.IterateAction"
+          inputs:
+            iterations:
+              value: 3
+            names:
+              value:
+                - "testing_insert"
+            inputs:
+              value:
+                - action_input_test:
+                    value: "This is the input of the first inserted action"
+                - action_input_test:
+                    value: "This is the input of the second inserted action"
+                - action_input_test:
+                    value: "This is the input of the third inserted action"
+            prepend_steps:
+              value:
+                - label: "Prepended step of inserted action"
+                  commands:
+                    prepend_string:
+                      definition_path: "silex_client.commands.tester.StringTester"
+                      inputs:
+                        string_tester:
+                          value: !connect "action_input_test.input"
+                        string_tester_2:
+                          value: !connect "action_input_test.input"
+            definitions:
+              value:
+                - label: "Testing insert"
+                  inputs:
+                    action_input_test:
+                      value: "This is the default input of the inserted actions"
+                  outputs:
+                    action_output_test:
+                      value: "This is the output of the inserted actions"
+                  steps:
+                    insert_step:
+                      index: 10
+                      label: "Testing insert parameters"
+                      commands:
+                        insert_string:
+                          definition_path: "silex_client.commands.tester.StringTester"
+                          inputs:
+                            string_tester:
+                              value: "This command has been inserted"
+                            string_tester_2:
+                              value: "This command has been inserted too"
+    features_2:
+      index: 20
+      label: "Testing features"
+      commands:
+        get_insert_output:
+          definition_path: "silex_client.commands.tester.StringTester"
+          inputs:
+            string_tester:
+              value: !connect "features_1.insert.actions_output.output"
+            string_tester_2:
+              value: !connect "features_1.insert.actions_output.output"
+          ask_user: true
 
     parameters:
       index: 30
@@ -59,43 +78,53 @@ tester:
         string:
           definition_path: "silex_client.commands.tester.StringTester"
           inputs:
-            string_tester: "hello world!"
+            string_tester:
+              value: "hello world!"
           ask_user: true
         integer:
           definition_path: "silex_client.commands.tester.IntegerTester"
           inputs:
-            int_tester: 42
+            int_tester:
+              value: 42
           ask_user: true
         boolean:
           definition_path: "silex_client.commands.tester.BooleanTester"
           inputs:
-            bool_tester: true
+            bool_tester:
+              value: true
           ask_user: true
         path:
           definition_path: "silex_client.commands.tester.PathTester"
           inputs:
-            path_tester: "/foo/bar.py"
+            path_tester:
+              value: "/foo/bar.py"
             path_tester_multiple:
-              - "/foo/bar.01.py"
-              - "/foo/bar.02.py"
-              - "/foo/bar.03.py"
-            path_tester_extensions: "/foo/bar.py"
-            path_tester_multiple_extensions: "/foo/bar.py"
+              value:
+                - "/foo/bar.01.py"
+                - "/foo/bar.02.py"
+                - "/foo/bar.03.py"
+            path_tester_extensions:
+              value: "/foo/bar.py"
+            path_tester_multiple_extensions:
+              value: "/foo/bar.py"
           ask_user: true
         select:
           definition_path: "silex_client.commands.tester.SelectTester"
           inputs:
-            select_tester: "foo"
+            select_tester:
+              value: "foo"
           ask_user: true
         range_low:
           definition_path: "silex_client.commands.tester.RangeTesterLow"
           inputs:
-            range_tester: 22
+            range_tester:
+              value: 22
           ask_user: true
         range_mid:
           definition_path: "silex_client.commands.tester.RangeTesterMid"
           inputs:
-            range_tester: 6
+            range_tester:
+              value: 6
             range_tester_2:
               value: !connect "parameters.range_low.test_return_range.output"
               hide: true
@@ -103,19 +132,22 @@ tester:
         range_high:
           definition_path: "silex_client.commands.tester.RangeTesterHigh"
           inputs:
-            range_tester: 1200
+            range_tester:
+              value: 1200
           ask_user: true
         task:
           definition_path: "silex_client.commands.tester.TaskTester"
           inputs:
-            task_tester: "foobar"
+            task_tester:
+              value: "foobar"
           ask_user: true
         multiple_select:
           definition_path: "silex_client.commands.tester.MultipleSelectTester"
           inputs:
             multiple_select_tester:
-              - "hello"
-              - "bar"
+              value:
+                - "hello"
+                - "bar"
             multiple_select_tester_2:
               value: !connect "parameters.select.test_return_select.output"
               hide: true
@@ -123,22 +155,29 @@ tester:
         radio_select:
           definition_path: "silex_client.commands.tester.RadioSelectTester"
           inputs:
-            radio_select_tester: "hello"
+            radio_select_tester:
+              value: "hello"
           ask_user: true
         int_array:
           definition_path: "silex_client.commands.tester.IntArrayTester"
           inputs:
             int_array_tester:
-              - 5394
-              - 7
+              value:
+                - 5394
+                - 7
           ask_user: true
         text_tester:
           definition_path: "silex_client.commands.tester.TextTester"
           inputs:
-            text_tester: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed magna ex, condimentum at placerat ac, pellentesque quis lorem. Praesent vitae tellus sit amet nibh aliquam aliquet. Sed feugiat metus tempus, facilisis neque rutrum, lobortis nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Nulla cursus, erat nec mollis pellentesque, eros velit tincidunt augue, vitae accumsan est quam id est. Suspendisse potenti. Sed odio nulla, rutrum ut lacus quis, mattis hendrerit augue. Donec aliquam id turpis in consectetur. Curabitur at metus at velit mollis tristique nec vitae magna. Proin quis pharetra velit. Vestibulum auctor suscipit accumsan. Nulla efficitur et dolor id sollicitudin. Integer ultricies posuere elit eu ultrices. Integer id ante mauris. Aenean at risus sit amet diam molestie facilisis at et purus. Quisque facilisis turpis mattis ante sollicitudin, at egestas leo vestibulum"
+            text_tester:
+              value: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed magna ex, condimentum at placerat ac, pellentesque quis lorem. Praesent vitae tellus sit amet nibh aliquam aliquet. Sed feugiat metus tempus, facilisis neque rutrum, lobortis nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Nulla cursus, erat nec mollis pellentesque, eros velit tincidunt augue, vitae accumsan est quam id est. Suspendisse potenti. Sed odio nulla, rutrum ut lacus quis, mattis hendrerit augue. Donec aliquam id turpis in consectetur. Curabitur at metus at velit mollis tristique nec vitae magna. Proin quis pharetra velit. Vestibulum auctor suscipit accumsan. Nulla efficitur et dolor id sollicitudin. Integer ultricies posuere elit eu ultrices. Integer id ante mauris. Aenean at risus sit amet diam molestie facilisis at et purus. Quisque facilisis turpis mattis ante sollicitudin, at egestas leo vestibulum"
           ask_user: true
         frameset_tester:
           definition_path: "silex_client.commands.tester.FrameSetTester"
           inputs:
-            frameset_tester: "42,78-102,144,1254-1277"
+            frameset_tester:
+              value: "42,78-102,144,1254-1277"
           ask_user: true
+  outputs:
+    tester_output:
+      value: "This is the output of the tester action"

@@ -1,3 +1,9 @@
+"""
+@author: TD gang
+@github: https://github.com/ArtFXDev
+
+Class definition of the IterateAction command
+"""
 from __future__ import annotations
 
 import logging
@@ -8,7 +14,6 @@ from silex_client.action.command_definition import CommandDefinition
 from silex_client.action.command_sockets import CommandSockets
 from silex_client.commands.insert_action import InsertAction
 from silex_client.utils.socket_types import (
-    AnyType,
     ListType,
     StringType,
 )
@@ -18,7 +23,7 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class IterateAction(CommandDefinition):
+class IterateAction(InsertAction):
     """
     Same as the InsertAction command.
     All the parameters are now list of parameters, you can set a parameter with a
@@ -84,18 +89,18 @@ class IterateAction(CommandDefinition):
         },
         "inputs": {
             "label": "Action inputs value",
-            "type": ListType(AnyType),
+            "type": ListType(dict),
             "value": [{}],
             "tooltip": "These values will be set to the newly inserted action's input",
             "hide": True,
         },
-        "parameters_overrides": {
-            "label": "Parameters to set on the actions",
+        "inputs_overrides": {
+            "label": "Inputs to set on the actions",
             "type": ListType(dict),
             "value": [{}],
             "tooltip": """
-            Dict of values to set on the parameters of the inserted action
-            The keys of the dict should look like <step>.<command>.<parameter>
+            Dict of values to set on the inputs of the inserted action
+            The keys of the dict should look like <step>.<command>.<input>
             """,
             "hide": True,
         },
@@ -108,7 +113,16 @@ class IterateAction(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    outputs = {
+        "actions_output": {
+            "label": "Actions's output",
+            "type": ListType(dict),
+            "value": [{}],
+            "tooltip": "The outputs of the actions can be retrieved here"
+        }
+    }
+
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -121,14 +135,14 @@ class IterateAction(CommandDefinition):
         definitions: List[dict] = parameters["definitions"]
         prepend_steps: List[dict] = parameters["prepend_steps"]
         append_steps: List[dict] = parameters["append_steps"]
-        action_inputs: List[Any] = parameters["inputs"]
-        parameters_overrides: List[Dict[str, Any]] = parameters["parameters_overrides"]
+        action_inputs: List[dict] = parameters["inputs"]
+        inputs_overrides: List[Dict[str, Any]] = parameters["inputs_overrides"]
         labels: List[str] = parameters["labels"]
 
         outputs = []
 
         logger.info("Inserting %s actions: %s", iterations, names)
-        for iteration in range(iterations):
+        for iteration in range(iterations - 1, -1, -1):
             # Every parameters are the same as the insert action but as list
             # To allow users to not have to set multiple times the same values
             # we use the modulo of the iteration to get the index of the value
@@ -138,8 +152,8 @@ class IterateAction(CommandDefinition):
             prepend_step: dict = prepend_steps[iteration % len(prepend_steps)]
             append_step: dict = append_steps[iteration % len(append_steps)]
             action_input: Any = action_inputs[iteration % len(action_inputs)]
-            parameters_override: Dict[str, Any] = parameters_overrides[
-                iteration % len(parameters_overrides)
+            inputs_override: Dict[str, Any] = inputs_overrides[
+                iteration % len(inputs_overrides)
             ]
             label: str = labels[iteration % len(labels)]
 
@@ -154,14 +168,14 @@ class IterateAction(CommandDefinition):
                     "prepend_step": prepend_step,
                     "append_step": append_step,
                     "input": action_input,
-                    "parameters_override": parameters_override,
+                    "inputs_override": inputs_override,
                     "label": label,
                 }
             )
             output = await super().__call__(parameters, action_query, logger)
             outputs.append(output)
 
-        return outputs
+        return {"actions_output": outputs}
 
     async def setup(
         self,

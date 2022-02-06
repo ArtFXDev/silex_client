@@ -7,7 +7,7 @@ Class definition of SocketBuffer
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING
+from typing import Any, Dict, TYPE_CHECKING
 from silex_client.action.base_buffer import BaseBuffer
 
 from silex_client.action.connection import Connection
@@ -34,7 +34,7 @@ class SocketBuffer(BaseBuffer, AbstractSocketBuffer):
         "children",
         "buffer_type",
     ]
-    READONLY_FIELDS = ["type", "buffer_type"]
+    READONLY_FIELDS = ["type", "buffer_type", "name"]
 
     #: Type name to help differentiate the different buffer types
     buffer_type: None = field(default=None)
@@ -84,10 +84,25 @@ class SocketBuffer(BaseBuffer, AbstractSocketBuffer):
         if isinstance(raw_value, Connection):
             raw_value = self.resolve_connection(action_query, raw_value)
 
-        return self.type(raw_value)
+        try:
+            return self.type(raw_value)
+        except TypeError as exception:
+            raise TypeError(f"Could not cast {raw_value} of the socket {self.name} " +
+                f"to {self.type}") from exception
 
     def is_connected(self) -> bool:
         """
         Helper to know if the input is linked to an other SocketBuffer
         """
         return isinstance(self.value, Connection)
+
+    def deserialize(self, serialized_data: Dict[str, Any], force=False) -> None:
+        self.__dict__.update(serialized_data)
+
+    @classmethod
+    def construct(
+        cls, serialized_data: Dict[str, Any], parent: BaseBuffer = None
+    ) -> SocketBuffer:
+        if "type" not in serialized_data:
+            serialized_data["type"] = type(serialized_data.get("value"))
+        return super().construct(serialized_data, parent)

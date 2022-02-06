@@ -35,7 +35,7 @@ class CommandSockets:
         return self.data[key].eval(self.action_query)
 
     def __setitem__(self, key: str, value: Any):
-        self.data[key].input = value
+        self.data[key].value = value
 
     def get(self, key: str, default: GenericType = None) -> Union[Any, GenericType]:
         """
@@ -53,7 +53,7 @@ class CommandSockets:
         """
         if key not in self.data:
             return default
-        return self.data[key].input
+        return self.data[key].value
 
     def get_buffer(self, key) -> AbstractSocketBuffer:
         """

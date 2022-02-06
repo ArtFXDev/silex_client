@@ -57,7 +57,7 @@ class BaseBuffer:
         "serialize_cache",
     ]
     #: The list of fields that should be ignored when deserializing this buffer to json
-    READONLY_FIELDS = ["status", "buffer_type"]
+    READONLY_FIELDS = ["status", "buffer_type", "name"]
 
     #: Name of the buffer, must have no space or special characters
     name: str = field(default="unnamed")
@@ -191,6 +191,25 @@ class BaseBuffer:
             sorted(self.children.items(), key=lambda item: item[1].index)
         )
 
+    def set_output_value(self, path: str, value: Any):
+        """
+        Helper to set the output value of a child from a path
+        """
+        (*child_path, key) = path.split(Connection.SPLIT)
+        child = self.get_child(child_path, BaseBuffer)
+        if child is not None:
+            child.outputs[key].value = value
+
+    def set_input_value(self, path: str, value: Any):
+        """
+        Helper to set the input value of a child from a path
+        """
+        (*child_path, key) = path.split(Connection.SPLIT)
+        child = self.get_child(child_path, BaseBuffer)
+        if child is not None:
+            child.inputs[key].value = value
+
+
     def eval_input(self, action_query: ActionQuery, key: str) -> Any:
         """
         Always use this method to get the input of the buffer
@@ -306,7 +325,7 @@ class BaseBuffer:
                     bar:
                         name: "<name>"
         """
-        # Don't take the modifications of the hidden commands
+        # Don't take the modifications of the hidden buffers
         if self.hide and not force:
             return
 
@@ -328,11 +347,15 @@ class BaseBuffer:
 
         # If a children update some existing child, it inherit from its buffer type
         for child_name, child_data in serialized_data["children"].items():
-            child_data["name"] = child_name
             current_children_data = current_buffer_data.get("children", {})
             existing_child_data = current_children_data.get(child_name)
             if existing_child_data is not None:
                 child_data["buffer_type"] = existing_child_data["buffer_type"]
+
+        # The children, inputs and outputs have the same name as their key
+        for field_type in ["inputs", "outputs", "children"]:
+            for field_name, field_value in serialized_data.get(field_type, {}).items():
+                field_value["name"] = field_name
 
         # We don't want to re deserialize the existing children data
         current_buffer_data.pop("children", None)
@@ -351,10 +374,10 @@ class BaseBuffer:
         }
 
         if BaseBuffer not in self.get_child_types():
-            config_data["type_hooks"] = {
+            config_data["type_hooks"].update({
                 child_type: partial(self._deserialize_child, child_type)
                 for child_type in self.get_child_types()
-            }
+            })
         config = dacite_config.Config(**config_data)
 
         # Create a new buffer with the patched serialized data

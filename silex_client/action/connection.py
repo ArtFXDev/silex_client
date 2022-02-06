@@ -75,19 +75,19 @@ class Connection:
 
         if remaining_path:
             logger.error(("Could not resolve the connection %s: ",
-                "the buffer %s has not %s child"), full_path, buffer, remaining_path[0])
+                "the buffer %s has not %s child"), full_path, buffer.name, remaining_path[0])
             return None
 
         if socket == "input":
             if key not in buffer.inputs:
                 logger.error(("Could not resolve the connection %s: ",
-                    "the buffer %s has input %s"), full_path, buffer, key)
+                    "the buffer %s has no input %s"), full_path, buffer.name, key)
                 return None
             return buffer.eval_input(action_query, key)
         if socket == "output":
             if key not in buffer.outputs:
                 logger.error(("Could not resolve the connection %s: ",
-                    "the buffer %s has output %s"), full_path, buffer, key)
+                    "the buffer %s has no output %s"), full_path, buffer.name, key)
                 return None
             return buffer.eval_output(action_query, key)
 
@@ -96,7 +96,7 @@ class Connection:
         return None
 
     def __str__(self):
-        return self.path
+        return self.SPLIT.join(self.path)
 
     def __repr__(self):
         return f'Connection(path="{self.path}")'

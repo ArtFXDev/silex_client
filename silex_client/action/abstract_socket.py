@@ -29,7 +29,7 @@ class AbstractSocketBuffer(ABC):
     #: The expected type in the output, the input will be casted in to this type
     type: Union[TypeAlias, SocketTypeMeta] = field(default=TypeAlias(None))
     #: Store the raw value passed in
-    value: Any = field(default=None, init=False)
+    value: Any = field(default=None)
     #: Specify if the buffer must be displayed by the UI or not
     hide: bool = field(compare=False, repr=False, default=False)
 

@@ -246,7 +246,7 @@ def MultipleSelectType(*list_options, **options):
         return [list(options.values())[0]] if options else None
 
     attributes = {
-        "__ini__": __init__,
+        "__init__": __init__,
         "serialize": serialize,
         "get_default": get_default,
         "rebuild": MultipleSelectType,

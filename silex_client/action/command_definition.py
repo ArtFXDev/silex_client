@@ -156,11 +156,11 @@ class CommandDefinition:
                 if not isinstance(output, dict):
                     command.buffer.status = Status.INVALID
                     logger.error(
-                        "Error during the execution of the command %s: Invalid retured values %s",
+                        "Error during the execution of the command %s: %s is not a dict",
                         command.buffer.name,
-                        output,
+                        output
                     )
-                    return
+                    return output
 
                 for output_key, output_value in output.items():
                     if isinstance(command.buffer.outputs.get(output_key), SocketBuffer):
@@ -178,7 +178,7 @@ class CommandDefinition:
                         command.buffer.name,
                         output,
                     )
-                    return
+                    return output
 
                 await action_query.async_update_websocket()
                 return output

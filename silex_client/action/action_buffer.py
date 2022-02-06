@@ -73,7 +73,7 @@ class ActionBuffer(BaseBuffer):
         """
         The status property is readonly, however
         we need to implement this since it is also a property
-        and the datablass module tries to set it
+        and the dataclass module tries to set it
         """
 
     @property
