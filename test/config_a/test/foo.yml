@@ -7,15 +7,19 @@ foo: !inherit
       commands:
         first_a:
           label: "Publish"
-          path: "silex_client.commands.log.Log"
-          parameters:
-            message: "FOO action config from path config_a"
-            level: "info"
+          definition_path: "silex_client.commands.log.Log"
+          inputs:
+            message:
+              value: "FOO action config from path config_a"
+            level:
+              value: "info"
           hide: true
         second_a:
           label: "Publish"
-          path: "silex_client.commands.log.Log"
-          parameters:
-            message: "FOO action config from path config_a"
-            level: "info"
+          definition_path: "silex_client.commands.log.Log"
+          inputs:
+            message:
+              value: "FOO action config from path config_a"
+            level:
+              value: "info"
           hide: true

@@ -40,7 +40,7 @@ def test_execute_foo_action(dummy_config: Config, dummy_context: Context):
     # Let the execution of the action happen in the event loop thread
     future.result()
 
-    assert action.status is Status.COMPLETED
+    assert action.buffer.status is Status.COMPLETED
 
 
 def test_execute_tester_action(dummy_context: Context):
@@ -55,4 +55,4 @@ def test_execute_tester_action(dummy_context: Context):
     # Let the execution of the action happen in the event loop thread
     future.result()
 
-    assert action.status is Status.COMPLETED
+    assert action.buffer.status is Status.COMPLETED
