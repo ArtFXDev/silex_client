@@ -59,7 +59,12 @@ class CommandBuffer(BaseBuffer):
 
     def __post_init__(self):
         super().__post_init__()
+
+        # The definition is resolved dynamically
         self.definition = self._get_definition()
+
+        # Sockets buffers cannot have children
+        self.children = {}
 
     def _get_definition(self) -> CommandDefinition:
         """
@@ -167,7 +172,7 @@ class CommandBuffer(BaseBuffer):
 
                 # The socket can be defined with <key>=<value> directly as a shortcut
                 if not isinstance(socket_serialized.get(socket_name, {}), dict):
-                    socket_serialized[socket_name] = {"input": socket_serialized[socket_name]}
+                    socket_serialized[socket_name] = {"value": socket_serialized[socket_name]}
 
                 # Apply the serialied socket to override the default values in the socket definition
                 socket_definition[socket_name] = jsondiff.patch(

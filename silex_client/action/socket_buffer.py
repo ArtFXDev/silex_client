@@ -22,8 +22,7 @@ if TYPE_CHECKING:
 class SocketBuffer(BaseBuffer, AbstractSocketBuffer):
     """
     Store the data of an input or output of an other buffer.
-    This buffer is responsible to cast the input values into the desired type, and
-    then cache the result in the output.
+    This buffer is responsible to hold and cast the input values into the desired type
     """
 
     PRIVATE_FIELDS = [
@@ -32,7 +31,6 @@ class SocketBuffer(BaseBuffer, AbstractSocketBuffer):
         "serialize_cache",
         "inputs",
         "outputs",
-        "output",
         "children",
         "buffer_type",
     ]
@@ -49,8 +47,8 @@ class SocketBuffer(BaseBuffer, AbstractSocketBuffer):
             self.hide = True
 
         # Get the default value from to the type
-        if self.input is None and isinstance(self.type, SocketTypeMeta):
-            self.input = self.type.get_default()
+        if self.value is None and isinstance(self.type, SocketTypeMeta):
+            self.value = self.type.get_default()
 
         # Sockets buffers cannot have children
         self.children = {}
@@ -65,8 +63,8 @@ class SocketBuffer(BaseBuffer, AbstractSocketBuffer):
         # Rebuild the socket type
         self.type = self.type.rebuild(*args, **kwargs)
 
-        if self.input is None:
-            self.input = self.type.get_default()
+        if self.value is None:
+            self.value = self.type.get_default()
 
     def resolve_connection(self, action_query: ActionQuery, connection: Connection) -> Any:
         """
@@ -82,14 +80,14 @@ class SocketBuffer(BaseBuffer, AbstractSocketBuffer):
         """
         The output of a socket buffer is the result of the input casted to the desired type
         """
-        raw_input = self.input
-        if isinstance(raw_input, Connection):
-            raw_input = self.resolve_connection(action_query, raw_input)
+        raw_value = self.value
+        if isinstance(raw_value, Connection):
+            raw_value = self.resolve_connection(action_query, raw_value)
 
-        return self.type(raw_input)
+        return self.type(raw_value)
 
     def is_connected(self) -> bool:
         """
         Helper to know if the input is linked to an other SocketBuffer
         """
-        return isinstance(self.input, Connection)
+        return isinstance(self.value, Connection)

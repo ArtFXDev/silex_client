@@ -1,9 +1,9 @@
 """
 @author: TD gang
+@github: https://github.com/ArtFXDev
 
-Class definition that represent a connection between a buffer output to a buffer input
+Class definition of Connection
 """
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, List, Tuple
@@ -23,7 +23,7 @@ class Connection:
     will be queried, the output of the socket it leads to will be returned.
 
     In the yaml definition of an action, a connection can be created with the
-    tag !connection plus the path to the socket you want. That path must be 
+    tag !connection plus the path to the socket you want. That path must be
     relative to the closest ActionBuffer parent.
     """
 
@@ -66,22 +66,33 @@ class Connection:
         full_path = [*prefix.strip(self.SPLIT).split(self.SPLIT), *self.path]
 
         if len(full_path) < 2:
-            logger.error("Could not resolve the connection %s: Please specify at least input/output and a key", full_path)
+            logger.error(("Could not resolve the connection %s: ",
+            "Please specify at least input/output and a key"), full_path)
             return None
 
         (*buffer_path, key, socket) = full_path
         buffer, remaining_path = self.get_buffer(action_query, buffer_path)
 
         if remaining_path:
-            logger.error("Could not resolve the connection %s: the buffer %s has not %s child", full_path, buffer, remaining_path[0])
+            logger.error(("Could not resolve the connection %s: ",
+                "the buffer %s has not %s child"), full_path, buffer, remaining_path[0])
             return None
 
         if socket == "input":
+            if key not in buffer.inputs:
+                logger.error(("Could not resolve the connection %s: ",
+                    "the buffer %s has input %s"), full_path, buffer, key)
+                return None
             return buffer.eval_input(action_query, key)
         if socket == "output":
+            if key not in buffer.outputs:
+                logger.error(("Could not resolve the connection %s: ",
+                    "the buffer %s has output %s"), full_path, buffer, key)
+                return None
             return buffer.eval_output(action_query, key)
 
-        logger.error("Could not resolve the connection %s: Please specify input or output", full_path)
+        logger.error(("Could not resolve the connection %s: ",
+            "Please specify input or output"), full_path)
         return None
 
     def __str__(self):

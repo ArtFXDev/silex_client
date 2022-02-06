@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, TypeVar, Union
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.command_buffer import CommandBuffer
 from silex_client.action.step_buffer import StepBuffer
-from silex_client.utils.enums import Execution, Status
+from silex_client.utils.enums import Status
 
 TBaseBuffer = TypeVar("TBaseBuffer", bound="BaseBuffer")
 

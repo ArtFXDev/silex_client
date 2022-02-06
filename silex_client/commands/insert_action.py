@@ -4,14 +4,14 @@ import logging
 import uuid
 from typing import Any, Dict
 
-from silex_client.action.command_base import CommandBase
-from silex_client.action.command_buffer import CommandParameters
+from silex_client.action.command_definition import CommandDefinition
+from silex_client.action.command_sockets import CommandSockets
 from silex_client.action.connection import Connection
-from silex_client.utils.io_types import AnyType, StringType
+from silex_client.utils.socket_types import AnyType, StringType
 from silex_client.action.action_query import ActionQuery
 
 
-class InsertAction(CommandBase):
+class InsertAction(CommandDefinition):
     """
     Insert an action right into the current action as a child.
 
@@ -23,7 +23,7 @@ class InsertAction(CommandBase):
     parameters.
     """
 
-    parameters = {
+    inputs = {
         "name": {
             "label": "Name of the action to insert",
             "type": StringType(),
@@ -113,10 +113,10 @@ class InsertAction(CommandBase):
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -154,7 +154,7 @@ class InsertAction(CommandBase):
 
         # The parameter values of the inserted action can be overriden
         for parameter_path, parameter_value in parameters_override.items():
-            parameter_value = self.command_buffer.resolve_io(
+            parameter_value = self.buffer.resolve_connect(
                 action_query, parameter_value
             )
             main_action.set_parameter(parameter_path, parameter_value)
@@ -171,8 +171,8 @@ class InsertAction(CommandBase):
 
         # To insert the action between the existing children
         # we must shift the index of all the children that follow the current step
-        parent_action = self.command_buffer.get_parent("actions")
-        parent_step = self.command_buffer.get_parent("steps")
+        parent_action = self.buffer.get_parent("actions")
+        parent_step = self.buffer.get_parent("steps")
         if parent_action is None or parent_step is None:
             raise Exception(
                 "Could not append new action: The current command is invalid"

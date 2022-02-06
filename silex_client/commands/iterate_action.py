@@ -4,10 +4,10 @@ import logging
 import typing
 from typing import Any, Dict, List
 
-from silex_client.action.command_base import CommandBase
-from silex_client.action.command_buffer import CommandParameters
+from silex_client.action.command_definition import CommandDefinition
+from silex_client.action.command_sockets import CommandSockets
 from silex_client.commands.insert_action import InsertAction
-from silex_client.utils.io_types import (
+from silex_client.utils.socket_types import (
     AnyType,
     ListType,
     StringType,
@@ -18,14 +18,14 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class IterateAction(InsertAction):
+class IterateAction(CommandDefinition):
     """
     Same as the InsertAction command.
     All the parameters are now list of parameters, you can set a parameter with a
     list of one item to use this value for all the iterations
     """
 
-    parameters = {
+    inputs = {
         "iterations": {
             "label": "Iteration count",
             "type": int,
@@ -108,10 +108,10 @@ class IterateAction(InsertAction):
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.conform_command()
     async def __call__(
         self,
-        parameters: CommandParameters,
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -165,7 +165,7 @@ class IterateAction(InsertAction):
 
     async def setup(
         self,
-        parameters: CommandParameters,
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -173,7 +173,7 @@ class IterateAction(InsertAction):
 
         # By inheriting from an other class we also get all its parameters.
         # We must hide them all since they will be overriden by the values in the lists parameters
-        for key, _ in super().parameters.items():
-            parameter = self.command_buffer.parameters.get(key)
+        for key, _ in super().inputs.items():
+            parameter = self.buffer.inputs.get(key)
             if parameter is not None:
                 parameter.hide = True

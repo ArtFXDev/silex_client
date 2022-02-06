@@ -49,7 +49,7 @@ class StringTester(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -66,7 +66,6 @@ class StringTester(CommandDefinition):
             parameters["string_tester_2"],
             type(parameters["string_tester_2"]),
         )
-        return {"testing_values": parameters["string_tester"]}
 
 
 class IntegerTester(CommandDefinition):
@@ -89,7 +88,7 @@ class IntegerTester(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -106,7 +105,6 @@ class IntegerTester(CommandDefinition):
             parameters["int_tester_2"],
             type(parameters["int_tester_2"]),
         )
-        return parameters["int_tester"]
 
 
 class BooleanTester(CommandDefinition):
@@ -129,7 +127,7 @@ class BooleanTester(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -146,7 +144,6 @@ class BooleanTester(CommandDefinition):
             parameters["bool_tester_2"],
             type(parameters["bool_tester_2"]),
         )
-        return parameters["bool_tester"]
 
     async def setup(
         self,
@@ -188,7 +185,7 @@ class PathTester(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -215,7 +212,6 @@ class PathTester(CommandDefinition):
             parameters["path_tester_multiple_extensions"],
             type(parameters["path_tester_multiple_extensions"]),
         )
-        return parameters["path_tester"]
 
 
 class SelectTester(CommandDefinition):
@@ -245,7 +241,16 @@ class SelectTester(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    outputs = {
+        "test_return_select": {
+            "label": "Select Return",
+            "type": SelectType("hello", "world", "foo", "bar"),
+            "value": None,
+            "tooltip": "Testing the return of select type",
+        },
+    }
+
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -262,7 +267,7 @@ class SelectTester(CommandDefinition):
             parameters["select_tester_2"],
             type(parameters["select_tester_2"]),
         )
-        return parameters["select_tester"]
+        return {"test_return_select": parameters["select_tester"]}
 
 
 class RangeTesterLow(CommandDefinition):
@@ -285,7 +290,16 @@ class RangeTesterLow(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    outputs = {
+        "test_return_range": {
+            "label": "Range Return",
+            "type": RangeType(1, 475, 1),
+            "value": None,
+            "tooltip": "Testing the return of a range type",
+        },
+    }
+
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -302,7 +316,7 @@ class RangeTesterLow(CommandDefinition):
             parameters["range_tester_2"],
             type(parameters["range_tester_2"]),
         )
-        return parameters["range_tester"]
+        return {"test_return_range": parameters["range_tester"]}
 
 
 class RangeTesterMid(CommandDefinition):
@@ -325,7 +339,7 @@ class RangeTesterMid(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -350,7 +364,6 @@ class RangeTesterMid(CommandDefinition):
         await asyncio.sleep(1)
         logger.info("Work done")
         await asyncio.sleep(1)
-        return parameters["range_tester"]
 
 
 class RangeTesterHigh(CommandDefinition):
@@ -373,7 +386,7 @@ class RangeTesterHigh(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -390,30 +403,29 @@ class RangeTesterHigh(CommandDefinition):
             parameters["range_tester_2"],
             type(parameters["range_tester_2"]),
         )
-        return parameters["range_tester"]
 
 
-class EntityTester(CommandDefinition):
+class TaskTester(CommandDefinition):
     """
-    Testing the entity parameters
+    Testing the task parameters
     """
 
     inputs = {
-        "entity_tester": {
-            "label": "Entity Tester",
+        "task_tester": {
+            "label": "Task Tester",
             "type": TaskType(),
             "value": None,
-            "tooltip": "Testing the entity parameters",
+            "tooltip": "Testing the task parameters",
         },
-        "entity_tester_2": {
-            "label": "Entity Tester 2",
+        "task_tester_2": {
+            "label": "Task Tester 2",
             "type": TaskType(),
             "value": None,
-            "tooltip": "Testing the entity parameters",
+            "tooltip": "Testing the task parameters",
         },
     }
 
-    @CommandDefinition.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -421,16 +433,15 @@ class EntityTester(CommandDefinition):
         logger: logging.Logger,
     ):
         logger.info(
-            "Entity parameter tester: %s, %s",
-            parameters["entity_tester"],
-            type(parameters["entity_tester"]),
+            "Task parameter tester: %s, %s",
+            parameters["task_tester"],
+            type(parameters["task_tester"]),
         )
         logger.info(
-            "Entity parameter tester: %s, %s",
-            parameters["entity_tester_2"],
-            type(parameters["entity_tester_2"]),
+            "Task parameter tester: %s, %s",
+            parameters["task_tester_2"],
+            type(parameters["task_tester_2"]),
         )
-        return parameters["entity_tester"]
 
 
 class MultipleSelectTester(CommandDefinition):
@@ -453,7 +464,7 @@ class MultipleSelectTester(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -470,7 +481,6 @@ class MultipleSelectTester(CommandDefinition):
             parameters["multiple_select_tester_2"],
             type(parameters["multiple_select_tester_2"]),
         )
-        return parameters["multiple_select_tester"]
 
 
 class RadioSelectTester(CommandDefinition):
@@ -493,7 +503,7 @@ class RadioSelectTester(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -510,7 +520,6 @@ class RadioSelectTester(CommandDefinition):
             parameters["radio_select_tester_2"],
             type(parameters["radio_select_tester_2"]),
         )
-        return parameters["radio_select_tester"]
 
 
 class IntArrayTester(CommandDefinition):
@@ -533,7 +542,7 @@ class IntArrayTester(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -550,7 +559,6 @@ class IntArrayTester(CommandDefinition):
             parameters["int_array_tester_2"],
             type(parameters["int_array_tester_2"]),
         )
-        return parameters["int_array_tester"]
 
 
 class TextTester(CommandDefinition):
@@ -598,7 +606,7 @@ class TextTester(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -615,8 +623,6 @@ class TextTester(CommandDefinition):
             parameters["text_tester_2"],
             type(parameters["text_tester_2"]),
         )
-
-        return parameters["text_tester"]
 
 
 class FrameSetTester(CommandDefinition):
@@ -639,7 +645,7 @@ class FrameSetTester(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -657,8 +663,6 @@ class FrameSetTester(CommandDefinition):
             type(parameters["frameset_tester_2"]),
         )
 
-        return parameters["frameset_tester"]
-
 
 class TracebackTester(CommandDefinition):
     """
@@ -674,7 +678,7 @@ class TracebackTester(CommandDefinition):
         },
     }
 
-    @CommandDefinition.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
         parameters: CommandSockets,
@@ -689,4 +693,3 @@ class TracebackTester(CommandDefinition):
 
         if parameters["raise_exception"]:
             raise ValueError("Don't worry, this is a fake error for testing purpose")
-        return parameters["raise_exception"]

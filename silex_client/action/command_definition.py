@@ -106,7 +106,7 @@ class CommandDefinition:
         return return_value
 
     @staticmethod
-    def conform_command():
+    def validate():
         """
         Helper decorator that makes sure all the parameter can be casted to the expected types,
         and the required metadata are present.
@@ -114,9 +114,9 @@ class CommandDefinition:
         a clear error before the execution of the command.
         """
 
-        def decorator_conform_command(func: Callable) -> Callable:
+        def decorator_validate(func: Callable) -> Callable:
             @functools.wraps(func)
-            async def wrapper_conform_command(
+            async def wrapper_validate(
                 command: CommandDefinition,
                 inputs: CommandSockets,
                 action_query: ActionQuery,
@@ -147,8 +147,24 @@ class CommandDefinition:
 
                 await action_query.async_update_websocket()
 
+                # Execution of the function
                 output = await func(command, inputs, action_query, logger)
-                command.buffer.output = output
+
+                if output is None:
+                    return
+
+                if not isinstance(output, dict):
+                    command.buffer.status = Status.INVALID
+                    logger.error(
+                        "Error during the execution of the command %s: Invalid retured values %s",
+                        command.buffer.name,
+                        output,
+                    )
+                    return
+
+                for output_key, output_value in output.items():
+                    if isinstance(command.buffer.outputs.get(output_key), SocketBuffer):
+                        command.buffer.outputs[output_key].value = output_value
 
                 # Make sure the returned output is valid
                 if not command.check_sockets(
@@ -160,16 +176,16 @@ class CommandDefinition:
                     logger.error(
                         "Error during the execution of the command %s: Invalid retured values %s",
                         command.buffer.name,
-                        command.buffer.outputs,
+                        output,
                     )
                     return
 
                 await action_query.async_update_websocket()
                 return output
 
-            return wrapper_conform_command
+            return wrapper_validate
 
-        return decorator_conform_command
+        return decorator_validate
 
     async def prompt_user(
         self,
@@ -208,7 +224,9 @@ class CommandDefinition:
         action_query: ActionQuery,
         logger: logging.Logger,
     ) -> Any:
-        raise NotImplementedError("This command does not have any execution function")
+        """
+        Override this method to implement the behaviour of your command
+        """
 
     async def undo(
         self,
@@ -216,7 +234,9 @@ class CommandDefinition:
         action_query: ActionQuery,
         logger: logging.Logger,
     ) -> Any:
-        pass
+        """
+        Override this method as a hook executed when the user undo this command
+        """
 
     async def setup(
         self,
@@ -224,4 +244,7 @@ class CommandDefinition:
         action_query: ActionQuery,
         logger: logging.Logger,
     ) -> Any:
-        pass
+        """
+        Override this method as a hook executed when a parameter is changed and before
+        the command is executed
+        """
