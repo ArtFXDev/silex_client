@@ -70,7 +70,7 @@ class Connection:
             "Please specify at least input/output and a key"), full_path)
             return None
 
-        (*buffer_path, key, socket) = full_path
+        (*buffer_path, socket, key) = full_path
         buffer, remaining_path = self.get_buffer(action_query, buffer_path)
 
         if remaining_path:

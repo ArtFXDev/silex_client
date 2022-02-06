@@ -34,9 +34,9 @@ tester:
                       definition_path: "silex_client.commands.tester.StringTester"
                       inputs:
                         string_tester:
-                          value: !connect "action_input_test.input"
+                          value: !connect "input.action_input_test"
                         string_tester_2:
-                          value: !connect "action_input_test.input"
+                          value: !connect "input.action_input_test"
             definitions:
               value:
                 - label: "Testing insert"
@@ -66,9 +66,9 @@ tester:
           definition_path: "silex_client.commands.tester.StringTester"
           inputs:
             string_tester:
-              value: !connect "features_1.insert.actions_output.output"
+              value: !connect "features_1.insert.output.actions_output"
             string_tester_2:
-              value: !connect "features_1.insert.actions_output.output"
+              value: !connect "features_1.insert.output.actions_output"
           ask_user: true
 
     parameters:
@@ -126,7 +126,7 @@ tester:
             range_tester:
               value: 6
             range_tester_2:
-              value: !connect "parameters.range_low.test_return_range.output"
+              value: !connect "parameters.range_low.output.test_return_range"
               hide: true
           ask_user: true
         range_high:
@@ -149,7 +149,7 @@ tester:
                 - "hello"
                 - "bar"
             multiple_select_tester_2:
-              value: !connect "parameters.select.test_return_select.output"
+              value: !connect "parameters.select.output.test_return_select"
               hide: true
           ask_user: true
         radio_select:
