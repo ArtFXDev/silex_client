@@ -6,6 +6,7 @@ Class definition of the IterateAction command
 """
 from __future__ import annotations
 
+from collections.abc import Sized
 import logging
 import typing
 from typing import Any, Dict, List
@@ -34,7 +35,7 @@ class IterateAction(InsertAction):
         "iterations": {
             "label": "Iteration count",
             "type": int,
-            "value": 1,
+            "value": 0,
         },
         "names": {
             "label": "Name of the actions to insert",
@@ -184,6 +185,10 @@ class IterateAction(InsertAction):
         logger: logging.Logger,
     ):
         await super().setup(parameters, action_query, logger)
+
+        # The number of iteration can be a sized variable
+        if isinstance(parameters.get_raw("iterations", 0), Sized):
+            parameters["iterations"] = len(parameters["iterations"])
 
         # By inheriting from an other class we also get all its parameters.
         # We must hide them all since they will be overriden by the values in the lists parameters

@@ -7,6 +7,8 @@ Class definition of CommandSockets
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, List, Union, Tuple, TypeVar
 
+from silex_client.action.connection import Connection
+
 # Forward references
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -54,7 +56,12 @@ class CommandSockets:
         """
         if key not in self.data:
             return default
-        return self.data[key].value
+
+        raw_value = self.data[key].value
+        if isinstance(raw_value, Connection):
+            return self.data[key].resolve_connection(self.action_query, raw_value)
+
+        return raw_value
 
     def get_buffer(self, key) -> AbstractSocketBuffer:
         """

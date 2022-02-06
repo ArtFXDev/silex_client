@@ -10,7 +10,7 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List
 from silex_client.action.socket_buffer import SocketBuffer
 
 from silex_client.utils.enums import Status
@@ -186,37 +186,6 @@ class CommandDefinition:
             return wrapper_validate
 
         return decorator_validate
-
-    async def prompt_user(
-        self,
-        action_query: ActionQuery,
-        new_inputs: dict[str, Union[SocketBuffer, dict]],
-    ) -> CommandSockets:
-        """
-        Add the given parameters to to current command parameters and ask an update from the user
-        """
-        command_parameters = self.buffer.get_inputs_helper(action_query)
-        if not action_query.ws_connection.is_running:
-            return command_parameters
-
-        # Hide the existing parameters
-        for input_buffer in self.buffer.inputs.values():
-            input_buffer.hide = True
-
-        # Cast the parameters that are dict into SocketBuffer
-        socket_buffers: Dict[str, SocketBuffer] = {}
-        for socket_name, socket in new_inputs.items():
-            if isinstance(socket, SocketBuffer):
-                socket_buffers[socket_name] = socket
-                continue
-            socket_buffers[socket_name] = SocketBuffer.construct(socket, self.buffer)
-
-        # Add the parameters to the command buffer's parameters
-        self.buffer.inputs.update(socket_buffers)
-        self.buffer.prompt = True
-
-        await action_query.prompt_commands(end=action_query.current_command_index + 1)
-        return command_parameters
 
     async def __call__(
         self,

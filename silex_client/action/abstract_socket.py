@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Union, TYPE_CHECKING
 
+from silex_client.action.connection import Connection
 from silex_client.utils.socket_types import SocketTypeMeta
 
 if TYPE_CHECKING:
@@ -38,4 +39,12 @@ class AbstractSocketBuffer(ABC):
     def eval(self, action_query: ActionQuery) -> Any:
         """
         The output of a socket buffer is the result of the value casted to the desired type
+        """
+
+    @abstractmethod
+    def resolve_connection(
+        self, action_query: ActionQuery, connection: Connection
+    ) -> Any:
+        """
+        Resolve connection of the given value
         """
