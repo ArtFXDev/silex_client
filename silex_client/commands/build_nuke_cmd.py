@@ -3,12 +3,11 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from fileseq import FrameSet
-
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.command import CommandBuilder
+from silex_client.utils import command_builder
 from silex_client.utils.frames import split_frameset
 
 # Forward references
@@ -46,10 +45,10 @@ class BuildNukeCommand(CommandBase):
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
 
-        nuke_cmd = CommandBuilder("nuke", rez_packages=["nuke"])
+        nuke_cmd = command_builder.CommandBuilder("nuke", rez_packages=["nuke"])
 
         frame_chunks = split_frameset(frame_range, task_size)
-        commands: Dict[str, CommandBuilder] = {}
+        commands: Dict[str, command_builder.CommandBuilder] = {}
 
         for chunk in frame_chunks:
             chunk_cmd = nuke_cmd.deepcopy()
@@ -62,4 +61,7 @@ class BuildNukeCommand(CommandBase):
 
             commands[chunk.frameRange()] = chunk_cmd
 
-        return {"commands": commands, "file_name": scene.stem}
+        return {
+            "commands": {f"Script: {scene.stem}": commands},
+            "file_name": scene.stem,
+        }

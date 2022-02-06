@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import contextlib
 import pathlib
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, Optional, List, Type, Union
 
 
 class SocketTypeMeta(type):
@@ -295,14 +295,16 @@ def PathType(extensions: List[str] = None, multiple: bool = False):
     return SocketTypeMeta("PathParameter", (type(pathlib.Path()),), attributes)
 
 
-def TextType(color=None):
+def TextType(
+    color=None, progress: Optional[Dict[str, Union[str, int]]] = None
+):
     """
     Builds a socket type that return a string
     In the UI, this socket display the string with the given color
     """
 
     def serialize():
-        return {"name": "text", "color": color}
+        return {"name": "text", "color": color, "progress": progress}
 
     def get_default():
         return ""

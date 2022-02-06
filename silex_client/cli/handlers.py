@@ -11,7 +11,6 @@ import subprocess
 from concurrent import futures
 
 import gazu.files
-
 from silex_client.action.action_query import ActionQuery
 from silex_client.core.context import Context
 from silex_client.resolve.config import Config
@@ -118,5 +117,9 @@ def launch_handler(dcc: str, **kwargs) -> None:
     # check for env variable
     if os.environ.get("SILEX_DCC_BIN") is not None:
         command[0] = os.environ["SILEX_DCC_BIN"]
+
+    additional_args = os.environ.get("SILEX_DCC_BIN_ARGS")
+    if additional_args is not None:
+        command.extend(additional_args.split(" "))
 
     subprocess.Popen(command, cwd=os.getcwd(), shell=True)

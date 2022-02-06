@@ -43,7 +43,7 @@ houdini:
       commands:
         build_houdini_cmd:
           path: "silex_client.commands.build_houdini_cmd.HoudiniCommand"
-          label: "Mantra job parameters"
+          label: "Houdini job parameters"
           ask_user: true
           parameters:
             output_filename:

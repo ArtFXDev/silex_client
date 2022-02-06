@@ -6,11 +6,8 @@ import typing
 from typing import Any, Dict, List
 
 from fileseq import FrameSet
-
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command, frames
-from silex_client.utils.command import CommandBuilder
-from silex_client.utils.frames import split_frameset
+from silex_client.utils import command_builder, frames
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
     PathParameterMeta,
@@ -54,6 +51,17 @@ class HoudiniCommand(CommandBase):
             "hide": True,
         },
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
+        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
+        "rop_from_hip": {
+            "label": "Get ROP node list from scene file (can take some time)",
+            "type": bool,
+            "value": False,
+        },
+        "render_nodes": {
+            "label": "ROP node path (defaults to /out/...)",
+            "type": SelectParameterMeta(),
+            "value": None,
+        },
         "parameter_overrides": {
             "type": bool,
             "label": "Parameter overrides",
@@ -64,17 +72,6 @@ class HoudiniCommand(CommandBase):
             "type": IntArrayParameterMeta(2),
             "value": [1920, 1080],
             "hide": True,
-        },
-        "rop_from_hip": {
-            "label": "Get ROP node list from scene file (can take some time)",
-            "type": bool,
-            "value": False,
-        },
-        "render_nodes": {
-            "label": "Render Nodes",
-            "type": SelectParameterMeta(),
-            "value": None,
-            "tooltip": "Select Render Node",
         },
     }
 
@@ -89,7 +86,7 @@ class HoudiniCommand(CommandBase):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
-        # skip_existing = int(parameters["skip_existing"]) todo
+        skip_existing = parameters["skip_existing"]
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
         render_node: str = parameters["render_nodes"]
@@ -102,37 +99,40 @@ class HoudiniCommand(CommandBase):
         )
 
         # Build the render command
-        houdini_cmd = CommandBuilder("hython", rez_packages=["houdini"], delimiter=" ")
+        houdini_cmd = command_builder.CommandBuilder(
+            "hython", rez_packages=["houdini"], delimiter=" "
+        )
         houdini_cmd.param("m", "hrender")
         houdini_cmd.value(str(scene))
         houdini_cmd.param("d", render_node)
         houdini_cmd.param("o", str(output_file))
         # Verbose mode
         houdini_cmd.param("v")
+        houdini_cmd.param("S", condition=skip_existing)
 
         if parameter_overrides:
             houdini_cmd.param("w", resolution[0])
             houdini_cmd.param("h", resolution[1])
 
         frame_chunks = frames.split_frameset(frame_range, task_size)
-        commands: Dict[str, CommandBuilder] = {}
+        commands: Dict[str, command_builder.CommandBuilder] = {}
 
         # Create commands
         for chunk in frame_chunks:
             chunk_cmd = houdini_cmd.deepcopy()
             task_title = chunk.frameRange()
 
-            if len(chunk) > 1:
-                chunk_cmd.param("e")
-                # Add the frames argument
-                chunk_cmd.param("f", str(chunk).split("-"))
-            else:
-                chunk_cmd.param("F", chunk[0])
+            chunk_cmd.param("f", ";".join(map(str, list(chunk))))
 
             commands[task_title] = chunk_cmd
 
+        # Format "commands" output to match the input type in the submiter
+        node_cmd: Dict[str, Dict[str, command_builder.CommandBuilder]] = {
+            f"ROP node: {render_node}": commands
+        }
+
         logger.info(f"final commands: {commands}")
-        return {"commands": commands, "file_name": scene.stem}
+        return {"commands": node_cmd, "file_name": scene.stem}
 
     async def setup(
         self,

@@ -87,6 +87,8 @@ class BaseBuffer:
     buffer_type: str = field(default="none")
     #: Defines if the buffer must be executed or not
     skip: bool = field(default=False)
+    #: The progress is only infomational, it should go from 0 to 100
+    progress: Optional[int] = field(default=None)
 
     def __setattr__(self, name, value):
         super().__setattr__("outdated_cache", True)

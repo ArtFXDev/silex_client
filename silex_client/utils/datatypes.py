@@ -38,3 +38,13 @@ class ReadOnlyDict(dict):
     pop = __readonly__
     clear = __readonly__
     update = __readonly__
+
+
+class SharedVariable:
+    """
+    Simple container for a variable to share the value between threads without any
+    thread safety overhead
+    """
+
+    def __init__(self, value):
+        self.value = value

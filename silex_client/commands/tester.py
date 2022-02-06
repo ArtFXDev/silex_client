@@ -318,53 +318,6 @@ class RangeTesterLow(CommandDefinition):
         return {"test_return_range": parameters["range_tester"]}
 
 
-class RangeTesterMid(CommandDefinition):
-    """
-    Testing the range parameters
-    """
-
-    inputs = {
-        "range_tester": {
-            "label": "Range Tester",
-            "type": RangeType(1, 30, 5),
-            "value": None,
-            "tooltip": "Testing the range parameters",
-        },
-        "range_tester_2": {
-            "label": "Range Tester 2",
-            "type": RangeType(1, 30, 5),
-            "value": None,
-            "tooltip": "Testing the range parameters",
-        },
-    }
-
-    @CommandDefinition.validate()
-    async def __call__(
-        self,
-        parameters: CommandSockets,
-        action_query: ActionQuery,
-        logger: logging.Logger,
-    ):
-        logger.info(
-            "Range parameter tester: %s, %s",
-            parameters["range_tester"],
-            type(parameters["range_tester"]),
-        )
-        logger.info(
-            "Range parameter tester: %s, %s",
-            parameters["range_tester_2"],
-            type(parameters["range_tester_2"]),
-        )
-
-        await asyncio.sleep(1)
-        logger.info("Pretending to work")
-        await asyncio.sleep(1)
-        logger.info("Keep pretending to work")
-        await asyncio.sleep(1)
-        logger.info("Work done")
-        await asyncio.sleep(1)
-
-
 class RangeTesterHigh(CommandDefinition):
     """
     Testing the range parameters
@@ -521,7 +474,7 @@ class RadioSelectTester(CommandDefinition):
         )
 
 
-class IntArrayTester(CommandDefinition):
+class IntArrayTesterLow(CommandDefinition):
     """
     Testing the int_array parameters
     """
@@ -535,8 +488,8 @@ class IntArrayTester(CommandDefinition):
         },
         "int_array_tester_2": {
             "label": "IntArray Tester 2",
-            "type": IntArrayType(6),
-            "value": [3, 4, 2, 39, 204, 3],
+            "type": IntArrayType(2),
+            "value": [3, 4],
             "tooltip": "Testing the int_array parameters",
         },
     }
@@ -558,6 +511,83 @@ class IntArrayTester(CommandDefinition):
             parameters["int_array_tester_2"],
             type(parameters["int_array_tester_2"]),
         )
+
+
+class IntArrayTesterHigh(CommandDefinition):
+    """
+    Testing the int_array parameters
+    """
+
+    inputs = {
+        "int_array_tester": {
+            "label": "IntArray Tester",
+            "type": IntArrayType(6),
+            "value": None,
+            "tooltip": "Testing the int_array parameters",
+        },
+        "int_array_tester_2": {
+            "label": "IntArray Tester 2",
+            "type": IntArrayType(6),
+            "value": [3, 4, 3, 5, 0, 1],
+            "tooltip": "Testing the int_array parameters",
+        },
+    }
+
+    @CommandDefinition.validate()
+    async def __call__(
+        self,
+        parameters: CommandSockets,
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        logger.info(
+            "IntArray parameter tester: %s, %s",
+            parameters["int_array_tester"],
+            type(parameters["int_array_tester"]),
+        )
+        logger.info(
+            "IntArray parameter tester: %s, %s",
+            parameters["int_array_tester_2"],
+            type(parameters["int_array_tester_2"]),
+        )
+
+
+class ProgressTester(CommandDefinition):
+    """
+    Testing the progress on info parameters
+    """
+
+    parameters = {
+        "progress_tester": {
+            "label": "Progress Tester",
+            "type": TextType(color="info", progress={"variant": "indeterminate"}),
+            "value": "This command will take time to execute and show its progress",
+            "tooltip": "Testing the range parameters",
+        },
+    }
+
+    @CommandDefinition.validate()
+    async def __call__(
+        self,
+        parameters: CommandSockets,
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        self.buffer.progress = 0
+        action_query.update_websocket()
+        await asyncio.sleep(1)
+        logger.info("Pretending to work")
+        self.buffer.progress = 33
+        action_query.update_websocket()
+        await asyncio.sleep(1)
+        logger.info("Keep pretending to work")
+        self.buffer.progress = 66
+        action_query.update_websocket()
+        await asyncio.sleep(1)
+        logger.info("Work done")
+        self.buffer.progress = 100
+        action_query.update_websocket()
+        await asyncio.sleep(1)
 
 
 class TextTester(CommandDefinition):

@@ -1,20 +1,20 @@
-arnold:
-  label: "Submit ass sequence"
+blender:
+  label: "Submit Blender scene"
   steps:
     build_output_path:
       label: "Build output path"
       index: 10
       commands:
-        select_list:
+        select_extension:
           label: "Enter extension"
           path: "silex_client.commands.select_list.SelectList"
           parameters:
+            param_name: "Render type"
             parameters_list:
               - "exr"
               - "png"
               - "jpg"
               - "tiff"
-            param_name: "Render type"
 
         build_output_path:
           label: "Build output path"
@@ -23,10 +23,10 @@ arnold:
           ask_user: true
           parameters:
             output_type:
-              value: !command-output "build_output_path:select_list"
+              value: !command-output "build_output_path:select_extension"
               hide: true
             create_temp_dir: false
-            create_output_dir: true
+            create_output_dir: false
             task:
               hide: true
             use_current_context:
@@ -34,27 +34,27 @@ arnold:
               hide: true
             frame_set:
               hide: true
-            name:
-              value: "render"
 
-    send_kick_render:
+    send_blender_render:
       label: "Setup render parameters"
       index: 20
       commands:
-        build_kick_cmd:
-          path: "silex_client.commands.build_kick_cmd.KickCommand"
-          label: "Arnold job parameters"
+        build_blender_cmd:
+          path: "silex_client.commands.build_blender_cmd.BlenderCommand"
+          label: "Blender Job parameters"
           ask_user: true
           parameters:
-            output_path:
+            output_filename:
               value: !command-output "build_output_path:build_output_path:full_path"
+            output_extension:
+              value: !command-output "build_output_path:select_extension"
 
         submit_to_tractor:
           label: "Submit"
           path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
           ask_user: true
           parameters:
-            job_title:
-              value: !command-output "send_kick_render:build_kick_cmd:file_name"
             commands:
-              value: !command-output "send_kick_render:build_kick_cmd:commands"
+              value: !command-output "send_blender_render:build_blender_cmd:commands"
+            job_title:
+              value: !command-output "send_blender_render:build_blender_cmd:file_name"

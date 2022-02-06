@@ -120,15 +120,6 @@ tester:
             range_tester:
               value: 22
           ask_user: true
-        range_mid:
-          definition_path: "silex_client.commands.tester.RangeTesterMid"
-          inputs:
-            range_tester:
-              value: 6
-            range_tester_2:
-              value: !connect "parameters.range_low.output.test_return_range"
-              hide: true
-          ask_user: true
         range_high:
           definition_path: "silex_client.commands.tester.RangeTesterHigh"
           inputs:
@@ -158,13 +149,28 @@ tester:
             radio_select_tester:
               value: "hello"
           ask_user: true
-        int_array:
-          definition_path: "silex_client.commands.tester.IntArrayTester"
+        int_array_low:
+          definition_path: "silex_client.commands.tester.IntArrayTesterLow"
           inputs:
             int_array_tester:
               value:
                 - 5394
                 - 7
+          ask_user: true
+        int_array_high:
+          definition_path: "silex_client.commands.tester.IntArrayTesterHigh"
+          inputs:
+            int_array_tester:
+              value:
+                - 5394
+                - 39
+                - 2
+                - 943
+                - 239
+                - 30
+          ask_user: true
+        progress_tester:
+          definition_path: "silex_client.commands.tester.ProgressTester"
           ask_user: true
         text_tester:
           definition_path: "silex_client.commands.tester.TextTester"
