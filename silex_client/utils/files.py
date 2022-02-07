@@ -188,6 +188,36 @@ def format_sequence_string(
     return pathlib.Path(str(sequence.index(0))).as_posix()
 
 
+def expand_template_to_sequence(
+    path_template: pathlib.Path, regexes: List[re.Pattern]
+) -> fileseq.FileSequence:
+    """
+    Find the sequence related to the template path given. Used to find sequences of
+    path like /foo/bar.<UDIM>.png.
+
+    Each regex in the list must contain a single capturing group that will capture the expression
+    """
+    file_matches = []
+    for regex in regexes:
+        match = regex.match(str(path_template))
+        if match is None:
+            continue
+
+        template_format = re.escape(
+            str(path_template).replace(match.group(1), r"__INDEX__")
+        )
+        regex_format = re.compile(template_format.replace("__INDEX__", r"\d+"))
+        for child in path_template.parent.iterdir():
+            if regex_format.search(str(child)):
+                file_matches.append(child)
+
+        match_sequence = fileseq.findSequencesInList(file_matches)
+        if match_sequence:
+            return match_sequence[0]
+
+    return fileseq.findSequencesInList([path_template])[0]
+
+
 def sequence_exists(sequence: fileseq.FileSequence) -> bool:
     """
     Test if every files in the given sequence exists
