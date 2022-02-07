@@ -192,7 +192,9 @@ def expand_template_to_sequence(
     path_template: pathlib.Path, regexes: List[re.Pattern]
 ) -> fileseq.FileSequence:
     """
-    Find the sequence related to the template path given. Used to find sequences of path like /foo/bar.<UDIM>.png
+    Find the sequence related to the template path given. Used to find sequences of
+    path like /foo/bar.<UDIM>.png.
+
     Each regex in the list must contain a single capturing group that will capture the expression
     """
     file_matches = []
