@@ -37,11 +37,6 @@ class VrayCommand(CommandBase):
             "type": int,
             "value": 10,
         },
-        "skip_existing": {
-            "label": "Skip existing frames", 
-            "type": bool, 
-            "value": True
-        },
         "output_path": {
             "type": pathlib.Path, 
             "hide": True, 
@@ -166,7 +161,7 @@ class VrayCommand(CommandBase):
 
         # Get scene name from path
         first_key = next(iter(scene_to_layer_dict))
-        scene_name = (first_key.stem).strip( scene_to_layer_dict[first_key] )
+        scene_name = (first_key.stem).strip(scene_to_layer_dict[first_key] )
 
         # Taking into acount people working out of silex ( Rebels ! terrosists !! )
         if scene_name is None or scene_name == '':
