@@ -39,8 +39,12 @@ class VrayCommand(CommandBase):
             "type": int,
             "value": 10,
         },
-        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
-        "output_path": {"type": pathlib.Path, "hide": True, "value": ""},
+        "output_path": {
+            "type": pathlib.Path, 
+            "hide": True, 
+            "value": ""
+        },
+
         "engine": {
             "label": "RT engine",
             "type": RadioSelectParameterMeta(
@@ -113,7 +117,6 @@ class VrayCommand(CommandBase):
         vray_cmd.param("verboseLevel", 1)
         vray_cmd.param("rtEngine", engine)
         vray_cmd.param("sceneFile", scene)
-        vray_cmd.param("skipExistingFrames", skip_existing)
         vray_cmd.param("imgFile", output_path)
 
         if parameter_overrides:
@@ -150,7 +153,6 @@ class VrayCommand(CommandBase):
         engine: int = parameters["engine"]
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
-        skip_existing = int(parameters["skip_existing"])
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
 
@@ -170,6 +172,7 @@ class VrayCommand(CommandBase):
             )
 
             # Get tasks for each render layer
+
             render_layers_cmd[
                 f"Render layer: {layer_name}"
             ] = self._create_render_layer_task(
