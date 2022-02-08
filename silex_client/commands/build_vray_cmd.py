@@ -6,11 +6,13 @@ import typing
 from typing import Any, Dict, List
 
 from fileseq import FrameSet
-
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder
-from silex_client.utils import frames
-from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta, RadioSelectParameterMeta
+from silex_client.utils import command_builder, frames
+from silex_client.utils.parameter_types import (
+    IntArrayParameterMeta,
+    PathParameterMeta,
+    RadioSelectParameterMeta,
+)
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -42,6 +44,7 @@ class VrayCommand(CommandBase):
             "hide": True, 
             "value": ""
         },
+
         "engine": {
             "label": "RT engine",
             "type": RadioSelectParameterMeta(
@@ -68,32 +71,43 @@ class VrayCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        # Overriding resolution is optional 
+        # Overriding resolution is optional
         hide_overrides = not parameters["parameter_overrides"]
         self.command_buffer.parameters["resolution"].hide = hide_overrides
 
-    def  _get_layers_from_scenes(self, scenes: List[pathlib.Path] ) -> Dict[pathlib.Path, str]:
+    def _get_layers_from_scenes(
+        self, scenes: List[pathlib.Path]
+    ) -> Dict[pathlib.Path, str]:
         """Create a conrespondance dict { scene_name: render_layer }"""
 
         scene_to_layer_dict = dict()
 
         for scene in scenes:
-            
-            scene_split = scene.stem.split('_')
+            scene_split = scene.stem.split("_")
             temp_list = []
 
             # Get layer name at the end of the scene name
             for i in reversed(scene_split):
-                # Only get render layer in name. 
+                # Only get render layer in name.
                 if i == scene.parents[0].stem:
                     break
 
                 temp_list = [i] + temp_list
-            scene_to_layer_dict[scene] = '_'.join(temp_list)
-            
-        return scene_to_layer_dict 
+            scene_to_layer_dict[scene] = "_".join(temp_list)
 
-    def _create_render_layer_task(self, scene: pathlib.Path, skip_existing: int, output_path: pathlib.Path, engine: int, parameter_overrides: bool, resolution: List[int], frame_range: FrameSet, task_size: int):
+        return scene_to_layer_dict
+
+    def _create_render_layer_task(
+        self,
+        scene: pathlib.Path,
+        skip_existing: int,
+        output_path: pathlib.Path,
+        engine: int,
+        parameter_overrides: bool,
+        resolution: List[int],
+        frame_range: FrameSet,
+        task_size: int,
+    ):
         """Build command for every task (depending on a task size), store them in a dict and return it"""
 
         # Build the V-Ray command
@@ -125,8 +139,8 @@ class VrayCommand(CommandBase):
 
             # Add the frames argument
             commands[task_title] = chunk_cmd
-        
-        return commands        
+
+        return commands
 
     @CommandBase.conform_command()
     async def __call__(
@@ -135,7 +149,7 @@ class VrayCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        vray_scenes: List[pathlib.Path]= parameters["scene_file"]
+        vray_scenes: List[pathlib.Path] = parameters["scene_file"]
         output_path: pathlib.Path = parameters["output_path"]
         engine: int = parameters["engine"]
         frame_range: FrameSet = parameters["frame_range"]
@@ -151,20 +165,35 @@ class VrayCommand(CommandBase):
 
         for scene in vray_scenes:
             layer_name = scene_to_layer_dict[scene]
-            
+
             # The outputed image goes into a layer folder
-            full_output_path = output_path.parents[0] / layer_name / f'{output_path.stem}{output_path.suffix}'
+            full_output_path = (
+                output_path.parents[0]
+                / layer_name
+                / f"{output_path.stem}{output_path.suffix}"
+            )
 
             # Get tasks for each render layer
-            render_layers_cmd[f'Render layer: {layer_name}'] = self._create_render_layer_task(scene, skip_existing, full_output_path, engine, parameter_overrides, resolution, frame_range, task_size)
 
+            render_layers_cmd[
+                f"Render layer: {layer_name}"
+            ] = self._create_render_layer_task(
+                scene,
+                skip_existing,
+                full_output_path,
+                engine,
+                parameter_overrides,
+                resolution,
+                frame_range,
+                task_size,
+            )
 
-        # Get scene name from path
-        first_key = next(iter(scene_to_layer_dict))
-        scene_name = (first_key.stem).strip(scene_to_layer_dict[first_key] )
-
-        # Taking into acount people working out of silex ( Rebels ! terrosists !! )
-        if scene_name is None or scene_name == '':
-            scene_name = first_key.stem
+        # Take the first path job title
+        if len(scene_to_layer_dict) != 0:
+            first_key = list(scene_to_layer_dict.keys())[0]
+            render_layer = scene_to_layer_dict[first_key]
+            scene_name = str(first_key.stem).split(render_layer)[0][:-1]
+        else:
+            scene_name = vray_scenes[0]
 
         return {"commands": render_layers_cmd, "file_name": scene_name}
