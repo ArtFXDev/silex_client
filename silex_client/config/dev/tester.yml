@@ -37,18 +37,10 @@ tester:
           parameters:
             range_tester: 22
           ask_user: True
-        range_mid:
-          path: "silex_client.commands.tester.RangeTesterMid"
-          parameters:
-            range_tester: 6
-          ask_user: True
         range_high:
           path: "silex_client.commands.tester.RangeTesterHigh"
           parameters:
             range_tester: 1200
-            range_tester_2: 
-              value: !command-output "parameter_tester:range_mid"
-              hide: true
           ask_user: True
         entity:
           path: "silex_client.commands.tester.EntityTester"
@@ -84,6 +76,9 @@ tester:
               - 7
               - 80
               - 400
+          ask_user: True
+        progress_tester:
+          path: "silex_client.commands.tester.ProgressTester"
           ask_user: True
         text_tester:
           path: "silex_client.commands.tester.TextTester"

@@ -67,6 +67,7 @@ default:
             dst: 
               value: !command-output "conform:build_output_path:directory"
               hide: true
+            force: false
         rename:
           label: "Rename the copied files"
           path: "silex_client.commands.rename.Rename"
