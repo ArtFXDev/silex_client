@@ -79,17 +79,9 @@ class VrayCommand(CommandBase):
         scene_to_layer_dict = dict()
 
         for scene in scenes:
-            scene_split = scene.stem.split("_")
-            temp_list = []
-
-            # Get layer name at the end of the scene name
-            for i in reversed(scene_split):
-                # Only get render layer in name.
-                if i == scene.parents[0].stem:
-                    break
-
-                temp_list = [i] + temp_list
-            scene_to_layer_dict[scene] = "_".join(temp_list)
+            
+            layer = scene.stem.split(f"{scene.parents[0].stem}_")[-1]
+            scene_to_layer_dict[scene] = layer
 
         return scene_to_layer_dict
 
@@ -190,6 +182,7 @@ class VrayCommand(CommandBase):
             render_layer = scene_to_layer_dict[first_key]
             scene_name = str(first_key.stem).split(render_layer)[0][:-1]
         else:
+            # for groups outside of silex... ( TRAITORS !! REBELS !! hum.. hum...)
             scene_name = vray_scenes[0]
 
         return {"commands": render_layers_cmd, "file_name": scene_name}
