@@ -93,7 +93,7 @@ class VrayCommand(CommandBase):
             
         return scene_to_layer_dict 
 
-    def _create_render_layer_task(self, scene: pathlib.Path, skip_existing: int, output_path: pathlib.Path, engine: int, parameter_overrides: bool, resolution: List[int], frame_range: FrameSet, task_size: int):
+    def _create_render_layer_task(self, scene: pathlib.Path, output_path: pathlib.Path, engine: int, parameter_overrides: bool, resolution: List[int], frame_range: FrameSet, task_size: int):
         """Build command for every task (depending on a task size), store them in a dict and return it"""
 
         # Build the V-Ray command
@@ -103,7 +103,6 @@ class VrayCommand(CommandBase):
         vray_cmd.param("verboseLevel", 1)
         vray_cmd.param("rtEngine", engine)
         vray_cmd.param("sceneFile", scene)
-        vray_cmd.param("skipExistingFrames", skip_existing)
         vray_cmd.param("imgFile", output_path)
 
         if parameter_overrides:
@@ -140,7 +139,6 @@ class VrayCommand(CommandBase):
         engine: int = parameters["engine"]
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
-        skip_existing = int(parameters["skip_existing"])
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
 
@@ -156,7 +154,7 @@ class VrayCommand(CommandBase):
             full_output_path = output_path.parents[0] / layer_name / f'{output_path.stem}{output_path.suffix}'
 
             # Get tasks for each render layer
-            render_layers_cmd[f'Render layer: {layer_name}'] = self._create_render_layer_task(scene, skip_existing, full_output_path, engine, parameter_overrides, resolution, frame_range, task_size)
+            render_layers_cmd[f'Render layer: {layer_name}'] = self._create_render_layer_task(scene, full_output_path, engine, parameter_overrides, resolution, frame_range, task_size)
 
 
         # Get scene name from path
