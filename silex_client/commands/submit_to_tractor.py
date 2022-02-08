@@ -140,6 +140,12 @@ class TractorSubmiter(CommandBase):
 
                 # Add every command to the subtask
                 for index, command in enumerate(all_commands):
+                    if "project" in action_query.context_metadata:
+                        # Add the project in the rez environment
+                        command.add_rez_package(
+                            action_query.context_metadata["project"].lower()
+                        )
+
                     # Generates a random uuid for every command
                     id = str(uuid.uuid4())
                     params = {
