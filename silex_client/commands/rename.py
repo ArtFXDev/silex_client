@@ -92,6 +92,7 @@ class Rename(CommandBase):
                 extension = str(src_sequence.extension())
                 new_name = os.path.splitext(new_name)[0] + extension
                 new_path = src_path.parent / new_name
+                new_paths.append(new_path)
 
                 # Handle override of existing file
                 if new_path.exists() and force:
@@ -126,7 +127,6 @@ class Rename(CommandBase):
                         continue
 
                 await execute_in_thread(os.rename, src_path, new_path)
-                new_paths.append(new_path)
 
         return {
             "source_paths": src_paths,

@@ -41,7 +41,7 @@ class KickCommand(CommandBase):
         },
         "render_layers": {
             "label": "Select render layers",
-            "type": MultipleSelectParameterMeta(*['masterLayer']),
+            "type": MultipleSelectParameterMeta(),
         },
         "output_path": {"type": pathlib.Path, "value": "", "hide": True},
     }
@@ -65,47 +65,27 @@ class KickCommand(CommandBase):
 
             # Update frame range 
             ass_file = pathlib.Path(parameters['ass_file'])
-            self.command_buffer.parameters['frame_range'].value = self._find_sequence(ass_file).frameSet()
 
+            path_without_extension: pathlib.Path = ass_file.parents[0] / ass_file.stem
+            sequence = fileseq.findSequenceOnDisk( path_without_extension.with_suffix(f".@{ass_file.suffix}"))
 
-    def _find_sequence(
-        self, file_path: pathlib.Path, frame_range: fileseq.FrameSet = None
-    ) -> fileseq.FileSequence:
-        """
-        Return a file sequence for a specific frame range
-        """
-
-        path_without_extension: pathlib.Path = file_path.parents[0] / file_path.stem
-
-        # Find existing ass
-        sequence = fileseq.findSequenceOnDisk(
-            path_without_extension.with_suffix(f".@{file_path.suffix}")
-        )
-
-        if frame_range is not None:
-
-            # Create wanted sequence
-            search_sequence = fileseq.FileSequence(
-                path_without_extension.with_suffix(f".{frame_range}#{file_path.suffix}")
-            )
-
-            sequence = set(list(sequence)).intersection(set(list(search_sequence)))
-
-
-        return sequence
+            self.command_buffer.parameters['frame_range'].value = sequence.frameSet()
 
     def _create_render_layer_task(self, general_output_path: pathlib.Path, frame_range: fileseq.FrameSet, task_size: int, ass_file: pathlib.Path, layer: str):
         """Build command for every task (depending on a task size), store them and return a dict"""
 
+        output_path = general_output_path.parents[0] / layer / general_output_path.stem
+
         kick_cmd = (
-            command_builder.CommandBuilder("powershell.exe", delimiter=" ")
-            .param("ExecutionPolicy", "Bypass")
-            .param("NoProfile")
-            .param("File", "\\\\prod.silex.artfx.fr\\rez\\windows\\render_kick_ass.ps1")
+            command_builder.CommandBuilder("python", delimiter=" ")
+            .value("\\\\prod.silex.artfx.fr\\rez\\windows\\render_kick_ass.py")
+            .value(str(output_path))
+            .value(general_output_path.suffix.strip('.'))
+            .value(ass_file.parents[0])
+            .value(ass_file.suffix.strip('.'))
         )
 
-        output_path = (general_output_path.parents[0] / layer / general_output_path.stem).with_suffix(f'{general_output_path.suffix}')
-        kick_cmd.param("ExportFile", str(output_path))
+        kick_cmd.add_rez_package('silex_client')
 
         # Create layer folder 
         os.makedirs(output_path.parents[0], exist_ok=True)
@@ -119,16 +99,10 @@ class KickCommand(CommandBase):
 
             chunk_cmd = kick_cmd.deepcopy()
 
-            # Get ass sequence  using a specific frame_range
-            sequence =  self._find_sequence(
-                ass_file, fileseq.FrameSet(chunk)
-            )
-            ass_files: List[str] = list(sequence)
-
             # Converting chunk back to a frame set
             task_name = chunk.frameRange()
 
-            chunk_cmd.param("AssFiles", ",".join(ass_files))
+            chunk_cmd.value(chunk)
 
             # Add ass sequence to argument list
             commands[task_name] = chunk_cmd
