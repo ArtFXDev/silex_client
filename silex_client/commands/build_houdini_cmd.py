@@ -215,3 +215,4 @@ class HoudiniCommand(CommandBase):
             run, f"rez env houdini -- hython -m get_rop_nodes --file {scene}"
         )
         self.command_buffer.parameters["get_rop_progress"].hide = True
+        action_query.store["submit_houdini_temp_hip_filepath"] = scene
