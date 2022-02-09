@@ -101,12 +101,6 @@ class HoudiniCommand(CommandBase):
         render_nodes: Union[str, List[str]] = parameters["render_nodes"]
         output_file = pathlib.Path(parameters["output_filename"])
 
-        logger.info(output_file)
-        output_file = (
-            output_file.parent
-            / f"{output_file.with_suffix('').stem}.$F4{''.join(output_file.suffixes)}"
-        )
-
         if not isinstance(render_nodes, list):
             render_nodes = render_nodes.split(" ")
 
@@ -117,7 +111,7 @@ class HoudiniCommand(CommandBase):
             full_output_file = (
                 output_file.parent
                 / render_name
-                / f"{output_file.stem}_{render_name}.{''.join(output_file.suffixes)}"
+                / f"{output_file.with_suffix('').stem}_{render_name}.$F4{''.join(output_file.suffixes)}"
             )
             # Build the render command
             houdini_cmd = command_builder.CommandBuilder(
