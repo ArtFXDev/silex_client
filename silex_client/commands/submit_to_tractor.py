@@ -142,9 +142,10 @@ class TractorSubmiter(CommandBase):
 
                 # Add every command to the subtask
                 for index, command in enumerate(all_commands):
+                    command = command.deepcopy()
                     if "project" in action_query.context_metadata:
                         # Add the project in the rez environment
-                        command.deepcopy().add_rez_package(
+                        command.add_rez_package(
                             action_query.context_metadata["project"].lower()
                         )
 

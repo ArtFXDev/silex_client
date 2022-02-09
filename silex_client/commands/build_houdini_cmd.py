@@ -7,8 +7,10 @@ from typing import Any, Dict, List, Union
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
+from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils import command_builder, frames
 from silex_client.utils.parameter_types import (
+    TextParameterMeta,
     IntArrayParameterMeta,
     PathParameterMeta,
     MultipleSelectParameterMeta,
@@ -53,12 +55,19 @@ class HoudiniCommand(CommandBase):
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
         "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
         "rop_from_hip": {
-            "label": "Get ROP node list from scene file (can take some time)",
+            "label": "Get ROP node list from scene file",
             "type": bool,
             "value": False,
         },
+        "get_rop_progress": {
+            "type": TextParameterMeta(
+                color="info", progress={"variant": "indeterminate"}
+            ),
+            "value": "Openning houdini scene...",
+            "hide": True,
+        },
         "render_nodes": {
-            "label": "ROP node path (defaults to /out/...)",
+            "label": "ROP node path",
             "type": MultipleSelectParameterMeta(),
             "value": None,
         },
@@ -200,7 +209,9 @@ class HoudiniCommand(CommandBase):
             if stderr:
                 logger.error(f"stderr: {stderr.decode()}")
 
-        action_query.store["submit_houdini_temp_hip_filepath"] = scene
+        self.command_buffer.parameters["get_rop_progress"].hide = False
+        await action_query.async_update_websocket()
         await execute_in_thread(
             run, f"rez env houdini -- hython -m get_rop_nodes --file {scene}"
         )
+        self.command_buffer.parameters["get_rop_progress"].hide = True
