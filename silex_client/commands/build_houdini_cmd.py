@@ -3,15 +3,17 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
+from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils import command_builder, frames
 from silex_client.utils.parameter_types import (
+    TextParameterMeta,
     IntArrayParameterMeta,
     PathParameterMeta,
-    SelectParameterMeta,
+    MultipleSelectParameterMeta,
 )
 from silex_client.utils.thread import execute_in_thread
 
@@ -53,13 +55,20 @@ class HoudiniCommand(CommandBase):
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
         "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
         "rop_from_hip": {
-            "label": "Get ROP node list from scene file (can take some time)",
+            "label": "Get ROP node list from scene file",
             "type": bool,
             "value": False,
         },
+        "get_rop_progress": {
+            "type": TextParameterMeta(
+                color="info", progress={"variant": "indeterminate"}
+            ),
+            "value": "Openning houdini scene...",
+            "hide": True,
+        },
         "render_nodes": {
-            "label": "ROP node path (defaults to /out/...)",
-            "type": SelectParameterMeta(),
+            "label": "ROP node path",
+            "type": MultipleSelectParameterMeta(),
             "value": None,
         },
         "parameter_overrides": {
@@ -89,49 +98,54 @@ class HoudiniCommand(CommandBase):
         skip_existing = parameters["skip_existing"]
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
-        render_node: str = parameters["render_nodes"]
+        render_nodes: Union[str, List[str]] = parameters["render_nodes"]
         output_file = pathlib.Path(parameters["output_filename"])
 
-        logger.info(output_file)
-        output_file = (
-            output_file.parent
-            / f"{output_file.with_suffix('').stem}_$F4{''.join(output_file.suffixes)}"
-        )
+        if not isinstance(render_nodes, list):
+            render_nodes = render_nodes.split(" ")
 
-        # Build the render command
-        houdini_cmd = command_builder.CommandBuilder(
-            "hython", rez_packages=["houdini"], delimiter=" "
-        )
-        houdini_cmd.param("m", "hrender")
-        houdini_cmd.value(str(scene))
-        houdini_cmd.param("d", render_node)
-        houdini_cmd.param("o", str(output_file))
-        # Verbose mode
-        houdini_cmd.param("v")
-        houdini_cmd.param("S", condition=skip_existing)
+        node_cmd: Dict[str, Dict[str, command_builder.CommandBuilder]] = {}
 
-        if parameter_overrides:
-            houdini_cmd.param("w", resolution[0])
-            houdini_cmd.param("h", resolution[1])
+        for render_node in render_nodes:
+            render_name = render_node.split("/")[-1]
+            full_output_file = (
+                output_file.parent
+                / render_name
+                / f"{output_file.with_suffix('').stem}_{render_name}.$F4{''.join(output_file.suffixes)}"
+            )
+            # Build the render command
+            houdini_cmd = command_builder.CommandBuilder(
+                "hython", rez_packages=["houdini"], delimiter=" "
+            )
+            houdini_cmd.param("m", "hrender")
+            houdini_cmd.value(str(scene))
+            houdini_cmd.param("d", render_node)
+            houdini_cmd.param("o", str(full_output_file))
+            # Verbose mode
+            houdini_cmd.param("v")
+            houdini_cmd.param("S", condition=skip_existing)
 
-        frame_chunks = frames.split_frameset(frame_range, task_size)
-        commands: Dict[str, command_builder.CommandBuilder] = {}
+            if parameter_overrides:
+                houdini_cmd.param("w", resolution[0])
+                houdini_cmd.param("h", resolution[1])
 
-        # Create commands
-        for chunk in frame_chunks:
-            chunk_cmd = houdini_cmd.deepcopy()
-            task_title = chunk.frameRange()
+            frame_chunks = frames.split_frameset(frame_range, task_size)
+            commands: Dict[str, command_builder.CommandBuilder] = {}
 
-            chunk_cmd.param("f", ";".join(map(str, list(chunk))))
+            # Create commands
+            for chunk in frame_chunks:
+                chunk_cmd = houdini_cmd.deepcopy()
+                task_title = chunk.frameRange()
 
-            commands[task_title] = chunk_cmd
+                chunk_cmd.param("f", ";".join(map(str, list(chunk))))
 
-        # Format "commands" output to match the input type in the submiter
-        node_cmd: Dict[str, Dict[str, command_builder.CommandBuilder]] = {
-            f"ROP node: {render_node}": commands
-        }
+                commands[task_title] = chunk_cmd
 
-        logger.info(f"final commands: {commands}")
+            logger.info(f"Commands created: {commands}")
+
+            # Format "commands" output to match the input type in the submiter
+            node_cmd[f"ROP node: {render_node}"] = commands
+
         return {"commands": node_cmd, "file_name": scene.stem}
 
     async def setup(
@@ -150,7 +164,9 @@ class HoudiniCommand(CommandBase):
         self.command_buffer.parameters["resolution"].hide = not hide_overrides
 
         if rop_from_hip:
-            self.command_buffer.parameters["render_nodes"].type = SelectParameterMeta()
+            self.command_buffer.parameters[
+                "render_nodes"
+            ].type = MultipleSelectParameterMeta()
         else:
             self.command_buffer.parameters["render_nodes"].type = str
             return
@@ -187,7 +203,10 @@ class HoudiniCommand(CommandBase):
             if stderr:
                 logger.error(f"stderr: {stderr.decode()}")
 
-        action_query.store["submit_houdini_temp_hip_filepath"] = scene
+        self.command_buffer.parameters["get_rop_progress"].hide = False
+        await action_query.async_update_websocket()
         await execute_in_thread(
             run, f"rez env houdini -- hython -m get_rop_nodes --file {scene}"
         )
+        self.command_buffer.parameters["get_rop_progress"].hide = True
+        action_query.store["submit_houdini_temp_hip_filepath"] = scene
