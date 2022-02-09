@@ -1,36 +1,41 @@
+"""
+@author: TD gang
+@github: https://github.com/ArtFXDev
+
+Definition of multiple commands that are for testing purpose only
+"""
 from __future__ import annotations
 
 import asyncio
 import logging
-import typing
-from typing import Any, Dict
+from typing import TYPE_CHECKING
 
 from fileseq import FrameSet
 
-
-from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import (
-    IntArrayParameterMeta,
-    MultipleSelectParameterMeta,
-    PathParameterMeta,
-    RadioSelectParameterMeta,
-    RangeParameterMeta,
-    SelectParameterMeta,
-    TaskParameterMeta,
-    TextParameterMeta,
+from silex_client.action.command_definition import CommandDefinition
+from silex_client.action.command_sockets import CommandSockets
+from silex_client.utils.socket_types import (
+    IntArrayType,
+    MultipleSelectType,
+    PathType,
+    RadioSelectType,
+    RangeType,
+    SelectType,
+    TaskType,
+    TextType,
 )
 
 # Forward references
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class StringTester(CommandBase):
+class StringTester(CommandDefinition):
     """
     Testing the string parameters
     """
 
-    parameters = {
+    inputs = {
         "string_tester": {
             "label": "String Tester",
             "type": str,
@@ -45,10 +50,10 @@ class StringTester(CommandBase):
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -62,15 +67,14 @@ class StringTester(CommandBase):
             parameters["string_tester_2"],
             type(parameters["string_tester_2"]),
         )
-        return {"testing_values": parameters["string_tester"]}
 
 
-class IntegerTester(CommandBase):
+class IntegerTester(CommandDefinition):
     """
     Testing the int parameters
     """
 
-    parameters = {
+    inputs = {
         "int_tester": {
             "label": "Integer Tester",
             "type": int,
@@ -85,10 +89,10 @@ class IntegerTester(CommandBase):
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -102,15 +106,14 @@ class IntegerTester(CommandBase):
             parameters["int_tester_2"],
             type(parameters["int_tester_2"]),
         )
-        return parameters["int_tester"]
 
 
-class BooleanTester(CommandBase):
+class BooleanTester(CommandDefinition):
     """
     Testing the bool parameters
     """
 
-    parameters = {
+    inputs = {
         "bool_tester": {
             "label": "Boolean Tester",
             "type": bool,
@@ -125,10 +128,10 @@ class BooleanTester(CommandBase):
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -142,55 +145,49 @@ class BooleanTester(CommandBase):
             parameters["bool_tester_2"],
             type(parameters["bool_tester_2"]),
         )
-        return parameters["bool_tester"]
 
     async def setup(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        if not parameters["bool_tester"]:
-            self.command_buffer.parameters["bool_tester_2"].hide = True
-        else:
-            self.command_buffer.parameters["bool_tester_2"].hide = False
+        parameters.get_buffer("bool_tester_2").hide = not parameters["bool_tester"]
 
 
-class PathTester(CommandBase):
+class PathTester(CommandDefinition):
     """
     Testing the path parameters
     """
 
-    parameters = {
+    inputs = {
         "path_tester": {
             "label": "Path Tester",
-            "type": PathParameterMeta(),
+            "type": PathType(),
             "value": None,
             "tooltip": "Testing the path parameters",
         },
         "path_tester_multiple": {
             "label": "Path Tester Multiple",
-            "type": PathParameterMeta(multiple=True),
+            "type": PathType(multiple=True),
             "value": None,
         },
         "path_tester_extensions": {
             "label": "Path Tester extensions .abc, .obj, .fbx",
-            "type": PathParameterMeta(extensions=[".abc", ".obj", ".fbx"]),
+            "type": PathType(extensions=[".abc", ".obj", ".fbx"]),
             "value": None,
         },
         "path_tester_multiple_extensions": {
             "label": "Path Tester multiple files and extensions (.png, .jpg, .jpeg)",
-            "type": PathParameterMeta(
-                extensions=[".png", ".jpg", ".jpeg"], multiple=True
-            ),
+            "type": PathType(extensions=[".png", ".jpg", ".jpeg"], multiple=True),
             "value": None,
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -214,24 +211,23 @@ class PathTester(CommandBase):
             parameters["path_tester_multiple_extensions"],
             type(parameters["path_tester_multiple_extensions"]),
         )
-        return parameters["path_tester"]
 
 
-class SelectTester(CommandBase):
+class SelectTester(CommandDefinition):
     """
     Testing the select parameters
     """
 
-    parameters = {
+    inputs = {
         "select_tester": {
             "label": "Select Tester",
-            "type": SelectParameterMeta("hello", "world", "foo", "bar"),
+            "type": SelectType("hello", "world", "foo", "bar"),
             "value": None,
             "tooltip": "Testing the select parameters",
         },
         "select_tester_2": {
             "label": "Select Tester 2",
-            "type": SelectParameterMeta(
+            "type": SelectType(
                 **{
                     "Hello Label": "hello",
                     "World Label": "world",
@@ -239,15 +235,24 @@ class SelectTester(CommandBase):
                     "Bar Label": "bar",
                 }
             ),
-            "value": None,
+            "value": "bar",
             "tooltip": "Testing the select parameters",
         },
     }
 
-    @CommandBase.conform_command()
+    outputs = {
+        "test_return_select": {
+            "label": "Select Return",
+            "type": SelectType("hello", "world", "foo", "bar"),
+            "value": None,
+            "tooltip": "Testing the return of select type",
+        },
+    }
+
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -261,33 +266,42 @@ class SelectTester(CommandBase):
             parameters["select_tester_2"],
             type(parameters["select_tester_2"]),
         )
-        return parameters["select_tester"]
+        return {"test_return_select": parameters["select_tester"]}
 
 
-class RangeTesterLow(CommandBase):
+class RangeTesterLow(CommandDefinition):
     """
     Testing the range parameters
     """
 
-    parameters = {
+    inputs = {
         "range_tester": {
             "label": "Range Tester",
-            "type": RangeParameterMeta(1, 475, 1),
+            "type": RangeType(1, 475, 1),
             "value": None,
             "tooltip": "Testing the range parameters",
         },
         "range_tester_2": {
             "label": "Range Tester 2",
-            "type": RangeParameterMeta(1, 475, 1),
-            "value": None,
+            "type": RangeType(1, 475, 1),
+            "value": 300,
             "tooltip": "Testing the range parameters",
         },
     }
 
-    @CommandBase.conform_command()
+    outputs = {
+        "test_return_range": {
+            "label": "Range Return",
+            "type": RangeType(1, 475, 1),
+            "value": None,
+            "tooltip": "Testing the return of a range type",
+        },
+    }
+
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -301,33 +315,33 @@ class RangeTesterLow(CommandBase):
             parameters["range_tester_2"],
             type(parameters["range_tester_2"]),
         )
-        return parameters["range_tester"]
+        return {"test_return_range": parameters["range_tester"]}
 
 
-class RangeTesterHigh(CommandBase):
+class RangeTesterHigh(CommandDefinition):
     """
     Testing the range parameters
     """
 
-    parameters = {
+    inputs = {
         "range_tester": {
             "label": "Range Tester",
-            "type": RangeParameterMeta(1000, 10000, 100),
+            "type": RangeType(1000, 10000, 100),
             "value": None,
             "tooltip": "Testing the range parameters",
         },
         "range_tester_2": {
             "label": "Range Tester 2",
-            "type": RangeParameterMeta(1000, 10000, 100),
-            "value": 5000,
+            "type": RangeType(1000, 10000, 100),
+            "value": 5500,
             "tooltip": "Testing the range parameters",
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -341,73 +355,71 @@ class RangeTesterHigh(CommandBase):
             parameters["range_tester_2"],
             type(parameters["range_tester_2"]),
         )
-        return parameters["range_tester"]
 
 
-class EntityTester(CommandBase):
+class TaskTester(CommandDefinition):
     """
-    Testing the entity parameters
+    Testing the task parameters
     """
 
-    parameters = {
-        "entity_tester": {
-            "label": "Entity Tester",
-            "type": TaskParameterMeta(),
+    inputs = {
+        "task_tester": {
+            "label": "Task Tester",
+            "type": TaskType(),
             "value": None,
-            "tooltip": "Testing the entity parameters",
+            "tooltip": "Testing the task parameters",
         },
-        "entity_tester_2": {
-            "label": "Entity Tester 2",
-            "type": TaskParameterMeta(),
+        "task_tester_2": {
+            "label": "Task Tester 2",
+            "type": TaskType(),
             "value": None,
-            "tooltip": "Testing the entity parameters",
+            "tooltip": "Testing the task parameters",
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
         logger.info(
-            "Entity parameter tester: %s, %s",
-            parameters["entity_tester"],
-            type(parameters["entity_tester"]),
+            "Task parameter tester: %s, %s",
+            parameters["task_tester"],
+            type(parameters["task_tester"]),
         )
         logger.info(
-            "Entity parameter tester: %s, %s",
-            parameters["entity_tester_2"],
-            type(parameters["entity_tester_2"]),
+            "Task parameter tester: %s, %s",
+            parameters["task_tester_2"],
+            type(parameters["task_tester_2"]),
         )
-        return parameters["entity_tester"]
 
 
-class MultipleSelectTester(CommandBase):
+class MultipleSelectTester(CommandDefinition):
     """
     Testing the multiple_select parameters
     """
 
-    parameters = {
+    inputs = {
         "multiple_select_tester": {
             "label": "MultipleSelect Tester",
-            "type": MultipleSelectParameterMeta("foo", "bar", "hello", "world"),
+            "type": MultipleSelectType("foo", "bar", "hello", "world"),
             "value": None,
             "tooltip": "Testing the multiple_select parameters",
         },
         "multiple_select_tester_2": {
             "label": "MultipleSelect Tester 2",
-            "type": MultipleSelectParameterMeta("foo", "bar", "hello", "world"),
+            "type": MultipleSelectType("foo", "bar", "hello", "world"),
             "value": None,
             "tooltip": "Testing the multiple_select parameters",
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -421,33 +433,32 @@ class MultipleSelectTester(CommandBase):
             parameters["multiple_select_tester_2"],
             type(parameters["multiple_select_tester_2"]),
         )
-        return parameters["multiple_select_tester"]
 
 
-class RadioSelectTester(CommandBase):
+class RadioSelectTester(CommandDefinition):
     """
     Testing the radio_select parameters
     """
 
-    parameters = {
+    inputs = {
         "radio_select_tester": {
             "label": "RadioSelect Tester",
-            "type": RadioSelectParameterMeta("foo", "bar", "hello", "world"),
+            "type": RadioSelectType("foo", "bar", "hello", "world"),
             "value": None,
             "tooltip": "Testing the radio_select parameters",
         },
         "radio_select_tester_2": {
             "label": "RadioSelect Tester 2",
-            "type": RadioSelectParameterMeta("foo", "bar", "hello", "world"),
-            "value": None,
+            "type": RadioSelectType("foo", "bar", "hello", "world"),
+            "value": "world",
             "tooltip": "Testing the radio_select parameters",
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -461,73 +472,32 @@ class RadioSelectTester(CommandBase):
             parameters["radio_select_tester_2"],
             type(parameters["radio_select_tester_2"]),
         )
-        return parameters["radio_select_tester"]
 
 
-class IntArrayTesterLow(CommandBase):
+class IntArrayTesterLow(CommandDefinition):
     """
     Testing the int_array parameters
     """
 
-    parameters = {
+    inputs = {
         "int_array_tester": {
             "label": "IntArray Tester",
-            "type": IntArrayParameterMeta(2),
+            "type": IntArrayType(2),
             "value": None,
             "tooltip": "Testing the int_array parameters",
         },
         "int_array_tester_2": {
             "label": "IntArray Tester 2",
-            "type": IntArrayParameterMeta(2),
-            "value": None,
+            "type": IntArrayType(2),
+            "value": [3, 4],
             "tooltip": "Testing the int_array parameters",
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
-    ):
-        logger.info(
-            "IntArray parameter tester: %s, %s",
-            parameters["int_array_tester"],
-            type(parameters["int_array_tester"]),
-        )
-        logger.info(
-            "IntArray parameter tester: %s, %s",
-            parameters["int_array_tester_2"],
-            type(parameters["int_array_tester_2"]),
-        )
-        return parameters["int_array_tester"]
-
-
-class IntArrayTesterHigh(CommandBase):
-    """
-    Testing the int_array parameters
-    """
-
-    parameters = {
-        "int_array_tester": {
-            "label": "IntArray Tester",
-            "type": IntArrayParameterMeta(6),
-            "value": None,
-            "tooltip": "Testing the int_array parameters",
-        },
-        "int_array_tester_2": {
-            "label": "IntArray Tester 2",
-            "type": IntArrayParameterMeta(6),
-            "value": None,
-            "tooltip": "Testing the int_array parameters",
-        },
-    }
-
-    @CommandBase.conform_command()
-    async def __call__(
-        self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -542,10 +512,47 @@ class IntArrayTesterHigh(CommandBase):
             type(parameters["int_array_tester_2"]),
         )
 
-        return parameters["int_array_tester"]
+
+class IntArrayTesterHigh(CommandDefinition):
+    """
+    Testing the int_array parameters
+    """
+
+    inputs = {
+        "int_array_tester": {
+            "label": "IntArray Tester",
+            "type": IntArrayType(6),
+            "value": None,
+            "tooltip": "Testing the int_array parameters",
+        },
+        "int_array_tester_2": {
+            "label": "IntArray Tester 2",
+            "type": IntArrayType(6),
+            "value": [3, 4, 3, 5, 0, 1],
+            "tooltip": "Testing the int_array parameters",
+        },
+    }
+
+    @CommandDefinition.validate()
+    async def __call__(
+        self,
+        parameters: CommandSockets,
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        logger.info(
+            "IntArray parameter tester: %s, %s",
+            parameters["int_array_tester"],
+            type(parameters["int_array_tester"]),
+        )
+        logger.info(
+            "IntArray parameter tester: %s, %s",
+            parameters["int_array_tester_2"],
+            type(parameters["int_array_tester_2"]),
+        )
 
 
-class ProgressTester(CommandBase):
+class ProgressTester(CommandDefinition):
     """
     Testing the progress on info parameters
     """
@@ -553,85 +560,85 @@ class ProgressTester(CommandBase):
     parameters = {
         "progress_tester": {
             "label": "Progress Tester",
-            "type": TextParameterMeta(color="info", progress={"variant": "indeterminate"}),
+            "type": TextType(color="info", progress={"variant": "indeterminate"}),
             "value": "This command will take time to execute and show its progress",
             "tooltip": "Testing the range parameters",
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        self.command_buffer.progress = 0
+        self.buffer.progress = 0
         action_query.update_websocket()
         await asyncio.sleep(1)
         logger.info("Pretending to work")
-        self.command_buffer.progress = 33
+        self.buffer.progress = 33
         action_query.update_websocket()
         await asyncio.sleep(1)
         logger.info("Keep pretending to work")
-        self.command_buffer.progress = 66
+        self.buffer.progress = 66
         action_query.update_websocket()
+        await asyncio.sleep(1)
         logger.info("Work done")
-        await asyncio.sleep(1)
-        self.command_buffer.progress = 100
+        self.buffer.progress = 100
         action_query.update_websocket()
         await asyncio.sleep(1)
 
 
-class TextTester(CommandBase):
+class TextTester(CommandDefinition):
     """
     Testing the text parameters
     """
 
-    parameters = {
+    inputs = {
         "text_tester": {
             "label": "Text Tester",
-            "type": TextParameterMeta(),
+            "type": TextType(),
             "value": None,
             "tooltip": "Testing the text parameters",
         },
         "text_tester_2": {
             "label": "Text Tester 2",
-            "type": TextParameterMeta(),
+            "type": TextType(),
             "value": "Lorem ipsum dolor sit amet",
             "tooltip": "Testing the text parameters",
         },
         "text_tester_with_returns": {
             "label": "Text Tester with returns",
-            "type": TextParameterMeta(),
+            "type": TextType(),
             "value": "First line\nSecond line\nThird line\n\nEnd",
         },
         "text_tester_info": {
             "label": "Text Tester Info",
-            "type": TextParameterMeta(color="info"),
+            "type": TextType(color="info"),
             "value": "You are doing well! ℹ️",
         },
         "text_tester_success": {
             "label": "Text Tester Success",
-            "type": TextParameterMeta(color="success"),
+            "type": TextType(color="success"),
             "value": "You are doing well! ✅",
         },
         "text_tester_warning": {
             "label": "Text Tester Warning",
-            "type": TextParameterMeta(color="warning"),
+            "type": TextType(color="warning"),
             "value": "Be careful... ⚠️",
         },
         "text_tester_error": {
             "label": "Text Tester Error",
-            "type": TextParameterMeta(color="error"),
+            "type": TextType(color="error"),
             "value": "Something went wrong! 🚫",
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -646,15 +653,13 @@ class TextTester(CommandBase):
             type(parameters["text_tester_2"]),
         )
 
-        return parameters["text_tester"]
 
-
-class FrameSetTester(CommandBase):
+class FrameSetTester(CommandDefinition):
     """
     Testing the frame set parameters
     """
 
-    parameters = {
+    inputs = {
         "frameset_tester": {
             "label": "FrameSet Tester",
             "type": FrameSet,
@@ -669,10 +674,10 @@ class FrameSetTester(CommandBase):
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -687,15 +692,13 @@ class FrameSetTester(CommandBase):
             type(parameters["frameset_tester_2"]),
         )
 
-        return parameters["frameset_tester"]
 
-
-class TracebackTester(CommandBase):
+class TracebackTester(CommandDefinition):
     """
     Testing the int_array parameters
     """
 
-    parameters = {
+    inputs = {
         "raise_exception": {
             "label": "Raise exception",
             "type": bool,
@@ -704,10 +707,10 @@ class TracebackTester(CommandBase):
         },
     }
 
-    @CommandBase.conform_command()
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
@@ -719,4 +722,3 @@ class TracebackTester(CommandBase):
 
         if parameters["raise_exception"]:
             raise ValueError("Don't worry, this is a fake error for testing purpose")
-        return parameters["raise_exception"]

@@ -21,8 +21,6 @@ from silex_client.resolve.config_types import ActionYAML
 from silex_client.resolve.loader import Loader
 from silex_client.utils.log import logger
 
-search_path = Optional[List[str]]
-
 
 class Config:
     """
@@ -33,12 +31,13 @@ class Config:
 
     def __init__(
         self,
-        config_search_path: search_path = None,
+        config_search_path: List[str] = None,
     ):
-        # Add the custom action config search path
-        self.action_search_path = config_search_path
+        # Get the default config search path
         if config_search_path is None:
-            self.action_search_path = Config.get_default_action_search_path()
+            config_search_path = Config.get_default_action_search_path()
+        # Add the custom action config search path
+        self.action_search_path: List[str] = config_search_path
 
     @staticmethod
     def get() -> Config:
@@ -48,7 +47,8 @@ class Config:
         # Get the instance of Context created in this same module
         return getattr(sys.modules[__name__], "config")
 
-    def find_config(self, search_path: List[str]) -> List[Dict[str, str]]:
+    @staticmethod
+    def find_config(search_path: List[str]) -> List[Dict[str, str]]:
         """
         Find all the configs in the given paths
         """
@@ -77,18 +77,22 @@ class Config:
 
     @property
     def actions(self) -> List[Dict[str, str]]:
+        """Get the action configurations for the action category"""
         return self.get_actions("action")
 
     @property
     def publishes(self) -> List[Dict[str, str]]:
+        """Get the action configurations for the publish category"""
         return self.get_actions("publish")
 
     @property
     def conforms(self) -> List[Dict[str, str]]:
+        """Get the action configurations for the conform category"""
         return self.get_actions("conform")
 
     @property
     def submits(self) -> List[Dict[str, str]]:
+        """Get the action configurations for the submit category"""
         return self.get_actions("submit")
 
     def resolve_config(
@@ -126,19 +130,37 @@ class Config:
     def resolve_action(
         self, action_name: str, category: str = "action"
     ) -> Optional[dict]:
-        return self.resolve_config(action_name, self.get_actions(category))
+        """Resolve an action config from the given category"""
+        resolved_action = self.resolve_config(action_name, self.get_actions(category))
+
+        if not resolved_action:
+            raise Exception(
+                f"Could not resolve the action {action_name}: The action definition is invalid",
+            )
+
+        # To force only one action definition per files, the first key of the action
+        # must be the same as the file
+        if action_name not in resolved_action.keys():
+            raise Exception(
+                f"Could not resolve the action {action_name}: The root key should be the same as the config file name",
+            )
+
+        return resolved_action
 
     def resolve_publish(self, action_name: str) -> Optional[dict]:
+        """Resolve an action config from the publish category"""
         return self.resolve_action(action_name, "publish")
 
     def resolve_conform(self, action_name: str) -> Optional[dict]:
+        """Resolve an action config from the conform category"""
         return self.resolve_action(action_name, "conform")
 
     def resolve_submit(self, action_name: str) -> Optional[dict]:
+        """Resolve an action config from the submit category"""
         return self.resolve_action(action_name, "submit")
 
     def _load_config(self, config_path: str) -> Any:
-        # Load the config
+        """Load the yaml config at the given path"""
         with open(config_path, "r", encoding="utf-8") as config_data:
             search_path = copy.deepcopy(self.action_search_path)
             search_path = [Path(path) for path in search_path]
@@ -149,7 +171,7 @@ class Config:
                 loader.dispose()
 
     @staticmethod
-    def get_default_action_search_path():
+    def get_default_action_search_path() -> List[str]:
         """
         Get a list of search path from environment variables and entry points
         This is for the default Config object

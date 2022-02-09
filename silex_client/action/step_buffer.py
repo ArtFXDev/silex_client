@@ -1,13 +1,14 @@
 """
 @author: TD gang
+@github: https://github.com/ArtFXDev
 
-Dataclass used to store the data related to a step
+Class definition of StepBuffer
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict, List
 
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.command_buffer import CommandBuffer
@@ -17,28 +18,23 @@ from silex_client.utils.enums import Status
 @dataclass()
 class StepBuffer(BaseBuffer):
     """
-    Store the data of a step, it is used as a comunication payload with the UI
+    Store the data of a step. A step is only for grouping commands into categories, it helps
+    for readability, and allows to hide/skip... multiple commands at once
     """
 
-    #: The list of fields that should be ignored when serializing this buffer to json
-    PRIVATE_FIELDS = ["outdated_cache", "serialize_cache", "parent"]
-    READONLY_FIELDS = ["label"]
-    CHILD_NAME = "commands"
-
-    #: The index of the step, to set the order in which they should be executed
-    index: int = field(default=0)
+    #: Type name to help differentiate the different buffer types
+    buffer_type: str = field(default="steps")
     #: The status is readonly, it is computed from the commands's status
     status: Status = field(init=False)  # type: ignore
-    #: Dict that represent the parameters of the command, their type, value, name...
+    #: A step can only have commands as children
     children: Dict[str, CommandBuffer] = field(default_factory=dict)
 
     @property
-    def child_type(self):
-        return CommandBuffer
-
-    @property
-    def commands(self) -> Dict[str, CommandBuffer]:
-        return self.children
+    def commands(self) -> List[CommandBuffer]:
+        """
+        Alias for children as a list
+        """
+        return list(self.children.values())
 
     @property  # type: ignore
     def status(self) -> Status:
@@ -46,12 +42,12 @@ class StepBuffer(BaseBuffer):
         The status of the action depends of the status of its commands
         """
         status = Status.COMPLETED
-        for command in self.commands.values():
+        for command in self.commands:
             status = command.status if command.status > status else status
 
         # If some commands are completed and the rest initialized, then the step is processing
         if status is Status.INITIALIZED and Status.COMPLETED in [
-            command.status for command in self.commands.values()
+            command.status for command in self.commands
         ]:
             status = Status.PROCESSING
 
@@ -62,5 +58,5 @@ class StepBuffer(BaseBuffer):
         """
         The status property is readonly, however
         we need to implement this since it is also a property
-        and the datablass module tries to set it
+        and the dataclass module tries to set it
         """

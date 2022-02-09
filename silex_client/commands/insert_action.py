@@ -1,198 +1,218 @@
+"""
+@author: TD gang
+@github: https://github.com/ArtFXDev
+
+Class definition of the InsertAction command
+"""
 from __future__ import annotations
 
-import copy
 import logging
-import typing
 import uuid
 from typing import Any, Dict
 
-import fileseq
-
-from silex_client.action.command_base import CommandBase
-from silex_client.resolve.config import Config
-from silex_client.utils.datatypes import CommandOutput
-from silex_client.utils.parameter_types import AnyParameter
-
-# Forward references
-if typing.TYPE_CHECKING:
-    from silex_client.action.action_query import ActionQuery
+from silex_client.action.command_definition import CommandDefinition
+from silex_client.action.command_sockets import CommandSockets
+from silex_client.action.connection import Connection
+from silex_client.action.socket_buffer import SocketBuffer
+from silex_client.utils.socket_types import StringType
+from silex_client.action.action_query import ActionQuery
 
 
-class InsertAction(CommandBase):
+class InsertAction(CommandDefinition):
     """
-    Insert an action's steps after the current step
+    Insert an action right into the current action as a child.
+
+    The inserted action will be executed right after the current step, make sure
+    this command is called at the end of a step if you want the inserted action to be
+    executed right after being inserted.
+
+    You can customise dynamically the inserted action using the append_step and prepend_step
+    parameters.
     """
 
-    parameters = {
-        "action": {
-            "label": "Action to execute",
-            "type": str,
-            "value": None,
-            "tooltip": "This action will be executed for each items in the given list",
+    inputs = {
+        "name": {
+            "label": "Name of the action to insert",
+            "type": StringType(),
+            "value": "",
+            "tooltip": """
+            Name of the action to insert.
+            If the definition is empty, this name will be used to find
+            the definition in the config files
+            """,
         },
         "category": {
             "label": "Action category",
-            "type": str,
+            "type": StringType(),
             "value": "action",
-            "tooltip": "Set the category of the action you want to execute",
+            "tooltip": """
+            If the action to insert is an action name
+            This define the category of the action to resolve
+            """,
         },
-        "value": {
-            "label": "Value to set on the new action",
-            "type": AnyParameter,
-            "value": "",
-            "tooltip": "This value will be append to action's steps labels",
+        "definition": {
+            "label": "Action definition",
+            "type": dict,
+            "value": {},
+            "tooltip": """
+            If you don't provide any action definition, the definition will be resolved
+            from the available action config files
+            """,
             "hide": True,
         },
-        "parameter": {
-            "label": "Parameters to set on the action",
-            "type": str,
-            "value": "",
-            "tooltip": "Set wich parameter will be overriden by the given value",
+        "prepend_step": {
+            "label": "Action to prepend",
+            "type": dict,
+            "value": {},
+            "tooltip": """
+            You can provide a step definition to customize the inserted action
+            dynamically
+            The step will be preprended in the inserted action
+            """,
             "hide": True,
         },
-        "label_key": {
-            "label": "Value's key to set on the label",
-            "type": str,
-            "value": "",
-            "tooltip": "If the value is a dictionary, the value at that key will be set on the label",
+        "append_step": {
+            "label": "Action to append",
+            "type": dict,
+            "value": {},
+            "tooltip": """
+            You can provide a step definition to customize the inserted action
+            dynamically
+            The step will be appended in the inserted action
+            """,
             "hide": True,
         },
-        "output": {
-            "label": "The command to get the output from",
-            "type": str,
-            "value": "",
-            "tooltip": "The output of the given command will be returned",
+        "input": {
+            "label": "Action input value",
+            "type": dict,
+            "value": {},
+            "tooltip": "This value will be set to the newly inserted action's input",
             "hide": True,
         },
-        "hide_commands": {
-            "label": "Hide the insterted commands",
-            "type": bool,
-            "value": False,
-            "tooltip": "This option is for performance purpose",
+        "inputs_override": {
+            "label": "Inputs to set on the action",
+            "type": dict,
+            "value": {},
+            "tooltip": """
+            Dict of values to set on the inputs of the inserted action
+            The keys of the dict should look like <step>.<command>.<input>
+            """,
+            "hide": True,
+        },
+        "label": {
+            "label": "Action label",
+            "type": StringType(),
+            "value": "",
+            "tooltip": "The label to append to the inserted action's label",
+            "hide": True,
+        },
+        "index_shift": {
+            "label": "Index margin",
+            "type": int,
+            "value": 10,
+            "tooltip": """
+            When inserting the action, the index will be set automatically so the
+            action is set between the current steps and the next step.
+            This is done by shifting the index of the following steps, you can choose,
+            how big is the shift with this parameter.
+            """,
             "hide": True,
         },
     }
 
-    @CommandBase.conform_command()
+    outputs = {
+        "action_output": {
+            "label": "Action's output",
+            "type": dict,
+            "value": {},
+            "tooltip": "The outputs of the action can be retrieved here",
+        }
+    }
+
+    @CommandDefinition.validate()
     async def __call__(
         self,
-        parameters: Dict[str, Any],
+        parameters: CommandSockets,
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        action_type = parameters["action"]
-        label_key = parameters["label_key"]
-        value = parameters["value"]
-        hide_commands = parameters["hide_commands"]
-        action = Config.get().resolve_action(action_type, parameters["category"])
+        name: str = parameters["name"]
+        category: str = parameters["category"]
+        definition: dict = parameters["definition"]
+        prepend_step: dict = parameters["prepend_step"]
+        append_step: dict = parameters["append_step"]
+        action_input: Dict[str, Any] = parameters["input"]
+        inputs_override: Dict[str, Any] = parameters["inputs_override"]
+        label: str = parameters["label"]
+        index_shift: int = parameters["index_shift"]
 
-        if action is None:
-            raise Exception("Could not resolve the action %s", action_type)
+        main_action = ActionQuery(name=name, category=category, definition=definition)
+        if not main_action:
+            raise Exception(f"Could not resolve the action {name}")
 
-        # Make sure the required action is in the config
-        if action_type not in action.keys():
-            raise Exception(
-                "Could not resolve the action {}: The root key should be the same as the config file name".format(
-                    action_type
-                )
+        # The user can pass action definitions to prepend or append to the inserted action.
+        # It can be used to customise the action dynamicaly
+        for index, insert_step in enumerate([prepend_step, append_step]):
+            if not insert_step:
+                continue
+
+            action_children = list(main_action.buffer.children.values())
+
+            # The index of the inserted definition is different if we prepend of append
+            insert_index = action_children[0].index - index_shift
+            if index == 1:
+                insert_index = action_children[-1].index + index_shift
+
+            insert_step["index"] = insert_index
+            # We always need to make sure the inserted definitions does not override
+            # existing children, we use uuid as name to avoid that
+            main_action.buffer.deserialize({"steps": {str(uuid.uuid4()): insert_step}})
+
+        # The parameter values of the inserted action can be overriden
+        for input_path, input_value in inputs_override.items():
+            input_buffer = SocketBuffer(value=input_value, parent=self.buffer)
+            main_action.buffer.set_input_value(
+                input_path, input_buffer.eval(action_query)
             )
 
-        action_definition = action[action_type]
-        action_definition["name"] = action_type
-        if not isinstance(action_definition.get("steps"), dict):
+        if label:
+            action_label = main_action.buffer.label
+            main_action.buffer.label = (
+                f"{action_label} {label}" if action_label else label
+            )
+        for input_key, input_value in action_input.items():
+            if isinstance(main_action.buffer.inputs.get(input_key), SocketBuffer):
+                main_action.buffer.inputs[input_key].value = input_value
+
+        action_definition = main_action.buffer.serialize()
+
+        # To insert the action between the existing children
+        # we must shift the index of all the children that follow the current step
+        parent_action = self.buffer.get_parent("actions")
+        parent_step = self.buffer.get_parent("steps")
+        if parent_action is None or parent_step is None:
             raise Exception(
-                "Could not append new action: The resolved action has not steps"
+                "Could not append new action: The current command is invalid"
             )
 
-        action_steps = action_definition.get("steps")
-        parameter_path = CommandOutput(parameters["parameter"])
-        output_path = CommandOutput(parameters["output"])
+        action_definition["index"] = parent_step.index + index_shift
+        parent_action_steps = list(parent_action.children.values())
+        parent_step_index = parent_action_steps.index(parent_step)
+        next_steps = parent_action_steps[parent_step_index + 1 :]
 
-        # Get the current step and the next step to insert the new steps in between
-        current_step_index = next(
-            index
-            for index, step in enumerate(action_query.steps)
-            if self.command_buffer in step.commands.values()
-        )
-        current_step = action_query.steps[current_step_index]
-        next_steps = action_query.steps[current_step_index + 1 :]
+        for next_step in next_steps:
+            next_step.index += index_shift * 2
 
-        # Rename each steps to make sure they don't override existing steps
-        step_name_mapping = {name: name for name in list(action_steps.keys())}
-        for step_name in step_name_mapping.keys():
-            new_name = step_name + "_" + str(uuid.uuid4())
-            step_name_mapping[step_name] = new_name
-            # Set the step label before applying it on the action query
-            action_steps[step_name].setdefault("label", step_name.title())
-            if value:
-                # Add to the label the value to help differenciate it from others
-                splitted_key = label_key.split(":") if label_key else []
-                value_copy = copy.deepcopy(value)
-                while isinstance(value_copy, dict) and splitted_key:
-                    value_copy = value_copy.get(splitted_key[0])
-                    splitted_key.pop(0)
-                if isinstance(value_copy, list):
-                    value_copy = fileseq.findSequencesInList(value_copy)[0]
-                action_steps[step_name]["label"] = (
-                    action_steps[step_name]["label"] + " : " + str(value_copy)
-                )
-            # Rename the step
-            action_steps[new_name] = action_steps.pop(step_name)
+        # We always need to make sure the inserted definitions does not override
+        # existing children, we use uuid as name to avoid that
+        action_name = str(uuid.uuid4())
+        logger.info("Inserting action: %s", action_name)
+        parent_action.deserialize({"actions": {action_name: action_definition}})
 
-        # Remove all the action's infos that are not about the steps
-        for key in list(action_definition.keys()):
-            if key != "steps":
-                del action_definition[key]
-        # Apply the new action to the current action
-        # patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
-        action_query.buffer.deserialize(action_definition)
-
-        # Adapt the indexes, the parameter paths on the newly added steps
-        last_index = current_step.index
-        for old_step_name, step_name in step_name_mapping.items():
-            step = action_query.buffer.steps[step_name]
-            # Change the index to make sure the new step in executed after the current step
-            step.index += current_step.index
-            last_index = step.index
-
-            # Adapt the parameter_path to the new step's name
-            if parameter_path.step == old_step_name:
-                parameter_path.step = step_name
-            # Adapt the output_path to the new step's name
-            if output_path.step == old_step_name:
-                output_path.step = step_name
-
-            # Loop over all the commands of the step
-            if (
-                action_query.buffer.simplify
-                or hide_commands
-                or self.command_buffer.hide
-            ):
-                for command in step.commands.values():
-                    command.hide = True
-
-            # Loop over all the parameters of the step
-            step_parameters = [
-                parameter
-                for command in step.commands.values()
-                for parameter in command.parameters.values()
-                if isinstance(parameter.value, CommandOutput)
-            ]
-            for parameter in step_parameters:
-                # If the parameter was pointing to a newly added step
-                if parameter.value.step in step_name_mapping.keys():
-                    # Make it point to the new name of the step
-                    parameter.value.step = step_name_mapping[parameter.value.step]
-                    parameter.value = parameter.value.rebuild()
-
-        # Change the index of the steps that where after to maintain them after
-        for step in next_steps:
-            index_difference = step.index - current_step.index
-            step.index = last_index + index_difference
-
-        action_query.buffer.reorder_steps()
-
-        if parameter_path:
-            action_query.set_parameter(parameter_path.rebuild(), value, hide=True)
-
-        return output_path.rebuild()
+        # This command foward the output of the inserted action.
+        outputs = {}
+        for output_name in main_action.buffer.outputs:
+            outputs[output_name] = Connection(
+                Connection.SPLIT.join([action_name, output_name, "output"])
+            )
+        return {"action_output": outputs}

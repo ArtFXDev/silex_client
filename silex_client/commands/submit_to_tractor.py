@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 
 import gazu.client
 import gazu.project
+
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder
 from silex_client.utils.parameter_types import (

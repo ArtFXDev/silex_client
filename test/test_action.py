@@ -40,7 +40,7 @@ def test_execute_foo_action(dummy_config: Config, dummy_context: Context):
     # Let the execution of the action happen in the event loop thread
     future.result()
 
-    assert action.status is Status.COMPLETED
+    assert action.buffer.status is Status.COMPLETED
 
 
 def test_execute_tester_action(dummy_context: Context):
@@ -50,16 +50,9 @@ def test_execute_tester_action(dummy_context: Context):
     action = ActionQuery("tester", category="dev")
     assert hasattr(action, "buffer")
 
-    # Set the parameter that are required for the execution
-    action.set_parameter("parameter_tester:path:path_tester", "/foo/bar")
-    action.set_parameter("parameter_tester:path:path_tester_multiple", "/foo/bar")
-    action.set_parameter("parameter_tester:path:path_tester_extensions", "/foo/bar")
-    action.set_parameter(
-        "parameter_tester:path:path_tester_multiple_extensions", "/foo/bar"
-    )
     future = action.execute(batch=True)
 
     # Let the execution of the action happen in the event loop thread
     future.result()
 
-    assert action.status is Status.COMPLETED
+    assert action.buffer.status is Status.COMPLETED

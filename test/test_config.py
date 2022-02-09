@@ -40,14 +40,3 @@ def test_resolve_action(dummy_config: Config):
     assert len(resolved_action["foo"]["steps"]["pre_action"]) == 3
     assert len(resolved_action["foo"]["steps"]["pre_action"]["commands"]) == 2
     assert len(resolved_action["foo"]["steps"]["action"]["commands"]) == 3
-
-
-def test_resolve_non_existing_action(dummy_config):
-    """
-    Test the resolving of a configuration for the non existing action 'foobar' and
-    a task 'task_a' with a dummy config file
-    """
-    resolved_action = dummy_config.resolve_action("fix_maya")
-
-    # Make sure the the config is empty
-    assert resolved_action is None

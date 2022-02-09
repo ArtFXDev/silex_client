@@ -1,28 +1,22 @@
 """
 @author: TD gang
+@github: https://github.com/ArtFXDev
 
-Dataclass used to store the data related to a command
+Class definition of CommandBuffer
 """
 
 from __future__ import annotations
 
-import copy
 import importlib
-import os
-import traceback
-from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, TypeVar
 
-import dacite.config as dacite_config
-import dacite.core as dacite
 import jsondiff
 
 from silex_client.action.base_buffer import BaseBuffer
-from silex_client.action.command_base import CommandBase
-from silex_client.action.parameter_buffer import ParameterBuffer
+from silex_client.action.command_definition import CommandDefinition
+from silex_client.action.command_sockets import CommandSockets
 from silex_client.network.websocket_log import RedirectWebsocketLogs
-from silex_client.utils.datatypes import CommandOutput
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
 
@@ -30,87 +24,78 @@ from silex_client.utils.log import logger
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
+GenericType = TypeVar("GenericType")
+
 
 @dataclass()
 class CommandBuffer(BaseBuffer):
     """
-    Store the data of a command, it is used as a comunication payload with the UI
+    Store the data of a command. A command can be executed, it stores a path to a CommandDefinition
+    that will contain the code to execute. The CommandBuffer is responsible to gather the input data
+    for the execution of the command.
     """
 
     PRIVATE_FIELDS = [
-        "output_result",
-        "executor",
+        "definition",
         "parent",
         "outdated_cache",
         "serialize_cache",
     ]
-    READONLY_FIELDS = ["logs", "label"]
-    CHILD_NAME = "parameters"
-    ALLOW_HIDE_CHILDS = False
 
-    #: Childs in the buffer hierarchy of buffer of the action
-    children: Dict[str, ParameterBuffer] = field(default_factory=dict)
-    #: The path to the command's module
-    path: str = field(default="")
-    #: Specify if the parameters must be displayed by the UI or not
-    hide_parameters: bool = field(compare=False, repr=False, default=False)
-    #: Specify if the command should be asking to the UI a feedback
-    ask_user: bool = field(compare=False, repr=False, default=False)
+    READONLY_FIELDS = ["status", "buffer_type", "logs", "name"]
+
+    #: Type name to help differentiate the different buffer types
+    buffer_type: str = field(default="commands")
+    #: The path to the command's definition is a regular python import, with '.' as a separator
+    definition_path: str = field(default="")
+    #: Specify if the command should be asking to the UI a user input
+    prompt: bool = field(compare=False, repr=False, default=False)
     #: The status of the command, to keep track of the progression, specify the errors
-    status: Status = field(default=Status.INITIALIZED, init=False)
-    #: The output of the command, it can be passed to an other command
-    output_result: Any = field(default=None, init=False)
-    #: The callable that will be used when the command is executed
-    executor: CommandBase = field(init=False)
+    status: Status = field(default=Status.INITIALIZED)
+    #: The definition of the code to execute when the command is executed
+    definition: CommandDefinition = field(init=False)
     #: List of all the logs during the execution of that command
     logs: List[Dict[str, str]] = field(default_factory=list)
-    #: Defines if the command must be executed or not
-    skip: bool = field(default=False)
-    #: The progress is only infomational, it should go from 0 to 100
-    progress: Optional[int] = field(default=None)
 
     def __post_init__(self):
         super().__post_init__()
 
-        # Get the executor
-        self.executor = self._get_executor(self.path)
+        # The definition is resolved dynamically
+        self.definition = self._get_definition()
 
-    @property
-    def child_type(self):
-        return ParameterBuffer
+        # Sockets buffers cannot have children
+        self.children = {}
 
-    @property
-    def parameters(self) -> Dict[str, ParameterBuffer]:
-        return self.children
-
-    def _get_executor(self, path: str) -> CommandBase:
+    def _get_definition(self) -> CommandDefinition:
         """
-        Try to import the module and get the Command object
+        Try to import the module, get and instantiate the CommandDefinition object
         """
         try:
-            split_path = path.split(".")
-            module_path = ".".join(split_path[:-1])
-            class_name = split_path[-1]
+            # We cannot import the class directly, we must split the module from the class,
+            # import the module and get the class from the module afterwards
+            (*module_path, class_name) = self.definition_path.split(".")
 
             # Import the module
-            module = importlib.import_module(module_path)
+            module = importlib.import_module(".".join(module_path))
             importlib.reload(module)
 
             # Get the command class
-            executor = getattr(module, class_name)
+            definition = getattr(module, class_name)
 
-            if issubclass(executor, CommandBase):
-                return executor(self)
+            if not issubclass(definition, CommandDefinition):
+                raise ImportError("The given command does not inherit from CommandBase")
 
-            # If the module is not a subclass or CommandBase, return an error
-            raise ImportError("The given command does not inherit from CommandBase")
-        except (ImportError, AttributeError, ModuleNotFoundError) as exception:
-            logger.error("Invalid command path, skipping %s (%s)", path, exception)
-            self.status = Status.INVALID
-            if os.getenv("SILEX_LOG_LEVEL") == "DEBUG":
-                traceback.print_tb(exception.__traceback__)
+            return definition(self)
 
-            return CommandBase(self)
+        except (
+            ImportError,
+            AttributeError,
+            ModuleNotFoundError,
+            ValueError,
+        ) as exception:
+            raise Exception(
+                f"Invalid command path: {self.definition_path}"
+            ) from exception
 
     async def execute(
         self, action_query: ActionQuery, execution_type: Execution = Execution.FORWARD
@@ -118,20 +103,10 @@ class CommandBuffer(BaseBuffer):
         """
         Execute the command using the executor
         """
-        if self.skip:
+        if self.skip_execution():
             logger.debug("Skipping command %s", self.name)
         else:
-            # Create a dictionary that only contains the name and the value of the parameters
-            # without infos like the type, label...
-            parameters = {
-                key: value.get_value(action_query)
-                for key, value in self.children.items()
-            }
-            with suppress(TypeError):
-                parameters = copy.deepcopy(parameters)
-
-            # Run the executor and copy the parameters
-            # to prevent them from being modified during execution
+            parameters = self.get_inputs_helper(action_query)
             logger.debug("Executing command %s", self.name)
             async with RedirectWebsocketLogs(action_query, self) as log:
                 # Set the status to processing
@@ -139,9 +114,9 @@ class CommandBuffer(BaseBuffer):
 
                 # Call the actual command
                 if execution_type == Execution.FORWARD:
-                    await self.executor(parameters, action_query, log)
+                    await self.definition(parameters, action_query, log)
                 elif execution_type == Execution.BACKWARD:
-                    await self.executor.undo(parameters, action_query, log)
+                    await self.definition.undo(parameters, action_query, log)
 
         # Keep the error statuses
         if self.status in [Status.INVALID, Status.ERROR]:
@@ -152,18 +127,18 @@ class CommandBuffer(BaseBuffer):
         elif execution_type == Execution.BACKWARD:
             self.status = Status.INITIALIZED
 
-    def require_prompt(self) -> bool:
+    def require_prompt(self, action_query: ActionQuery) -> bool:
         """
-        Check if this command require a user input, by testing the ask_user field
-        and none values on the parameters
+        Check if this command require a user input, by testing the prompt field
+        and none values on the input
         """
         if self.skip:
             return False
-        if self.ask_user:
+        if self.prompt:
             return True
         if all(
-            parameter.value is not None or parameter.hide
-            for parameter in self.children.values()
+            input_buffer.eval(action_query) is not None or input_buffer.hide
+            for input_buffer in self.inputs.values()
         ):
             return False
         return True
@@ -173,49 +148,64 @@ class CommandBuffer(BaseBuffer):
         Call the setup of the command, the setup method is used to edit the command attributes
         dynamically (parameters, states...)
         """
-        # Create a dictionary that only contains the name and the value of the parameters
-        # without infos like the type, label...
-        parameters = {
-            key: value.get_value(action_query) for key, value in self.children.items()
-        }
-        with suppress(TypeError):
-            parameters = copy.deepcopy(parameters)
-
+        parameters = self.get_inputs_helper(action_query)
         async with RedirectWebsocketLogs(action_query, self) as log:
-            await self.executor.setup(parameters, action_query, log)
+            await self.definition.setup(parameters, action_query, log)
 
     @classmethod
     def construct(
         cls, serialized_data: Dict[str, Any], parent: BaseBuffer = None
     ) -> CommandBuffer:
         """
-        Create an command buffer from serialized data
+        The construct of a command is different from others since the command
+        first inerit it's data from the command definition and then is overriden
+        by the input data
         """
-        config = dacite_config.Config(cast=[Status, CommandOutput])
-
-        # Initialize the buffer without the children, since the children needs special treatment
-        filtered_data = serialized_data
-        filtered_data["parent"] = parent
-        if cls.CHILD_NAME in serialized_data:
-            filtered_data = copy.copy(serialized_data)
-            del filtered_data[cls.CHILD_NAME]
-        command = dacite.from_dict(cls, filtered_data, config)
-
-        # Get the default data from the executor and patch it with the serialized data
-        executor_parameters = copy.deepcopy(command.executor.parameters)
-        serialized_parameters = serialized_data.get("parameters", {})
-        for parameter_name, parameter in executor_parameters.items():
-            parameter["name"] = parameter_name
-
-            # The parameters can be defined with <key>=<value> as a shortcut
-            if not isinstance(serialized_parameters.get(parameter_name, {}), dict):
-                serialized_parameters[parameter_name] = {
-                    "value": serialized_parameters[parameter_name]
-                }
-
-            # Apply the parameters to the default parameters
-            serialized_data["parameters"] = jsondiff.patch(
-                executor_parameters, serialized_parameters
+        if "definition_path" not in serialized_data:
+            raise Exception(
+                "Could not create command buffer: The definition path is required"
             )
 
-        return super().construct(serialized_data, parent)
+        # The private and readonly fields must be initialized in the construct
+        buffer_options = {
+            field_name: serialized_data[field_name]
+            for field_name in [*cls.PRIVATE_FIELDS, *cls.READONLY_FIELDS]
+            if field_name in serialized_data
+        }
+        buffer_options["parent"] = parent
+        buffer_options["definition_path"] = serialized_data["definition_path"]
+        buffer = cls(**buffer_options)
+
+        for socket in ["inputs", "outputs"]:
+            socket_definition = getattr(buffer.definition, socket)
+            if socket not in serialized_data:
+                serialized_data[socket] = socket_definition
+                continue
+
+            socket_serialized = serialized_data[socket]
+
+            for socket_name, socket_data in socket_definition.items():
+                socket_data["name"] = socket_name
+
+                # Apply the serialied socket to override the default values in the socket definition
+                socket_definition[socket_name] = jsondiff.patch(
+                    socket_definition[socket_name],
+                    socket_serialized.get(socket_name, {}),
+                )
+
+            serialized_data[socket] = socket_definition
+
+        buffer.deserialize(serialized_data, force=True)
+        return buffer
+
+    def get_inputs_helper(self, action_query: ActionQuery) -> CommandSockets:
+        """
+        Helper to get and set the input values easly
+        """
+        return CommandSockets(action_query, self, self.inputs)
+
+    def get_outputs_helper(self, action_query: ActionQuery) -> CommandSockets:
+        """
+        Helper to get and set the output values easly
+        """
+        return CommandSockets(action_query, self, self.outputs)
