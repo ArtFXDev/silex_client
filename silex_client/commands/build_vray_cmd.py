@@ -182,7 +182,7 @@ class VrayCommand(CommandBase):
             render_layer = scene_to_layer_dict[first_key]
             scene_name = str(first_key.stem).split(render_layer)[0][:-1]
         else:
-            # for groups outside of silex... ( TRAITORS !! REBELS !! hum.. hum...)
+            # For THE group outside of silex... ( TRAITORS !! REBELS !! hum.. hum...)
             scene_name = vray_scenes[0]
 
         return {"commands": render_layers_cmd, "file_name": scene_name}
