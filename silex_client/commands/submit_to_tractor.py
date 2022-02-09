@@ -95,8 +95,10 @@ class TractorSubmiter(CommandBase):
 
             try:
                 project_dict["data"]["nas"]
-            except KeyError:
-                raise Exception(f"Project {project} doesn't have data or nas key")
+            except KeyError as exception:
+                raise Exception(
+                    f"Project {project} doesn't have data or nas key"
+                ) from exception
 
             owner = action_query.context_metadata["user_email"].split("@")[0]
             mount_cmd.param(
@@ -142,7 +144,7 @@ class TractorSubmiter(CommandBase):
                 for index, command in enumerate(all_commands):
                     if "project" in action_query.context_metadata:
                         # Add the project in the rez environment
-                        command.add_rez_package(
+                        command.deepcopy().add_rez_package(
                             action_query.context_metadata["project"].lower()
                         )
 

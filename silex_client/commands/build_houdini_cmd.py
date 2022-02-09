@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
@@ -11,7 +11,7 @@ from silex_client.utils import command_builder, frames
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
     PathParameterMeta,
-    SelectParameterMeta,
+    MultipleSelectParameterMeta,
 )
 from silex_client.utils.thread import execute_in_thread
 
@@ -59,7 +59,7 @@ class HoudiniCommand(CommandBase):
         },
         "render_nodes": {
             "label": "ROP node path (defaults to /out/...)",
-            "type": SelectParameterMeta(),
+            "type": MultipleSelectParameterMeta(),
             "value": None,
         },
         "parameter_overrides": {
@@ -89,49 +89,60 @@ class HoudiniCommand(CommandBase):
         skip_existing = parameters["skip_existing"]
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
-        render_node: str = parameters["render_nodes"]
+        render_nodes: Union[str, List[str]] = parameters["render_nodes"]
         output_file = pathlib.Path(parameters["output_filename"])
 
         logger.info(output_file)
         output_file = (
             output_file.parent
-            / f"{output_file.with_suffix('').stem}_$F4{''.join(output_file.suffixes)}"
+            / f"{output_file.with_suffix('').stem}.$F4{''.join(output_file.suffixes)}"
         )
 
-        # Build the render command
-        houdini_cmd = command_builder.CommandBuilder(
-            "hython", rez_packages=["houdini"], delimiter=" "
-        )
-        houdini_cmd.param("m", "hrender")
-        houdini_cmd.value(str(scene))
-        houdini_cmd.param("d", render_node)
-        houdini_cmd.param("o", str(output_file))
-        # Verbose mode
-        houdini_cmd.param("v")
-        houdini_cmd.param("S", condition=skip_existing)
+        if not isinstance(render_nodes, list):
+            render_nodes = render_nodes.split(" ")
 
-        if parameter_overrides:
-            houdini_cmd.param("w", resolution[0])
-            houdini_cmd.param("h", resolution[1])
+        node_cmd: Dict[str, Dict[str, command_builder.CommandBuilder]] = {}
 
-        frame_chunks = frames.split_frameset(frame_range, task_size)
-        commands: Dict[str, command_builder.CommandBuilder] = {}
+        for render_node in render_nodes:
+            render_name = render_node.split("/")[-1]
+            full_output_file = (
+                output_file.parent
+                / render_name
+                / f"{output_file.stem}_{render_name}.{''.join(output_file.suffixes)}"
+            )
+            # Build the render command
+            houdini_cmd = command_builder.CommandBuilder(
+                "hython", rez_packages=["houdini"], delimiter=" "
+            )
+            houdini_cmd.param("m", "hrender")
+            houdini_cmd.value(str(scene))
+            houdini_cmd.param("d", render_node)
+            houdini_cmd.param("o", str(full_output_file))
+            # Verbose mode
+            houdini_cmd.param("v")
+            houdini_cmd.param("S", condition=skip_existing)
 
-        # Create commands
-        for chunk in frame_chunks:
-            chunk_cmd = houdini_cmd.deepcopy()
-            task_title = chunk.frameRange()
+            if parameter_overrides:
+                houdini_cmd.param("w", resolution[0])
+                houdini_cmd.param("h", resolution[1])
 
-            chunk_cmd.param("f", ";".join(map(str, list(chunk))))
+            frame_chunks = frames.split_frameset(frame_range, task_size)
+            commands: Dict[str, command_builder.CommandBuilder] = {}
 
-            commands[task_title] = chunk_cmd
+            # Create commands
+            for chunk in frame_chunks:
+                chunk_cmd = houdini_cmd.deepcopy()
+                task_title = chunk.frameRange()
 
-        # Format "commands" output to match the input type in the submiter
-        node_cmd: Dict[str, Dict[str, command_builder.CommandBuilder]] = {
-            f"ROP node: {render_node}": commands
-        }
+                chunk_cmd.param("f", ";".join(map(str, list(chunk))))
 
-        logger.info(f"final commands: {commands}")
+                commands[task_title] = chunk_cmd
+
+            logger.info(f"Commands created: {commands}")
+
+            # Format "commands" output to match the input type in the submiter
+            node_cmd[f"ROP node: {render_node}"] = commands
+
         return {"commands": node_cmd, "file_name": scene.stem}
 
     async def setup(
@@ -150,7 +161,9 @@ class HoudiniCommand(CommandBase):
         self.command_buffer.parameters["resolution"].hide = not hide_overrides
 
         if rop_from_hip:
-            self.command_buffer.parameters["render_nodes"].type = SelectParameterMeta()
+            self.command_buffer.parameters[
+                "render_nodes"
+            ].type = MultipleSelectParameterMeta()
         else:
             self.command_buffer.parameters["render_nodes"].type = str
             return
