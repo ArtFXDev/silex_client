@@ -1,0 +1,12 @@
+set_context:
+  thumbnail: "switch_context.svg"
+  steps:
+    switch_context:
+      lavel: "Switch context"
+      index: 50
+      commands:
+        set_context:
+          label: "Select new context"
+          path: "silex_client.commands.set_context.SetContext"
+          tooltip: "This new context will define the location of your future saves, publish..."
+          ask_user: true

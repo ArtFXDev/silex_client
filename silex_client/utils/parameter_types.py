@@ -43,10 +43,8 @@ def TaskParameterMeta():
         return {
             "name": "task",
         }
-
     def get_default():
         return ""
-
     attributes = {
         "serialize": serialize,
         "get_default": get_default,
