@@ -7,6 +7,7 @@ from typing import Any, Dict
 
 from silex_client.core.context import Context
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.thread import execute_in_thread
 from silex_client.utils.parameter_types import TaskParameterMeta
 
 # Forward references
@@ -37,4 +38,4 @@ class SetContext(CommandBase):
     ):
         task_id: str = parameters["task"]
         os.environ["SILEX_TASK_ID"] = task_id
-        Context.get().compute_metadata()
+        await execute_in_thread(Context.get().compute_metadata)
