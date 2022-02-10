@@ -182,7 +182,7 @@ class BuildOutputPath(CommandBase):
 
         return {
             "directory": directory,
-            "task": task_id,
+            "task": str(task_id),
             "file_name": file_name,
             "full_name": full_names,
             "temp_directory": temp_directory,
