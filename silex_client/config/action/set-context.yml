@@ -1,4 +1,4 @@
-set_context:
+set-context:
   thumbnail: "switch_context.svg"
   steps:
     switch_context:
