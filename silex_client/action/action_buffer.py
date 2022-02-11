@@ -7,6 +7,8 @@ Dataclass used to store the data related to an action
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import json
+import pathlib
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from silex_client.action.base_buffer import BaseBuffer
@@ -151,3 +153,19 @@ class ActionBuffer(BaseBuffer):
                 )
                 continue
             setattr(parameter, key, value)
+
+    def load_store(self, file_path: pathlib.Path):
+        """
+        Load a new store from disk, usefull to backup the progression of the action
+        """
+        with open(file_path, "r", encoding="utf8") as file:
+            store = json.load(file)
+            self.store = store
+
+    def dump_store(self, file_path: pathlib.Path):
+        """
+        Backup the store for later load. When an error occured, it can be usefull to dump the
+        store so when an action is run again, we can load back in the store for autocompletion
+        """
+        with open(file_path, "w", encoding="utf8") as file:
+            json.dump(self.store, file)

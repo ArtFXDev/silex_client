@@ -6,8 +6,9 @@ Helpers to encode or decode the json stream
 
 import uuid
 
-import fileseq
+import pathlib
 import jsondiff
+import fileseq
 
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.action.command_buffer import CommandBuffer
@@ -22,20 +23,12 @@ def silex_encoder(obj):
     if isinstance(obj, uuid.UUID):
         return obj.hex
 
-    # Convert ActionBuffer into dict
-    if isinstance(obj, ActionBuffer):
+    # Convert ActionBuffer, CommandBuffer and command parameters into dict
+    if isinstance(obj, (ActionBuffer, CommandBuffer, CommandParameterMeta)):
         return obj.serialize()
 
-    # Convert ActionBuffer into dict
-    if isinstance(obj, CommandBuffer):
-        return obj.serialize()
-
-    # Use the serialize method for command parameters
-    if isinstance(obj, CommandParameterMeta):
-        return obj.serialize()
-
-    # Convert frameset to string
-    if isinstance(obj, fileseq.FrameSet):
+    # Convert frameset and pathlib to string
+    if isinstance(obj, (fileseq.FrameSet, pathlib.Path)):
         return str(obj)
 
     # Convert types into string
@@ -57,7 +50,7 @@ class CustomDiffSyntax(jsondiff.CompactJsonDiffSyntax):
         """
         if s == 0.0 or removed:
             return b
-        elif s == 1.0:
+        if s == 1.0:
             return {}
 
         changed.update(added)
