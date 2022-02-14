@@ -6,8 +6,6 @@ import typing
 from typing import Any, Dict
 
 from fileseq import FrameSet
-
-
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
@@ -16,6 +14,7 @@ from silex_client.utils.parameter_types import (
     RadioSelectParameterMeta,
     RangeParameterMeta,
     SelectParameterMeta,
+    TaskFileParameterMeta,
     TaskParameterMeta,
     TextParameterMeta,
 )
@@ -553,7 +552,9 @@ class ProgressTester(CommandBase):
     parameters = {
         "progress_tester": {
             "label": "Progress Tester",
-            "type": TextParameterMeta(color="info", progress={"variant": "indeterminate"}),
+            "type": TextParameterMeta(
+                color="info", progress={"variant": "indeterminate"}
+            ),
             "value": "This command will take time to execute and show its progress",
             "tooltip": "Testing the range parameters",
         },
@@ -720,3 +721,43 @@ class TracebackTester(CommandBase):
         if parameters["raise_exception"]:
             raise ValueError("Don't worry, this is a fake error for testing purpose")
         return parameters["raise_exception"]
+
+
+class TaskFileTester(CommandBase):
+    """
+    Testing the task file
+    """
+
+    parameters = {
+        "any_file": {
+            "label": "Any file",
+            "type": TaskFileParameterMeta(),
+            "value": None,
+        },
+        "maya_file": {
+            "label": "Maya file",
+            "type": TaskFileParameterMeta(extensions=[".ma"]),
+            "value": None,
+        },
+        "image_file": {
+            "label": "Image file",
+            "type": TaskFileParameterMeta(
+                extensions=[".png", ".jpg", ".jpeg", ".tiff"]
+            ),
+            "value": None,
+        },
+        "multiple_files": {
+            "label": "Multiple files",
+            "type": TaskFileParameterMeta(multiple=True),
+            "value": None,
+        },
+    }
+
+    @CommandBase.conform_command()
+    async def __call__(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        logger.error(parameters["task_file_tester"])
