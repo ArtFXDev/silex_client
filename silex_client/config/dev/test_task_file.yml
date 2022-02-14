@@ -1,0 +1,7 @@
+test_task_file:
+  steps:
+    test:
+      commands:
+        get_input:
+          path: "silex_client.commands.tester.TaskFileTester"
+          ask_user: True
