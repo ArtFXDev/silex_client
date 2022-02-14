@@ -101,7 +101,7 @@ class Move(CommandBase):
                     raise Exception(f"{src_path} doesn't exist.")
 
                 new_path = dst_path
-                if not new_path.is_dir():
+                if new_path.is_dir():
                     new_path = new_path / src_path.name
 
                 # Handle override of existing file
