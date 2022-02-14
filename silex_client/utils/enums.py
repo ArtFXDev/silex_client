@@ -28,3 +28,14 @@ class Execution(IntEnum):
     PAUSE = 0
     FORWARD = 1
     BACKWARD = 2
+
+
+class ConflictBehaviour(IntEnum):
+    """
+    Used by commands like copy, rename...
+    """
+
+    OVERRIDE = 0
+    ALWAYS_OVERRIDE = 1
+    KEEP_EXISTING = 2
+    ALWAYS_KEEP_EXISTING = 3

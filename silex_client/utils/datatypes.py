@@ -47,6 +47,16 @@ class ReadOnlyDict(dict):
     update = __readonly__
 
 
+class SharedVariable:
+    """
+    Simple container for a variable to share the value between threads without any
+    thread safety overhead
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+
 class CommandOutput(str):
     """
     Helper to differenciate the strings from the command_output
