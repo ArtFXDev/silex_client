@@ -85,7 +85,7 @@ class KickCommand(CommandBase):
             .value(ass_file.suffix.strip('.'))
         )
 
-        kick_cmd.add_rez_package('silex_client')
+        kick_cmd.add_rez_package('python-3.7')
 
         # Create layer folder 
         os.makedirs(output_path.parents[0], exist_ok=True)
