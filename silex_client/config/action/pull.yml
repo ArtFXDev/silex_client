@@ -1,28 +1,25 @@
 pull:
-  thumbnail: "publish.svg"
+  thumbnail: "pull.svg"
   steps:
     pull:
-      lavel: "Move publish into work"
-      index: 50
+      label: "Versioning"
+      index: 20
       commands:
         select_pull:
-          label: "Do you want to pull the publish"
+          label: "Prompt versionning"
           path: "silex_client.commands.select_pull.SelectPull"
-          ask_user: true
-        move:
-          label: "Move"
-          path: "silex_client.commands.move.Move"
           parameters:
-            output_type: 
-              value: !command-output "setup:get_publish_type:publish_type"
+            prompt: false
+            increment:
+              value: false
               hide: true
-            use_current_context:
-              value: true
+        copy:
+          label: "Copy existing publish into work folder"
+          path: "silex_client.commands.copy.Copy"
+          parameters:
+            src: 
+              value: !command-output "pull:select_pull:pull_src"
               hide: true
-            task:
+            dst: 
+              value: !command-output "pull:select_pull:pull_dst"
               hide: true
-            frame_set:
-              hide: true
-            name:
-              value: "main"
-              label: "Publish name"
