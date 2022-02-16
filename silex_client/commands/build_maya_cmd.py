@@ -9,7 +9,11 @@ from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder
 from silex_client.utils.frames import split_frameset
-from silex_client.utils.parameter_types import IntArrayParameterMeta, PathParameterMeta
+from silex_client.utils.parameter_types import (
+    IntArrayParameterMeta,
+    PathParameterMeta,
+    SelectParameterMeta,
+)
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -22,6 +26,11 @@ class MayaCommand(CommandBase):
     """
 
     parameters = {
+        "renderer": {
+            "label": "Renderer",
+            "type": SelectParameterMeta("vray", "arnold"),
+            "value": "vray",
+        },
         "scene_file": {
             "label": "Scene file",
             "type": PathParameterMeta(extensions=[".ma", ".mb"]),
@@ -57,6 +66,7 @@ class MayaCommand(CommandBase):
         maya_cmd = command_builder.CommandBuilder(
             "Render", rez_packages=["maya"], delimiter=" ", dashes="-"
         )
+        maya_cmd.param("r", parameters["renderer"])
         # Doesn't work need to check on a forum
         # maya_cmd.param("skipExistingFrames", str(parameters["skip_existing"]).lower())
         maya_cmd.param("rd", parameters["output_folder"])
