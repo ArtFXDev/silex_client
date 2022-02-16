@@ -157,7 +157,11 @@ def MultipleSelectParameterMeta(*list_options, **options):
     return CommandParameterMeta("SelectParameter", (list,), attributes)
 
 
-def TaskFileParameterMeta(extensions: List[str] = None, multiple: bool = False):
+def TaskFileParameterMeta(
+    extensions: List[str] = None,
+    multiple: bool = False,
+    use_current_context: bool = False,
+):
     def __init__(self, value):
         if not isinstance(value, list):
             value = [value]
@@ -172,6 +176,7 @@ def TaskFileParameterMeta(extensions: List[str] = None, multiple: bool = False):
             "name": "task_file",
             "extensions": extensions,
             "multiple": multiple,
+            "useCurrentContext": use_current_context,
         }
 
     def get_default():

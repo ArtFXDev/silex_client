@@ -27,7 +27,7 @@ class SelectPull(BuildWorkPath):
     parameters = {
         "publish": {
             "label": "Select a publish",
-            "type": TaskFileParameterMeta(),
+            "type": TaskFileParameterMeta(use_current_context=True),
             "value": None,
             "tooltip": "Select a submiter in the list",
         },

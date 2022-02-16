@@ -39,7 +39,11 @@ class VrayCommand(CommandBase):
             "type": int,
             "value": 10,
         },
-        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
+        "skip_existing": {
+            "label": "Skip existing frames",
+            "type": bool,
+            "value": False,
+        },
         "output_path": {"type": pathlib.Path, "hide": True, "value": ""},
         "engine": {
             "label": "RT engine",
@@ -79,7 +83,7 @@ class VrayCommand(CommandBase):
         scene_to_layer_dict = dict()
 
         for scene in scenes:
-            
+
             layer = scene.stem.split(f"{scene.parents[0].stem}_")[-1]
             scene_to_layer_dict[scene] = layer
 
