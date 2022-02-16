@@ -111,7 +111,8 @@ class SelectPull(BuildWorkPath):
         pull_path = (
             work_path.parent
             / "publish_backup"
-            / expanded_path.get("OutputType", "unknown")
+            / expanded_path["OutputType"]
+            / expanded_path["Name"]
         )
         os.makedirs(pull_path, exist_ok=True)
         versions = [
