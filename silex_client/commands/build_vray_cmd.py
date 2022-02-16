@@ -79,7 +79,7 @@ class VrayCommand(CommandBase):
         scene_to_layer_dict = dict()
 
         for scene in scenes:
-            
+
             layer = scene.stem.split(f"{scene.parents[0].stem}_")[-1]
             scene_to_layer_dict[scene] = layer
 
@@ -102,7 +102,7 @@ class VrayCommand(CommandBase):
         vray_cmd = command_builder.CommandBuilder("vray", rez_packages=["vray"])
         vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
         vray_cmd.param("progressIncrement", 5)
-        vray_cmd.param("verboseLevel", 1)
+        vray_cmd.param("verboseLevel", 3)
         vray_cmd.param("rtEngine", engine)
         vray_cmd.param("sceneFile", scene)
         vray_cmd.param("skipExistingFrames", skip_existing)
