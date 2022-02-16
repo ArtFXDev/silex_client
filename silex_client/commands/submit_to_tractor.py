@@ -81,8 +81,12 @@ class TractorSubmiter(CommandBase):
         owner = ""
 
         # This command will mount network drive
-        mount_cmd = command_builder.CommandBuilder("mount_rd_drive", delimiter=None, dashes="")
-        mount_cmd.add_rez_package("mount_render_drive")
+        mount_cmd = command_builder.CommandBuilder(
+            "mount_rd_drive",
+            delimiter=None,
+            dashes="",
+            rez_packages=["mount_render_drive"],
+        )
 
         if "project" in action_query.context_metadata:
             project_dict = await gazu.project.get_project_by_name(project)
