@@ -70,7 +70,7 @@ class BlenderCommand(CommandBase):
         )
         blender_cmd.param("background")
         # Scene file
-        blender_cmd.value(scene)
+        blender_cmd.value(scene.as_posix())
         blender_cmd.param("render-format", output_extension)
         blender_cmd.param("engine", parameters["engine"])
         blender_cmd.param("render-output", parameters["output_filename"])

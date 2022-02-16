@@ -81,11 +81,8 @@ class TractorSubmiter(CommandBase):
         owner = ""
 
         # This command will mount network drive
-        mount_cmd = (
-            command_builder.CommandBuilder("powershell.exe", delimiter=None)
-            .param("ExecutionPolicy", "Bypass")
-            .param("NoProfile")
-        )
+        mount_cmd = command_builder.CommandBuilder("mount_rd_drive", delimiter=None, dashes="")
+        mount_cmd.add_rez_package("mount_render_drive")
 
         if "project" in action_query.context_metadata:
             project_dict = await gazu.project.get_project_by_name(project)
@@ -101,13 +98,7 @@ class TractorSubmiter(CommandBase):
                 ) from exception
 
             owner = action_query.context_metadata["user_email"].split("@")[0]
-            mount_cmd.param(
-                "File",
-                [
-                    "\\\\prod.silex.artfx.fr\\rez\\windows\\set-rd-drive.ps1",
-                    project_dict["data"]["nas"],
-                ],
-            )
+            mount_cmd.value(project_dict["data"]["nas"])
 
         # Add the mount command
         precommands.append(mount_cmd)
