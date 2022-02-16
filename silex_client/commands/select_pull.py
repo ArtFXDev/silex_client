@@ -47,7 +47,9 @@ class SelectPull(BuildWorkPath):
 
     required_metadata = ["project_file_tree"]
 
-    def skip_next_command(self, action_query):
+    @staticmethod
+    def skip_next_command(action_query):
+        # TODO: Use a skip at the level of the step to do this
         action_query.commands[action_query.current_command_index + 1].skip = True
 
     @CommandBase.conform_command()
@@ -72,6 +74,7 @@ class SelectPull(BuildWorkPath):
         else:
             publishes = list(publish.iterdir())
 
+        # This is for publishes, to allow the user to skip the pull or not before publish
         if all(file.exists() for file in publishes) and publishes and prompt:
             response = await self.prompt_user(
                 action_query,
@@ -102,6 +105,8 @@ class SelectPull(BuildWorkPath):
                 "The given mode does not exists in the current project file tree"
             )
 
+        # Extract informations about the file to pull and build a new path in the work folder
+        # from these informations.
         expanded_path = expand_path(publish)
         pull_path = (
             work_path.parent
