@@ -13,7 +13,17 @@ import os
 import sys
 import uuid
 from concurrent import futures
-from typing import TYPE_CHECKING, Any, Dict, ItemsView, KeysView, ValuesView
+from queue import Queue
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    ItemsView,
+    KeysView,
+    Tuple,
+    ValuesView,
+)
 
 import gazu
 import gazu.client
@@ -50,6 +60,9 @@ class Context:
         self.ws_connection = WebsocketConnection("ws://127.0.0.1:5118", self)
 
         self._actions: Dict[str, ActionQuery] = {}
+        # The event queue is used to pass callable between threads
+        # the tuple is meant to store kwargs and args
+        self.callback_queue: "Queue[Callable]" = Queue()
 
     def start_services(self):
         self.compute_metadata()

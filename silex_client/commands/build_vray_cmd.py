@@ -39,7 +39,11 @@ class VrayCommand(CommandBase):
             "type": int,
             "value": 10,
         },
-        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
+        "skip_existing": {
+            "label": "Skip existing frames",
+            "type": bool,
+            "value": False,
+        },
         "output_path": {"type": pathlib.Path, "hide": True, "value": ""},
         "engine": {
             "label": "RT engine",

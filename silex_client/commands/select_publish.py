@@ -38,34 +38,7 @@ class SelectPublish(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        publish_action = Config.get().resolve_publish(
-            parameters["publish_type"].lower()
-        )
-
-        if publish_action is None:
-            raise Exception("Could not resolve the action %s")
-
-        # Make sure the required action is in the config
-        if parameters["publish_type"] not in publish_action.keys():
-            raise Exception(
-                "Could not resolve the action {}: The root key should be the same as the config file name".format(
-                    parameters["publish_type"]
-                )
-            )
-
-        action_definition = publish_action[parameters["publish_type"]]
-        action_definition["name"] = parameters["publish_type"]
-
-        last_index = action_query.steps[-1].index
-        if "steps" in action_definition and isinstance(
-            action_definition["steps"], dict
-        ):
-            for step_value in action_definition["steps"].values():
-                step_value["index"] = step_value.get("index", 10) + last_index
-
-        patch = jsondiff.patch(action_query.buffer.serialize(), action_definition)
-        action_query.buffer.deserialize(patch)
-        return {"publish_type": parameters["publish_type"]}
+        return {"publish_type": parameters["publish_type"].lower()}
 
     async def setup(
         self,
