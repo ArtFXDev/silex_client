@@ -73,6 +73,10 @@ class MayaCommand(CommandBase):
         maya_cmd.param("im", parameters["output_filename"])
         maya_cmd.param("of", parameters["output_extension"])
 
+        if parameters["renderer"] == "arnold":
+            maya_cmd.param("ai:lve", 2)  # log level
+            maya_cmd.param("fnc", 3)  # File naming name.#.ext
+
         commands: Dict[str, command_builder.CommandBuilder] = {}
 
         # Split frames by task size
