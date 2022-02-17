@@ -75,6 +75,7 @@ class MayaCommand(CommandBase):
 
         if parameters["renderer"] == "arnold":
             maya_cmd.param("ai:lve", 2)  # log level
+            maya_cmd.param("fnc", 3)  # File naming name.#.ext
 
         commands: Dict[str, command_builder.CommandBuilder] = {}
 
