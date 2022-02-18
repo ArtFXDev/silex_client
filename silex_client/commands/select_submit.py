@@ -40,7 +40,7 @@ class SelectSubmit(CommandBase):
                 *[submit_action["name"] for submit_action in Config.get().submits]
             ),
             name="new_submit",
-            label=f"Submiter",
+            label="Submiter",
         )
         # Prompt the user to get the new path
         new_submit = await self.prompt_user(

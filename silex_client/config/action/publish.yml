@@ -1,4 +1,6 @@
-publish:
+publish: !inherit
+  parent: ".pull"
+
   thumbnail: "publish.svg"
   steps:
     setup:
@@ -29,3 +31,27 @@ publish:
             name:
               value: "main"
               label: "Publish name"
+
+    pull:
+      index: 100
+      commands:
+        select_pull:
+          parameters:
+            prompt: true
+            publish: 
+              value: !command-output "setup:build_output_path:directory"
+              hide: true
+
+    insert:
+      index: 150
+      hide: true
+      commands:
+        append_publish_actions:
+          label: "Append selected publish action"
+          path: "silex_client.commands.insert_action.InsertAction"
+          tooltip: "Append the selected publish to the list of commands to execute"
+          parameters:
+            category: "publish"
+            action: 
+              value: !command-output "setup:get_publish_type:publish_type"
+              hide: true
