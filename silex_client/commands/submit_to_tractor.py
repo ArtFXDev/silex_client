@@ -62,6 +62,11 @@ class TractorSubmiter(CommandBase):
             "label": "Project",
             "type": SelectParameterMeta(),
         },
+        "add_mount": {
+            "type": bool,
+            "value": True,
+            "hide": True,
+        },
     }
 
     @CommandBase.conform_command()
@@ -79,6 +84,7 @@ class TractorSubmiter(CommandBase):
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
         owner = ""
+        nas = None
 
         # This command will mount network drive
         mount_cmd = command_builder.CommandBuilder(
@@ -101,11 +107,13 @@ class TractorSubmiter(CommandBase):
                     f"Project {project} doesn't have data or nas key"
                 ) from exception
 
+            nas = project_dict["data"]["nas"]
             owner = action_query.context_metadata["user_email"].split("@")[0]
-            mount_cmd.value(project_dict["data"]["nas"])
+            mount_cmd.value(nas)
 
         # Add the mount command
-        precommands.append(mount_cmd)
+        if parameters["add_mount"]:
+            precommands.append(mount_cmd)
 
         # Set the services the job will run on (groups of blades)
         if len(pools) == 1:
@@ -120,7 +128,11 @@ class TractorSubmiter(CommandBase):
             tags=["render"],
             projects=[project],
             service=services,
+            spoolcwd="/home/td",
         )
+
+        # Directory mapping for Linux
+        job.newDirMap("P:", f"/mnt/{nas}", "NFS")
 
         # Create the render tasks for each command
         for task_title, task_argv in commands.items():
@@ -165,6 +177,8 @@ class TractorSubmiter(CommandBase):
 
             # Add the task as child
             job.addChild(task)
+
+        logger.error(job.asTcl())
 
         # Submit the job to Tractor
         jid = job.spool(owner=owner)

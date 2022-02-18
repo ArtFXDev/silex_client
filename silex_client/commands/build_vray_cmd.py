@@ -5,6 +5,8 @@ import pathlib
 import typing
 from typing import Any, Dict, List
 
+import gazu.client
+import gazu.project
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder, frames
@@ -13,6 +15,7 @@ from silex_client.utils.parameter_types import (
     PathParameterMeta,
     RadioSelectParameterMeta,
 )
+from silex_client.utils.tractor import dirmap
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -51,6 +54,11 @@ class VrayCommand(CommandBase):
                 **{"Regular": 0, "CPU RT": 1, "GPU CUDA": 5, "GPU RTX": 7}
             ),
             "value": 0,
+        },
+        "linux": {
+            "label": "Run on Linux",
+            "type": bool,
+            "value": False,
         },
         "parameter_overrides": {
             "type": bool,
@@ -99,6 +107,8 @@ class VrayCommand(CommandBase):
         resolution: List[int],
         frame_range: FrameSet,
         task_size: int,
+        nas: str,
+        linux: bool,
     ):
         """Build command for every task (depending on a task size), store them in a dict and return it"""
 
@@ -108,9 +118,13 @@ class VrayCommand(CommandBase):
         vray_cmd.param("progressIncrement", 5)
         vray_cmd.param("verboseLevel", 3)
         vray_cmd.param("rtEngine", engine)
-        vray_cmd.param("sceneFile", scene)
+        vray_cmd.param("sceneFile", dirmap(scene.as_posix()))
         vray_cmd.param("skipExistingFrames", skip_existing)
-        vray_cmd.param("imgFile", output_path)
+        vray_cmd.param("imgFile", dirmap(output_path.as_posix()))
+
+        # Path mapping for Linux
+        if linux:
+            vray_cmd.param("remapPath", f"P:=/mnt/{nas}")
 
         if parameter_overrides:
             vray_cmd.param("imgWidth", resolution[0]).param("imgHeight", resolution[1])
@@ -150,6 +164,11 @@ class VrayCommand(CommandBase):
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
 
+        project_dict = await gazu.project.get_project_by_name(
+            action_query.context_metadata["project"]
+        )
+        nas = project_dict["data"]["nas"]
+
         # Match selected vrscenes with their attributed render layers
         scene_to_layer_dict = self._get_layers_from_scenes(vray_scenes)
 
@@ -178,6 +197,8 @@ class VrayCommand(CommandBase):
                 resolution,
                 frame_range,
                 task_size,
+                nas,
+                parameters["linux"],
             )
 
         # Take the first path job title
@@ -189,4 +210,8 @@ class VrayCommand(CommandBase):
             # For THE group outside of silex... ( TRAITORS !! REBELS !! hum.. hum...)
             scene_name = vray_scenes[0]
 
-        return {"commands": render_layers_cmd, "file_name": scene_name}
+        return {
+            "commands": render_layers_cmd,
+            "file_name": scene_name,
+            "mount": not parameters["linux"],
+        }

@@ -13,6 +13,7 @@ from silex_client.utils.parameter_types import (
     PathParameterMeta,
     RadioSelectParameterMeta,
 )
+from silex_client.utils.tractor import dirmap
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -40,6 +41,7 @@ class BlenderCommand(CommandBase):
             "type": int,
             "value": 10,
         },
+        "output_directory": {"type": pathlib.Path, "hide": True, "value": ""},
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
         "output_extension": {"type": str, "hide": True, "value": "exr"},
         "engine": {
@@ -70,10 +72,17 @@ class BlenderCommand(CommandBase):
         )
         blender_cmd.param("background")
         # Scene file
-        blender_cmd.value(scene.as_posix())
+        blender_cmd.value(dirmap(scene.as_posix()))
         blender_cmd.param("render-format", output_extension)
         blender_cmd.param("engine", parameters["engine"])
-        blender_cmd.param("render-output", parameters["output_filename"])
+        blender_cmd.param(
+            "render-output",
+            dirmap(
+                (
+                    parameters["output_directory"] / parameters["output_filename"]
+                ).as_posix()
+            ),
+        )
         blender_cmd.param("log-level", 0)
 
         commands: Dict[str, command_builder.CommandBuilder] = {}
