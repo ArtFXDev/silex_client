@@ -56,3 +56,5 @@ vray:
               value: !command-output "send_vray_render:build_vray_cmd:commands"
             job_title:
               value: !command-output "send_vray_render:build_vray_cmd:file_name"
+            add_mount:
+              value: !command-output "send_vray_render:build_vray_cmd:mount"
