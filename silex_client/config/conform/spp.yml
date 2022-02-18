@@ -1,4 +1,4 @@
-avi: !inherit
+spp: !inherit
   parent: ".default"
 
   steps:
