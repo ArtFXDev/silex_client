@@ -13,6 +13,7 @@ from silex_client.utils import command_builder
 from silex_client.utils.parameter_types import (
     DictParameterMeta,
     MultipleSelectParameterMeta,
+    RadioSelectParameterMeta,
     SelectParameterMeta,
 )
 
@@ -47,6 +48,17 @@ class TractorSubmiter(CommandBase):
                 str, DictParameterMeta(str, command_builder.CommandBuilder)
             ),
             "hide": True,
+        },
+        "priority": {
+            "label": "Job type",
+            "type": RadioSelectParameterMeta(
+                **{
+                    "Standard": 100,
+                    "Specific frames": 120,
+                    "Retake": 90,
+                    "Camap": 130,
+                }
+            ),
         },
         "pools": {
             "label": "Pool",
@@ -83,6 +95,7 @@ class TractorSubmiter(CommandBase):
         pools: List[str] = parameters["pools"]
         project: str = parameters["project"]
         job_title: str = parameters["job_title"]
+        priority: float = float(parameters["priority"])
         owner = ""
         nas = None
 
@@ -124,7 +137,7 @@ class TractorSubmiter(CommandBase):
         # Create a job
         job = author.Job(
             title=job_title,
-            priority=100.0,
+            priority=priority,
             tags=["render"],
             projects=[project],
             service=services,
