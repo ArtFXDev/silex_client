@@ -11,8 +11,8 @@ from silex_client.utils import command_builder
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
-    PathParameterMeta,
     SelectParameterMeta,
+    TaskFileParameterMeta,
 )
 
 # Forward references
@@ -33,7 +33,9 @@ class MayaCommand(CommandBase):
         },
         "scene_file": {
             "label": "Scene file",
-            "type": PathParameterMeta(extensions=[".ma", ".mb"]),
+            "type": TaskFileParameterMeta(
+                extensions=[".ma", ".mb"], use_current_context=True
+            ),
         },
         "frame_range": {
             "label": "Frame range (start, end, step)",

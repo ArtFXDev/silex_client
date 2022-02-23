@@ -10,10 +10,10 @@ from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils import command_builder, frames
 from silex_client.utils.parameter_types import (
-    TextParameterMeta,
     IntArrayParameterMeta,
-    PathParameterMeta,
     MultipleSelectParameterMeta,
+    TaskFileParameterMeta,
+    TextParameterMeta,
 )
 from silex_client.utils.thread import execute_in_thread
 
@@ -34,7 +34,9 @@ class HoudiniCommand(CommandBase):
     parameters = {
         "scene_file": {
             "label": "Scene file",
-            "type": PathParameterMeta(extensions=[".hip", ".hipnc"]),
+            "type": TaskFileParameterMeta(
+                extensions=[".hip", ".hipnc"], use_current_context=True
+            ),
         },
         "frame_range": {
             "label": "Frame range (start, end, step)",

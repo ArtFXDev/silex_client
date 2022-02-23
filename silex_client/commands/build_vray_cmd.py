@@ -12,8 +12,8 @@ from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder, frames
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
-    PathParameterMeta,
     RadioSelectParameterMeta,
+    TaskFileParameterMeta,
 )
 from silex_client.utils.tractor import dirmap
 
@@ -30,7 +30,9 @@ class VrayCommand(CommandBase):
     parameters = {
         "scene_file": {
             "label": "Scene file (Can select multiple render layers)",
-            "type": PathParameterMeta(multiple=True, extensions=[".vrscene"]),
+            "type": TaskFileParameterMeta(
+                multiple=True, extensions=[".vrscene"], use_current_context=True
+            ),
         },
         "frame_range": {
             "label": "Frame range (start, end, step)",

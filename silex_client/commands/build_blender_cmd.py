@@ -10,8 +10,8 @@ from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import (
-    PathParameterMeta,
     RadioSelectParameterMeta,
+    TaskFileParameterMeta,
 )
 from silex_client.utils.tractor import dirmap
 
@@ -29,7 +29,9 @@ class BlenderCommand(CommandBase):
     parameters = {
         "scene_file": {
             "label": "Scene file",
-            "type": PathParameterMeta(extensions=[".blend"]),
+            "type": TaskFileParameterMeta(
+                extensions=[".blend"], use_current_context=True
+            ),
         },
         "frame_range": {
             "label": "Frame range (start, end, step)",
