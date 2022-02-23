@@ -178,8 +178,6 @@ class TractorSubmiter(CommandBase):
             # Add the task as child
             job.addChild(task)
 
-        logger.error(job.asTcl())
-
         # Submit the job to Tractor
         jid = job.spool(owner=owner)
         logger.info(f"Sent job: {job_title} ({jid})")
