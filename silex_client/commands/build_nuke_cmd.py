@@ -9,6 +9,7 @@ from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder
 from silex_client.utils.frames import split_frameset
+from silex_client.utils.parameter_types import TaskFileParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -21,7 +22,10 @@ class BuildNukeCommand(CommandBase):
     """
 
     parameters = {
-        "scene_file": {"label": "Scene file", "type": pathlib.Path},
+        "scene_file": {
+            "label": "Scene file",
+            "type": TaskFileParameterMeta(extensions=[".nk"], use_current_context=True),
+        },
         "frame_range": {
             "label": "Frame range (start, end, step)",
             "type": FrameSet,
