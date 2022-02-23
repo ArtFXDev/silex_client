@@ -53,6 +53,7 @@ class BuildOutputPathConform(BuildOutputPath):
         key = f"build_output_path_conform:{str(file_paths)}"
         action_query.store[key] = result
 
+        result["store_conform_key"] = key
         return result
 
     async def setup(

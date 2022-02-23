@@ -41,6 +41,19 @@ default:
             files: !command-output "input:input:file_paths"
             padding: !command-output "input:input:padding"
           ask_user: true
+        get_output_cache:
+          label: "Get previous conform output"
+          path: "silex_client.commands.get_stored_value.GetStoredValue"
+          parameters:
+            key: "conform_output"
+            key_suffix: !command-output "conform:build_output_path:store_conform_key"
+          hide: true
+        step_exit:
+          label: "Skip reconform"
+          path: "silex_client.commands.exit_step.ExitStep"
+          parameters:
+            enable: !command-output "conform:get_output_cache:value"
+          hide: true
         set_conform_cache:
           label: "Cache conform location"
           path: "silex_client.commands.set_stored_value.SetStoredValue"
@@ -79,12 +92,27 @@ default:
               value: !command-output "conform:build_output_path:full_name"
               hide: true
             force: false
+        set_output_cache:
+          label: "Cache conform output"
+          path: "silex_client.commands.set_stored_value.SetStoredValue"
+          parameters:
+            key: "conform_output"
+            key_suffix: !command-output "conform:build_output_path:store_conform_key"
+            value: !command-output "conform:rename:new_paths"
+          hide: true
 
     output:
       index: 30
       hide: true
       commands:
+        get_output_cache:
+          label: "Get previous conform output"
+          path: "silex_client.commands.get_stored_value.GetStoredValue"
+          parameters:
+            key: "conform_output"
+            key_suffix: !command-output "conform:build_output_path:store_conform_key"
+          hide: true
         output:
           path: "silex_client.commands.pass.Pass"
           parameters:
-            input: !command-output "conform:rename:new_paths"
+            input: !command-output "output:get_output_cache:value"
