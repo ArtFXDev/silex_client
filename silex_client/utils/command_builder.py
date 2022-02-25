@@ -109,5 +109,4 @@ class CommandBuilder:
         return copy.deepcopy(self)
 
     def __repr__(self) -> str:
-        
         return " ".join(self.as_argv())
