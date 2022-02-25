@@ -62,6 +62,9 @@ class CustomJsonDiffer(jsondiff.JsonDiffer):
         super().__init__(marshal=marshal)
         self.options.syntax = CustomDiffSyntax()
 
+    def _list_diff(self, X, Y):
+        return Y, 1.0
+
 
 def silex_diff(a, b, marshal=False):
     """
