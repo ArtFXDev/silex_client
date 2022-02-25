@@ -1,0 +1,31 @@
+houdini_redshift: !inherit
+  parent: ".houdini"
+  label: "Submit Houdini Redshift scene"
+
+  steps:
+    redshift_license:
+      index: 15
+      commands:
+        build_redshift_license_cmd:
+          path: "silex_client.commands.build_redshift_license_cmd.RedshiftLicenseCommands"
+
+    send_houdini_render:
+      label: "Setup render parameters"
+      index: 20
+      commands:
+        build_houdini_cmd:
+          label: "Houdini Redshift job parameters"
+
+        submit_to_tractor:
+          label: "Submit"
+          path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
+          ask_user: true
+          parameters:
+            job_title:
+              value: !command-output "send_houdini_render:build_houdini_cmd:file_name"
+            precommands:
+              value: !command-output "redshift_license:build_redshift_license_cmd:precommands"
+            commands:
+              value: !command-output "send_houdini_render:build_houdini_cmd:commands"
+            postcommands:
+              value: !command-output "redshift_license:build_redshift_license_cmd:postcommands"

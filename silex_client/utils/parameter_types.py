@@ -239,7 +239,8 @@ def ListParameterMeta(parameter_type: Type):
             value = [value]
 
         for index, item in enumerate(value):
-            value[index] = parameter_type(item)
+            if not isinstance(item, parameter_type):
+                value[index] = parameter_type(item)
 
         self.extend(value)
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import os
 import typing
-import uuid
 from typing import Any, Dict, List
 
 import gazu.client
@@ -12,6 +11,7 @@ from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder
 from silex_client.utils.parameter_types import (
     DictParameterMeta,
+    ListParameterMeta,
     MultipleSelectParameterMeta,
     RadioSelectParameterMeta,
     SelectParameterMeta,
@@ -38,7 +38,13 @@ class TractorSubmiter(CommandBase):
     parameters = {
         "precommands": {
             "label": "Pre-commands list",
-            "type": list,
+            "type": ListParameterMeta(command_builder.CommandBuilder),
+            "value": [],
+            "hide": True,
+        },
+        "postcommands": {
+            "label": "Post-commands list",
+            "type": ListParameterMeta(command_builder.CommandBuilder),
             "value": [],
             "hide": True,
         },
@@ -89,6 +95,7 @@ class TractorSubmiter(CommandBase):
         logger: logging.Logger,
     ):
         precommands: List[command_builder.CommandBuilder] = parameters["precommands"]
+        postcommands: List[command_builder.CommandBuilder] = parameters["postcommands"]
         commands: Dict[str, Dict[str, command_builder.CommandBuilder]] = parameters[
             "commands"
         ]
@@ -156,35 +163,29 @@ class TractorSubmiter(CommandBase):
                 subtask: author.Task = author.Task(title=subtask_title)
 
                 # Add precommands to each subtask
-                all_commands = precommands + [subtask_argv]
-
-                last_id = None
+                all_commands = precommands + [subtask_argv] + postcommands
 
                 # Add every command to the subtask
                 for index, command in enumerate(all_commands):
                     command = command.deepcopy()
+
                     if "project" in action_query.context_metadata:
                         # Add the project in the rez environment
                         command.add_rez_package(
                             action_query.context_metadata["project"].lower()
                         )
 
-                    # Generates a random uuid for every command
-                    id = str(uuid.uuid4())
                     params = {
                         "argv": command.as_argv(),
-                        "id": id,
-                        # Limit tag with the executable
-                        # Useful when limiting the amout of vray jobs on the farm for example
-                        "tags": [command.executable],
+                        "samehost": True,
                     }
 
-                    # Every command refers to the previous one
-                    if index > 0:
-                        params["refersto"] = last_id
+                    # Limit tag with the executable
+                    # Useful when limiting the amout of vray jobs on the farm for example
+                    if command.executable:
+                        params["tags"] = [command.executable]
 
                     subtask.addCommand(author.Command(**params))
-                    last_id = id
 
                 task.addChild(subtask)
 
