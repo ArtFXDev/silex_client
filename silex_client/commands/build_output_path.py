@@ -12,7 +12,6 @@ import gazu.asset
 import gazu.files
 import gazu.shot
 import gazu.task
-
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.files import slugify
 from silex_client.utils.parameter_types import (
@@ -83,7 +82,7 @@ class BuildOutputPath(CommandBase):
             "tooltip": "This parameter will overrite the select conform location",
         },
         "task": {
-            "label": "Select conform location",
+            "label": "Task",
             "type": TaskParameterMeta(),
             "value": None,
             "tooltip": "Select the task where you can to conform your file",
