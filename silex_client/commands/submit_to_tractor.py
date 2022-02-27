@@ -255,6 +255,3 @@ class TractorSubmiter(CommandBase):
             # Use the project as value
             project_parameter.rebuild_type(action_query.context_metadata["project"])
             project_parameter.hide = True
-        else:
-            # If there is no project in the current context return a hard coded list of project for 4th years
-            project_parameter.rebuild_type("WS_Environment", "WS_Lighting")
