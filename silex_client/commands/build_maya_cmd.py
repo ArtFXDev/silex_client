@@ -101,6 +101,5 @@ class MayaCommand(CommandBase):
 
             # Add the frames argument
             commands[task_title] = chunk_cmd
-            logger.error(str(chunk_cmd))
 
         return {"commands": {f"Scene: {scene.stem}": commands}, "file_name": scene.stem}
