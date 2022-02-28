@@ -48,6 +48,12 @@ class TractorSubmiter(CommandBase):
             "value": [],
             "hide": True,
         },
+        "task_cleanup_cmd": {
+            "label": "Task cleanup command",
+            "type": command_builder.CommandBuilder,
+            "value": None,
+            "hide": True,
+        },
         "commands": {
             "label": "Commands list",
             "type": DictParameterMeta(
@@ -159,6 +165,13 @@ class TractorSubmiter(CommandBase):
             # Create task
             task: author.Task = author.Task(title=task_title)
 
+            if parameters["task_cleanup_cmd"] is not None:
+                task.addCleanup(
+                    author.Command(
+                        argv=parameters["task_cleanup_cmd"].as_argv(), samehost=True
+                    )
+                )
+
             for subtask_title, subtask_argv in task_argv.items():
                 subtask: author.Task = author.Task(title=subtask_title)
 
@@ -179,6 +192,8 @@ class TractorSubmiter(CommandBase):
                         "argv": command.as_argv(),
                         "samehost": True,
                     }
+
+                    logger.error(command.as_argv())
 
                     # Limit tag with the executable
                     # Useful when limiting the amout of vray jobs on the farm for example

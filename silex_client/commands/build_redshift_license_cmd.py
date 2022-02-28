@@ -33,5 +33,5 @@ class RedshiftLicenseCommands(CommandBase):
 
         return {
             "precommands": [redshift_cmd.deepcopy().value("start")],
-            "postcommands": [redshift_cmd.deepcopy().value("stop")],
+            "task_cleanup_cmd": redshift_cmd.deepcopy().value("stop"),
         }

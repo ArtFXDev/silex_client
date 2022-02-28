@@ -27,5 +27,5 @@ houdini_redshift: !inherit
               value: !command-output "redshift_license:build_redshift_license_cmd:precommands"
             commands:
               value: !command-output "send_houdini_render:build_houdini_cmd:commands"
-            postcommands:
-              value: !command-output "redshift_license:build_redshift_license_cmd:postcommands"
+            task_cleanup_cmd:
+              value: !command-output "redshift_license:build_redshift_license_cmd:task_cleanup_cmd"
