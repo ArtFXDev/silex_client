@@ -212,7 +212,7 @@ class VrayCommand(CommandBase):
 
         # For THE group outside of silex... ( TRAITORS !! REBELS !! hum.. hum...)
         if not re.match(r'\w',scene_name) :
-            scene_name = vray_scenes[0]
+            scene_name = vray_scenes[0].split('\\')[-1].stem
 
         return {
             "commands": render_layers_cmd,
