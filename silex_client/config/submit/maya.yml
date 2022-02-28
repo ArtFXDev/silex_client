@@ -1,11 +1,11 @@
-vray:
-  label: "Submit V-Ray scene"
+maya:
+  label: "Submit Maya scene"
   steps:
     build_output_path:
       label: "Build output path"
       index: 10
       commands:
-        select_list:
+        select_extension:
           label: "Enter extension"
           path: "silex_client.commands.select_list.SelectList"
           parameters:
@@ -23,7 +23,7 @@ vray:
           ask_user: true
           parameters:
             output_type:
-              value: !command-output "build_output_path:select_list"
+              value: !command-output "build_output_path:select_extension"
               hide: true
             create_temp_dir: false
             create_output_dir: false
@@ -35,17 +35,21 @@ vray:
             frame_set:
               hide: true
 
-    send_vray_render:
+    send_maya_render:
       label: "Setup render parameters"
       index: 20
       commands:
-        build_vray_cmd:
-          path: "silex_client.commands.build_vray_cmd.VrayCommand"
-          label: "V-Ray Job parameters"
+        build_maya_cmd:
+          path: "silex_client.commands.build_maya_cmd.MayaCommand"
+          label: "Maya Job parameters"
           ask_user: true
           parameters:
-            output_path:
-              value: !command-output "build_output_path:build_output_path:full_path"
+            output_folder:
+              value: !command-output "build_output_path:build_output_path:directory"
+            output_filename:
+              value: !command-output "build_output_path:build_output_path:file_name"
+            output_extension:
+              value: !command-output "build_output_path:select_extension"
 
         submit_to_tractor:
           label: "Submit"
@@ -53,8 +57,6 @@ vray:
           ask_user: true
           parameters:
             commands:
-              value: !command-output "send_vray_render:build_vray_cmd:commands"
+              value: !command-output "send_maya_render:build_maya_cmd:commands"
             job_title:
-              value: !command-output "send_vray_render:build_vray_cmd:file_name"
-            add_mount:
-              value: !command-output "send_vray_render:build_vray_cmd:mount"
+              value: !command-output "send_maya_render:build_maya_cmd:file_name"

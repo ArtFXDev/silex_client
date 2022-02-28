@@ -157,6 +157,46 @@ def MultipleSelectParameterMeta(*list_options, **options):
     return CommandParameterMeta("SelectParameter", (list,), attributes)
 
 
+def TaskFileParameterMeta(
+    extensions: List[str] = None,
+    multiple: bool = False,
+    use_current_context: bool = False,
+):
+    def __init__(self, value):
+        if not isinstance(value, list):
+            value = [value]
+
+        for index, item in enumerate(value):
+            value[index] = pathlib.Path(item)
+
+        self.extend(value)
+
+    def serialize():
+        return {
+            "name": "task_file",
+            "extensions": extensions,
+            "multiple": multiple,
+            "useCurrentContext": use_current_context,
+        }
+
+    def get_default():
+        return None
+
+    attributes = {
+        "serialize": serialize,
+        "get_default": get_default,
+        "rebuild": TaskFileParameterMeta,
+    }
+
+    if multiple:
+        attributes["__init__"] = __init__
+        return CommandParameterMeta("TaskFileParameter", (list,), attributes)
+
+    return CommandParameterMeta(
+        "TaskFileParameter", (type(pathlib.Path()),), attributes
+    )
+
+
 def PathParameterMeta(extensions: List[str] = None, multiple: bool = False):
     if extensions is None:
         extensions = ["*"]
@@ -199,7 +239,8 @@ def ListParameterMeta(parameter_type: Type):
             value = [value]
 
         for index, item in enumerate(value):
-            value[index] = parameter_type(item)
+            if not isinstance(item, parameter_type):
+                value[index] = parameter_type(item)
 
         self.extend(value)
 

@@ -9,6 +9,7 @@ from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder
 from silex_client.utils.frames import split_frameset
+from silex_client.utils.parameter_types import TaskFileParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -21,7 +22,10 @@ class BuildNukeCommand(CommandBase):
     """
 
     parameters = {
-        "scene_file": {"label": "Scene file", "type": pathlib.Path},
+        "scene_file": {
+            "label": "Scene file",
+            "type": TaskFileParameterMeta(extensions=[".nk"], use_current_context=True),
+        },
         "frame_range": {
             "label": "Frame range (start, end, step)",
             "type": FrameSet,
@@ -45,7 +49,12 @@ class BuildNukeCommand(CommandBase):
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
 
-        nuke_cmd = command_builder.CommandBuilder("nuke", rez_packages=["nuke"])
+        nuke_cmd = command_builder.CommandBuilder(
+            "nuke", rez_packages=["nuke"], delimiter=" "
+        )
+        nuke_cmd.param("-gpu").param("-multigpu")  # Use gpu
+        nuke_cmd.param("-sro")  # Follow write order
+        nuke_cmd.param("-priority", "high")
 
         frame_chunks = split_frameset(frame_range, task_size)
         commands: Dict[str, command_builder.CommandBuilder] = {}

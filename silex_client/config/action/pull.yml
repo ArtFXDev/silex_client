@@ -1,0 +1,25 @@
+pull:
+  thumbnail: "pull.svg"
+  steps:
+    pull:
+      label: "Versioning"
+      index: 20
+      commands:
+        select_pull:
+          label: "Prompt versionning"
+          path: "silex_client.commands.select_pull.SelectPull"
+          parameters:
+            prompt: false
+            increment:
+              value: false
+              hide: true
+        copy:
+          label: "Copy existing publish into work folder"
+          path: "silex_client.commands.copy.Copy"
+          parameters:
+            src: 
+              value: !command-output "pull:select_pull:pull_src"
+              hide: true
+            dst: 
+              value: !command-output "pull:select_pull:pull_dst"
+              hide: true

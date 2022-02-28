@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import logging
+import os
 import pathlib
 import typing
-import os
 from typing import Any, Dict, List
 
 import fileseq
-
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import frames
-from silex_client.utils import command_builder
-from silex_client.utils.parameter_types import MultipleSelectParameterMeta, PathParameterMeta
+from silex_client.utils import command_builder, frames
+from silex_client.utils.parameter_types import (
+    MultipleSelectParameterMeta,
+    TaskFileParameterMeta,
+)
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -26,7 +27,9 @@ class KickCommand(CommandBase):
     parameters = {
         "ass_file": {
             "label": "Select Asss",
-            "type": PathParameterMeta(extensions=[".ass"]),
+            "type": TaskFileParameterMeta(
+                extensions=[".ass"], use_current_context=True
+            ),
             "value": None,
         },
         "frame_range": {
@@ -45,7 +48,7 @@ class KickCommand(CommandBase):
         },
         "output_path": {"type": pathlib.Path, "value": "", "hide": True},
     }
-    
+
     async def setup(
         self,
         parameters: Dict[str, Any],
@@ -53,25 +56,33 @@ class KickCommand(CommandBase):
         logger: logging.Logger,
     ):
 
-        if parameters['ass_file'] is not None:
-            
+        if parameters["ass_file"] is not None:
+
             # Get render layers when a ass_file is selected
-            render_layers: List[str] = os.listdir(pathlib.Path(parameters['ass_file']).parents[1])
+            render_layers: List[str] = os.listdir(
+                pathlib.Path(parameters["ass_file"]).parents[1]
+            )
 
-            self.command_buffer.parameters[
-                "render_layers"
-            ].rebuild_type(*render_layers)
+            self.command_buffer.parameters["render_layers"].rebuild_type(*render_layers)
 
-
-            # Update frame range 
-            ass_file = pathlib.Path(parameters['ass_file'])
+            # Update frame range
+            ass_file = pathlib.Path(parameters["ass_file"])
 
             path_without_extension: pathlib.Path = ass_file.parents[0] / ass_file.stem
-            sequence = fileseq.findSequenceOnDisk( path_without_extension.with_suffix(f".@{ass_file.suffix}"))
+            sequence = fileseq.findSequenceOnDisk(
+                path_without_extension.with_suffix(f".@{ass_file.suffix}")
+            )
 
-            self.command_buffer.parameters['frame_range'].value = sequence.frameSet()
+            self.command_buffer.parameters["frame_range"].value = sequence.frameSet()
 
-    def _create_render_layer_task(self, general_output_path: pathlib.Path, frame_range: fileseq.FrameSet, task_size: int, ass_file: pathlib.Path, layer: str):
+    def _create_render_layer_task(
+        self,
+        general_output_path: pathlib.Path,
+        frame_range: fileseq.FrameSet,
+        task_size: int,
+        ass_file: pathlib.Path,
+        layer: str,
+    ):
         """Build command for every task (depending on a task size), store them and return a dict"""
 
         output_path = general_output_path.parents[0] / layer / general_output_path.stem
@@ -80,14 +91,14 @@ class KickCommand(CommandBase):
             command_builder.CommandBuilder("python", delimiter=" ")
             .value("\\\\prod.silex.artfx.fr\\rez\\windows\\render_kick_ass.py")
             .value(str(output_path))
-            .value(general_output_path.suffix.strip('.'))
+            .value(general_output_path.suffix.strip("."))
             .value(ass_file.parents[0])
-            .value(ass_file.suffix.strip('.'))
+            .value(ass_file.suffix.strip("."))
         )
 
-        kick_cmd.add_rez_package('silex_client')
+        kick_cmd.add_rez_package("python-3.7")
 
-        # Create layer folder 
+        # Create layer folder
         os.makedirs(output_path.parents[0], exist_ok=True)
 
         # Split frames by task
@@ -106,7 +117,7 @@ class KickCommand(CommandBase):
 
             # Add ass sequence to argument list
             commands[task_name] = chunk_cmd
-        
+
         return commands
 
     @CommandBase.conform_command()
@@ -127,13 +138,17 @@ class KickCommand(CommandBase):
         render_layers_cmd: Dict[str, Dict[str, command_builder.CommandBuilder]] = {}
 
         for layer in render_layers:
-            
+
             # Build path to ass_file patern so it can be used when creating ass sequence
             ass_file_layer = ass_file.parents[0].stem
             layer_file = pathlib.Path(str(ass_file).replace(ass_file_layer, layer))
 
             # Create a task dict for each layer
-            render_layers_cmd[f'Render layer: {layer}'] = self._create_render_layer_task(output_path, frame_range, task_size, layer_file, layer)
+            render_layers_cmd[
+                f"Render layer: {layer}"
+            ] = self._create_render_layer_task(
+                output_path, frame_range, task_size, layer_file, layer
+            )
 
         # Get scene name from path
         scene_name = (ass_file.stem).strip(ass_file.parents[0].stem)
