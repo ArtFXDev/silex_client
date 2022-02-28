@@ -84,7 +84,7 @@ class BuildOutputPath(CommandBase):
         "task": {
             "label": "Task",
             "type": TaskParameterMeta(),
-            "value": None,
+            "value": "",
             "tooltip": "Select the task where you can to conform your file",
         },
     }
