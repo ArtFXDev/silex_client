@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
+import re
 from typing import Any, Dict, List
 
 import gazu.client
@@ -208,9 +209,10 @@ class VrayCommand(CommandBase):
             first_key = list(scene_to_layer_dict.keys())[0]
             render_layer = scene_to_layer_dict[first_key]
             scene_name = str(first_key.stem).split(render_layer)[0][:-1]
-        else:
-            # For THE group outside of silex... ( TRAITORS !! REBELS !! hum.. hum...)
-            scene_name = vray_scenes[0]
+
+        # For THE group outside of silex... ( TRAITORS !! REBELS !! hum.. hum...)
+        if not re.match(r'\w',scene_name) :
+            scene_name = vray_scenes[0].stem.split('.')[0]        
 
         return {
             "commands": render_layers_cmd,
