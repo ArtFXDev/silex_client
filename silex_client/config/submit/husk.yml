@@ -1,0 +1,62 @@
+husk:
+  label: "Submit USD scene"
+  steps:
+    build_output_path:
+      label: "Build output path"
+      index: 10
+      commands:
+        select_extension:
+          label: "Enter extension"
+          path: "silex_client.commands.select_list.SelectList"
+          parameters:
+            param_name: "Render type"
+            parameters_list:
+              - "exr"
+              - "png"
+              - "jpg"
+              - "tiff"
+
+        build_output_path:
+          label: "Build output path"
+          path: "silex_client.commands.build_output_path.BuildOutputPath"
+          tooltip: "Build the complete output path"
+          ask_user: true
+          parameters:
+            output_type:
+              value: !command-output "build_output_path:select_extension"
+              hide: true
+            create_temp_dir: false
+            create_output_dir: false
+            task:
+              hide: true
+            use_current_context:
+              value: true
+              hide: true
+            frame_set:
+              hide: true
+
+    send_husk_render:
+      label: "Setup render parameters"
+      index: 20
+      commands:
+        build_husk_cmd:
+          path: "silex_client.commands.build_husk_cmd.HuskCommand"
+          label: "Husk Job parameters"
+          ask_user: true
+          parameters:
+            output_directory:
+              value: !command-output "build_output_path:build_output_path:directory"
+            output_filename:
+              value: !command-output "build_output_path:build_output_path:file_name"
+            output_extension:
+              value: !command-output "build_output_path:select_extension"
+
+        submit_to_tractor:
+          label: "Submit"
+          path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
+          ask_user: true
+          parameters:
+            commands:
+              value: !command-output "send_husk_render:build_husk_cmd:commands"
+            job_title:
+              value: !command-output "send_husk_render:build_husk_cmd:file_name"
