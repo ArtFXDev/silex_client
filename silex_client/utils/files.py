@@ -224,6 +224,7 @@ def expand_template_to_sequence(
     file_matches = []
     for regex in regexes:
         match = regex.match(str(path_template))
+        
         if match is None:
             continue
 
