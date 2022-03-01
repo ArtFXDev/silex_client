@@ -15,6 +15,7 @@ from silex_client.utils.parameter_types import (
     MultipleSelectParameterMeta,
     RadioSelectParameterMeta,
     SelectParameterMeta,
+    UnionParameterMeta,
 )
 
 # Forward references
@@ -50,7 +51,7 @@ class TractorSubmiter(CommandBase):
         },
         "task_cleanup_cmd": {
             "label": "Task cleanup command",
-            "type": command_builder.CommandBuilder,
+            "type": UnionParameterMeta([command_builder.CommandBuilder]),
             "value": None,
             "hide": True,
         },
@@ -111,6 +112,10 @@ class TractorSubmiter(CommandBase):
         priority: float = float(parameters["priority"])
         owner = ""
         nas = None
+
+        logger.error(
+            type(parameters["task_cleanup_cmd"]), parameters["task_cleanup_cmd"]
+        )
 
         # This command will mount network drive
         mount_cmd = command_builder.CommandBuilder(
@@ -192,8 +197,6 @@ class TractorSubmiter(CommandBase):
                         "argv": command.as_argv(),
                         "samehost": True,
                     }
-
-                    logger.error(command.as_argv())
 
                     # Limit tag with the executable
                     # Useful when limiting the amout of vray jobs on the farm for example

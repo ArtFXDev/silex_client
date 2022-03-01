@@ -73,10 +73,6 @@ class CommandBase:
                 )
                 return False
 
-            # Skip if None
-            if parameters[parameter_name] is None:
-                continue
-
             # Don't cast if it's already the right type
             if isinstance(parameters[parameter_name], parameter_buffer.type):
                 continue
