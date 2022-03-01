@@ -346,3 +346,40 @@ def DictParameterMeta(key_type: Type, value_type: Type):
     }
 
     return CommandParameterMeta("ListParameter", (dict,), attributes)
+
+
+def UnionParameterMeta(types: List[Type]):
+    def __new__(cls, *args, **kwargs):
+        previous_exception = None
+
+        for t in types:
+            if len(args) > 0 and isinstance(args[0], t):
+                return args[0]
+
+            try:
+                temp = t(*args, **kwargs)
+                return temp
+            except Exception as e:
+                if previous_exception is not None:
+                    e.__cause__ = previous_exception
+                previous_exception = e
+                continue
+
+        raise TypeError(
+            f"Could not cast {args} {kwargs} to the appropriate type(s): {types}"
+        ) from previous_exception
+
+    def serialize():
+        return {}
+
+    def get_default():
+        return None
+
+    attributes = {
+        "__new__": __new__,
+        "serialize": serialize,
+        "get_default": get_default,
+        "rebuild": UnionParameterMeta,
+    }
+
+    return CommandParameterMeta("UnionParameter", (object,), attributes)

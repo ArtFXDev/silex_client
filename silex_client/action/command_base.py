@@ -73,6 +73,10 @@ class CommandBase:
                 )
                 return False
 
+            # Don't cast if it's already the right type
+            if isinstance(parameters[parameter_name], parameter_buffer.type):
+                continue
+
             # Check if the parameter is the right type
             try:
                 parameters[parameter_name] = parameter_buffer.type(
