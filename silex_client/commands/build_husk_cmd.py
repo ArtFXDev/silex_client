@@ -11,30 +11,26 @@ from silex_client.utils import command_builder
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
-    SelectParameterMeta,
     TaskFileParameterMeta,
 )
+from silex_client.utils.tractor import dirmap
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class MayaCommand(CommandBase):
+class HuskCommand(CommandBase):
     """
-    Construct Maya render commands
+    Construct Husk render commands
+    See: https://www.sidefx.com/docs/houdini/ref/utils/husk.html
     """
 
     parameters = {
-        "renderer": {
-            "label": "Renderer",
-            "type": SelectParameterMeta("vray", "arnold"),
-            "value": "vray",
-        },
         "scene_file": {
             "label": "Scene file",
             "type": TaskFileParameterMeta(
-                extensions=[".ma", ".mb"], use_current_context=True
+                extensions=[".usd", ".usda", ".usdc"], use_current_context=True
             ),
         },
         "frame_range": {
@@ -47,8 +43,7 @@ class MayaCommand(CommandBase):
             "type": int,
             "value": 10,
         },
-        # "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
-        "output_folder": {"type": pathlib.Path, "hide": True, "value": ""},
+        "output_directory": {"type": pathlib.Path, "hide": True, "value": ""},
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
         "output_extension": {"type": str, "hide": True, "value": "exr"},
     }
@@ -63,21 +58,16 @@ class MayaCommand(CommandBase):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: List[int] = parameters["frame_range"]
         task_size: int = parameters["task_size"]
+        full_path = f"{(parameters['output_directory'] / parameters['output_filename']).as_posix()}.$F4.{parameters['output_extension']}"
 
-        # Build the Blender command
-        maya_cmd = command_builder.CommandBuilder(
-            "Render", rez_packages=["maya"], delimiter=" ", dashes="-"
+        husk_cmd = command_builder.CommandBuilder(
+            "husk", rez_packages=["houdini"], delimiter=" ", dashes="--"
         )
-        maya_cmd.param("r", parameters["renderer"])
-        # Doesn't work need to check on a forum
-        # maya_cmd.param("skipExistingFrames", str(parameters["skip_existing"]).lower())
-        maya_cmd.param("rd", parameters["output_folder"])
-        maya_cmd.param("im", parameters["output_filename"])
-        maya_cmd.param("of", parameters["output_extension"])
-
-        if parameters["renderer"] == "arnold":
-            maya_cmd.param("ai:lve", 2)  # log level
-            maya_cmd.param("fnc", 3)  # File naming name.#.ext
+        husk_cmd.param("usd-input", dirmap(scene.as_posix()))
+        husk_cmd.param("output", dirmap(full_path))
+        husk_cmd.param("make-output-path")
+        husk_cmd.param("exrmode", 1)
+        husk_cmd.param("verbose", "3a")
 
         commands: Dict[str, command_builder.CommandBuilder] = {}
 
@@ -89,17 +79,20 @@ class MayaCommand(CommandBase):
 
         # Creating tasks for each frame chunk
         for chunk in frame_chunks:
-            chunk_cmd = maya_cmd.deepcopy()
+            chunk_cmd = husk_cmd.deepcopy()
             task_title = chunk.frameRange()
 
-            chunk_cmd.param("s", chunk[0])
-            chunk_cmd.param("e", chunk[-1])
-            chunk_cmd.param("b", frame_range[2])
+            start = int(chunk[0])
+            end = int(chunk[-1])
+            step = int(frame_range[2])
 
-            # Add the scene file
-            chunk_cmd.value(scene)
+            chunk_cmd.param("frame", start)
+            chunk_cmd.param("frame-count", end - start + 1)
+            chunk_cmd.param("frame-inc", step)
 
             # Add the frames argument
             commands[task_title] = chunk_cmd
+
+        logger.error(commands)
 
         return {"commands": {f"Scene: {scene.stem}": commands}, "file_name": scene.stem}

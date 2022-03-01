@@ -9,11 +9,14 @@ class CommandBuilder:
 
     def __init__(
         self,
-        executable: Optional[str] = None,
+        executable: str,
         rez_packages: List[str] = [],
         delimiter: Optional[str] = "=",
         dashes: str = "-",
     ):
+        if executable is None:
+            raise TypeError("Executable can't be None")
+
         self.executable = executable
         self.rez_cmd = None
         self.params: List[Tuple[Optional[str], Any]] = []

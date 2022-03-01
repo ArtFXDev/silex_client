@@ -15,6 +15,7 @@ from silex_client.utils.parameter_types import (
     MultipleSelectParameterMeta,
     RadioSelectParameterMeta,
     SelectParameterMeta,
+    UnionParameterMeta,
 )
 
 # Forward references
@@ -46,6 +47,12 @@ class TractorSubmiter(CommandBase):
             "label": "Post-commands list",
             "type": ListParameterMeta(command_builder.CommandBuilder),
             "value": [],
+            "hide": True,
+        },
+        "task_cleanup_cmd": {
+            "label": "Task cleanup command",
+            "type": UnionParameterMeta([command_builder.CommandBuilder]),
+            "value": None,
             "hide": True,
         },
         "commands": {
@@ -106,6 +113,10 @@ class TractorSubmiter(CommandBase):
         owner = ""
         nas = None
 
+        logger.error(
+            type(parameters["task_cleanup_cmd"]), parameters["task_cleanup_cmd"]
+        )
+
         # This command will mount network drive
         mount_cmd = command_builder.CommandBuilder(
             "mount_rd_drive",
@@ -158,6 +169,13 @@ class TractorSubmiter(CommandBase):
         for task_title, task_argv in commands.items():
             # Create task
             task: author.Task = author.Task(title=task_title)
+
+            if parameters["task_cleanup_cmd"] is not None:
+                task.addCleanup(
+                    author.Command(
+                        argv=parameters["task_cleanup_cmd"].as_argv(), samehost=True
+                    )
+                )
 
             for subtask_title, subtask_argv in task_argv.items():
                 subtask: author.Task = author.Task(title=subtask_title)
@@ -255,6 +273,3 @@ class TractorSubmiter(CommandBase):
             # Use the project as value
             project_parameter.rebuild_type(action_query.context_metadata["project"])
             project_parameter.hide = True
-        else:
-            # If there is no project in the current context return a hard coded list of project for 4th years
-            project_parameter.rebuild_type("WS_Environment", "WS_Lighting")
