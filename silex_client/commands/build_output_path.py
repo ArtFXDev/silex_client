@@ -19,6 +19,7 @@ from silex_client.utils.parameter_types import (
     SelectParameterMeta,
     StringParameterMeta,
     TaskParameterMeta,
+    TextParameterMeta,
 )
 
 # Forward references
@@ -32,6 +33,12 @@ class BuildOutputPath(CommandBase):
     """
 
     parameters = {
+        "info": {
+            "label": "Info",
+            "type": TextParameterMeta(color="info"),
+            "value": "",
+            "hide": True,
+        },
         "use_existing_name": {
             "label": "Use existing name",
             "type": bool,
@@ -89,6 +96,16 @@ class BuildOutputPath(CommandBase):
             "tooltip": "Select the task where you can to conform your file",
         },
     }
+
+    async def _get_existing_names(self, task_id, output_type, nb_elements):
+        # Get the selected task an populate the existing name
+        output_path = await self._get_gazu_output_path(
+            task_id, output_type, nb_elements
+        )
+        if output_path is not None and output_path.parent.exists():
+            return [str(s.name) for s in output_path.parent.iterdir() if s.is_dir()]
+        else:
+            return []
 
     @staticmethod
     async def _get_gazu_output_path(
@@ -230,13 +247,10 @@ class BuildOutputPath(CommandBase):
             if use_current_context:
                 task_id = action_query.context_metadata["task_id"]
 
-            # Get the selected task an populate the existing name
-            output_path = await self._get_gazu_output_path(
+            existing_names = await self._get_existing_names(
                 task_id, output_type, nb_elements
             )
-            if output_path is not None and output_path.parent.exists():
-                name_parameter.type = SelectParameterMeta(
-                    *[str(s.name) for s in output_path.parent.iterdir() if s.is_dir()]
-                )
+            if existing_names:
+                name_parameter.type = SelectParameterMeta(*existing_names)
             else:
                 name_parameter.type = SelectParameterMeta(**{"<no_name>": ""})
