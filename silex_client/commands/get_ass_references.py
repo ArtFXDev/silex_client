@@ -8,7 +8,7 @@ from arnold import *
 from typing import Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import PathParameterMeta
+from silex_client.utils.parameter_types import ListParameterMeta
 from silex_client.utils import files, constants
 
 import silex_maya.utils.thread as thread_maya
@@ -25,10 +25,11 @@ class GetAssReferences(CommandBase):
     """
 
     parameters = {
-        "ass_file": {
-            "type":PathParameterMeta(
-                extensions=[".ass"], 
+        "ass_files": {
+            "type":ListParameterMeta(
+                pathlib.Path
             ),
+        "value": []
         },
     }
 
@@ -65,15 +66,14 @@ class GetAssReferences(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        ass_file: pathlib.Path = parameters['ass_file']
+        ass_files: pathlib.Path = parameters['ass_files']
 
         # Get texture paths in the .ass file
-        node_to_path_dict: Dict[str, pathlib.Path] = await thread_maya.execute_in_main_thread(self._get_textures_in_ass, ass_file)
+        node_to_path_dict: Dict[str, pathlib.Path] = await thread_maya.execute_in_main_thread(self._get_textures_in_ass, ass_files[0])
 
         # Create tow lits with corresponding indexes 
         node_names = list(node_to_path_dict.keys())
         references = [[pathlib.Path(path) for path in files.expand_template_to_sequence(item, constants.ARNOLD_MATCH_SEQUENCE)] for item in list(node_to_path_dict.values())]
-        logger.error(references)
         return {
             "node_names": node_names,
             "references": references,
