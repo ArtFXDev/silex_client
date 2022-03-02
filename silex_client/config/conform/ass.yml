@@ -87,17 +87,7 @@ ass:
           parameters:
             enable: !command-output "get_conform_location:get_output_cache:value"
           hide: true
-        # open:
-        #   label: "Open scene to conform"
-        #   path: "silex_maya.commands.open.Open"
-        #   parameters:
-        #     file_path:
-        #       value: !command-output "input:input:file_paths"
-        #       hide: true
-        #     save: True
-        # cleanup:
-        #   label: "Cleanup scene"
-        #   path: "silex_maya.commands.cleanup_scene.CleanupScene"
+
         get_ass_references:
           label: "Get referenced files"
           path: "silex_client.commands.get_ass_references.GetAssReferences"
@@ -147,23 +137,6 @@ ass:
               value: !command-output "get_conform_location:build_output_path:full_path"
               hide: true
 
-        # save:
-        #   label: "Save the maya scene to the right location"
-        #   path: "silex_maya.commands.save.Save"
-        #   parameters:
-        #     file_path:
-        #       value: !command-output "get_conform_location:build_output_path:full_path"
-        #       hide: true
-
-        # open:
-        #   label: "Open back the original scene"
-        #   path: "silex_maya.commands.open.Open"
-        #   parameters:
-        #     file_path:
-        #       value: !command-output "conform_references:open:old_path"
-        #       hide: true
-        #     save: False
-
         set_output_cache:
           label: "Cache conform output"
           path: "silex_client.commands.set_stored_value.SetStoredValue"
@@ -172,30 +145,6 @@ ass:
             key_suffix: !command-output "get_conform_location:build_output_path:store_conform_key"
             value: !command-output "conform_ass:set_ass_references:new_ass_file"
           hide: true
-
-    # preview:
-    #   label: "Upload preview"
-    #   index: 35
-    #   commands:
-    #     step_exit:
-    #       label: "Skip reconform"
-    #       path: "silex_client.commands.exit_step.ExitStep"
-    #       parameters:
-    #         enable: !command-output "get_conform_location:get_output_cache:value"
-    #       hide: true
-
-    #     capture_preview:
-    #       label: "Capture preview"
-    #       path: "silex_maya.commands.capture_preview.CapturePreview"
-
-    #     upload_preview:
-    #       label: "Upload preview"
-    #       path: "silex_maya.commands.upload_preview.UploadPreview"
-    #       ask_user: true
-    #       parameters:
-    #         preview_path:
-    #           value: !command-output "preview:capture_preview:thumbnail"
-    #           hide: true
 
     output:
       index: 40

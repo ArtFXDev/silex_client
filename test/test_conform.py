@@ -16,9 +16,11 @@ from silex_client.utils.enums import Status
 
 # Run the conform test for each conform types
 conform_types = [
-    i["name"] for i in Config.get().get_actions("conform") if i["name"] != "default"
+    i["name"] for i in Config.get().get_actions("conform") if i["name"] not in ["default", "ass"]
 ]
 file_quantities = [1, 19]
+
+
 
 
 @pytest.mark.parametrize("conform_type", conform_types)
