@@ -1,0 +1,164 @@
+ass:
+  steps:
+    input:
+      index: 10
+      hide: True
+      commands:
+        input:
+          path: "silex_client.commands.pass.Pass"
+
+    get_conform_location:
+      label: "Get maya scene conform location"
+      index: 15
+      commands:
+        get_conform_cache:
+          label: "Get previous conform location"
+          path: "silex_client.commands.get_stored_value.GetStoredValue"
+          parameters:
+            key: "build_output_path_task_id"
+            key_suffix: !command-output "input:input:file_paths"
+          hide: true
+        get_fast_conform_cache:
+          label: "Check fast conform"
+          path: "silex_client.commands.get_stored_value.GetStoredValue"
+          parameters:
+            key: "fast_conform_enabled"
+            key_suffix:
+              value: !command-output "input:input:file_paths"
+              hide: true
+            default: false
+          hide: true
+
+        build_output_path:
+          label: "Build output path"
+          path: "silex_client.commands.build_output_path_conform.BuildOutputPathConform"
+          tooltip: "Build the complete output path"
+          parameters:
+            task: !command-output "get_conform_location:get_conform_cache:value"
+            fast_conform: !command-output "get_conform_location:get_fast_conform_cache:value"
+            use_current_context: false
+            create_temp_dir: false
+            frame_set:
+              value: !command-output "input:input:frame_set"
+              hide: true
+            output_type:
+              value: "ass"
+              hide: true
+            files:
+              value: !command-output "input:input:file_paths"
+              hide: true
+            padding:
+              value: !command-output "input:input:padding"
+              hide: true
+          ask_user: true
+
+        set_conform_cache:
+          label: "Cache conform location"
+          path: "silex_client.commands.set_stored_value.SetStoredValue"
+          parameters:
+            key: "build_output_path_task_id"
+            key_suffix: !command-output "input:input:file_paths"
+            value: !command-output "get_conform_location:build_output_path:task"
+          hide: true
+        set_fast_conform_cache:
+          label: "Cache conform location"
+          path: "silex_client.commands.set_stored_value.SetStoredValue"
+          parameters:
+            key: "fast_conform_enabled"
+            key_suffix: !command-output "input:input:file_paths"
+            value: !command-output "get_conform_location:build_output_path:fast_conform"
+          hide: true
+
+        get_output_cache:
+          label: "Get previous conform output"
+          path: "silex_client.commands.get_stored_value.GetStoredValue"
+          parameters:
+            key: "conform_output"
+            key_suffix: !command-output "get_conform_location:build_output_path:store_conform_key"
+          hide: true
+
+    conform_references:
+      label: "Conform Maya scene's references"
+      index: 20
+      commands:
+        step_exit:
+          label: "Skip reconform"
+          path: "silex_client.commands.exit_step.ExitStep"
+          parameters:
+            enable: !command-output "get_conform_location:get_output_cache:value"
+          hide: true
+
+        get_ass_references:
+          label: "Get referenced files"
+          path: "silex_client.commands.get_ass_references.GetAssReferences"
+          parameters:
+            ass_file: !command-output "input:input:file_paths"
+        conform_references:
+          label: "Conform references found"
+          path: "silex_client.commands.iterate_action.IterateAction"
+          parameters:
+            values:
+              value: !command-output "conform_references:get_ass_references:references"
+              hide: true
+            actions:
+              - "conform"
+            categories:
+              - "action"
+            parameter: "setup:get_conform_output:file_paths"
+            label_key: "references"
+            output: "setup:append_conform_actions"
+
+    conform_ass:
+      label: "Conform Maya scene"
+      index: 30
+      commands:
+        step_exit:
+          label: "Skip reconform"
+          path: "silex_client.commands.exit_step.ExitStep"
+          parameters:
+            enable: !command-output "get_conform_location:get_output_cache:value"
+          hide: true
+
+        set_ass_references:
+          label: "Repath attributes"
+          path: "silex_client.commands.set_ass_references.SetAssReferences"
+          tooltip: "Set the new path on the attributes"
+          parameters:
+            node_names:
+              value: !command-output "conform_references:get_ass_references:node_names"
+              hide: true
+            references:
+              value: !command-output "conform_references:conform_references"
+              hide: true
+            ass_file:
+              value: !command-output "input:input:file_paths"
+              hide: true
+            new_ass_file:
+              value: !command-output "get_conform_location:build_output_path:full_path"
+              hide: true
+
+        set_output_cache:
+          label: "Cache conform output"
+          path: "silex_client.commands.set_stored_value.SetStoredValue"
+          parameters:
+            key: "conform_output"
+            key_suffix: !command-output "get_conform_location:build_output_path:store_conform_key"
+            value: !command-output "conform_ass:set_ass_references:new_ass_file"
+          hide: true
+
+    output:
+      index: 40
+      hide: true
+      commands:
+        get_output_cache:
+          label: "Get previous conform output"
+          path: "silex_client.commands.get_stored_value.GetStoredValue"
+          parameters:
+            key: "conform_output"
+            key_suffix: !command-output "get_conform_location:build_output_path:store_conform_key"
+          hide: true
+
+        output:
+          path: "silex_client.commands.pass.Pass"
+          parameters:
+            input: !command-output "output:get_output_cache:value"
