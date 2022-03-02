@@ -66,7 +66,7 @@ class GetAssReferences(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        ass_files: pathlib.Path = parameters['ass_files']
+        ass_files: List[pathlib.Path] = parameters['ass_files']
 
         # Get texture paths in the .ass file
         node_to_path_dict: Dict[str, pathlib.Path] = await thread_maya.execute_in_main_thread(self._get_textures_in_ass, ass_files[0])
