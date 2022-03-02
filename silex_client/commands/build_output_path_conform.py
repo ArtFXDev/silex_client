@@ -9,7 +9,8 @@ import fileseq
 
 from silex_client.action.command_base import CommandBase
 from silex_client.commands.build_output_path import BuildOutputPath
-from silex_client.utils.parameter_types import PathParameterMeta
+from silex_client.utils.parameter_types import PathParameterMeta, TextParameterMeta
+from silex_client.action.parameter_buffer import ParameterBuffer
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -35,6 +36,25 @@ class BuildOutputPathConform(BuildOutputPath):
         },
     }
 
+    async def prompt_warning(self, action_query: ActionQuery, parameters):
+        warning_parameter = ParameterBuffer(
+            type=TextParameterMeta(color="warning"),
+            value=(
+                "WARNING: \n"
+                + "The current name "
+                + "Will override an existing conform\n"
+                + "If you don't want to override previous conform "
+                + "make sure to set a different name\n"
+                + "Otherwise you can just press continue"
+            ),
+        )
+        name_parameter = self.command_buffer.parameters["name"]
+        response = await self.prompt_user(
+            action_query, {"warning": warning_parameter, "name": name_parameter}
+        )
+        parameters["warning"] = warning_parameter
+        return response["name"]
+
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -48,10 +68,25 @@ class BuildOutputPathConform(BuildOutputPath):
         result = await super().__call__(parameters, action_query, logger)
         result.update({"fast_conform": fast_conform})
 
+        action_query.store.setdefault("build_output_path_conform:output_dir", [])
+        if (
+            list(result.get("directory", []).iterdir())
+            and result["directory"]
+            in action_query.store["build_output_path_conform:output_dir"]
+            and fast_conform
+        ):
+            new_name = await self.prompt_warning(action_query, parameters)
+            self.command_buffer.parameters["name"].value = new_name
+            parameters["name"] = new_name
+            result.update(await super().__call__(parameters, action_query, logger))
+
         # Store the result of the built output path
         file_paths = fileseq.findSequencesInList(file_paths)[0]
         key = f"build_output_path_conform:{str(file_paths)}"
         action_query.store[key] = result
+        action_query.store["build_output_path_conform:output_dir"].append(
+            result["directory"]
+        )
 
         result["store_conform_key"] = key
         return result
@@ -81,43 +116,11 @@ class BuildOutputPathConform(BuildOutputPath):
         if len(file_paths) <= 1:
             new_name_value = pathlib.Path(str(file_paths[0])).stem
         name_parameter = self.command_buffer.parameters["name"]
-        warning_parameter = self.command_buffer.parameters["info"]
         if not name_parameter.get_value(action_query):
             name_parameter.value = new_name_value
-        name_value = name_parameter.get_value(action_query)
 
         # Force the name to be visible
         self.command_buffer.parameters["name"].hide = False
-
-        warning_parameter.hide = True
-        use_existing_name: bool = parameters["use_existing_name"]
-        task_id: str = parameters["task"]
-        output_type: str = parameters["output_type"]
-        frame_set: fileseq.FrameSet = parameters["frame_set"]
-        nb_elements = len(frame_set)
-        existing_names = await self._get_existing_names(
-            task_id, output_type, nb_elements
-        )
-        if not use_existing_name and name_value in existing_names:
-            warning_parameter.rebuild_type(color="info")
-            warning_parameter.value = (
-                "WARNING: \n"
-                + "The current name "
-                + "Will override an existing conform"
-                + "If you don't want to override previous conform "
-                + "make sure to set a different name"
-            )
-            warning_parameter.hide = False
-
-        if len(name_value) > 40:
-            warning_parameter.rebuild_type(color="warning")
-            warning_parameter.value = (
-                "WARNING: \n"
-                + "The autofilled name is too long. "
-                + "Make sure to enter a name with less that 40 characters "
-                + "otherwise the name will be clamped"
-            )
-            warning_parameter.hide = False
 
         # If the fast_conform is enabled and a valid task is selected
         # Don't prompt the user
@@ -130,9 +133,8 @@ class BuildOutputPathConform(BuildOutputPath):
             task_value is not None
             and fast_conform
             and current_status != 2
-            and warning_parameter.hide
+            and len(name_parameter.get_value(action_query)) < 40
         ):
             self.command_buffer.ask_user = False
 
-        fast_parameter.hide = False
         await super().setup(parameters, action_query, logger)

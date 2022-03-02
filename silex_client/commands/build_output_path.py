@@ -19,7 +19,6 @@ from silex_client.utils.parameter_types import (
     SelectParameterMeta,
     StringParameterMeta,
     TaskParameterMeta,
-    TextParameterMeta,
 )
 
 # Forward references
@@ -33,12 +32,6 @@ class BuildOutputPath(CommandBase):
     """
 
     parameters = {
-        "info": {
-            "label": "Info",
-            "type": TextParameterMeta(color="info"),
-            "value": "",
-            "hide": True,
-        },
         "use_existing_name": {
             "label": "Use existing name",
             "type": bool,
