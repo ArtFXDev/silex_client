@@ -43,10 +43,10 @@ class SetAssReferences(CommandBase):
     }
 
     def _set_reference_in_ass(self, new_ass_files: pathlib.Path, ass_files: pathlib.Path, node_names: List[str], references: List[pathlib.Path]):
-        """set references path in a list of nodes"""
+        """set references path for a list of nodes then save in a new location"""
 
-        # Open ass file
         for ass in ass_files:
+            # Open ass files
             AiBegin()
             AiMsgSetConsoleFlags(AI_LOG_ALL)
 
@@ -70,7 +70,7 @@ class SetAssReferences(CommandBase):
 
             AiNodeIteratorDestroy(iter)
 
-            # Save to new location
+            # Save .ass file to new location
             AiASSWrite(str(new_ass_files[ass_files.index(ass)]), AI_NODE_ALL, False)
             AiEnd()
 
