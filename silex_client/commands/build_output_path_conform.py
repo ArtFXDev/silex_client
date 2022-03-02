@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
+import copy
 from typing import Any, Dict
 
 import fileseq
@@ -48,12 +49,28 @@ class BuildOutputPathConform(BuildOutputPath):
                 + "Otherwise you can just press continue"
             ),
         )
-        name_parameter = self.command_buffer.parameters["name"]
-        response = await self.prompt_user(
-            action_query, {"warning": warning_parameter, "name": name_parameter}
+        name_parameter = copy.copy(self.command_buffer.parameters["name"])
+        task_parameter = copy.copy(self.command_buffer.parameters["task"])
+        use_current_context_parameter = copy.copy(
+            self.command_buffer.parameters["use_current_context"]
         )
+        task_parameter.hide = False
+        use_current_context_parameter.hide = False
         parameters["warning"] = warning_parameter
-        return response["name"]
+
+        response = await self.prompt_user(
+            action_query,
+            {
+                "warning": warning_parameter,
+                "name": name_parameter,
+                "task": task_parameter,
+                "use_current_context": use_current_context_parameter,
+            },
+        )
+        for key, value in response.items():
+            parameters[key] = value
+
+        return response
 
     @CommandBase.conform_command()
     async def __call__(
@@ -63,32 +80,32 @@ class BuildOutputPathConform(BuildOutputPath):
         logger: logging.Logger,
     ):
         fast_conform = parameters["fast_conform"]
-        file_paths = parameters["files"]
+        file_paths = fileseq.findSequencesInList(parameters["files"])[0]
 
+        input_key = f"build_output_path_conform:{str(file_paths)}"
         result = await super().__call__(parameters, action_query, logger)
         result.update({"fast_conform": fast_conform})
 
-        action_query.store.setdefault("build_output_path_conform:output_dir", [])
+        # When is enabled, files might be overriden, since the name is autofilled
+        # To prevent this, we store the input directory and the output directory
+        # and check if we are not building a path that has already been built
+        action_query.store.setdefault("build_conform_path:output", [])
         if (
-            list(result.get("directory", []).iterdir())
-            and result["directory"]
-            in action_query.store["build_output_path_conform:output_dir"]
-            and fast_conform
+            action_query.store.get(f"fast_conform_enabled:{file_paths.dirname()}")
+            and result["directory"] in action_query.store["build_conform_path:output"]
+            and input_key not in action_query.store.keys()
         ):
-            new_name = await self.prompt_warning(action_query, parameters)
-            self.command_buffer.parameters["name"].value = new_name
-            parameters["name"] = new_name
+            await self.prompt_warning(action_query, parameters)
             result.update(await super().__call__(parameters, action_query, logger))
 
         # Store the result of the built output path
-        file_paths = fileseq.findSequencesInList(file_paths)[0]
-        key = f"build_output_path_conform:{str(file_paths)}"
-        action_query.store[key] = result
-        action_query.store["build_output_path_conform:output_dir"].append(
-            result["directory"]
-        )
+        action_query.store["build_conform_path:output"].append(result["directory"])
+        action_query.store[
+            f"fast_conform_enabled:{file_paths.dirname()}"
+        ] = fast_conform
+        action_query.store[input_key] = result
 
-        result["store_conform_key"] = key
+        result["store_conform_key"] = input_key
         return result
 
     async def setup(
@@ -126,8 +143,9 @@ class BuildOutputPathConform(BuildOutputPath):
         # Don't prompt the user
         task_parameter = self.command_buffer.parameters["task"]
         task_value = task_parameter.get_value(action_query)
-        fast_parameter = self.command_buffer.parameters["fast_conform"]
-        fast_conform = fast_parameter.get_value(action_query)
+        fast_conform = action_query.store.get(
+            f"fast_conform_enabled:{file_paths.dirname()}"
+        )
         current_status = self.command_buffer.status
         if (
             task_value is not None
