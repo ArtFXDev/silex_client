@@ -82,8 +82,8 @@ class SetAssReferences(CommandBase):
         logger: logging.Logger,
     ):
         node_names: List[str] = parameters['node_names']
-        ass_files: pathlib.Path = parameters['ass_files']
-        new_ass_files: pathlib.Path = parameters['new_ass_files']
+        ass_files: List[pathlib.Path] = parameters['ass_files']
+        new_ass_files: List[pathlib.Path] = parameters['new_ass_files']
 
         # TODO: This should be done in the get_value method of the ParameterBuffer
         references: List[pathlib.Path] = []
