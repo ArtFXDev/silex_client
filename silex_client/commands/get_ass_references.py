@@ -5,7 +5,7 @@ import typing
 import re
 import pathlib
 from arnold import *
-from typing import Dict
+from typing import Dict, List
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import ListParameterMeta
