@@ -8,7 +8,7 @@ ass:
           path: "silex_client.commands.pass.Pass"
 
     get_conform_location:
-      label: "Get maya scene conform location"
+      label: "Get ass scene conform location"
       index: 15
       commands:
         get_conform_cache:
@@ -78,7 +78,7 @@ ass:
           hide: true
 
     conform_references:
-      label: "Conform Maya scene's references"
+      label: "Conform ass scene's references"
       index: 20
       commands:
         step_exit:
@@ -92,7 +92,7 @@ ass:
           label: "Get referenced files"
           path: "silex_client.commands.get_ass_references.GetAssReferences"
           parameters:
-            ass_file: !command-output "input:input:file_paths"
+            ass_files: !command-output "input:input:file_paths"
         conform_references:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
@@ -109,7 +109,7 @@ ass:
             output: "setup:append_conform_actions"
 
     conform_ass:
-      label: "Conform Maya scene"
+      label: "Conform ass scene"
       index: 30
       commands:
         step_exit:
@@ -130,10 +130,10 @@ ass:
             references:
               value: !command-output "conform_references:conform_references"
               hide: true
-            ass_file:
+            ass_files:
               value: !command-output "input:input:file_paths"
               hide: true
-            new_ass_file:
+            new_ass_files:
               value: !command-output "get_conform_location:build_output_path:full_path"
               hide: true
 
@@ -143,7 +143,7 @@ ass:
           parameters:
             key: "conform_output"
             key_suffix: !command-output "get_conform_location:build_output_path:store_conform_key"
-            value: !command-output "conform_ass:set_ass_references:new_ass_file"
+            value: !command-output "conform_ass:set_ass_references:new_ass_files"
           hide: true
 
     output:

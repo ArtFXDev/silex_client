@@ -34,43 +34,45 @@ class SetAssReferences(CommandBase):
                 str
             )
         },
-        "ass_file": {
-            "type": PathParameterMeta(extensions=['.ass'])
+        "ass_files": {
+            "type": ListParameterMeta(pathlib.Path)
         },
-        "new_ass_file": {
-            "type": PathParameterMeta(extensions=['.ass'])
+        "new_ass_files": {
+            "type": ListParameterMeta(pathlib.Path)
         },
     }
 
-    def _set_reference_in_ass(self, new_ass_file: pathlib.Path, ass_file: pathlib.Path, node_names: List[str], references: List[pathlib.Path]):
-        """set references path in a list of nodes"""
+    def _set_reference_in_ass(self, new_ass_files: pathlib.Path, ass_files: pathlib.Path, node_names: List[str], references: List[pathlib.Path]):
+        """set references path for a list of nodes then save in a new location"""
 
-        # Open ass file
-        AiBegin()
-        AiMsgSetConsoleFlags(AI_LOG_ALL)
-        AiASSLoad(str(ass_file), AI_NODE_ALL)
+        for ass in ass_files:
+            # Open ass files
+            AiBegin()
+            AiMsgSetConsoleFlags(AI_LOG_ALL)
 
-        node_to_path_dict = dict()
+            AiASSLoad(str(ass), AI_NODE_ALL)
 
-        # Iter through all shading nodes
-        iter = AiUniverseGetNodeIterator(AI_NODE_SHADER)
+            node_to_path_dict = dict()
 
-        while not AiNodeIteratorFinished(iter):
-            node = AiNodeIteratorGetNext(iter)
-            name = AiNodeGetName( node )
+            # Iter through all shading nodes
+            iter = AiUniverseGetNodeIterator(AI_NODE_SHADER)
 
-            # Only look for a path in a file node
-            if name in node_names:
-                sequence = fileseq.findSequencesInList(references[node_names.index(name)])[0]
-                template = AiNodeGetStr(node, "filename")
-                new_path = files.format_sequence_string(sequence, template, constants.ARNOLD_MATCH_SEQUENCE)
-                AiNodeSetStr(node, "filename", new_path)
+            while not AiNodeIteratorFinished(iter):
+                node = AiNodeIteratorGetNext(iter)
+                name = AiNodeGetName( node )
 
-        AiNodeIteratorDestroy(iter)
+                # Only look for a path in a file node
+                if name in node_names:
+                    sequence = fileseq.findSequencesInList(references[node_names.index(name)])[0]
+                    template = AiNodeGetStr(node, "filename")
+                    new_path = files.format_sequence_string(sequence, template, constants.ARNOLD_MATCH_SEQUENCE)
+                    AiNodeSetStr(node, "filename", new_path)
 
-        # Save to new location
-        AiASSWrite(str(new_ass_file), AI_NODE_ALL, False)
-        AiEnd()
+            AiNodeIteratorDestroy(iter)
+
+            # Save .ass file to new location
+            AiASSWrite(str(new_ass_files[ass_files.index(ass)]), AI_NODE_ALL, False)
+            AiEnd()
 
     @CommandBase.conform_command()
     async def __call__(
@@ -80,8 +82,8 @@ class SetAssReferences(CommandBase):
         logger: logging.Logger,
     ):
         node_names: List[str] = parameters['node_names']
-        ass_file: pathlib.Path = parameters['ass_file']
-        new_ass_file: pathlib.Path = parameters['new_ass_file']
+        ass_files: List[pathlib.Path] = parameters['ass_files']
+        new_ass_files: List[pathlib.Path] = parameters['new_ass_files']
 
         # TODO: This should be done in the get_value method of the ParameterBuffer
         references: List[pathlib.Path] = []
@@ -91,6 +93,6 @@ class SetAssReferences(CommandBase):
             references.append(reference)
         
         # set references paths
-        await thread_maya.execute_in_main_thread(self._set_reference_in_ass, new_ass_file, ass_file, node_names, references)
+        await thread_maya.execute_in_main_thread(self._set_reference_in_ass, new_ass_files, ass_files, node_names, references)
 
-        return new_ass_file
+        return new_ass_files
