@@ -32,10 +32,20 @@ class Execution(IntEnum):
 
 class ConflictBehaviour(IntEnum):
     """
-    Used by commands like copy, rename...
+    Used for file conflicts in copy, rename...
     """
 
     OVERRIDE = 0
     ALWAYS_OVERRIDE = 1
     KEEP_EXISTING = 2
     ALWAYS_KEEP_EXISTING = 3
+
+
+class NotFoundBehaviour(IntEnum):
+    """
+    Used when a file is not found
+    """
+
+    NEW_PATH = 0
+    SKIP_FILE = 1
+    SKIP_ALL = 2

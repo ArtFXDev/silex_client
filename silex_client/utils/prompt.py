@@ -1,21 +1,22 @@
 import asyncio
 import pathlib
-from typing import Optional
+from typing import Optional, Tuple
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.action_query import ActionQuery
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.action.command_buffer import CommandBuffer
 from silex_client.utils.datatypes import SharedVariable
-from silex_client.utils.enums import ConflictBehaviour
+from silex_client.utils.enums import ConflictBehaviour, NotFoundBehaviour
 from silex_client.utils.parameter_types import (
     TextParameterMeta,
     RadioSelectParameterMeta,
+    SelectParameterMeta,
 )
 
 
 async def prompt_override(
-    command_base: CommandBase, file_path: pathlib.Path, action_query: ActionQuery
+    command: CommandBase, file_path: pathlib.Path, action_query: ActionQuery
 ) -> ConflictBehaviour:
     """
     Helper to prompt the user for cases when we must override a file and wait for its response
@@ -40,7 +41,7 @@ async def prompt_override(
         label="Conflict behaviour",
     )
     # Prompt the user to get the new path
-    response = await command_base.prompt_user(
+    response = await command.prompt_user(
         action_query,
         {
             "info": info_parameter,
@@ -48,6 +49,44 @@ async def prompt_override(
         },
     )
     return ConflictBehaviour(int(response["conflict_behaviour"]))
+
+
+async def prompt_unreachable_file(
+    command: CommandBase, file_path: pathlib.Path, action_query: ActionQuery
+) -> Tuple[NotFoundBehaviour, Optional[pathlib.Path]]:
+    """
+    Helper to prompt the user for cases when a file cannot be reached
+    """
+    behaviours = ["Select new path", "Skip this file", "Skip all the unreachable path"]
+    info_parameter = ParameterBuffer(
+        type=TextParameterMeta("warning"),
+        name="info",
+        value=f"The file:\n{file_path}\n\nCould not be reached",
+    )
+    behaviour_parameter = ParameterBuffer(
+        type=SelectParameterMeta(*behaviours),
+        name="behaviour",
+        label="Behaviour",
+    )
+    path_parameter = ParameterBuffer(
+        type=pathlib.Path,
+        name="new_path",
+        label="New path",
+    )
+    # Prompt the user to get the new path
+    response = await command.prompt_user(
+        action_query,
+        {
+            "info": info_parameter,
+            "behaviour": behaviour_parameter,
+            "new_path": path_parameter,
+        },
+    )
+    new_path = response["new_path"]
+    behaviour = response["behaviour"]
+    if new_path is not None:
+        new_path = pathlib.Path(new_path)
+    return NotFoundBehaviour(behaviours.index(behaviour)), new_path
 
 
 class UpdateProgress:
