@@ -68,7 +68,7 @@ class GetVrsceneReferences(CommandBase):
         )
 
         # Create two lists with corresponding indexes
-        node_names = list(plugins_references.keys())
+        plugins_names = list(plugins_references.keys())
         references = [
             [
                 pathlib.Path(str(path))
@@ -77,6 +77,6 @@ class GetVrsceneReferences(CommandBase):
             for item in list(plugins_references.values())
         ]
         return {
-            "plugins": node_names,
+            "plugins": plugins_names,
             "references": references,
         }
