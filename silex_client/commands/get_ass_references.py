@@ -8,7 +8,7 @@ from arnold import *
 from typing import Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import ListParameterMeta
+from silex_client.utils.parameter_types import PathParameterMeta
 from silex_client.utils import files, constants
 
 import silex_maya.utils.thread as thread_maya
@@ -21,16 +21,11 @@ if typing.TYPE_CHECKING:
 
 class GetAssReferences(CommandBase):
     """
-    Retrieve a stored value from the action's global store
+    Get all the textures in the given ass files
     """
 
     parameters = {
-        "ass_files": {
-            "type":ListParameterMeta(
-                pathlib.Path
-            ),
-        "value": []
-        },
+        "ass_files": {"type": PathParameterMeta(multiple=True), "value": []},
     }
 
     def _get_textures_in_ass(self, ass_file: pathlib.Path) -> Dict[str, pathlib.Path]:
@@ -48,12 +43,14 @@ class GetAssReferences(CommandBase):
 
         while not AiNodeIteratorFinished(iter):
             node = AiNodeIteratorGetNext(iter)
-            node_name = AiNodeGetName( node )
+            node_name = AiNodeGetName(node)
 
             # Only look for a path in a file node
             if bool(re.search(r"\w*file", str(node_name))):
-                node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
-        
+                node_to_path_dict[node_name] = pathlib.Path(
+                    AiNodeGetStr(node, "filename")
+                )
+
         AiNodeIteratorDestroy(iter)
         AiEnd()
 
@@ -66,18 +63,27 @@ class GetAssReferences(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        ass_files: List[pathlib.Path] = parameters['ass_files']
+        ass_files: List[pathlib.Path] = parameters["ass_files"]
 
         # Get texture paths in the .ass file
-        node_to_path_dict: Dict[str, pathlib.Path] = await thread_maya.execute_in_main_thread(self._get_textures_in_ass, ass_files[0])
+        node_to_path_dict: Dict[
+            str, pathlib.Path
+        ] = await thread_maya.execute_in_main_thread(
+            self._get_textures_in_ass, ass_files[0]
+        )
 
-        # Create tow lits with corresponding indexes 
+        # Create tow lits with corresponding indexes
         node_names = list(node_to_path_dict.keys())
-        references = [[pathlib.Path(path) for path in files.expand_template_to_sequence(item, constants.ARNOLD_MATCH_SEQUENCE)] for item in list(node_to_path_dict.values())]
+        references = [
+            [
+                pathlib.Path(str(path))
+                for path in files.expand_template_to_sequence(
+                    item, constants.ARNOLD_MATCH_SEQUENCE
+                )
+            ]
+            for item in list(node_to_path_dict.values())
+        ]
         return {
             "node_names": node_names,
             "references": references,
         }
-
-
-
