@@ -29,7 +29,7 @@ class GetVrsceneReferences(CommandBase):
     """
 
     parameters = {
-        "vrscenes": {"type": PathParameterMeta(multiple=True), "value": []},
+        "vrscene_files": {"type": PathParameterMeta(multiple=True), "value": []},
     }
 
     @staticmethod
@@ -60,11 +60,11 @@ class GetVrsceneReferences(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        vrscenes: List[pathlib.Path] = parameters["vrscenes"]
+        vrscene_files: List[pathlib.Path] = parameters["vrscene_files"]
 
         # Get texture paths in the .vrscene file
         plugins_references: Dict[str, pathlib.Path] = await execute_in_thread(
-            self._get_vrscene_references, vrscenes[0]
+            self._get_vrscene_references, vrscene_files[0]
         )
 
         # Create two lists with corresponding indexes
