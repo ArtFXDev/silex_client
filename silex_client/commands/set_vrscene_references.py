@@ -16,13 +16,14 @@ from silex_client.utils.parameter_types import (
     AnyParameter,
 )
 
+import vray
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class SetAssReferences(CommandBase):
+class SetVrsceneReferences(CommandBase):
     """
     Retrieve a stored value from the action's global store
     """
@@ -46,8 +47,19 @@ class SetAssReferences(CommandBase):
         Set references path for a list of nodes then save in a new location
         """
 
+        def dumpMsg(renderer, message, level, instant):
+            if level == vray.LOGLEVEL_ERROR:
+                logger.error(message)
+            elif level == vray.LOGLEVEL_WARNING:
+                logger.warning(message)
+            elif level == vray.LOGLEVEL_INFO:
+                logger.info(message)
+            else:
+                logger.debug(message)
+
         with vray.VRayRenderer() as renderer:
-            renderer.load(vrscene_src)
+            renderer.setOnLogMessage(dumpMsg)
+            renderer.load(vrscene_src.as_posix())
             for plugin_name, file_paths in zip(plugins_names, reference_values):
                 name = ":".join(plugin_name.split(":")[:-1])
                 attribute = plugin_name.split(":")[-1]
@@ -61,10 +73,8 @@ class SetAssReferences(CommandBase):
 
                 plugin.setValueAsString(attribute, new_value)
 
-            errors = renderer.export(vrscene_dst)
-            if not errors:
-                logger.info("Vrscene exported to %s", vrscene_dst)
-            logger.error(errors)
+            logger.info("Exporting vrscene to %s", vrscene_dst)
+            renderer.export(vrscene_dst.as_posix())
 
     @CommandBase.conform_command()
     async def __call__(
@@ -75,7 +85,7 @@ class SetAssReferences(CommandBase):
     ):
         vrscenes_src: List[pathlib.Path] = parameters["vrscene_src"]
         vrscenes_dst: List[pathlib.Path] = parameters["vrscene_dst"]
-        plugins_values: List[str] = parameters["plugins_values"]
+        plugins_values: List[str] = parameters["plugins_attributes"]
 
         # TODO: This should be done in the get_value method of the ParameterBuffer
         reference_values: List[List[pathlib.Path]] = []

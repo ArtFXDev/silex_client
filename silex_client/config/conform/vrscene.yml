@@ -42,7 +42,7 @@ vrscene:
               value: !command-output "input:input:frame_set"
               hide: true
             output_type:
-              value: "ass"
+              value: "vrscene"
               hide: true
             files:
               value: !command-output "input:input:file_paths"
@@ -78,7 +78,7 @@ vrscene:
           hide: true
 
     conform_references:
-      label: "Conform ass scene's references"
+      label: "Conform vray scene's references"
       index: 20
       commands:
         step_exit:
@@ -143,7 +143,7 @@ vrscene:
           parameters:
             key: "conform_output"
             key_suffix: !command-output "get_conform_location:build_output_path:store_conform_key"
-            value: !command-output "conform_ass:set_ass_references:new_ass_files"
+            value: !command-output "conform_vrscene:set_vrscene_references"
           hide: true
 
     output:
