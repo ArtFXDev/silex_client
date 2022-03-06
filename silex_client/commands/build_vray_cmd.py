@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import logging
 import pathlib
-import typing
 import re
+import typing
 from typing import Any, Dict, List
 
 import gazu.client
@@ -58,18 +58,13 @@ class VrayCommand(CommandBase):
             ),
             "value": 0,
         },
-        "linux": {
-            "label": "Run on Linux",
-            "type": bool,
-            "value": False,
-        },
         "parameter_overrides": {
             "type": bool,
             "label": "Parameter overrides",
             "value": False,
         },
         "resolution": {
-            "label": "Resolution ( width, height )",
+            "label": "Resolution (width, height)",
             "type": IntArrayParameterMeta(2),
             "value": [1920, 1080],
             "hide": True,
@@ -110,8 +105,6 @@ class VrayCommand(CommandBase):
         resolution: List[int],
         frame_range: FrameSet,
         task_size: int,
-        nas: str,
-        linux: bool,
     ):
         """Build command for every task (depending on a task size), store them in a dict and return it"""
 
@@ -124,10 +117,6 @@ class VrayCommand(CommandBase):
         vray_cmd.param("sceneFile", dirmap(scene.as_posix()))
         vray_cmd.param("skipExistingFrames", skip_existing)
         vray_cmd.param("imgFile", dirmap(output_path.as_posix()))
-
-        # Path mapping for Linux
-        if linux:
-            vray_cmd.param("remapPath", f"P:=/mnt/{nas}")
 
         if parameter_overrides:
             vray_cmd.param("imgWidth", resolution[0]).param("imgHeight", resolution[1])
@@ -167,11 +156,6 @@ class VrayCommand(CommandBase):
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
 
-        project_dict = await gazu.project.get_project_by_name(
-            action_query.context_metadata["project"]
-        )
-        nas = project_dict["data"]["nas"]
-
         # Match selected vrscenes with their attributed render layers
         scene_to_layer_dict = self._get_layers_from_scenes(vray_scenes)
 
@@ -200,8 +184,6 @@ class VrayCommand(CommandBase):
                 resolution,
                 frame_range,
                 task_size,
-                nas,
-                parameters["linux"],
             )
 
         # Take the first path job title
@@ -210,9 +192,8 @@ class VrayCommand(CommandBase):
             render_layer = scene_to_layer_dict[first_key]
             scene_name = str(first_key.stem).split(render_layer)[0][:-1]
 
-        # For THE group outside of silex... ( TRAITORS !! REBELS !! hum.. hum...)
-        if not re.match(r'\w',scene_name) :
-            scene_name = vray_scenes[0].stem.split('.')[0]        
+        if not re.match(r"\w", scene_name):
+            scene_name = vray_scenes[0].stem.split(".")[0]
 
         return {
             "commands": render_layers_cmd,
