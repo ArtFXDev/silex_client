@@ -14,6 +14,8 @@ houdini:
               - "png"
               - "jpg"
               - "tiff"
+              - "usd"
+              - "bgeo"
             param_name: "Render type"
 
         build_output_path:
@@ -54,6 +56,9 @@ houdini:
           path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
           ask_user: true
           parameters:
+            job_tags:
+              value:
+                - "houdini"
             job_title:
               value: !command-output "send_houdini_render:build_houdini_cmd:file_name"
             commands:
