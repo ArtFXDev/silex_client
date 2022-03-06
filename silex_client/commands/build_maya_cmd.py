@@ -69,6 +69,7 @@ class MayaCommand(CommandBase):
             "Render", rez_packages=["maya"], delimiter=" ", dashes="-"
         )
         maya_cmd.param("r", parameters["renderer"])
+
         # Doesn't work need to check on a forum
         # maya_cmd.param("skipExistingFrames", str(parameters["skip_existing"]).lower())
         maya_cmd.param("rd", parameters["output_folder"])
