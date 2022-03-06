@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import logging
-import os
 import typing
 from typing import Any, Dict, List
 
-import gazu.client
 import gazu.project
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder
@@ -14,7 +12,6 @@ from silex_client.utils.parameter_types import (
     ListParameterMeta,
     MultipleSelectParameterMeta,
     RadioSelectParameterMeta,
-    SelectParameterMeta,
     UnionParameterMeta,
 )
 
@@ -22,19 +19,21 @@ from silex_client.utils.parameter_types import (
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import aiohttp
 import tractor.api.author as author
-from aiohttp.client_exceptions import (
-    ClientConnectionError,
-    ContentTypeError,
-    InvalidURL,
-)
 
 
 class TractorSubmiter(CommandBase):
     """
     Send job to Tractor
     """
+
+    # Service key filters for Tractor job
+    # See: https://rmanwiki.pixar.com/display/TRA/Job+Scripting#JobScripting-servicekeys
+    SERVICE_FILTERS = {
+        "16RAM": "(@.mem >= 0) && (@.mem < 32)",
+        "32RAM": "(@.mem >= 32) && (@.mem < 64)",
+        "64RAM": "(@.mem >= 64) && (@.mem < 128)",
+    }
 
     parameters = {
         "precommands": {
@@ -73,9 +72,20 @@ class TractorSubmiter(CommandBase):
                 }
             ),
         },
-        "pools": {
-            "label": "Pool",
-            "type": MultipleSelectParameterMeta(),
+        "blade_or_filters": {
+            "label": "Render on",
+            "type": MultipleSelectParameterMeta(**SERVICE_FILTERS),
+            "value": list(SERVICE_FILTERS.values()),
+        },
+        "blade_and_filters": {
+            "label": "Restrict with filters",
+            "type": MultipleSelectParameterMeta("GPU", "REDSHIFT", "VRAYHOU52"),
+            "value": [],
+        },
+        "blade_ignore_filters": {
+            "label": "Do not render on",
+            "type": MultipleSelectParameterMeta("PC2014", "PC2015"),
+            "value": ["PC2014", "PC2015"],
         },
         "job_title": {
             "label": "Job title",
@@ -83,9 +93,9 @@ class TractorSubmiter(CommandBase):
             "value": "untitled",
             "hide": True,
         },
-        "project": {
-            "label": "Project",
-            "type": SelectParameterMeta(),
+        "job_tags": {
+            "type": ListParameterMeta(str),
+            "hide": True,
         },
         "add_mount": {
             "type": bool,
@@ -93,6 +103,72 @@ class TractorSubmiter(CommandBase):
             "hide": True,
         },
     }
+
+    def get_mount_command(self, nas: str) -> command_builder.CommandBuilder:
+        """
+        Constructs the mount command in order to access files on the render farm
+        """
+        mount_cmd = command_builder.CommandBuilder(
+            "mount_rd_drive",
+            delimiter=None,
+            dashes="",
+            rez_packages=["mount_render_drive"],
+        )
+
+        mount_cmd.value(nas)
+        return mount_cmd
+
+    def join_svckey_filters(self, filters: List[str], op: str) -> str:
+        """
+        Combines service key filters with an operator
+        Ex: ["GPU", "32RAM"], "||" -> "(GPU) || (32RAM)"
+        """
+        return f" {op} ".join([f"({f})" for f in filters])
+
+    async def create_task_with_commands(
+        self,
+        parameters: Dict[str, Any],
+        title: str,
+        project: str,
+        command: command_builder.CommandBuilder,
+    ):
+        cleanup = parameters["task_cleanup_cmd"]
+        task: author.Task = author.Task(title=title)
+
+        # Add the project in the Rez requires
+        # This is useful to require ACES and define OCIO for example
+        command.add_rez_package(project)
+
+        # Since Tractor's task.addCleanup doesn't work
+        # We use a custom python wrapper script
+        if cleanup is not None:
+            command = (
+                command_builder.CommandBuilder(
+                    "python", rez_packages=["command_wrapper"], dashes="--"
+                )
+                .value("-m")
+                .value("command_wrapper.main")
+                .param("cleanup", f'"{str(cleanup)}"')
+                .param("command", f'"{str(command)}"')
+            )
+
+        # Add pre and post commands to each subtask
+        all_commands = (
+            parameters["precommands"] + [command] + parameters["postcommands"]
+        )
+
+        # Add every command to the subtask
+        for command in all_commands:
+            task.newCommand(
+                argv=command.as_argv(),
+                # Run commands on the same host
+                samehost=1,
+                # Limit tags with rez packages
+                # Useful when limiting the amout of vray jobs on the farm for example
+                tags=command.rez_packages,
+            )
+
+        return task
 
     @CommandBase.conform_command()
     async def __call__(
@@ -102,174 +178,64 @@ class TractorSubmiter(CommandBase):
         logger: logging.Logger,
     ):
         precommands: List[command_builder.CommandBuilder] = parameters["precommands"]
-        postcommands: List[command_builder.CommandBuilder] = parameters["postcommands"]
-        commands: Dict[str, Dict[str, command_builder.CommandBuilder]] = parameters[
-            "commands"
-        ]
-        pools: List[str] = parameters["pools"]
-        project: str = parameters["project"]
+        commands = parameters["commands"]
+        blade_or_filters: List[str] = parameters["blade_or_filters"]
+        blade_and_filters: List[str] = parameters["blade_and_filters"]
         job_title: str = parameters["job_title"]
+        job_tags: List[str] = parameters["job_tags"]
         priority: float = float(parameters["priority"])
-        owner = ""
-        nas = None
 
-        logger.error(
-            type(parameters["task_cleanup_cmd"]), parameters["task_cleanup_cmd"]
-        )
+        # Get user context information
+        context = action_query.context_metadata
+        owner = context["user_email"].split("@")[0]
 
-        # This command will mount network drive
-        mount_cmd = command_builder.CommandBuilder(
-            "mount_rd_drive",
-            delimiter=None,
-            dashes="",
-            rez_packages=["mount_render_drive"],
-        )
+        # Construct service keys to restrict the blades the tasks will run on
+        services = ""
 
-        if "project" in action_query.context_metadata:
-            project_dict = await gazu.project.get_project_by_name(project)
+        # Set the services the job will run on (groups of blades and filter tags using service keys)
+        if len(blade_or_filters) > 0:
+            services = self.join_svckey_filters(blade_or_filters, "||")
 
-            if not project_dict:
-                Exception(f"Project {project} doesn't exist")
-
-            try:
-                project_dict["data"]["nas"]
-            except KeyError as exception:
-                raise Exception(
-                    f"Project {project} doesn't have data or nas key"
-                ) from exception
-
-            nas = project_dict["data"]["nas"]
-            owner = action_query.context_metadata["user_email"].split("@")[0]
-            mount_cmd.value(nas)
-
-        # Add the mount command
-        if parameters["add_mount"]:
-            precommands.append(mount_cmd)
-
-        # Set the services the job will run on (groups of blades)
-        if len(pools) == 1:
-            services = pools[0]
-        else:
-            services = "(" + " || ".join(pools) + ")"
+        # Add and && conditions
+        ignore_keys = [f"!{k}" for k in (["BUG"] + parameters["blade_ignore_filters"])]
+        if len(blade_and_filters) + len(ignore_keys) > 0:
+            services = self.join_svckey_filters(
+                [services] + blade_and_filters + ignore_keys, "&&"
+            )
 
         # Create a job
         job = author.Job(
             title=job_title,
             priority=priority,
-            tags=["render"],
-            projects=[project],
+            tags=job_tags,
+            projects=[context["project"]],
             service=services,
-            spoolcwd="/home/td",
         )
 
+        # Add the mount command
+        if parameters["add_mount"] and context["project_nas"] is not None:
+            mount_cmd = self.get_mount_command(context["project_nas"])
+            precommands.append(mount_cmd)
+
         # Directory mapping for Linux
-        job.newDirMap("P:", f"/mnt/{nas}", "NFS")
+        # job.newDirMap("P:", f"/mnt/{nas}", "NFS")
 
-        # Create the render tasks for each command
-        for task_title, task_argv in commands.items():
-            # Create task
-            task: author.Task = author.Task(title=task_title)
+        # This will organize tasks in group of tasks with dependencies
+        for task_group_title, subtasks in commands.items():
+            task_group: author.Task = author.Task(title=task_group_title)
 
-            if parameters["task_cleanup_cmd"] is not None:
-                task.addCleanup(
-                    author.Command(
-                        argv=parameters["task_cleanup_cmd"].as_argv(), samehost=True
-                    )
+            for subtask_title, subtask_cmd in subtasks.items():
+                task = await self.create_task_with_commands(
+                    parameters=parameters,
+                    title=subtask_title,
+                    project=action_query.context_metadata["project"].lower(),
+                    command=subtask_cmd,
                 )
-
-            for subtask_title, subtask_argv in task_argv.items():
-                subtask: author.Task = author.Task(title=subtask_title)
-
-                # Add precommands to each subtask
-                all_commands = precommands + [subtask_argv] + postcommands
-
-                # Add every command to the subtask
-                for index, command in enumerate(all_commands):
-                    command = command.deepcopy()
-
-                    if "project" in action_query.context_metadata:
-                        # Add the project in the rez environment
-                        command.add_rez_package(
-                            action_query.context_metadata["project"].lower()
-                        )
-
-                    params = {
-                        "argv": command.as_argv(),
-                        "samehost": True,
-                    }
-
-                    # Limit tag with the executable
-                    # Useful when limiting the amout of vray jobs on the farm for example
-                    if command.executable:
-                        params["tags"] = [command.executable]
-
-                    subtask.addCommand(author.Command(**params))
-
-                task.addChild(subtask)
+                task_group.addChild(task)
 
             # Add the task as child
-            job.addChild(task)
+            job.addChild(task_group)
 
         # Submit the job to Tractor
         jid = job.spool(owner=owner)
         logger.info(f"Sent job: {job_title} ({jid})")
-
-    async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
-    ):
-        # Query the Tractor config
-        try:
-            async with aiohttp.ClientSession() as session:
-                tractor_host = os.getenv("silex_tractor_host", "")
-                tractor_config_url = (
-                    f"{tractor_host}/Tractor/config?q=get&file=blade.config"
-                )
-                async with session.get(tractor_config_url) as response:
-                    tractor_pools = await response.json()
-        except (ClientConnectionError, ContentTypeError, InvalidURL):
-            logger.warning(
-                "Could not query the tractor pool list, the config is unreachable"
-            )
-            tractor_pools = {"BladeProfiles": []}
-
-        # Build list of profile names to ignore
-        PROFILE_IGNORE = [
-            "DEV",
-            "BUG",
-            "Windows10",
-            "Linux64",
-            "Linux32",
-            "Windows8.1",
-            "Windows8",
-            "Windows7",
-            "Windows7_32bit",
-            "WindowsVista64",
-            "WindowsVista32",
-            "WindowsXP",
-            "Windows",
-            "MacOSX",
-        ]
-
-        # Filter the pools
-        pools = [
-            profile["ProfileName"]
-            for profile in tractor_pools["BladeProfiles"]
-            if profile.get("ProfileName") not in PROFILE_IGNORE
-        ]
-
-        # Sort the pools
-        pools.sort()
-
-        pool_parameter = self.command_buffer.parameters["pools"]
-        project_parameter = self.command_buffer.parameters["project"]
-
-        pool_parameter.rebuild_type(*pools)
-
-        # If user have a project
-        if "project" in action_query.context_metadata:
-            # Use the project as value
-            project_parameter.rebuild_type(action_query.context_metadata["project"])
-            project_parameter.hide = True
