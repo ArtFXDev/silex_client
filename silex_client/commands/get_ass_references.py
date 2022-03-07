@@ -25,12 +25,7 @@ class GetAssReferences(CommandBase):
     """
 
     parameters = {
-        "ass_files": {
-            "type":ListParameterMeta(
-                pathlib.Path
-            ),
-        "value": []
-        },
+        "ass_files": {"type": ListParameterMeta(pathlib.Path), "value": []},
     }
 
     def _get_textures_in_ass(self, ass_file: pathlib.Path) -> Dict[str, pathlib.Path]:
@@ -48,12 +43,14 @@ class GetAssReferences(CommandBase):
 
         while not AiNodeIteratorFinished(iter):
             node = AiNodeIteratorGetNext(iter)
-            node_name = AiNodeGetName( node )
+            node_name = AiNodeGetName(node)
 
             # Only look for a path in a file node
             if bool(re.search(r"\w*file", str(node_name))):
-                node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
-        
+                node_to_path_dict[node_name] = pathlib.Path(
+                    AiNodeGetStr(node, "filename")
+                )
+
         AiNodeIteratorDestroy(iter)
         AiEnd()
 
@@ -66,12 +63,16 @@ class GetAssReferences(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        ass_files: List[pathlib.Path] = parameters['ass_files']
+        ass_files: List[pathlib.Path] = parameters["ass_files"]
 
         # Get texture paths in the .ass file
-        node_to_path_dict: Dict[str, pathlib.Path] = await thread_maya.execute_in_main_thread(self._get_textures_in_ass, ass_files[0])
+        node_to_path_dict: Dict[
+            str, pathlib.Path
+        ] = await thread_maya.execute_in_main_thread(
+            self._get_textures_in_ass, ass_files[0]
+        )
 
-        # Create tow lits with corresponding indexes 
+        # Create tow lits with corresponding indexes
         node_names = list(node_to_path_dict.keys())
 
         references = list()
@@ -86,6 +87,3 @@ class GetAssReferences(CommandBase):
             "node_names": node_names,
             "references": references,
         }
-
-
-
