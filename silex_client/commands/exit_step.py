@@ -30,6 +30,7 @@ class ExitStep(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
+        logger.error(parameters["enable"])
         enable: bool = parameters["enable"]
 
         if not enable:
@@ -46,12 +47,3 @@ class ExitStep(CommandBase):
 
         for command in current_step.children.values():
             command.skip = True
-
-    async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
-    ):
-        logger.info(parameters["enable"])
-        self.command_buffer.parameters["enable"].value = bool(parameters["enable"])
