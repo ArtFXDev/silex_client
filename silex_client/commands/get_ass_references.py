@@ -78,13 +78,11 @@ class GetAssReferences(CommandBase):
         references = list()
 
         for item in list(node_to_path_dict.values()):
-            for path in files.expand_template_to_sequence(
-                item, constants.ARNOLD_MATCH_SEQUENCE
-            ):
+            for path in files.expand_template_to_sequence(item, constants.ARNOLD_MATCH_SEQUENCE):
                 if not files.is_valid_pipeline_path(pathlib.Path(path)):
                     references.append(pathlib.Path(path))
-
-        references = [references]
+            
+        references = [ references ]
         return {
             "node_names": node_names,
             "references": references,
