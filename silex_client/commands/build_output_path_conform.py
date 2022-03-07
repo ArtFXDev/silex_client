@@ -3,13 +3,15 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
+import copy
 from typing import Any, Dict
 
 import fileseq
 
 from silex_client.action.command_base import CommandBase
 from silex_client.commands.build_output_path import BuildOutputPath
-from silex_client.utils.parameter_types import PathParameterMeta
+from silex_client.utils.parameter_types import PathParameterMeta, TextParameterMeta
+from silex_client.action.parameter_buffer import ParameterBuffer
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -35,6 +37,41 @@ class BuildOutputPathConform(BuildOutputPath):
         },
     }
 
+    async def prompt_warning(self, action_query: ActionQuery, parameters):
+        warning_parameter = ParameterBuffer(
+            type=TextParameterMeta(color="warning"),
+            value=(
+                "WARNING: \n"
+                + "The current name "
+                + "Will override an existing conform\n"
+                + "If you don't want to override previous conform "
+                + "make sure to set a different name\n"
+                + "Otherwise you can just press continue"
+            ),
+        )
+        name_parameter = copy.copy(self.command_buffer.parameters["name"])
+        task_parameter = copy.copy(self.command_buffer.parameters["task"])
+        use_current_context_parameter = copy.copy(
+            self.command_buffer.parameters["use_current_context"]
+        )
+        task_parameter.hide = False
+        use_current_context_parameter.hide = False
+        parameters["warning"] = warning_parameter
+
+        response = await self.prompt_user(
+            action_query,
+            {
+                "warning": warning_parameter,
+                "name": name_parameter,
+                "task": task_parameter,
+                "use_current_context": use_current_context_parameter,
+            },
+        )
+        for key, value in response.items():
+            parameters[key] = value
+
+        return response
+
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -43,17 +80,32 @@ class BuildOutputPathConform(BuildOutputPath):
         logger: logging.Logger,
     ):
         fast_conform = parameters["fast_conform"]
-        file_paths = parameters["files"]
+        file_paths = fileseq.findSequencesInList(parameters["files"])[0]
 
+        input_key = f"build_output_path_conform:{str(file_paths)}"
         result = await super().__call__(parameters, action_query, logger)
         result.update({"fast_conform": fast_conform})
 
-        # Store the result of the built output path
-        file_paths = fileseq.findSequencesInList(file_paths)[0]
-        key = f"build_output_path_conform:{str(file_paths)}"
-        action_query.store[key] = result
+        # When is enabled, files might be overriden, since the name is autofilled
+        # To prevent this, we store the input directory and the output directory
+        # and check if we are not building a path that has already been built
+        action_query.store.setdefault("build_conform_path:output", [])
+        if (
+            action_query.store.get(f"fast_conform_enabled:{file_paths.dirname()}")
+            and result["directory"] in action_query.store["build_conform_path:output"]
+            and input_key not in action_query.store.keys()
+        ):
+            await self.prompt_warning(action_query, parameters)
+            result.update(await super().__call__(parameters, action_query, logger))
 
-        result["store_conform_key"] = key
+        # Store the result of the built output path
+        action_query.store["build_conform_path:output"].append(result["directory"])
+        action_query.store[
+            f"fast_conform_enabled:{file_paths.dirname()}"
+        ] = fast_conform
+        action_query.store[input_key] = result
+
+        result["store_conform_key"] = input_key
         return result
 
     async def setup(
@@ -91,12 +143,16 @@ class BuildOutputPathConform(BuildOutputPath):
         # Don't prompt the user
         task_parameter = self.command_buffer.parameters["task"]
         task_value = task_parameter.get_value(action_query)
-        fast_parameter = self.command_buffer.parameters["fast_conform"]
-        fast_conform = fast_parameter.get_value(action_query)
+        fast_conform = action_query.store.get(
+            f"fast_conform_enabled:{file_paths.dirname()}"
+        )
         current_status = self.command_buffer.status
-        if task_value is not None and fast_conform and current_status != 2:
+        if (
+            task_value is not None
+            and fast_conform
+            and current_status != 2
+            and len(name_parameter.get_value(action_query)) < 40
+        ):
             self.command_buffer.ask_user = False
-        else:
-            fast_parameter.hide = False
 
         await super().setup(parameters, action_query, logger)

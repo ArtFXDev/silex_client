@@ -346,3 +346,33 @@ def DictParameterMeta(key_type: Type, value_type: Type):
     }
 
     return CommandParameterMeta("ListParameter", (dict,), attributes)
+
+
+def UnionParameterMeta(types: List[Type]):
+    def __new__(cls, *args, **kwargs):
+        for t in types:
+            if len(args) > 0 and isinstance(args[0], t):
+                return args[0]
+
+            try:
+                temp = t(*args, **kwargs)
+                return temp
+            except Exception as e:
+                continue
+
+        return None
+
+    def serialize():
+        return {}
+
+    def get_default():
+        return None
+
+    attributes = {
+        "__new__": __new__,
+        "serialize": serialize,
+        "get_default": get_default,
+        "rebuild": UnionParameterMeta,
+    }
+
+    return CommandParameterMeta("UnionParameter", (object,), attributes)
