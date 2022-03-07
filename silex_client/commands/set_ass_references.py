@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import typing
 import pathlib
+import os
 from arnold import *
 from typing import List
 import fileseq
@@ -30,14 +31,14 @@ class SetAssReferences(CommandBase):
     parameters = {
         "references": {"type": ListParameterMeta(AnyParameter)},
         "node_names": {"type": ListParameterMeta(str)},
-        "ass_files": {"type": PathParameterMeta(multiple=True)},
-        "new_ass_files": {"type": PathParameterMeta(multiple=True)},
+        "ass_files": {"type": ListParameterMeta(pathlib.Path)},
+        "new_ass_files": {"type": ListParameterMeta(pathlib.Path)},
     }
 
     def _set_reference_in_ass(
         self,
-        new_ass_files: pathlib.Path,
-        ass_files: pathlib.Path,
+        new_ass_files: List[pathlib.Path],
+        ass_files: List[pathlib.Path],
         node_names: List[str],
         references: List[pathlib.Path],
     ):
@@ -72,8 +73,12 @@ class SetAssReferences(CommandBase):
 
             AiNodeIteratorDestroy(iter)
 
+            # corresponding new path
+            new_path = new_ass_files[ass_files.index(ass)]
+
             # Save .ass file to new location
-            AiASSWrite(str(new_ass_files[ass_files.index(ass)]), AI_NODE_ALL, False)
+            os.makedirs(new_path.parents[0], exist_ok=True)
+            AiASSWrite(str(new_path), AI_NODE_ALL, False)
             AiEnd()
 
     @CommandBase.conform_command()
@@ -93,6 +98,15 @@ class SetAssReferences(CommandBase):
             reference = reference.get_value(action_query)[0]
             reference = reference.get_value(action_query)
             references.append(reference)
+
+        def add_asset_folder(ass):
+            """Add asset folder"""
+            directory = ass.parents[1]
+            file_name = str(ass).split("\\")[-1]
+            extension = ass.suffix
+            return directory / "assets" / file_name
+
+        new_ass_files = list(map(add_asset_folder, new_ass_files))
 
         # set references paths
         await thread_maya.execute_in_main_thread(

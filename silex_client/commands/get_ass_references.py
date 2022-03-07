@@ -8,7 +8,7 @@ from arnold import *
 from typing import Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import PathParameterMeta
+from silex_client.utils.parameter_types import ListParameterMeta
 from silex_client.utils import files, constants
 
 import silex_maya.utils.thread as thread_maya
@@ -21,11 +21,11 @@ if typing.TYPE_CHECKING:
 
 class GetAssReferences(CommandBase):
     """
-    Get all the textures in the given ass files
+    Retrieve a stored value from the action's global store
     """
 
     parameters = {
-        "ass_files": {"type": PathParameterMeta(multiple=True), "value": []},
+        "ass_files": {"type": ListParameterMeta(pathlib.Path), "value": []},
     }
 
     def _get_textures_in_ass(self, ass_file: pathlib.Path) -> Dict[str, pathlib.Path]:
@@ -39,7 +39,7 @@ class GetAssReferences(CommandBase):
         node_to_path_dict = dict()
 
         # Iter through all shading nodes
-        iter = AiUniverseGetNodeIterator(AI_NODE_SHADER)
+        iter = AiUniverseGetNodeIterator(AI_NODE_ALL)
 
         while not AiNodeIteratorFinished(iter):
             node = AiNodeIteratorGetNext(iter)
@@ -74,15 +74,17 @@ class GetAssReferences(CommandBase):
 
         # Create tow lits with corresponding indexes
         node_names = list(node_to_path_dict.keys())
-        references = [
-            [
-                pathlib.Path(str(path))
-                for path in files.expand_template_to_sequence(
-                    item, constants.ARNOLD_MATCH_SEQUENCE
-                )
-            ]
-            for item in list(node_to_path_dict.values())
-        ]
+
+        references = list()
+
+        for item in list(node_to_path_dict.values()):
+            for path in files.expand_template_to_sequence(
+                item, constants.ARNOLD_MATCH_SEQUENCE
+            ):
+                if not files.is_valid_pipeline_path(pathlib.Path(path)):
+                    references.append(pathlib.Path(path))
+
+        references = [references]
         return {
             "node_names": node_names,
             "references": references,
