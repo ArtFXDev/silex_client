@@ -148,48 +148,39 @@ class SelectConform(CommandBase):
             sequences.append(pathlib.Path(str(sequence[0])))
 
         # Simply return what was sent if find_sequence not set
-        if not find_sequence:
-            return {
-                "files": [
-                    {"file_paths": sequence, "frame_set": frame_set, "padding": padding}
-                    for sequence, frame_set, padding in zip(
-                        sequences, frame_sets, paddings
-                    )
-                ],
-                "types": conform_types,
-            }
+        if find_sequence:
+            # Handle file sequences
+            for index, sequence in enumerate(sequences):
+                if not sequence:
+                    continue
+                file_path = sequence if not isinstance(sequence, list) else sequence[0]
+                for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
+                    # Find the file sequence that correspond the to file we are looking for
+                    sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
+                    if file_path in sequence_list and len(sequence_list) > 1:
+                        frame_sets[index] = file_sequence.frameSet()
+                        sequences[index] = sequence_list
+                        paddings[index] = file_sequence._zfill
+                        break
 
-        # Handle file sequences
-        for index, sequence in enumerate(sequences):
-            if not sequence:
-                continue
-            file_path = sequence if not isinstance(sequence, list) else sequence[0]
-            for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
-                # Find the file sequence that correspond the to file we are looking for
-                sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
-                if file_path in sequence_list and len(sequence_list) > 1:
-                    frame_sets[index] = file_sequence.frameSet()
-                    sequences[index] = sequence_list
-                    paddings[index] = file_sequence._zfill
-                    break
-
-        # Finding sequences might result in duplicates
-        sequences_copy = copy.deepcopy(sequences)
-        for index, sequence in enumerate(sequences_copy):
-            offset = len(sequences_copy) - len(sequences)
-            if sequence in sequences[: index - offset]:
-                sequences.pop(index - offset)
-                frame_sets.pop(index - offset)
-                paddings.pop(index - offset)
-                conform_types.pop(index - offset)
+            # Finding sequences might result in duplicates
+            sequences_copy = copy.deepcopy(sequences)
+            for index, sequence in enumerate(sequences_copy):
+                offset = len(sequences_copy) - len(sequences)
+                if sequence in sequences[: index - offset]:
+                    sequences.pop(index - offset)
+                    frame_sets.pop(index - offset)
+                    paddings.pop(index - offset)
+                    conform_types.pop(index - offset)
 
         return {
             "files": [
-                {"file_paths": sequence, "frame_set": frame_set, "padding": padding}
+                {"file_paths": sequence, "frame_set": frame_set, "padding": padding, 'found_sequence': find_sequence}
                 for sequence, frame_set, padding in zip(sequences, frame_sets, paddings)
             ],
             "types": conform_types,
         }
+    
 
     async def setup(
         self,
