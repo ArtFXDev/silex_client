@@ -175,7 +175,7 @@ class SelectConform(CommandBase):
 
         return {
             "files": [
-                {"file_paths": sequence, "frame_set": frame_set, "padding": padding, 'found_sequence': find_sequence}
+                {"file_paths": sequence, "frame_set": frame_set, "padding": padding}
                 for sequence, frame_set, padding in zip(sequences, frame_sets, paddings)
             ],
             "types": conform_types,

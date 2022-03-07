@@ -130,8 +130,6 @@ ass:
             references:
               value: !command-output "conform_references:conform_references"
               hide: true
-            found_sequence:
-              value: !command-output "input:input:found_sequence"
             ass_files:
               value: !command-output "input:input:file_paths"
               hide: true

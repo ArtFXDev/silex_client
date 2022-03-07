@@ -30,11 +30,6 @@ class SetAssReferences(CommandBase):
                 AnyParameter
             )
         },
-        "found_sequence": {
-            "type": bool,
-            "value": True,
-            "hide": True
-        },
         "node_names": {
             "type": ListParameterMeta(
                 str
