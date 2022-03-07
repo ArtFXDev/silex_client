@@ -16,7 +16,7 @@ from silex_client.utils.parameter_types import (
     AnyParameter,
 )
 
-import vray
+from vray_sdk import vray as vray_sdk
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -48,17 +48,17 @@ class SetVrsceneReferences(CommandBase):
         """
 
         def dumpMsg(renderer, message, level, instant):
-            if level == vray.LOGLEVEL_ERROR:
+            if level == vray_sdk.LOGLEVEL_ERROR:
                 logger.error(message)
-            elif level == vray.LOGLEVEL_WARNING:
+            elif level == vray_sdk.LOGLEVEL_WARNING:
                 logger.warning(message)
-            elif level == vray.LOGLEVEL_INFO:
+            elif level == vray_sdk.LOGLEVEL_INFO:
                 logger.info(message)
             else:
                 logger.debug(message)
 
-        with vray.VRayRenderer() as renderer:
-            renderer.setOnLogMessage(dumpMsg)
+        with vray_sdk.VRayRenderer() as renderer:
+            # renderer.setOnLogMessage(dumpMsg)
             renderer.load(vrscene_src.as_posix())
             for plugin_name, file_paths in zip(plugins_names, reference_values):
                 name = ":".join(plugin_name.split(":")[:-1])

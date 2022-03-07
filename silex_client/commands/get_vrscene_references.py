@@ -18,7 +18,7 @@ from silex_client.utils.constants import VRAY_MATCH_SEQUENCE
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import vray
+from vray_sdk import vray as vray_sdk
 
 # This is the list of plugins to look for in order to find references that
 # might be in the vrscene
@@ -46,7 +46,7 @@ class GetVrsceneReferences(CommandBase):
         """
         plugins_references = {}
 
-        with vray.VRayRenderer() as renderer:
+        with vray_sdk.VRayRenderer() as renderer:
             renderer.load(file_path.as_posix())
             for plugin in renderer.plugins:
                 reference_values = PLUGIN_MAPPING.get(str(plugin.getClass()))
