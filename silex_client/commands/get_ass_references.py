@@ -44,7 +44,7 @@ class GetAssReferences(CommandBase):
         node_to_path_dict = dict()
 
         # Iter through all shading nodes
-        iter = AiUniverseGetNodeIterator(AI_NODE_SHADER)
+        iter = AiUniverseGetNodeIterator(AI_NODE_ALL)
 
         while not AiNodeIteratorFinished(iter):
             node = AiNodeIteratorGetNext(iter)
