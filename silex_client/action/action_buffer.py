@@ -53,7 +53,7 @@ class ActionBuffer(BaseBuffer):
     #: Snapshot of the context's metadata when this buffer is created
     context_metadata: Dict[str, Any] = field(default_factory=dict)
     #: Category when displaying the action in shelves
-    category: Optional[str] = field(default=None)
+    shelf: Optional[str] = field(default=None)
 
     @property
     def child_type(self):
