@@ -20,7 +20,7 @@ class CheckExisting(CommandBase):
     """
 
     parameters = {
-        "file_path": {
+        "file_paths": {
             "label": "File path",
             "type": PathParameterMeta(multiple=True),
             "value": None,
@@ -28,7 +28,7 @@ class CheckExisting(CommandBase):
         "prompt_override": {
             "label": "Prompt if the file exists",
             "type": bool,
-            "value": True,
+            "value": False,
         },
     }
 
@@ -39,7 +39,7 @@ class CheckExisting(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        file_paths: List[pathlib.Path] = parameters["file_path"]
+        file_paths: List[pathlib.Path] = parameters["file_paths"]
         prompt: bool = parameters["prompt_override"]
 
         exists_all = all(file_path.exists() for file_path in file_paths)

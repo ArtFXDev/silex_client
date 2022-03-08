@@ -1,0 +1,74 @@
+default-dcc:
+  steps:
+    input:
+      index: 10
+      hide: True
+      commands:
+        input:
+          path: "silex_client.commands.pass.Pass"
+
+    get_conform_location:
+      label: "Get conform location"
+      index: 20
+      commands:
+        get_conform_cache:
+          label: "Get previous conform location"
+          path: "silex_client.commands.get_stored_value.GetStoredValue"
+          parameters:
+            key: "build_output_path_task_id"
+            key_suffix: !command-output "input:input:file_paths"
+          hide: true
+
+        build_output_path:
+          label: "Build output path"
+          path: "silex_client.commands.build_output_path_conform.BuildOutputPathConform"
+          tooltip: "Build the complete output path"
+          parameters:
+            task: !command-output "get_conform_location:get_conform_cache:value:task"
+            use_current_context: false
+            create_temp_dir: false
+            frame_set:
+              value: !command-output "input:input:frame_set"
+              hide: true
+            output_type:
+              hide: true
+            files:
+              value: !command-output "input:input:file_paths"
+              hide: true
+            padding:
+              value: !command-output "input:input:padding"
+              hide: true
+          ask_user: true
+
+        set_conform_cache:
+          label: "Cache conform location"
+          path: "silex_client.commands.set_stored_value.SetStoredValue"
+          parameters:
+            key: "build_output_path_task_id"
+            key_suffix: !command-output "input:input:file_paths"
+            value: !command-output "get_conform_location:build_output_path"
+          hide: true
+
+        check_existing_file:
+          label: "Check if the output of the conform already exists"
+          path: "silex_client.commands.check_existing.CheckExisting"
+          parameters:
+            file_paths: !command-output "get_conform_location:build_output_path:full_path"
+            prompt_override: true
+
+    output:
+      index: 100
+      hide: true
+      commands:
+        get_conform_cache:
+          label: "Get previous conform location"
+          path: "silex_client.commands.get_stored_value.GetStoredValue"
+          parameters:
+            key: "build_output_path_task_id"
+            key_suffix: !command-output "input:input:file_paths"
+          hide: true
+
+        output:
+          path: "silex_client.commands.pass.Pass"
+          parameters:
+            input: !command-output "get_conform_location:get_conform_cache:value:full_path"

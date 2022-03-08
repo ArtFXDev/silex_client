@@ -5,6 +5,7 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.enums import Status
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -21,6 +22,11 @@ class ExitStep(CommandBase):
             "type": bool,
             "value": True,
         },
+        "goto": {
+            "label": "Name of the step to go to",
+            "type": str,
+            "value": "",
+        },
     }
 
     @CommandBase.conform_command()
@@ -30,20 +36,27 @@ class ExitStep(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        logger.error(parameters["enable"])
         enable: bool = parameters["enable"]
+        goto: str = parameters["goto"]
 
         if not enable:
             return
 
-        current_step = None
-        for step in action_query.steps:
+        current_step_index = None
+        goto_step_index = None
+        for index, step in enumerate(action_query.steps):
             if self.command_buffer in step.children.values():
-                current_step = step
-                break
+                current_step_index = index
+                if not goto:
+                    goto_step_index = index + 1
+            if step.name == goto:
+                goto_step_index = index
 
-        if current_step is None:
+        if current_step_index is None:
             raise Exception("Could not find the current step")
 
-        for command in current_step.children.values():
-            command.skip = True
+        for step in action_query.steps[current_step_index:goto_step_index]:
+            for command in step.children.values():
+                if command.status is Status.COMPLETED:
+                    continue
+                command.skip = True

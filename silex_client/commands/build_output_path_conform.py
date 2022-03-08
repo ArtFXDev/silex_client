@@ -33,7 +33,8 @@ class BuildOutputPathConform(BuildOutputPath):
             "label": "Fast conform the next files in this directory",
             "type": bool,
             "value": False,
-            "tooltip": "All the files in this directory will be conform in the selected location without any prompt",
+            "tooltip": "All the files in this directory will be conform"
+            + "in the selected location without any prompt",
         },
     }
 

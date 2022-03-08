@@ -26,7 +26,6 @@ default:
           tooltip: "Build the complete output path"
           parameters:
             task: !command-output "conform:get_conform_cache:value"
-            fast_conform: !command-output "conform:get_fast_conform_cache:value"
             use_current_context: false
             create_temp_dir: false
             frame_set: !command-output "input:input:frame_set"

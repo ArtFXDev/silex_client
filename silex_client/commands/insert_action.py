@@ -120,7 +120,7 @@ class InsertAction(CommandBase):
         # Rename each steps to make sure they don't override existing steps
         step_name_mapping = {name: name for name in list(action_steps.keys())}
         for step_name in step_name_mapping.keys():
-            new_name = step_name + "_" + str(uuid.uuid4())
+            new_name = step_name + ":" + str(uuid.uuid4())
             step_name_mapping[step_name] = new_name
             # Set the step label before applying it on the action query
             action_steps[step_name].setdefault("label", step_name.title())
