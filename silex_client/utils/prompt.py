@@ -1,6 +1,6 @@
 import asyncio
 import pathlib
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Union
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.action_query import ActionQuery
@@ -16,17 +16,24 @@ from silex_client.utils.parameter_types import (
 
 
 async def prompt_override(
-    command: CommandBase, file_path: pathlib.Path, action_query: ActionQuery
+    command: CommandBase,
+    file_paths: Union[List[pathlib.Path], pathlib.Path],
+    action_query: ActionQuery,
 ) -> ConflictBehaviour:
     """
     Helper to prompt the user for cases when we must override a file and wait for its response
     """
+    if not isinstance(file_paths, list):
+        file_paths = [file_paths]
+
+    paths_string = "\n".join([str(path) for path in file_paths])
+
     # Create a new parameter to prompt for the new file path
     info_parameter = ParameterBuffer(
         type=TextParameterMeta("info"),
         name="info",
         label="Info",
-        value=f"The path:\n{file_path}\nAlready exists",
+        value=f"The path(s):\n{paths_string}\nAlready exists",
     )
     new_parameter = ParameterBuffer(
         type=RadioSelectParameterMeta(
