@@ -90,12 +90,14 @@ class SetAssReferences(CommandBase):
         ass_files: List[pathlib.Path] = parameters['ass_files']
         new_ass_files: List[pathlib.Path] = parameters['new_ass_files']
 
+        logger.error(len(node_names))
+
         # TODO: This should be done in the get_value method of the ParameterBuffer
         references: List[pathlib.Path] = []
-        for reference in parameters["references"]:
-            reference = reference.get_value(action_query)[0]
-            reference = reference.get_value(action_query)
-            references.append(reference)
+        for reference in parameters["references"][0].get_value(action_query):
+            references.append(reference.get_value(action_query))
+
+        logger.error(len(references))
 
         def add_asset_folder(ass):
             """Add asset folder """
