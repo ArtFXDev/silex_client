@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import json
 import os
+import pathlib
 from concurrent import futures
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
@@ -20,7 +22,7 @@ from silex_client.resolve.config import Config
 from silex_client.utils.datatypes import ReadOnlyDict
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
-from silex_client.utils.serialiser import silex_diff
+from silex_client.utils.serialiser import silex_diff, silex_encoder
 
 # Forward references
 if TYPE_CHECKING:
@@ -318,6 +320,22 @@ class ActionQuery:
                 self.buffer.uuid, apply_update
             )
         return confirm
+
+    def load_store(self, file_path: pathlib.Path):
+        """
+        Load a new store from disk, usefull to backup the progression of the action
+        """
+        with open(file_path, "r", encoding="utf8") as file:
+            store = json.load(file)
+            self.buffer.store = store
+
+    def dump_store(self, file_path: pathlib.Path):
+        """
+        Backup the store for later load. When an error occured, it can be usefull to dump the
+        store so when an action is run again, we can load back in the store for autocompletion
+        """
+        with open(file_path, "w", encoding="utf8") as file:
+            json.dump(self.buffer.store, file, default=silex_encoder)
 
     @property
     def current_command(self):
