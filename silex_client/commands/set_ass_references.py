@@ -9,6 +9,8 @@ from typing import List
 import fileseq
 
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.prompt import UpdateProgress
+from silex_client.utils.datatypes import SharedVariable
 from silex_client.utils import files, constants
 from silex_client.utils.parameter_types import (
     ListParameterMeta,
@@ -35,16 +37,16 @@ class SetAssReferences(CommandBase):
         "new_ass_files": {"type": ListParameterMeta(pathlib.Path)},
     }
 
-    def _set_reference_in_ass(
-        self,
-        new_ass_files: List[pathlib.Path],
-        ass_files: List[pathlib.Path],
-        node_names: List[str],
-        references: List[pathlib.Path],
-    ):
+    def _set_reference_in_ass(self, progress, new_ass_files: List[pathlib.Path], ass_files: List[pathlib.Path], node_names: List[str], references: List[pathlib.Path]):
         """set references path for a list of nodes then save in a new location"""
 
-        for ass in ass_files:
+        logger.error('start')
+
+        for index, ass in enumerate(ass_files):
+            
+            # Update progress bar
+            progress.value = index + 1
+
             # Open ass files
             AiBegin()
             AiMsgSetConsoleFlags(AI_LOG_ALL)
@@ -92,27 +94,31 @@ class SetAssReferences(CommandBase):
         ass_files: List[pathlib.Path] = parameters["ass_files"]
         new_ass_files: List[pathlib.Path] = parameters["new_ass_files"]
 
-        logger.error(len(node_names))
-
         # TODO: This should be done in the get_value method of the ParameterBuffer
         references: List[pathlib.Path] = []
         for reference in parameters["references"][0].get_value(action_query):
             references.append(reference.get_value(action_query))
 
-        logger.error(len(references))
-
         def add_asset_folder(ass):
             """Add asset folder """
-            directory = ass.parents[1]
+            ass_directory = ass.parents[1]
+            standin_directory = ass.parents[0].stem
             file_name = str(ass).split('\\')[-1]
             extension = ass.suffix
-            return directory / 'assets' / file_name
+            return ass_directory / 'assets' / standin_directory / file_name
 
         new_ass_files = list(map(add_asset_folder, new_ass_files))
+        
+        # set references paths and display progress bar
+        progress = SharedVariable(0)
 
-        # set references paths
-        await thread_maya.execute_in_main_thread(
-            self._set_reference_in_ass, new_ass_files, ass_files, node_names, references
-        )
+        async with UpdateProgress(
+            self.command_buffer,
+            action_query,
+            progress,
+            SharedVariable(len(ass_files)),
+            0.2,
+        ):
+            await thread_maya.execute_in_main_thread(self._set_reference_in_ass,  progress, new_ass_files, ass_files, node_names, references)
 
         return new_ass_files
