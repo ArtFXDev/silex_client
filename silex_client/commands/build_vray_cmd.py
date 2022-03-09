@@ -6,8 +6,6 @@ import re
 import typing
 from typing import Any, Dict, List
 
-import gazu.client
-import gazu.project
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder, frames
