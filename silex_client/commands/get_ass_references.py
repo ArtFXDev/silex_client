@@ -28,8 +28,8 @@ class GetAssReferences(CommandBase):
         "ass_files": {"type": ListParameterMeta(pathlib.Path), "value": []},
     }
 
-    def _get_textures_in_ass(self, ass_file: pathlib.Path) -> Dict[str, pathlib.Path]:
-        """Parse an .ass file for textures and return a dictionary : dict(node_name: reference_path)"""
+    def _get_references_in_ass(self, ass_file: pathlib.Path) -> Dict[str, pathlib.Path]:
+        """Parse an .ass file for textures and procedurals, then return a dictionary : dict(node_name: reference_path)"""
 
         # Open ass file
         AiBegin()
@@ -45,10 +45,22 @@ class GetAssReferences(CommandBase):
             node = AiNodeIteratorGetNext(iter)
             node_name = AiNodeGetName(node)
 
-            # Only look for a path in a file node
-            if bool(re.search(r"\w*file\d+$", str(node_name))):
+            # Look for textures (images)
+            if AiNodeIs(node, 'image'):
                 node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
-        
+
+            # Look for procedurals (can be ass references,...)
+            if AiNodeIs(node, 'procedural'):
+                node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
+
+            # Look for procedurals (can be ass references,...)
+            if AiNodeIs(node, 'volume'):
+                node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
+
+            # Look for photometric_light
+            if AiNodeIs(node, 'photometric_light'):
+                node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
+
         AiNodeIteratorDestroy(iter)
         AiEnd()
 
