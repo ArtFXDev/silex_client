@@ -46,11 +46,9 @@ class GetAssReferences(CommandBase):
             node_name = AiNodeGetName(node)
 
             # Only look for a path in a file node
-            if bool(re.search(r"\w*file", str(node_name))):
-                node_to_path_dict[node_name] = pathlib.Path(
-                    AiNodeGetStr(node, "filename")
-                )
-
+            if bool(re.search(r"\w*file\d+$", str(node_name))):
+                node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
+        
         AiNodeIteratorDestroy(iter)
         AiEnd()
 
@@ -83,6 +81,7 @@ class GetAssReferences(CommandBase):
                     references.append(pathlib.Path(path))
             
         references = [ references ]
+
         return {
             "node_names": node_names,
             "references": references,
