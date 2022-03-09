@@ -66,7 +66,7 @@ class BuildNukeCommand(CommandBase):
             chunk_cmd.param("F", chunk.frameRange())
 
             # Specify the scene file
-            chunk_cmd.param("xi", str(scene))
+            chunk_cmd.param("xi", scene.as_posix())
 
             commands[chunk.frameRange()] = chunk_cmd
 
