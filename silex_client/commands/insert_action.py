@@ -150,7 +150,7 @@ class InsertAction(CommandBase):
             step = action_query.buffer.steps[step_name]
             # Change the index to make sure the new step in executed after the current step
             step.index += current_step.index
-            step.name = old_step_name + "toto"
+            step.name = old_step_name
             last_index = step.index
 
             # Adapt the parameter_path to the new step's name
