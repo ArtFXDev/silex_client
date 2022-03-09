@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import logging
+import os
 import typing
 from typing import Any, Dict, List
 
-import gazu.project
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder
 from silex_client.utils.parameter_types import (
@@ -19,21 +19,29 @@ from silex_client.utils.parameter_types import (
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
+import aiohttp
 import tractor.api.author as author
+from aiohttp.client_exceptions import (
+    ClientConnectionError,
+    ContentTypeError,
+    InvalidURL,
+)
+
+# Service key filters for Tractor job
+# See: https://rmanwiki.pixar.com/display/TRA/Job+Scripting#JobScripting-servicekeys
+SERVICE_FILTERS = {
+    "PC2014": "PC2014",
+    "PC2015": "PC2015",
+    "16RAM": "(@.mem >= 0) && (@.mem < 32)",
+    "32RAM": "(@.mem >= 32) && (@.mem < 64)",
+    "64RAM": "(@.mem >= 64) && (@.mem < 128)",
+}
 
 
 class TractorSubmiter(CommandBase):
     """
     Send job to Tractor
     """
-
-    # Service key filters for Tractor job
-    # See: https://rmanwiki.pixar.com/display/TRA/Job+Scripting#JobScripting-servicekeys
-    SERVICE_FILTERS = {
-        "16RAM": "(@.mem >= 0) && (@.mem < 32)",
-        "32RAM": "(@.mem >= 32) && (@.mem < 64)",
-        "64RAM": "(@.mem >= 64) && (@.mem < 128)",
-    }
 
     parameters = {
         "precommands": {
@@ -75,17 +83,12 @@ class TractorSubmiter(CommandBase):
         "blade_or_filters": {
             "label": "Render on",
             "type": MultipleSelectParameterMeta(**SERVICE_FILTERS),
-            "value": list(SERVICE_FILTERS.values()),
+            "value": [SERVICE_FILTERS[k] for k in ["16RAM", "32RAM", "64RAM"]],
         },
         "blade_and_filters": {
             "label": "Restrict with filters",
             "type": MultipleSelectParameterMeta("GPU", "REDSHIFT", "VRAYHOU52"),
             "value": [],
-        },
-        "blade_ignore_filters": {
-            "label": "Do not render on",
-            "type": MultipleSelectParameterMeta("PC2014", "PC2015"),
-            "value": ["PC2014", "PC2015"],
         },
         "job_title": {
             "label": "Job title",
@@ -197,11 +200,8 @@ class TractorSubmiter(CommandBase):
             services = self.join_svckey_filters(blade_or_filters, "||")
 
         # Add and && conditions
-        ignore_keys = [f"!{k}" for k in (["BUG"] + parameters["blade_ignore_filters"])]
-        if len(blade_and_filters) + len(ignore_keys) > 0:
-            services = self.join_svckey_filters(
-                [services] + blade_and_filters + ignore_keys, "&&"
-            )
+        if len(blade_and_filters) > 0:
+            services = self.join_svckey_filters([services] + blade_and_filters, "&&")
 
         # Create a job
         job = author.Job(
@@ -239,3 +239,41 @@ class TractorSubmiter(CommandBase):
         # Submit the job to Tractor
         jid = job.spool(owner=owner)
         logger.info(f"Sent job: {job_title} ({jid})")
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        tractor_pools = {"BladeProfiles": []}
+
+        # Query the Tractor config
+        try:
+            async with aiohttp.ClientSession() as session:
+                tractor_host = os.getenv("silex_tractor_host", "")
+                tractor_config_url = (
+                    f"{tractor_host}/Tractor/config?q=get&file=blade.config"
+                )
+                async with session.get(tractor_config_url) as response:
+                    tractor_pools = await response.json()
+        except (ClientConnectionError, ContentTypeError, InvalidURL):
+            logger.warning(
+                "Could not query the tractor pool list, the config is unreachable"
+            )
+
+        # Filter the pools
+        service_keys = list(
+            set(
+                [
+                    svckey
+                    for profile in tractor_pools["BladeProfiles"]
+                    if "Provides" in profile
+                    for svckey in profile["Provides"]
+                ]
+            )
+        )
+
+        service_keys.sort()
+        blade_and_filters = self.command_buffer.parameters["blade_and_filters"]
+        blade_and_filters.rebuild_type(*service_keys)

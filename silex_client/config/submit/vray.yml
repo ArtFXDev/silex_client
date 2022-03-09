@@ -59,5 +59,3 @@ vray:
             job_tags:
               value:
                 - "vray"
-            add_mount:
-              value: !command-output "send_vray_render:build_vray_cmd:mount"

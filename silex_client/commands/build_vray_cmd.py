@@ -198,5 +198,4 @@ class VrayCommand(CommandBase):
         return {
             "commands": render_layers_cmd,
             "file_name": scene_name,
-            "mount": not parameters["linux"],
         }
