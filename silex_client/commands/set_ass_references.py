@@ -37,14 +37,12 @@ class SetAssReferences(CommandBase):
         "new_ass_files": {"type": ListParameterMeta(pathlib.Path)},
     }
 
-    def _set_reference_in_ass(self, logger, progress, new_ass_files: List[pathlib.Path], ass_files: List[pathlib.Path], node_names: List[str], references: List[pathlib.Path]):
+    def _set_reference_in_ass(self, progress, new_ass_files: List[pathlib.Path], ass_files: List[pathlib.Path], node_names: List[str], references: List[pathlib.Path]):
         """set references path for a list of nodes then save in a new location"""
 
         logger.error('start')
 
         for index, ass in enumerate(ass_files):
-
-            logger.error(index)
             
             # Update progress bar
             progress.value = index + 1
@@ -80,8 +78,6 @@ class SetAssReferences(CommandBase):
             # corresponding new path
             new_path = new_ass_files[ass_files.index(ass)]
 
-            logger.error(new_ass_files)
-
             # Save .ass file to new location
             os.makedirs(new_path.parents[0], exist_ok=True)
             AiASSWrite(str(new_path), AI_NODE_ALL, False)
@@ -113,8 +109,6 @@ class SetAssReferences(CommandBase):
 
         new_ass_files = list(map(add_asset_folder, new_ass_files))
         
-        logger.error(new_ass_files)
-
         # set references paths and display progress bar
         progress = SharedVariable(0)
 
@@ -125,6 +119,6 @@ class SetAssReferences(CommandBase):
             SharedVariable(len(ass_files)),
             0.2,
         ):
-            await thread_maya.execute_in_main_thread(self._set_reference_in_ass, logger,  progress, new_ass_files, ass_files, node_names, references)
+            await thread_maya.execute_in_main_thread(self._set_reference_in_ass,  progress, new_ass_files, ass_files, node_names, references)
 
         return new_ass_files
