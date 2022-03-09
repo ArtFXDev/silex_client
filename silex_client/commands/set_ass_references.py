@@ -40,8 +40,6 @@ class SetAssReferences(CommandBase):
     def _set_reference_in_ass(self, progress, new_ass_files: List[pathlib.Path], ass_files: List[pathlib.Path], node_names: List[str], references: List[pathlib.Path]):
         """set references path for a list of nodes then save in a new location"""
 
-        logger.error('start')
-
         for index, ass in enumerate(ass_files):
             
             # Update progress bar
