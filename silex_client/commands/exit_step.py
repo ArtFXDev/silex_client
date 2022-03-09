@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import logging
 import typing
-from typing import Any, Dict
+from typing import Any, cast, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.enums import Status
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
+    from silex_client.action.step_buffer import StepBuffer
 
 
 class ExitStep(CommandBase):
@@ -42,18 +43,16 @@ class ExitStep(CommandBase):
         if not enable:
             return
 
-        current_step_index = None
+        current_step = cast("StepBuffer", self.command_buffer.parent)
+        current_step_index = action_query.steps.index(current_step)
         goto_step_index = None
-        for index, step in enumerate(action_query.steps):
-            if self.command_buffer in step.children.values():
-                current_step_index = index
-                if not goto:
-                    goto_step_index = index + 1
-            if step.name == goto:
-                goto_step_index = index
 
-        if current_step_index is None:
-            raise Exception("Could not find the current step")
+        if goto:
+            for index, step in enumerate(action_query.steps[current_step_index:]):
+                if step.name == goto:
+                    goto_step_index = index
+        else:
+            goto_step_index = current_step_index + 1
 
         for step in action_query.steps[current_step_index:goto_step_index]:
             for command in step.children.values():
