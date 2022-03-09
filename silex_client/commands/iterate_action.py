@@ -5,15 +5,19 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_client.commands.insert_action import InsertAction
+from silex_client.commands import insert_action
 from silex_client.utils.parameter_types import AnyParameter, ListParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
+import importlib
 
-class IterateAction(InsertAction):
+importlib.reload(insert_action)
+
+
+class IterateAction(insert_action.InsertAction):
     """
     Execute an action over a given list
     """

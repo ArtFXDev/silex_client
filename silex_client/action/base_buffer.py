@@ -47,7 +47,9 @@ class BaseBuffer:
     #: The name of the buffer, meant to be displayed
     label: Optional[str] = field(compare=False, repr=False, default=None)
     #: Parents in the buffer hierarchy of buffer of the action
-    parent: Optional[BaseBuffer] = field(repr=False, default=None)
+    parent: Optional[BaseBuffer] = field(
+        hash=False, compare=False, repr=False, default=None
+    )
     #: Childs in the buffer hierarchy of buffer of the action
     children: Dict[str, BaseBuffer] = field(default_factory=dict)
     #: Specify if the buffer must be displayed by the UI or not

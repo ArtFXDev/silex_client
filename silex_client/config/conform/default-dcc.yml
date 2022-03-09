@@ -18,6 +18,13 @@ default-dcc:
             key: "build_output_path_task_id"
             key_suffix: !command-output "input:input:file_paths"
           hide: true
+        exit_reconform_previous:
+          label: "Avoid reconform of the same file"
+          path: "silex_client.commands.exit_step.ExitStep"
+          parameters:
+            enable: !command-output "get_conform_location:get_conform_cache:value"
+            goto: "output"
+          hide: true
 
         build_output_path:
           label: "Build output path"
@@ -55,6 +62,15 @@ default-dcc:
           parameters:
             file_paths: !command-output "get_conform_location:build_output_path:full_path"
             prompt_override: true
+          hide: true
+
+        exit_reconform_override:
+          label: "Avoid reconform of the existing file"
+          path: "silex_client.commands.exit_step.ExitStep"
+          parameters:
+            enable: !command-output "get_conform_location:check_existing_file:keep_existing"
+            goto: "output"
+          hide: true
 
     output:
       index: 100

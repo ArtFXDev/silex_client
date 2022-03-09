@@ -401,9 +401,9 @@ class ActionQuery:
         The format of the output is {<step>:<command> : parameters}
         """
         parameters = {}
-        for step in self.steps:
-            for command in step.commands.values():
-                parameters[f"{step.name}:{command.name}"] = command.parameters
+        for step_key, step in self.buffer.children.items():
+            for command_key, command in step.commands.items():
+                parameters[f"{step_key}:{command_key}"] = command.parameters
 
         return parameters
 
@@ -448,12 +448,12 @@ class ActionQuery:
                 index = parameter_command
                 break
             # If the command name and the parameter are provided
-            elif step is None and command == parameter_command and name in parameters:
+            if step is None and command == parameter_command and name in parameters:
                 step = parameter_step
                 index = parameter_command
                 break
             # If everything is provided
-            elif step is not None and command is not None:
+            if step is not None and command is not None:
                 if (
                     step == parameter_step
                     and command == parameter_command
