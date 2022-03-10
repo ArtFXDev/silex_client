@@ -1,4 +1,5 @@
 set-context:
+  shelf: "misc"
   label: "Switch task"
   thumbnail: "switch_context.svg"
 
