@@ -203,10 +203,10 @@ class TractorSubmiter(CommandBase):
         if len(blade_or_filters) > 0:
             services = self.join_svckey_filters(blade_or_filters, "||")
 
-        ignore_services = [f"!{s}" for s in blade_ignore_filters]
+        ignore_services = [f"!{s}" for s in blade_ignore_filters + ["BUG"]]
 
         # Add and && conditions
-        if len(blade_and_filters) > 0 and len(ignore_services) > 0:
+        if len(blade_and_filters) > 0 or len(ignore_services) > 0:
             services = self.join_svckey_filters(
                 [services] + blade_and_filters + ignore_services, "&&"
             )
