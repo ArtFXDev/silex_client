@@ -101,11 +101,10 @@ class SetAssReferences(CommandBase):
 
         def add_asset_folder(ass):
             """Add asset folder """
-            ass_directory = ass.parents[1]
-            standin_directory = ass.parents[0].stem
+            directory = ass.parents[0]
             file_name = str(ass).split('\\')[-1]
             extension = ass.suffix
-            return ass_directory / 'assets' / standin_directory / file_name
+            return directory / 'assets' / file_name
 
         new_ass_files = list(map(add_asset_folder, new_ass_files))
         
