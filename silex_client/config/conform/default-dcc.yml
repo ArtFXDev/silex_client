@@ -53,7 +53,7 @@ default-dcc:
           parameters:
             key: "build_output_path_task_id"
             key_suffix: !command-output "input:input:file_paths"
-            value: !command-output "get_conform_location:build_output_path"
+            value: !command-output "get_conform_location:build_output_path:task"
           hide: true
 
         check_existing_file:
