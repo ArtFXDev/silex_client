@@ -37,7 +37,7 @@ class SetAssReferences(CommandBase):
         "new_ass_files": {"type": ListParameterMeta(pathlib.Path)},
     }
 
-    def _set_reference_in_ass(self, progress, new_ass_files: List[pathlib.Path], ass_files: List[pathlib.Path], node_names: List[str], references: List[pathlib.Path]):
+    def _set_reference_in_ass(self, logger, progress, new_ass_files: List[pathlib.Path], ass_files: List[pathlib.Path], node_names: List[str], references: List[pathlib.Path]):
         """set references path for a list of nodes then save in a new location"""
 
         for index, ass in enumerate(ass_files):
@@ -51,24 +51,26 @@ class SetAssReferences(CommandBase):
 
             AiASSLoad(str(ass), AI_NODE_ALL)
 
-            node_to_path_dict = dict()
-
             # Iter through all shading nodes
-            iter = AiUniverseGetNodeIterator(AI_NODE_SHADER)
+            iter = AiUniverseGetNodeIterator(AI_NODE_ALL)
 
             while not AiNodeIteratorFinished(iter):
                 node = AiNodeIteratorGetNext(iter)
                 name = AiNodeGetName(node)
 
-                # Only look for a path in a file node
                 if name in node_names:
+                    logger.error(node_names.index(name))
+                    logger.error(references[node_names.index(name)])
                     sequence = fileseq.findSequencesInList(
                         references[node_names.index(name)]
                     )[0]
+
                     template = AiNodeGetStr(node, "filename")
+
                     new_path = files.format_sequence_string(
                         sequence, template, constants.ARNOLD_MATCH_SEQUENCE
                     )
+
                     AiNodeSetStr(node, "filename", new_path)
 
             AiNodeIteratorDestroy(iter)
@@ -92,10 +94,16 @@ class SetAssReferences(CommandBase):
         ass_files: List[pathlib.Path] = parameters["ass_files"]
         new_ass_files: List[pathlib.Path] = parameters["new_ass_files"]
 
+        logger.error(parameters["references"])
+
         # TODO: This should be done in the get_value method of the ParameterBuffer
         references: List[pathlib.Path] = []
-        for reference in parameters["references"][0].get_value(action_query):
-            references.append(reference.get_value(action_query))
+        for reference in parameters["references"]:
+            reference = reference.get_value(action_query)[0]
+            reference = reference.get_value(action_query)
+            references.append(reference)
+
+        logger.error(references)
 
         def add_asset_folder(ass):
             """Add asset folder """
@@ -117,6 +125,6 @@ class SetAssReferences(CommandBase):
             SharedVariable(len(ass_files)),
             0.2,
         ):
-            await thread_maya.execute_in_main_thread(self._set_reference_in_ass,  progress, new_ass_files, ass_files, node_names, references)
+            await thread_maya.execute_in_main_thread(self._set_reference_in_ass, logger, progress, new_ass_files, ass_files, node_names, references)
 
         return new_ass_files
