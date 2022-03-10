@@ -30,8 +30,6 @@ from aiohttp.client_exceptions import (
 # Service key filters for Tractor job
 # See: https://rmanwiki.pixar.com/display/TRA/Job+Scripting#JobScripting-servicekeys
 SERVICE_FILTERS = {
-    "PC2014": "PC2014",
-    "PC2015": "PC2015",
     "16RAM": "(@.mem >= 0) && (@.mem < 32)",
     "32RAM": "(@.mem >= 32) && (@.mem < 64)",
     "64RAM": "(@.mem >= 64) && (@.mem < 128)",
@@ -89,6 +87,11 @@ class TractorSubmiter(CommandBase):
             "label": "Restrict with filters",
             "type": MultipleSelectParameterMeta("GPU", "REDSHIFT", "VRAYHOU52"),
             "value": [],
+        },
+        "blade_ignore_filters": {
+            "label": "Don't render on",
+            "type": MultipleSelectParameterMeta(),
+            "value": ["PC2014", "PC2015"],
         },
         "job_title": {
             "label": "Job title",
@@ -184,6 +187,7 @@ class TractorSubmiter(CommandBase):
         commands = parameters["commands"]
         blade_or_filters: List[str] = parameters["blade_or_filters"]
         blade_and_filters: List[str] = parameters["blade_and_filters"]
+        blade_ignore_filters: List[str] = parameters["blade_ignore_filters"]
         job_title: str = parameters["job_title"]
         job_tags: List[str] = parameters["job_tags"]
         priority: float = float(parameters["priority"])
@@ -199,9 +203,13 @@ class TractorSubmiter(CommandBase):
         if len(blade_or_filters) > 0:
             services = self.join_svckey_filters(blade_or_filters, "||")
 
+        ignore_services = [f"!{s}" for s in blade_ignore_filters]
+
         # Add and && conditions
-        if len(blade_and_filters) > 0:
-            services = self.join_svckey_filters([services] + blade_and_filters, "&&")
+        if len(blade_and_filters) > 0 and len(ignore_services) > 0:
+            services = self.join_svckey_filters(
+                [services] + blade_and_filters + ignore_services, "&&"
+            )
 
         # Create a job
         job = author.Job(
@@ -275,5 +283,5 @@ class TractorSubmiter(CommandBase):
         )
 
         service_keys.sort()
-        blade_and_filters = self.command_buffer.parameters["blade_and_filters"]
-        blade_and_filters.rebuild_type(*service_keys)
+        blade_ignore_filters = self.command_buffer.parameters["blade_ignore_filters"]
+        blade_ignore_filters.rebuild_type(*service_keys)
