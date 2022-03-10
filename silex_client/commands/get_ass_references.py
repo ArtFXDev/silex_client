@@ -27,7 +27,7 @@ class GetAssReferences(CommandBase):
         "ass_files": {"type": ListParameterMeta(pathlib.Path), "value": []},
     }
 
-    def _get_references_in_ass(self, logger, ass_file: pathlib.Path) -> Dict[str, pathlib.Path]:
+    def _get_references_in_ass(self, ass_file: pathlib.Path) -> Dict[str, pathlib.Path]:
         """Parse an .ass file for references then return a dictionary : dict(node_name: reference_path)"""
 
         # Open ass file
@@ -47,22 +47,18 @@ class GetAssReferences(CommandBase):
             if AiNodeIs(node, 'image'):
                 # Look for textures (images)
                 node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
-                logger.error(f'image: {node_name} -> {node_to_path_dict[node_name]}')
           
             elif AiNodeIs(node, 'procedural'):
                 # Look for procedurals (can be ass references,...)
                 node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
-                logger.error(f'procedural: {node_name} -> {node_to_path_dict[node_name]}')
 
             elif AiNodeIs(node, 'volume'):
                 # Look for procedurals (can be ass references,...)
                 node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
-                logger.error(f'volume: {node_name} -> {node_to_path_dict[node_name]}')
 
             elif AiNodeIs(node, 'photometric_light'):
                 # Look for photometric_light
                 node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
-                logger.error(f'photometric_light: {node_name} -> {node_to_path_dict[node_name]}')
 
         AiNodeIteratorDestroy(iter)
         AiEnd()
@@ -82,7 +78,7 @@ class GetAssReferences(CommandBase):
         node_to_path_dict: Dict[
             str, pathlib.Path
         ] = await thread_maya.execute_in_main_thread(
-            self._get_references_in_ass, logger,  ass_files[0]
+            self._get_references_in_ass, ass_files[0]
         )
 
         # Create tow lits with corresponding indexes
@@ -91,7 +87,6 @@ class GetAssReferences(CommandBase):
         references: List[List[pathlib.Path]] = list()
 
         for item in list(node_to_path_dict.values()):
-            logger.error(item)
             temp_list = []
         
             # Add sequence to the references list
@@ -109,8 +104,6 @@ class GetAssReferences(CommandBase):
                 # Add, non-sequence paths to the references list
                 if not files.is_valid_pipeline_path(pathlib.Path(item)):
                     references.append([item])
-
-        logger.error(references)
 
         return {
             "node_names": node_names,
