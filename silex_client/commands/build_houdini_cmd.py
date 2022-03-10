@@ -104,6 +104,9 @@ class HoudiniCommand(CommandBase):
         rop_nodes: Union[str, List[str]] = parameters["rop_nodes"]
         output_file = pathlib.Path(parameters["output_filename"])
 
+        if not isinstance(rop_nodes, list):
+            rop_nodes = rop_nodes.split(" ")
+
         node_cmd: Dict[str, Dict[str, command_builder.CommandBuilder]] = {}
 
         for rop_node in rop_nodes:
