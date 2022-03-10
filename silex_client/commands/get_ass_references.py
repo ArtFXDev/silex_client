@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import typing
-import re
 import pathlib
 from arnold import *
 from typing import Dict, List
@@ -28,8 +27,8 @@ class GetAssReferences(CommandBase):
         "ass_files": {"type": ListParameterMeta(pathlib.Path), "value": []},
     }
 
-    def _get_references_in_ass(self, ass_file: pathlib.Path) -> Dict[str, pathlib.Path]:
-        """Parse an .ass file for textures and procedurals, then return a dictionary : dict(node_name: reference_path)"""
+    def _get_references_in_ass(self, logger, ass_file: pathlib.Path) -> Dict[str, pathlib.Path]:
+        """Parse an .ass file for references then return a dictionary : dict(node_name: reference_path)"""
 
         # Open ass file
         AiBegin()
@@ -45,21 +44,25 @@ class GetAssReferences(CommandBase):
             node = AiNodeIteratorGetNext(iter)
             node_name = AiNodeGetName(node)
 
-            # Look for textures (images)
             if AiNodeIs(node, 'image'):
+                # Look for textures (images)
                 node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
+                logger.error(f'image: {node_name} -> {node_to_path_dict[node_name]}')
+          
+            elif AiNodeIs(node, 'procedural'):
+                # Look for procedurals (can be ass references,...)
+                node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
+                logger.error(f'procedural: {node_name} -> {node_to_path_dict[node_name]}')
 
-            # Look for procedurals (can be ass references,...)
-            if AiNodeIs(node, 'procedural'):
+            elif AiNodeIs(node, 'volume'):
+                # Look for procedurals (can be ass references,...)
                 node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
+                logger.error(f'volume: {node_name} -> {node_to_path_dict[node_name]}')
 
-            # Look for procedurals (can be ass references,...)
-            if AiNodeIs(node, 'volume'):
+            elif AiNodeIs(node, 'photometric_light'):
+                # Look for photometric_light
                 node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
-
-            # Look for photometric_light
-            if AiNodeIs(node, 'photometric_light'):
-                node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
+                logger.error(f'photometric_light: {node_name} -> {node_to_path_dict[node_name]}')
 
         AiNodeIteratorDestroy(iter)
         AiEnd()
@@ -79,20 +82,35 @@ class GetAssReferences(CommandBase):
         node_to_path_dict: Dict[
             str, pathlib.Path
         ] = await thread_maya.execute_in_main_thread(
-            self._get_textures_in_ass, ass_files[0]
+            self._get_references_in_ass, logger,  ass_files[0]
         )
 
         # Create tow lits with corresponding indexes
         node_names = list(node_to_path_dict.keys())
 
-        references = list()
+        references: List[List[pathlib.Path]] = list()
 
         for item in list(node_to_path_dict.values()):
-            for path in files.expand_template_to_sequence(item, constants.ARNOLD_MATCH_SEQUENCE):
-                if not files.is_valid_pipeline_path(pathlib.Path(path)):
-                    references.append(pathlib.Path(path))
-            
-        references = [ references ]
+            logger.error(item)
+            temp_list = []
+        
+            # Add sequence to the references list
+            if files.expand_template_to_sequence(item, constants.ARNOLD_MATCH_SEQUENCE):
+
+                for path in files.expand_template_to_sequence(item, constants.ARNOLD_MATCH_SEQUENCE):
+
+                    # Check if path already conformed
+                    if not files.is_valid_pipeline_path(pathlib.Path(path)):
+                        temp_list.append(pathlib.Path(path))
+
+                references.append(temp_list)
+
+            else:
+                # Add, non-sequence paths to the references list
+                if not files.is_valid_pipeline_path(pathlib.Path(item)):
+                    references.append([item])
+
+        logger.error(references)
 
         return {
             "node_names": node_names,
