@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import json
 import logging
 import pathlib
+import tempfile
 import typing
 from typing import Any, Dict, List, Union
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils import command_builder, frames
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
@@ -65,11 +66,11 @@ class HoudiniCommand(CommandBase):
             "type": TextParameterMeta(
                 color="info", progress={"variant": "indeterminate"}
             ),
-            "value": "Openning houdini scene...",
+            "value": "Opening houdini scene...",
             "hide": True,
         },
-        "render_nodes": {
-            "label": "ROP node path",
+        "rop_nodes": {
+            "label": "ROP node(s) path(s)",
             "type": MultipleSelectParameterMeta(),
             "value": None,
         },
@@ -79,7 +80,7 @@ class HoudiniCommand(CommandBase):
             "value": False,
         },
         "resolution": {
-            "label": "Resolution ( width, height )",
+            "label": "Resolution (width, height)",
             "type": IntArrayParameterMeta(2),
             "value": [1920, 1080],
             "hide": True,
@@ -100,32 +101,32 @@ class HoudiniCommand(CommandBase):
         skip_existing = parameters["skip_existing"]
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
-        render_nodes: Union[str, List[str]] = parameters["render_nodes"]
+        rop_nodes: Union[str, List[str]] = parameters["rop_nodes"]
         output_file = pathlib.Path(parameters["output_filename"])
-
-        if not isinstance(render_nodes, list):
-            render_nodes = render_nodes.split(" ")
 
         node_cmd: Dict[str, Dict[str, command_builder.CommandBuilder]] = {}
 
-        for render_node in render_nodes:
-            render_name = render_node.split("/")[-1]
+        for rop_node in rop_nodes:
+            render_name = rop_node.split("/")[-1]
+
             full_output_file = (
                 output_file.parent
                 / render_name
                 / f"{output_file.with_suffix('').stem}_{render_name}.$F4{''.join(output_file.suffixes)}"
             )
+
             # Build the render command
-            houdini_cmd = command_builder.CommandBuilder(
-                "hython", rez_packages=["houdini"], delimiter=" "
+            houdini_cmd = (
+                command_builder.CommandBuilder(
+                    "hython", rez_packages=["houdini"], delimiter=" "
+                )
+                .param("m", "hrender")
+                .value(scene.as_posix())
+                .param("d", rop_node)
+                .param("o", full_output_file.as_posix())
+                .param("v")
+                .param("S", condition=skip_existing)
             )
-            houdini_cmd.param("m", "hrender")
-            houdini_cmd.value(str(scene))
-            houdini_cmd.param("d", render_node)
-            houdini_cmd.param("o", str(full_output_file))
-            # Verbose mode
-            houdini_cmd.param("v")
-            houdini_cmd.param("S", condition=skip_existing)
 
             if parameter_overrides:
                 houdini_cmd.param("w", resolution[0])
@@ -146,7 +147,7 @@ class HoudiniCommand(CommandBase):
             logger.info(f"Commands created: {commands}")
 
             # Format "commands" output to match the input type in the submiter
-            node_cmd[f"ROP node: {render_node}"] = commands
+            node_cmd[f"ROP node: {rop_node}"] = commands
 
         return {"commands": node_cmd, "file_name": scene.stem}
 
@@ -167,10 +168,10 @@ class HoudiniCommand(CommandBase):
 
         if rop_from_hip:
             self.command_buffer.parameters[
-                "render_nodes"
+                "rop_nodes"
             ].type = MultipleSelectParameterMeta()
         else:
-            self.command_buffer.parameters["render_nodes"].type = str
+            self.command_buffer.parameters["rop_nodes"].type = str
             return
 
         if scene == previous_hip_value:
@@ -179,36 +180,46 @@ class HoudiniCommand(CommandBase):
         if not scene or not os.path.isfile(scene):
             return
 
-        def run(cmd):
-            proc = subprocess.Popen(
-                cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-
-            stdout, stderr = proc.communicate()
-            logger.info(f"[{cmd} exited with {proc.returncode}]")
-
-            if stdout:
-                logger.info(stdout)
-
-                stdout = stdout.decode().splitlines()
-                for line in stdout:
-                    try:
-                        logger.info(f"trying to parse stdout: {line}")
-                        render_nodes = ast.literal_eval(line)
-                        self.command_buffer.parameters["render_nodes"].rebuild_type(
-                            *render_nodes
-                        )
-
-                    except Exception as e:
-                        logger.info(f"failed to parse stdout: {e}, str: {line}")
-
-            if stderr:
-                logger.error(f"stderr: {stderr.decode()}")
-
         self.command_buffer.parameters["get_rop_progress"].hide = False
         await action_query.async_update_websocket()
-        await execute_in_thread(
-            run, f"rez env houdini -- hython -m get_rop_nodes --file {scene}"
+
+        tmp_dir = tempfile.mkdtemp()
+        tmp_file = os.path.join(tmp_dir, "get_rop_nodes")
+
+        get_rop_cmd = (
+            command_builder.CommandBuilder(
+                "hython",
+                delimiter=None,
+                rez_packages=[
+                    "houdini",
+                    action_query.context_metadata["project"].lower(),
+                ],
+            )
+            .param("m", "get_rop_nodes")
+            .param("-hip", scene)
+            .param("-tmp", tmp_file)
         )
+
+        def subprocess_rop_node():
+            proc = subprocess.Popen(
+                get_rop_cmd.as_argv(),
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            stdout, stderr = proc.communicate()
+            logger.info(stdout, stderr)
+
+        await execute_in_thread(subprocess_rop_node)
+
+        with open(tmp_file) as f:
+            self.command_buffer.parameters["rop_nodes"].rebuild_type(
+                *json.loads(f.readlines()[0])
+            )
+
+        # Clean tmp dir
+        os.remove(tmp_file)
+        os.rmdir(tmp_dir)
+
         self.command_buffer.parameters["get_rop_progress"].hide = True
         action_query.store["submit_houdini_temp_hip_filepath"] = scene

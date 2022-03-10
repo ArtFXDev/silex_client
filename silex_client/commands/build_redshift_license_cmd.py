@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import typing
-from distutils import command
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
@@ -31,7 +30,10 @@ class RedshiftLicenseCommands(CommandBase):
             delimiter=None,
         ).param("m", "redshift_license_client.main")
 
+        stop_cmd = redshift_cmd.deepcopy().value("stop")
+
         return {
             "precommands": [redshift_cmd.deepcopy().value("start")],
-            "task_cleanup_cmd": redshift_cmd.deepcopy().value("stop"),
+            "postcommands": [stop_cmd],
+            "task_cleanup_cmd": stop_cmd,
         }
