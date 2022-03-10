@@ -49,7 +49,7 @@ class MayaCommand(CommandBase):
         },
         # "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
         "output_folder": {"type": pathlib.Path, "hide": True, "value": ""},
-        "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
+        "output_filename": {"type": str, "hide": True, "value": ""},
         "output_extension": {"type": str, "hide": True, "value": "exr"},
     }
 
@@ -69,9 +69,10 @@ class MayaCommand(CommandBase):
             "Render", rez_packages=["maya"], delimiter=" ", dashes="-"
         )
         maya_cmd.param("r", parameters["renderer"])
+
         # Doesn't work need to check on a forum
         # maya_cmd.param("skipExistingFrames", str(parameters["skip_existing"]).lower())
-        maya_cmd.param("rd", parameters["output_folder"])
+        maya_cmd.param("rd", parameters["output_folder"].as_posix())
         maya_cmd.param("im", parameters["output_filename"])
         maya_cmd.param("of", parameters["output_extension"])
 
@@ -97,7 +98,7 @@ class MayaCommand(CommandBase):
             chunk_cmd.param("b", frame_range[2])
 
             # Add the scene file
-            chunk_cmd.value(scene)
+            chunk_cmd.value(scene.as_posix())
 
             # Add the frames argument
             commands[task_title] = chunk_cmd

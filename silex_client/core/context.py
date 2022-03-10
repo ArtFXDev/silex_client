@@ -31,7 +31,6 @@ import gazu.exception
 import gazu.files
 import gazu.shot
 import gazu.task
-
 from silex_client.core.event_loop import EventLoop
 from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.authentification import authentificate_gazu
@@ -246,6 +245,7 @@ class Context:
         resolved_context["task_type"] = task["task_type"]["name"]
         resolved_context["task_type_id"] = task["task_type"]["id"]
         resolved_context["project"] = task["project"]["name"]
+        resolved_context["project_nas"] = task["project"]["data"].get("nas", None)
         resolved_context["project_id"] = task["project"]["id"]
         resolved_context["project_file_tree"] = task["project"]["file_tree"]
 

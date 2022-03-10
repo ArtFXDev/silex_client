@@ -6,9 +6,9 @@ Dataclass used to store the data related to an action
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import json
 import pathlib
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from silex_client.action.base_buffer import BaseBuffer
@@ -52,6 +52,8 @@ class ActionBuffer(BaseBuffer):
     store: Dict[str, Any] = field(compare=False, default_factory=dict)
     #: Snapshot of the context's metadata when this buffer is created
     context_metadata: Dict[str, Any] = field(default_factory=dict)
+    #: Category when displaying the action in shelves
+    shelf: Optional[str] = field(default=None)
 
     @property
     def child_type(self):

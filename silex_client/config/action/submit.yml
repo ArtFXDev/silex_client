@@ -1,5 +1,7 @@
 submit:
+  shelf: "output"
   thumbnail: "submit.svg"
+
   steps:
     setup:
       lavel: "Setup"
@@ -17,7 +19,6 @@ submit:
           tooltip: "Append the selected submit to the list of commands to execute"
           parameters:
             category: "submit"
-            action: 
+            action:
               value: !command-output "setup:get_submiter:action"
               hide: true
-
