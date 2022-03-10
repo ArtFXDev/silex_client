@@ -91,7 +91,7 @@ class TractorSubmiter(CommandBase):
         "blade_ignore_filters": {
             "label": "Don't render on",
             "type": MultipleSelectParameterMeta(),
-            "value": ["PC2014", "PC2015"],
+            "value": ["PC2014", "PC2015", "VRAYHOU52"],
         },
         "job_title": {
             "label": "Job title",
