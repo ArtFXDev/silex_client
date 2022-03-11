@@ -30,9 +30,9 @@ from aiohttp.client_exceptions import (
 # Service key filters for Tractor job
 # See: https://rmanwiki.pixar.com/display/TRA/Job+Scripting#JobScripting-servicekeys
 SERVICE_FILTERS = {
-    "16RAM": "(@.mem >= 0) && (@.mem < 32)",
-    "32RAM": "(@.mem >= 32) && (@.mem < 64)",
-    "64RAM": "(@.mem >= 64) && (@.mem < 128)",
+    "16RAM": "(@.mem >= 0) && (@.mem < 8)",
+    "32RAM": "(@.mem >= 8) && (@.mem < 16)",
+    "64RAM": "(@.mem >= 16) && (@.mem < 32)",
 }
 
 
