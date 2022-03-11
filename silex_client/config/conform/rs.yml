@@ -2,7 +2,7 @@ rs: !inherit
   parent: ".default"
 
   steps:
-    conform:
+    get_conform_location:
       commands:
         build_output_path:
           parameters:

@@ -14,18 +14,19 @@ base:
         get_conform_cache:
           label: "Get previous conform location"
           path: "silex_client.commands.get_stored_value.GetStoredValue"
+          hide: true
           parameters:
             keys: 
               - "build_output_path_task_id"
               - !command-output "input:input:file_paths"
-          hide: true
         skip_reconform:
           label: "Skip reconform of the same file"
           path: "silex_client.commands.goto_step.GoToStep"
-          skip: !command-output "get_conform_location:get_conform_cache:value"
+          #skip: !command-output "get_conform_location:get_conform_cache:value"
+          skip: true
+          hide: true
           parameters:
             name: "output"
-          hide: true
 
         build_output_path:
           label: "Build output path"
@@ -64,7 +65,6 @@ base:
           parameters:
             file_paths: !command-output "get_conform_location:build_output_path:full_path"
             prompt_override: true
-          hide: true
 
         set_repath_cache:
           label: "Cache the renaming"
@@ -79,10 +79,11 @@ base:
 
         skip_override:
           label: "Avoid reconform of the existing file"
-          path: "silex_client.commands.exit_step.ExitStep"
+          path: "silex_client.commands.goto_step.GoToStep"
+          #skip: !command-output "get_conform_location:get_conform_cache:value"
+          skip: true
           parameters:
-            enable: !command-output "get_conform_location:check_existing_files:keep_existing"
-            goto: "output"
+            name: "output"
           hide: true
 
     output:
@@ -90,12 +91,13 @@ base:
       hide: true
       commands:
         get_conform_cache:
-          label: "Get previous conform location"
+          label: "Get conform location"
           path: "silex_client.commands.get_stored_value.GetStoredValue"
-          parameters:
-            key: "build_output_path_task_id"
-            key_suffix: !command-output "input:input:file_paths"
           hide: true
+          parameters:
+            keys: 
+              - "build_output_path_task_id"
+              - !command-output "input:input:file_paths"
 
         output:
           path: "silex_client.commands.pass.Pass"

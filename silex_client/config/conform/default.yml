@@ -1,60 +1,11 @@
-default:
-  shelf: "input"
+default: !inherit
+  parent: ".base"
 
   steps:
-    input:
-      hide: true
-      index: 10
-      commands:
-        input:
-          path: "silex_client.commands.pass.Pass"
-
     conform:
       label: "Conform"
-      index: 20
+      index: 40
       commands:
-        get_conform_cache:
-          label: "Get previous conform location"
-          path: "silex_client.commands.get_stored_value.GetStoredValue"
-          parameters:
-            key: "build_output_path_task_id"
-            key_suffix: !command-output "input:input:file_paths"
-          hide: true
-        build_output_path:
-          label: "Build output path"
-          path: "silex_client.commands.build_output_path_conform.BuildOutputPathConform"
-          tooltip: "Build the complete output path"
-          parameters:
-            task: !command-output "conform:get_conform_cache:value"
-            use_current_context: false
-            create_temp_dir: false
-            frame_set: !command-output "input:input:frame_set"
-            output_type:
-              hide: true
-            files: !command-output "input:input:file_paths"
-            padding: !command-output "input:input:padding"
-          ask_user: true
-        get_output_cache:
-          label: "Get previous conform output"
-          path: "silex_client.commands.get_stored_value.GetStoredValue"
-          parameters:
-            key: "conform_output"
-            key_suffix: !command-output "conform:build_output_path:store_conform_key"
-          hide: true
-        step_exit:
-          label: "Skip reconform"
-          path: "silex_client.commands.exit_step.ExitStep"
-          parameters:
-            enable: !command-output "conform:get_output_cache:value"
-          hide: true
-        set_conform_cache:
-          label: "Cache conform location"
-          path: "silex_client.commands.set_stored_value.SetStoredValue"
-          parameters:
-            key: "build_output_path_task_id"
-            key_suffix: !command-output "input:input:file_paths"
-            value: !command-output "conform:build_output_path:task"
-          hide: true
         copy:
           label: "Copy file to pipeline"
           path: "silex_client.commands.copy.Copy"
@@ -63,9 +14,8 @@ default:
               value: !command-output "input:input:file_paths"
               hide: true
             dst:
-              value: !command-output "conform:build_output_path:directory"
+              value: !command-output "get_conform_location:build_output_path:directory"
               hide: true
-            force: false
         rename:
           label: "Rename the copied files"
           path: "silex_client.commands.rename.Rename"
@@ -74,30 +24,6 @@ default:
               value: !command-output "conform:copy:destination_paths"
               hide: true
             name:
-              value: !command-output "conform:build_output_path:full_name"
+              value: !command-output "get_conform_location:check_existing_files:file_paths"
               hide: true
             force: false
-        set_output_cache:
-          label: "Cache conform output"
-          path: "silex_client.commands.set_stored_value.SetStoredValue"
-          parameters:
-            key: "conform_output"
-            key_suffix: !command-output "conform:build_output_path:store_conform_key"
-            value: !command-output "conform:rename:new_paths"
-          hide: true
-
-    output:
-      index: 30
-      hide: true
-      commands:
-        get_output_cache:
-          label: "Get previous conform output"
-          path: "silex_client.commands.get_stored_value.GetStoredValue"
-          parameters:
-            key: "conform_output"
-            key_suffix: !command-output "conform:build_output_path:store_conform_key"
-          hide: true
-        output:
-          path: "silex_client.commands.pass.Pass"
-          parameters:
-            input: !command-output "output:get_output_cache:value"

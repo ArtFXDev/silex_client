@@ -44,6 +44,8 @@ class SetStoredValue(CommandBase):
         for key in keys[:-1]:
             if not isinstance(store, dict):
                 break
+            if key not in store:
+                store[key] = {}
             store = store.get(key)
 
         if not isinstance(store, dict):

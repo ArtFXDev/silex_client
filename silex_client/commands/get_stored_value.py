@@ -42,7 +42,8 @@ class GetStoredValue(CommandBase):
         value = action_query.store
         for key in keys:
             if not isinstance(value, dict):
-                raise Exception("Could not set the value at %s in the store", keys)
+                value = default
+                break
             value = value.get(key, default)
 
         return {"value": value, "keys": keys}

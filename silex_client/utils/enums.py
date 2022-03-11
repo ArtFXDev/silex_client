@@ -42,7 +42,6 @@ class ConflictBehaviour(IntEnum):
     MERGE = 4
     ALWAYS_MERGE = 5
     RENAME = 6
-    REPATH = 7
 
 
 class NotFoundBehaviour(IntEnum):

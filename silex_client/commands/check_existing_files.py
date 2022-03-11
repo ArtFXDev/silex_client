@@ -62,8 +62,6 @@ async def prompt_override(
 
     conflict_behaviour = ConflictBehaviour(int(response["conflict_behaviour"]))
     if conflict_behaviour is ConflictBehaviour.RENAME:
-        file_path.setDirname(str(response["repath"]))
-    if conflict_behaviour is ConflictBehaviour.RENAME:
         file_path.setBasename(str(response["rename"]))
 
     return conflict_behaviour, file_path
@@ -112,6 +110,7 @@ class CheckExistingFiles(CommandBase):
         output = {
             "exists_all": exists_all,
             "exists_any": exists_any,
+            "exists_none": not exists_any,
             "keep_existing": False,
             "file_paths": file_paths,
             "override": True,
@@ -132,10 +131,7 @@ class CheckExistingFiles(CommandBase):
                     conflict_behaviour, sequence = await prompt_override(
                         self, sequence, action_query
                     )
-            if conflict_behaviour in [
-                ConflictBehaviour.RENAME,
-                ConflictBehaviour.REPATH,
-            ]:
+            if conflict_behaviour is ConflictBehaviour.RENAME:
                 sequences_rename[index] = sequence
             if conflict_behaviour in [
                 ConflictBehaviour.ALWAYS_OVERRIDE,

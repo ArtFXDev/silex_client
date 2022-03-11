@@ -13,12 +13,12 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Union
 
 from silex_client.utils.enums import Status
+from silex_client.action.parameter_buffer import ParameterBuffer
 
 # Forward references
 if TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
     from silex_client.action.command_buffer import CommandBuffer
-    from silex_client.action.parameter_buffer import ParameterBuffer
 
 # Type for parameters
 CommandParameters = Dict[str, Dict[str, Any]]
