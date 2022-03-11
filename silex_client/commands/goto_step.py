@@ -12,21 +12,24 @@ if typing.TYPE_CHECKING:
     from silex_client.action.step_buffer import StepBuffer
 
 
-class ExitStep(CommandBase):
+class GoToStep(CommandBase):
     """
-    Exit the current step by setting all the commands to skip
+    Exit the selected steps by setting all its commands to skip
+    The step can be selected by name or by count. If no name is specified, the count
+    is used.
     """
 
     parameters = {
-        "enable": {
-            "label": "Enable the skip",
-            "type": bool,
-            "value": True,
-        },
-        "goto": {
+        "name": {
             "label": "Name of the step to go to",
             "type": str,
             "value": "",
+        },
+        "count": {
+            "type": int,
+            "label": "Quantity of step to skip",
+            "tooltip": "The count start at the current step, (1 will skip the current step)",
+            "value": 1,
         },
     }
 
@@ -37,22 +40,17 @@ class ExitStep(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        enable: bool = parameters["enable"]
-        goto: str = parameters["goto"]
-
-        if not enable:
-            return
+        name: str = parameters["name"]
+        count: int = parameters["count"]
 
         current_step = cast("StepBuffer", self.command_buffer.parent)
         current_step_index = action_query.steps.index(current_step)
-        goto_step_index = None
 
-        if goto:
+        goto_step_index = current_step_index + count
+        if name:
             for index, step in enumerate(action_query.steps[current_step_index:]):
-                if step.name == goto:
-                    goto_step_index = index
-        else:
-            goto_step_index = current_step_index + 1
+                if name and step.name == name:
+                    goto_step_index += index
 
         for step in action_query.steps[current_step_index:goto_step_index]:
             for command in step.children.values():

@@ -108,6 +108,7 @@ class CheckExistingFiles(CommandBase):
             sequence_exists(sequence, any_file=True) for sequence in sequences
         )
 
+        # Initialize the output with default values
         output = {
             "exists_all": exists_all,
             "exists_any": exists_any,
