@@ -243,8 +243,10 @@ def expand_template_to_sequence(
     return fileseq.FileSequence(path_template)
 
 
-def sequence_exists(sequence: fileseq.FileSequence) -> bool:
+def sequence_exists(sequence: fileseq.FileSequence, any_file: bool = False) -> bool:
     """
     Test if every files in the given sequence exists
     """
+    if any_file:
+        return any(pathlib.Path(str(path)).exists() for path in sequence)
     return all(pathlib.Path(str(path)).exists() for path in sequence)

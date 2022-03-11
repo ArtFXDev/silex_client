@@ -10,7 +10,7 @@ import asyncio
 import functools
 import inspect
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Union
 
 from silex_client.utils.enums import Status
 
@@ -149,11 +149,19 @@ class CommandBase:
         return decorator_conform_command
 
     async def prompt_user(
-        self, action_query: ActionQuery, new_parameters: dict[str, ParameterBuffer]
+        self,
+        action_query: ActionQuery,
+        new_parameters: Union[Dict[str, ParameterBuffer], Dict[str, dict]],
     ) -> Dict[str, Any]:
         """
         Add the given parameters to to current command parameters and ask an update from the user
         """
+        parameters_patch: Dict[str, ParameterBuffer] = {}
+        for parameter_key, parameter in new_parameters.items():
+            if not isinstance(parameter, ParameterBuffer):
+                parameter["name"] = parameter_key
+                parameter = ParameterBuffer(**parameter)
+            parameters_patch[parameter_key] = parameter
         if not action_query.ws_connection.is_running:
             return {}
 
@@ -161,7 +169,7 @@ class CommandBase:
         for parameter in self.command_buffer.parameters.values():
             parameter.hide = True
         # Add the parameters to the command buffer's parameters
-        self.command_buffer.parameters.update(new_parameters)
+        self.command_buffer.parameters.update(parameters_patch)
         # Set the current command to WAITING_FOR_RESPONSE
         self.command_buffer.status = Status.WAITING_FOR_RESPONSE
         self.command_buffer.ask_user = True
