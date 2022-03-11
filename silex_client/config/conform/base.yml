@@ -1,4 +1,4 @@
-default-dcc:
+base:
   steps:
     input:
       index: 10
@@ -21,8 +21,8 @@ default-dcc:
         exit_reconform_previous:
           label: "Avoid reconform of the same file"
           path: "silex_client.commands.exit_step.ExitStep"
+          skip: !command-output "get_conform_location:get_conform_cache:value"
           parameters:
-            enable: !command-output "get_conform_location:get_conform_cache:value"
             goto: "output"
           hide: true
 
@@ -53,12 +53,12 @@ default-dcc:
           parameters:
             key: "build_output_path_task_id"
             key_suffix: !command-output "input:input:file_paths"
-            value: !command-output "get_conform_location:build_output_path:task"
+            value: !command-output "get_conform_location:build_output_path"
           hide: true
 
-        check_existing_file:
+        check_existing_files:
           label: "Check if the output of the conform already exists"
-          path: "silex_client.commands.check_existing.CheckExisting"
+          path: "silex_client.commands.check_existing_files.CheckExistingFiles"
           parameters:
             file_paths: !command-output "get_conform_location:build_output_path:full_path"
             prompt_override: true
@@ -68,7 +68,7 @@ default-dcc:
           label: "Avoid reconform of the existing file"
           path: "silex_client.commands.exit_step.ExitStep"
           parameters:
-            enable: !command-output "get_conform_location:check_existing_file:keep_existing"
+            enable: !command-output "get_conform_location:check_existing_files:keep_existing"
             goto: "output"
           hide: true
 
