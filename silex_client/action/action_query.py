@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import json
 import os
+import pathlib
 from concurrent import futures
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
@@ -20,7 +22,7 @@ from silex_client.resolve.config import Config
 from silex_client.utils.datatypes import ReadOnlyDict
 from silex_client.utils.enums import Execution, Status
 from silex_client.utils.log import logger
-from silex_client.utils.serialiser import silex_diff
+from silex_client.utils.serialiser import silex_diff, silex_encoder
 
 # Forward references
 if TYPE_CHECKING:
@@ -195,11 +197,11 @@ class ActionQuery:
                 "/dcc/action", "clearAction", {"uuid": self.buffer.uuid}
             )
 
+        self.pause()
         self._task.cancel()
 
-    def cancel(self, emit_clear: bool = True):
-        future = self.event_loop.register_task(self.async_cancel(emit_clear))
-        future.result()
+    def cancel(self, emit_clear: bool = True) -> futures.Future:
+        return self.event_loop.register_task(self.async_cancel(emit_clear))
 
     async def async_undo(self, all_commands: bool = False):
         """
@@ -210,23 +212,26 @@ class ActionQuery:
             if self.execution_type is not Execution.BACKWARD:
                 self.command_iterator.command_index += 1
 
-        for command in self.commands[self.current_command_index :]:
+        for command in self.commands[self.current_command_index:]:
             command.status = Status.INITIALIZED
 
         self.execution_type = Execution.BACKWARD
         await self.execute_commands(step_by_step=not all_commands)
 
-    def undo(self, all_commands: bool = False):
-        self.event_loop.register_task(self.async_undo(all_commands))
+    def undo(self, all_commands: bool = False) -> futures.Future:
+        return self.event_loop.register_task(self.async_undo(all_commands))
 
-    def redo(self):
+    def redo(self, all_commands: bool = True) -> futures.Future:
         if self.execution_type is not Execution.FORWARD:
             self.command_iterator.command_index -= 1
         self.execution_type = Execution.FORWARD
         if not self.is_running:
-            self.execute()
+            return self.execute(step_by_step=not all_commands)
+        future: futures.Future = futures.Future()
+        future.set_result(None)
+        return future
 
-    def stop(self):
+    def pause(self):
         self.execution_type = Execution.PAUSE
 
     def _initialize_buffer(
@@ -319,6 +324,22 @@ class ActionQuery:
             )
         return confirm
 
+    def load_store(self, file_path: pathlib.Path):
+        """
+        Load a new store from disk, usefull to backup the progression of the action
+        """
+        with open(file_path, "r", encoding="utf8") as file:
+            store = json.load(file)
+            self.buffer.store = store
+
+    def dump_store(self, file_path: pathlib.Path):
+        """
+        Backup the store for later load. When an error occured, it can be usefull to dump the
+        store so when an action is run again, we can load back in the store for autocompletion
+        """
+        with open(file_path, "w", encoding="utf8") as file:
+            json.dump(self.buffer.store, file, default=silex_encoder)
+
     @property
     def current_command(self):
         """Get the current command or the last command before stopping"""
@@ -383,9 +404,9 @@ class ActionQuery:
         The format of the output is {<step>:<command> : parameters}
         """
         parameters = {}
-        for step in self.steps:
-            for command in step.commands.values():
-                parameters[f"{step.name}:{command.name}"] = command.parameters
+        for step_key, step in self.buffer.children.items():
+            for command_key, command in step.commands.items():
+                parameters[f"{step_key}:{command_key}"] = command.parameters
 
         return parameters
 
@@ -430,12 +451,12 @@ class ActionQuery:
                 index = parameter_command
                 break
             # If the command name and the parameter are provided
-            elif step is None and command == parameter_command and name in parameters:
+            if step is None and command == parameter_command and name in parameters:
                 step = parameter_step
                 index = parameter_command
                 break
             # If everything is provided
-            elif step is not None and command is not None:
+            if step is not None and command is not None:
                 if (
                     step == parameter_step
                     and command == parameter_command

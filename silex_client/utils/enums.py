@@ -39,7 +39,9 @@ class ConflictBehaviour(IntEnum):
     ALWAYS_OVERRIDE = 1
     KEEP_EXISTING = 2
     ALWAYS_KEEP_EXISTING = 3
-    RENAME = 4
+    MERGE = 4
+    ALWAYS_MERGE = 5
+    RENAME = 6
 
 
 class NotFoundBehaviour(IntEnum):

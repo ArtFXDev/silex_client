@@ -4,7 +4,7 @@ import copy
 import logging
 import typing
 import uuid
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 import fileseq
 
@@ -16,6 +16,7 @@ from silex_client.utils.parameter_types import AnyParameter
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
+    from silex_client.action.step_buffer import StepBuffer
 
 
 class InsertAction(CommandBase):
@@ -109,12 +110,8 @@ class InsertAction(CommandBase):
         output_path = CommandOutput(parameters["output"])
 
         # Get the current step and the next step to insert the new steps in between
-        current_step_index = next(
-            index
-            for index, step in enumerate(action_query.steps)
-            if self.command_buffer in step.commands.values()
-        )
-        current_step = action_query.steps[current_step_index]
+        current_step = cast("StepBuffer", self.command_buffer.parent)
+        current_step_index = action_query.steps.index(current_step)
         next_steps = action_query.steps[current_step_index + 1 :]
 
         # Rename each steps to make sure they don't override existing steps
@@ -153,6 +150,7 @@ class InsertAction(CommandBase):
             step = action_query.buffer.steps[step_name]
             # Change the index to make sure the new step in executed after the current step
             step.index += current_step.index
+            step.name = old_step_name
             last_index = step.index
 
             # Adapt the parameter_path to the new step's name

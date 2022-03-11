@@ -113,6 +113,21 @@ class CommandOutput(str):
             if isinstance(value, dict):
                 value = value.get(key, {})
 
+        # Handle list of CommandOutputs
+        if isinstance(value, list):
+            for index, item in enumerate(value):
+                if isinstance(item, CommandOutput):
+                    value[index] = item.get_value(action_query)
+
+        # Handle dict of CommandOutputs
+        if isinstance(value, dict):
+            for key, item in enumerate(value.items()):
+                if isinstance(item, CommandOutput):
+                    value[key] = item.get_value(action_query)
+                if isinstance(key, CommandOutput):
+                    value[key.get_value(action_query)] = value.pop(key)
+
         if isinstance(value, CommandOutput):
-            return value.get_value(action_query)
+            value = value.get_value(action_query)
+
         return value
