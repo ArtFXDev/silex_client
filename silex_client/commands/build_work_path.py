@@ -7,11 +7,7 @@ import typing
 from typing import Any, Dict
 
 import fileseq
-import gazu.asset
-import gazu.files
-import gazu.shot
-import gazu.task
-
+import gazu
 from silex_client.action.command_base import CommandBase
 
 # Forward references

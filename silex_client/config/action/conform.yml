@@ -1,5 +1,7 @@
 conform:
+  shelf: "input"
   thumbnail: "conform.svg"
+
   steps:
     setup:
       lavel: "Setup"
@@ -18,12 +20,12 @@ conform:
           path: "silex_client.commands.iterate_action.IterateAction"
           tooltip: "Append the selected conforms to the list of commands to execute"
           parameters:
-            values: 
+            values:
               value: !command-output "setup:get_conform_output:files"
               hide: true
             categories:
               - "conform"
-            actions: 
+            actions:
               value: !command-output "setup:get_conform_output:types"
               hide: true
             parameter: "input:input:input"

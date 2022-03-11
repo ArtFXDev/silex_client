@@ -1,8 +1,11 @@
 set-context:
+  shelf: "misc"
+  label: "Switch task"
   thumbnail: "switch_context.svg"
+
   steps:
     switch_context:
-      lavel: "Switch context"
+      label: "Switch task"
       index: 50
       commands:
         set_context:

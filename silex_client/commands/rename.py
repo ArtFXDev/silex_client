@@ -4,23 +4,70 @@ import logging
 import os
 import pathlib
 import typing
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import fileseq
 
 from silex_client.action.command_base import CommandBase
+from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.datatypes import SharedVariable
 from silex_client.utils.enums import ConflictBehaviour
-from silex_client.utils.prompt import prompt_override, UpdateProgress
+from silex_client.utils.prompt import UpdateProgress
 from silex_client.utils.files import find_sequence_from_path
 from silex_client.utils.parameter_types import (
     ListParameterMeta,
     PathParameterMeta,
+    RadioSelectParameterMeta,
+    TextParameterMeta,
 )
 from silex_client.utils.thread import execute_in_thread
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
+
+
+async def prompt_override(
+    command: CommandBase,
+    file_path: pathlib.Path,
+    action_query: ActionQuery,
+    current_name: str,
+) -> Tuple[ConflictBehaviour, str]:
+    """
+    Helper to prompt the user for cases when we must override a file and wait for its response
+    """
+    # Create a new parameter to prompt for the new file path
+    info_parameter = ParameterBuffer(
+        type=TextParameterMeta("info"),
+        name="info",
+        label="Info",
+        value=f"The path:\n{file_path}\nAlready exists",
+    )
+    behaviour_parameter = ParameterBuffer(
+        type=RadioSelectParameterMeta(
+            **{
+                "Override": 0,
+                "Keep existing": 2,
+                "Always override": 1,
+                "Always keep existing": 3,
+                "Rename file": 4,
+            }
+        ),
+        name="conflict_behaviour",
+        label="Conflict behaviour",
+    )
+    rename_parameter = ParameterBuffer(
+        type=str, name="new_name", label="Insert the new name", value=current_name
+    )
+    # Prompt the user to get the new path
+    response = await command.prompt_user(
+        action_query,
+        {
+            "info": info_parameter,
+            "conflict_behaviour": behaviour_parameter,
+            "rename": rename_parameter,
+        },
+    )
+    return ConflictBehaviour(int(response["conflict_behaviour"])), response["rename"]
 
 
 class Rename(CommandBase):
@@ -103,9 +150,13 @@ class Rename(CommandBase):
                         "file_conflict_behaviour"
                     )
                     if conflict_behaviour is None:
-                        conflict_behaviour = await prompt_override(
-                            self, new_path, action_query
+                        conflict_behaviour, new_name = await prompt_override(
+                            self, new_path, action_query, os.path.splitext(new_name)[0]
                         )
+                    if conflict_behaviour is ConflictBehaviour.RENAME:
+                        new_name = new_name + extension
+                        new_path = src_path.parent / new_name
+                        new_paths[-1] = new_path
                     if conflict_behaviour in [
                         ConflictBehaviour.ALWAYS_OVERRIDE,
                         ConflictBehaviour.ALWAYS_KEEP_EXISTING,
@@ -132,3 +183,14 @@ class Rename(CommandBase):
             "source_paths": src_paths,
             "new_paths": new_paths,
         }
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        conflict_parameter = self.command_buffer.parameters.get("conflict_behaviour")
+        rename_parameter = self.command_buffer.parameters.get("rename")
+        if rename_parameter is not None and conflict_parameter is not None:
+            rename_parameter.hide = int(conflict_parameter.get_value(action_query)) != 4

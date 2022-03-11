@@ -164,7 +164,7 @@ def find_sequence_from_path(file_path: pathlib.Path) -> fileseq.FileSequence:
     Find the sequence corresponding to the given file path
     If no file sequence are found, a file sequene of one item is returned
     """
-    default_sequence = fileseq.findSequencesInList([file_path])[0]
+    default_sequence = fileseq.FileSequence(file_path)
 
     # Split the input file path using the fileseq's regex
     regex = fileseq.FileSequence.DISK_RE
@@ -224,7 +224,7 @@ def expand_template_to_sequence(
     file_matches = []
     for regex in regexes:
         match = regex.match(str(path_template))
-        
+
         if match is None:
             continue
 
@@ -240,7 +240,7 @@ def expand_template_to_sequence(
         if match_sequence:
             return match_sequence[0]
 
-    return fileseq.findSequencesInList([path_template])[0]
+    return fileseq.FileSequence(path_template)
 
 
 def sequence_exists(sequence: fileseq.FileSequence) -> bool:

@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import dacite.config as dacite_config
 import dacite.core as dacite
 import jsondiff
-
 from silex_client.action.base_buffer import BaseBuffer
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
@@ -104,7 +103,11 @@ class CommandBuffer(BaseBuffer):
 
             # If the module is not a subclass or CommandBase, return an error
             raise ImportError("The given command does not inherit from CommandBase")
-        except (ImportError, AttributeError, ModuleNotFoundError) as exception:
+        except (
+            ImportError,
+            AttributeError,
+            ModuleNotFoundError,
+        ) as exception:
             logger.error("Invalid command path, skipping %s (%s)", path, exception)
             self.status = Status.INVALID
             if os.getenv("SILEX_LOG_LEVEL") == "DEBUG":

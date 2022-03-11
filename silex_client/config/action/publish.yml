@@ -1,5 +1,6 @@
 publish: !inherit
   parent: ".pull"
+  shelf: "output"
 
   thumbnail: "publish.svg"
   steps:
@@ -18,7 +19,7 @@ publish: !inherit
           tooltip: "Build the complete output path"
           ask_user: True
           parameters:
-            output_type: 
+            output_type:
               value: !command-output "setup:get_publish_type:publish_type"
               hide: true
             use_current_context:
@@ -38,7 +39,7 @@ publish: !inherit
         select_pull:
           parameters:
             prompt: true
-            publish: 
+            publish:
               value: !command-output "setup:build_output_path:directory"
               hide: true
 
@@ -52,6 +53,6 @@ publish: !inherit
           tooltip: "Append the selected publish to the list of commands to execute"
           parameters:
             category: "publish"
-            action: 
+            action:
               value: !command-output "setup:get_publish_type:publish_type"
               hide: true
