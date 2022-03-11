@@ -15,15 +15,16 @@ base:
           label: "Get previous conform location"
           path: "silex_client.commands.get_stored_value.GetStoredValue"
           parameters:
-            key: "build_output_path_task_id"
-            key_suffix: !command-output "input:input:file_paths"
+            keys: 
+              - "build_output_path_task_id"
+              - !command-output "input:input:file_paths"
           hide: true
-        exit_reconform_previous:
-          label: "Avoid reconform of the same file"
-          path: "silex_client.commands.exit_step.ExitStep"
+        skip_reconform:
+          label: "Skip reconform of the same file"
+          path: "silex_client.commands.goto_step.GoToStep"
           skip: !command-output "get_conform_location:get_conform_cache:value"
           parameters:
-            goto: "output"
+            name: "output"
           hide: true
 
         build_output_path:
@@ -51,8 +52,9 @@ base:
           label: "Cache conform location"
           path: "silex_client.commands.set_stored_value.SetStoredValue"
           parameters:
-            key: "build_output_path_task_id"
-            key_suffix: !command-output "input:input:file_paths"
+            keys:
+              - "build_output_path_task_id"
+              - !command-output "input:input:file_paths"
             value: !command-output "get_conform_location:build_output_path"
           hide: true
 
@@ -64,7 +66,18 @@ base:
             prompt_override: true
           hide: true
 
-        exit_reconform_override:
+        set_repath_cache:
+          label: "Cache the renaming"
+          path: "silex_client.commands.set_stored_value.SetStoredValue"
+          parameters:
+            keys:
+              - "build_output_path_task_id"
+              - !command-output "input:input:file_paths"
+              - "full_path"
+            value: !command-output "get_conform_location:check_existing_files:file_paths"
+          hide: true
+
+        skip_override:
           label: "Avoid reconform of the existing file"
           path: "silex_client.commands.exit_step.ExitStep"
           parameters:

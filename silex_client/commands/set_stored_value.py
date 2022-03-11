@@ -47,7 +47,7 @@ class SetStoredValue(CommandBase):
             store = store.get(key)
 
         if not isinstance(store, dict):
-            raise Exception("Could not set the value at %s in the store", keys)
+            raise Exception(f"Could not set the value at {keys} in the store")
 
         store[keys[-1]] = value
         return {"value": value, "keys": keys}
