@@ -85,13 +85,13 @@ class TractorSubmiter(CommandBase):
         },
         "blade_and_filters": {
             "label": "Restrict with filters",
-            "type": MultipleSelectParameterMeta("GPU", "REDSHIFT", "VRAYHOU52"),
+            "type": MultipleSelectParameterMeta("GPU", "REDSHIFT"),
             "value": [],
         },
         "blade_ignore_filters": {
             "label": "Don't render on",
             "type": MultipleSelectParameterMeta(),
-            "value": ["PC2014", "PC2015", "VRAYHOU52"],
+            "value": ["PC2014", "PC2015"],
         },
         "job_title": {
             "label": "Job title",
