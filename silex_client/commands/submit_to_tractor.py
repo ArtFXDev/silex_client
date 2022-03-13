@@ -32,7 +32,7 @@ from aiohttp.client_exceptions import (
 SERVICE_FILTERS = {
     "16RAM": "(@.mem >= 0) && (@.mem < 8)",
     "32RAM": "(@.mem >= 8) && (@.mem < 16)",
-    "64RAM": "(@.mem >= 16) && (@.mem < 32)",
+    "64RAM": "(@.mem >= 16)",
 }
 
 
