@@ -32,7 +32,7 @@ from aiohttp.client_exceptions import (
 SERVICE_FILTERS = {
     "16RAM": "(@.mem >= 0) && (@.mem < 8)",
     "32RAM": "(@.mem >= 8) && (@.mem < 16)",
-    "64RAM": "(@.mem >= 16) && (@.mem < 32)",
+    "64RAM": "(@.mem >= 16)",
 }
 
 
@@ -85,13 +85,18 @@ class TractorSubmiter(CommandBase):
         },
         "blade_and_filters": {
             "label": "Restrict with filters",
-            "type": MultipleSelectParameterMeta("GPU", "REDSHIFT"),
+            "type": MultipleSelectParameterMeta(),
             "value": [],
         },
         "blade_ignore_filters": {
             "label": "Don't render on",
             "type": MultipleSelectParameterMeta(),
             "value": ["PC2014", "PC2015"],
+        },
+        "blade_blacklist": {
+            "type": ListParameterMeta(str),
+            "hide": True,
+            "value": ["BUG", "REDSHIFT"],
         },
         "job_title": {
             "label": "Job title",
@@ -188,6 +193,7 @@ class TractorSubmiter(CommandBase):
         blade_or_filters: List[str] = parameters["blade_or_filters"]
         blade_and_filters: List[str] = parameters["blade_and_filters"]
         blade_ignore_filters: List[str] = parameters["blade_ignore_filters"]
+        blade_blacklist: List[str] = parameters["blade_blacklist"]
         job_title: str = parameters["job_title"]
         job_tags: List[str] = parameters["job_tags"]
         priority: float = float(parameters["priority"])
@@ -203,7 +209,7 @@ class TractorSubmiter(CommandBase):
         if len(blade_or_filters) > 0:
             services = self.join_svckey_filters(blade_or_filters, "||")
 
-        ignore_services = [f"!{s}" for s in blade_ignore_filters + ["BUG"]]
+        ignore_services = [f"!{s}" for s in blade_ignore_filters + blade_blacklist]
 
         # Add and && conditions
         if len(blade_and_filters) > 0 or len(ignore_services) > 0:
@@ -280,8 +286,12 @@ class TractorSubmiter(CommandBase):
                     for svckey in profile["Provides"]
                 ]
             )
+            - set(parameters["blade_blacklist"])
         )
 
         service_keys.sort()
         blade_ignore_filters = self.command_buffer.parameters["blade_ignore_filters"]
         blade_ignore_filters.rebuild_type(*service_keys)
+
+        blade_and_filters = self.command_buffer.parameters["blade_and_filters"]
+        blade_and_filters.rebuild_type(*service_keys)
