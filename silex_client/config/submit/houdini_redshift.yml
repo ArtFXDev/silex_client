@@ -34,3 +34,9 @@ houdini_redshift: !inherit
               value: !command-output "send_houdini_render:build_houdini_cmd:commands"
             task_cleanup_cmd:
               value: !command-output "redshift_license:build_redshift_license_cmd:task_cleanup_cmd"
+            blade_blacklist:
+              value:
+                - "BUG"
+            blade_and_filters:
+              value:
+                - "REDSHIFT"
