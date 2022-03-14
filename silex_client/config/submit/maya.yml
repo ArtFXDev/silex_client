@@ -39,8 +39,8 @@ maya:
       label: "Setup render parameters"
       index: 20
       commands:
-        build_maya_cmd:
-          path: "silex_client.commands.build_maya_cmd.MayaCommand"
+        build_maya_tasks:
+          path: "silex_client.commands.MayaRenderTasksCommand"
           label: "Maya Job parameters"
           ask_user: true
           parameters:
@@ -53,10 +53,10 @@ maya:
 
         submit_to_tractor:
           label: "Submit"
-          path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
+          path: "silex_client.commands.SubmitToTractorCommand"
           ask_user: true
           parameters:
-            commands:
-              value: !command-output "send_maya_render:build_maya_cmd:commands"
+            tasks:
+              value: !command-output "send_maya_render:build_maya_tasks:tasks"
             job_title:
-              value: !command-output "send_maya_render:build_maya_cmd:file_name"
+              value: !command-output "send_maya_render:build_maya_tasks:file_name"

@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder
+from silex_client.utils import command_builder, farm
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
@@ -20,22 +20,22 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class MayaCommand(CommandBase):
+class MayaRenderTasksCommand(CommandBase):
     """
     Construct Maya render commands
     """
 
     parameters = {
-        "renderer": {
-            "label": "Renderer",
-            "type": SelectParameterMeta("vray", "arnold"),
-            "value": "vray",
-        },
         "scene_file": {
             "label": "Scene file",
             "type": TaskFileParameterMeta(
                 extensions=[".ma", ".mb"], use_current_context=True
             ),
+        },
+        "renderer": {
+            "label": "Renderer",
+            "type": SelectParameterMeta("vray", "arnold"),
+            "value": "vray",
         },
         "frame_range": {
             "label": "Frame range (start, end, step)",
@@ -80,7 +80,7 @@ class MayaCommand(CommandBase):
             maya_cmd.param("ai:lve", 2)  # log level
             maya_cmd.param("fnc", 3)  # File naming name.#.ext
 
-        commands: Dict[str, command_builder.CommandBuilder] = {}
+        tasks: List[farm.Task] = []
 
         # Split frames by task size
         frame_chunks = split_frameset(
@@ -91,7 +91,6 @@ class MayaCommand(CommandBase):
         # Creating tasks for each frame chunk
         for chunk in frame_chunks:
             chunk_cmd = maya_cmd.deepcopy()
-            task_title = chunk.frameRange()
 
             chunk_cmd.param("s", chunk[0])
             chunk_cmd.param("e", chunk[-1])
@@ -100,7 +99,8 @@ class MayaCommand(CommandBase):
             # Add the scene file
             chunk_cmd.value(scene.as_posix())
 
-            # Add the frames argument
-            commands[task_title] = chunk_cmd
+            task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
+            task.add_mount_command(action_query.context_metadata["project_nas"])
+            tasks.append(task)
 
-        return {"commands": {f"Scene: {scene.stem}": commands}, "file_name": scene.stem}
+        return {"tasks": tasks, "file_name": scene.stem}

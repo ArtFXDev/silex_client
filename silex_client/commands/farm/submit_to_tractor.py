@@ -6,14 +6,14 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder
+from silex_client.utils import command_builder, farm
 from silex_client.utils.parameter_types import (
-    DictParameterMeta,
     ListParameterMeta,
     MultipleSelectParameterMeta,
     RadioSelectParameterMeta,
     UnionParameterMeta,
 )
+from silex_client.utils.tractor import convert_to_tractor_task
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -30,13 +30,13 @@ from aiohttp.client_exceptions import (
 # Service key filters for Tractor job
 # See: https://rmanwiki.pixar.com/display/TRA/Job+Scripting#JobScripting-servicekeys
 SERVICE_FILTERS = {
-    "16RAM": "(@.mem >= 0) && (@.mem < 32)",
-    "32RAM": "(@.mem >= 32) && (@.mem < 64)",
-    "64RAM": "(@.mem >= 64) && (@.mem < 128)",
+    "16RAM": "(@.mem >= 0) && (@.mem < 8)",
+    "32RAM": "(@.mem >= 8) && (@.mem < 16)",
+    "64RAM": "(@.mem >= 16)",
 }
 
 
-class TractorSubmiter(CommandBase):
+class SubmitToTractorCommand(CommandBase):
     """
     Send job to Tractor
     """
@@ -60,11 +60,9 @@ class TractorSubmiter(CommandBase):
             "value": None,
             "hide": True,
         },
-        "commands": {
-            "label": "Commands list",
-            "type": DictParameterMeta(
-                str, DictParameterMeta(str, command_builder.CommandBuilder)
-            ),
+        "tasks": {
+            "label": "Tasks list",
+            "type": ListParameterMeta(farm.Task),
             "hide": True,
         },
         "priority": {
@@ -85,13 +83,13 @@ class TractorSubmiter(CommandBase):
         },
         "blade_and_filters": {
             "label": "Restrict with filters",
-            "type": MultipleSelectParameterMeta("GPU", "REDSHIFT", "VRAYHOU52"),
+            "type": MultipleSelectParameterMeta("GPU", "REDSHIFT"),
             "value": [],
         },
         "blade_ignore_filters": {
             "label": "Don't render on",
             "type": MultipleSelectParameterMeta(),
-            "value": ["PC2014", "PC2015", "VRAYHOU52"],
+            "value": ["PC2014", "PC2015"],
         },
         "job_title": {
             "label": "Job title",
@@ -109,20 +107,6 @@ class TractorSubmiter(CommandBase):
             "hide": True,
         },
     }
-
-    def get_mount_command(self, nas: str) -> command_builder.CommandBuilder:
-        """
-        Constructs the mount command in order to access files on the render farm
-        """
-        mount_cmd = command_builder.CommandBuilder(
-            "mount_rd_drive",
-            delimiter=None,
-            dashes="",
-            rez_packages=["mount_render_drive"],
-        )
-
-        mount_cmd.value(nas)
-        return mount_cmd
 
     def join_svckey_filters(self, filters: List[str], op: str) -> str:
         """
@@ -184,7 +168,7 @@ class TractorSubmiter(CommandBase):
         logger: logging.Logger,
     ):
         precommands: List[command_builder.CommandBuilder] = parameters["precommands"]
-        commands = parameters["commands"]
+        tasks: List[farm.Task] = parameters["tasks"]
         blade_or_filters: List[str] = parameters["blade_or_filters"]
         blade_and_filters: List[str] = parameters["blade_and_filters"]
         blade_ignore_filters: List[str] = parameters["blade_ignore_filters"]
@@ -203,6 +187,7 @@ class TractorSubmiter(CommandBase):
         if len(blade_or_filters) > 0:
             services = self.join_svckey_filters(blade_or_filters, "||")
 
+        # We ignore some services
         ignore_services = [f"!{s}" for s in blade_ignore_filters + ["BUG"]]
 
         # Add and && conditions
@@ -211,7 +196,7 @@ class TractorSubmiter(CommandBase):
                 [services] + blade_and_filters + ignore_services, "&&"
             )
 
-        # Create a job
+        # Create a Tractor job
         job = author.Job(
             title=job_title,
             priority=priority,
@@ -220,29 +205,12 @@ class TractorSubmiter(CommandBase):
             service=services,
         )
 
-        # Add the mount command
-        if parameters["add_mount"] and context["project_nas"] is not None:
-            mount_cmd = self.get_mount_command(context["project_nas"])
-            precommands.append(mount_cmd)
-
         # Directory mapping for Linux
         # job.newDirMap("P:", f"/mnt/{nas}", "NFS")
 
-        # This will organize tasks in group of tasks with dependencies
-        for task_group_title, subtasks in commands.items():
-            task_group: author.Task = author.Task(title=task_group_title)
-
-            for subtask_title, subtask_cmd in subtasks.items():
-                task = await self.create_task_with_commands(
-                    parameters=parameters,
-                    title=subtask_title,
-                    project=action_query.context_metadata["project"].lower(),
-                    command=subtask_cmd,
-                )
-                task_group.addChild(task)
-
-            # Add the task as child
-            job.addChild(task_group)
+        # Add the tasks to the job by converting them to Tractor specific classes
+        for task in tasks:
+            job.addChild(convert_to_tractor_task(task))
 
         # Submit the job to Tractor
         jid = job.spool(owner=owner)
@@ -283,5 +251,9 @@ class TractorSubmiter(CommandBase):
         )
 
         service_keys.sort()
+
+        # Rebuild the parameters with the new values
         blade_ignore_filters = self.command_buffer.parameters["blade_ignore_filters"]
+        blade_and_filters = self.command_buffer.parameters["blade_and_filters"]
         blade_ignore_filters.rebuild_type(*service_keys)
+        blade_and_filters.rebuild_type(*service_keys)

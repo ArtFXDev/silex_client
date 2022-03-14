@@ -39,8 +39,8 @@ husk:
       label: "Setup render parameters"
       index: 20
       commands:
-        build_husk_cmd:
-          path: "silex_client.commands.build_husk_cmd.HuskCommand"
+        build_husk_tasks:
+          path: "silex_client.commands.HuskRenderTasksCommand"
           label: "Husk Job parameters"
           ask_user: true
           parameters:
@@ -53,10 +53,10 @@ husk:
 
         submit_to_tractor:
           label: "Submit"
-          path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
+          path: "silex_client.commands.SubmitToTractorCommand"
           ask_user: true
           parameters:
-            commands:
-              value: !command-output "send_husk_render:build_husk_cmd:commands"
+            tasks:
+              value: !command-output "send_husk_render:build_husk_tasks:tasks"
             job_title:
-              value: !command-output "send_husk_render:build_husk_cmd:file_name"
+              value: !command-output "send_husk_render:build_husk_tasks:file_name"

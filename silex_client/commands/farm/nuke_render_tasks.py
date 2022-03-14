@@ -3,11 +3,11 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder
+from silex_client.utils import command_builder, farm
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import TaskFileParameterMeta
 
@@ -16,7 +16,7 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class BuildNukeCommand(CommandBase):
+class NukeRenderTasksCommand(CommandBase):
     """
     Construct Nuke render commands
     """
@@ -57,7 +57,7 @@ class BuildNukeCommand(CommandBase):
         nuke_cmd.param("-priority", "high")
 
         frame_chunks = split_frameset(frame_range, task_size)
-        commands: Dict[str, command_builder.CommandBuilder] = {}
+        tasks: List[farm.Task] = []
 
         for chunk in frame_chunks:
             chunk_cmd = nuke_cmd.deepcopy()
@@ -68,9 +68,11 @@ class BuildNukeCommand(CommandBase):
             # Specify the scene file
             chunk_cmd.param("xi", scene.as_posix())
 
-            commands[chunk.frameRange()] = chunk_cmd
+            task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
+            task.add_mount_command(action_query.context_metadata["project_nas"])
+            tasks.append(task)
 
         return {
-            "commands": {f"Script: {scene.stem}": commands},
+            "tasks": tasks,
             "file_name": scene.stem,
         }

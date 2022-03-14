@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Union
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder, frames
+from silex_client.utils import command_builder, farm, frames
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
     MultipleSelectParameterMeta,
@@ -22,7 +22,6 @@ from silex_client.utils.thread import execute_in_thread
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import ast
 import os
 import subprocess
 
@@ -94,7 +93,6 @@ class HoudiniCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
@@ -104,15 +102,15 @@ class HoudiniCommand(CommandBase):
         rop_nodes: Union[str, List[str]] = parameters["rop_nodes"]
         output_file = pathlib.Path(parameters["output_filename"])
 
-        node_cmd: Dict[str, Dict[str, command_builder.CommandBuilder]] = {}
+        tasks: List[farm.Task] = []
 
         for rop_node in rop_nodes:
-            render_name = rop_node.split("/")[-1]
+            rop_name = rop_node.split("/")[-1]
 
             full_output_file = (
                 output_file.parent
-                / render_name
-                / f"{output_file.with_suffix('').stem}_{render_name}.$F4{''.join(output_file.suffixes)}"
+                / rop_name
+                / f"{output_file.with_suffix('').stem}_{rop_name}.$F4{''.join(output_file.suffixes)}"
             )
 
             # Build the render command
@@ -132,24 +130,21 @@ class HoudiniCommand(CommandBase):
                 houdini_cmd.param("w", resolution[0])
                 houdini_cmd.param("h", resolution[1])
 
+            rop_task = farm.Task(title=f"ROP node: {rop_name}")
             frame_chunks = frames.split_frameset(frame_range, task_size)
-            commands: Dict[str, command_builder.CommandBuilder] = {}
 
-            # Create commands
+            # Create tasks for each frame chunk
             for chunk in frame_chunks:
                 chunk_cmd = houdini_cmd.deepcopy()
-                task_title = chunk.frameRange()
-
                 chunk_cmd.param("f", ";".join(map(str, list(chunk))))
 
-                commands[task_title] = chunk_cmd
+                task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
+                task.add_mount_command(action_query.context_metadata["project_nas"])
+                rop_task.addChild(task)
 
-            logger.info(f"Commands created: {commands}")
+            tasks.append(rop_task)
 
-            # Format "commands" output to match the input type in the submiter
-            node_cmd[f"ROP node: {rop_node}"] = commands
-
-        return {"commands": node_cmd, "file_name": scene.stem}
+        return {"tasks": tasks, "file_name": scene.stem}
 
     async def setup(
         self,

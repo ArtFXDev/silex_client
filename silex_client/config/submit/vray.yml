@@ -39,21 +39,21 @@ vray:
       label: "Setup render parameters"
       index: 20
       commands:
-        build_vray_cmd:
-          path: "silex_client.commands.build_vray_cmd.VrayCommand"
+        build_vray_tasks:
+          path: "silex_client.commands.VrayRenderTasksCommand"
           label: "V-Ray Job parameters"
           ask_user: true
           parameters:
-            output_path:
-              value: !command-output "build_output_path:build_output_path:full_path"
+            output_directory:
+              value: !command-output "build_output_path:build_output_path:directory"
 
         submit_to_tractor:
           label: "Submit"
-          path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
+          path: "silex_client.commands.SubmitToTractorCommand"
           ask_user: true
           parameters:
-            commands:
-              value: !command-output "send_vray_render:build_vray_cmd:commands"
+            tasks:
+              value: !command-output "send_vray_render:build_vray_tasks:tasks"
             job_title:
               value: !command-output "send_vray_render:build_vray_cmd:file_name"
             job_tags:

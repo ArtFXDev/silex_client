@@ -61,5 +61,5 @@ houdini:
                 - "houdini"
             job_title:
               value: !command-output "send_houdini_render:build_houdini_cmd:file_name"
-            commands:
-              value: !command-output "send_houdini_render:build_houdini_cmd:commands"
+            tasks:
+              value: !command-output "send_houdini_render:build_houdini_cmd:tasks"

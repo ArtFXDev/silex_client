@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder, frames
+from silex_client.utils import command_builder, farm, frames
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
     RadioSelectParameterMeta,
@@ -21,18 +21,21 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class VrayCommand(CommandBase):
+class VrayRenderTasksCommand(CommandBase):
     """
     Construct V-Ray render commands
     """
 
     parameters = {
-        "scene_file": {
-            "label": "Scene file (Can select multiple render layers)",
+        "vrscenes": {
+            "label": "Scene file(s) (You can select multiple render layers)",
             "type": TaskFileParameterMeta(
                 multiple=True, extensions=[".vrscene"], use_current_context=True
             ),
         },
+        "output_directory": {"type": pathlib.Path, "hide": True},
+        "output_filename": {"type": str, "hide": True, "value": ""},
+        "output_extension": {"type": str, "hide": True, "value": "exr"},
         "frame_range": {
             "label": "Frame range (start, end, step)",
             "type": FrameSet,
@@ -48,7 +51,6 @@ class VrayCommand(CommandBase):
             "type": bool,
             "value": False,
         },
-        "output_path": {"type": pathlib.Path, "hide": True, "value": ""},
         "engine": {
             "label": "RT engine",
             "type": RadioSelectParameterMeta(
@@ -104,8 +106,6 @@ class VrayCommand(CommandBase):
         frame_range: FrameSet,
         task_size: int,
     ):
-        """Build command for every task (depending on a task size), store them in a dict and return it"""
-
         # Build the V-Ray command
         vray_cmd = command_builder.CommandBuilder("vray", rez_packages=["vray"])
         vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
@@ -133,6 +133,10 @@ class VrayCommand(CommandBase):
 
             chunk_cmd.param("frames", fmt_frames)
 
+            task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
+            task.add_mount_command(action_query.context_metadata["project_nas"])
+            tasks.append(task)
+
             # Add the frames argument
             commands[task_title] = chunk_cmd
 
@@ -145,8 +149,12 @@ class VrayCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        vray_scenes: List[pathlib.Path] = parameters["scene_file"]
-        output_path: pathlib.Path = parameters["output_path"]
+        vrscenes: List[pathlib.Path] = parameters["vrscenes"]
+
+        output_folder: pathlib.Path = parameters["output_folder"]
+        output_filename: str = parameters["output_filename"]
+        output_extension: str = parameters["output_extension"]
+
         engine: int = parameters["engine"]
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
@@ -155,23 +163,30 @@ class VrayCommand(CommandBase):
         resolution: List[int] = parameters["resolution"]
 
         # Match selected vrscenes with their attributed render layers
-        scene_to_layer_dict = self._get_layers_from_scenes(vray_scenes)
+        # scene_to_layer_dict = self._get_layers_from_scenes(vray_scenes)
 
-        render_layers_cmd: Dict[str, Dict[str, command_builder.CommandBuilder]] = dict()
+        tasks: List[farm.Task] = []
 
-        for scene in vray_scenes:
-            layer_name = scene_to_layer_dict[scene]
+        for vrscene in vrscenes:
+            layer_name = str(vrscene).split(output_filename)
 
-            # The outputed image goes into a layer folder
+            if len(layer_name) > 0:
+                layer_name = layer_name[0]
+            else:
+                layer_name = str(vrscene)
+
             full_output_path = (
-                output_path.parents[0]
+                output_folder
                 / layer_name
-                / f"{output_path.stem}{output_path.suffix}"
+                / f"{output_filename}_{layer_name}.{output_extension}"
             )
 
-            # Get tasks for each render layer
+            logger.error(vrscene)
+            logger.error(layer_name)
+            logger.error(full_output_path)
 
-            render_layers_cmd[
+            # Get tasks for each render layer
+            """render_layers_cmd[
                 f"Render layer: {layer_name}"
             ] = self._create_render_layer_task(
                 scene,
@@ -182,18 +197,18 @@ class VrayCommand(CommandBase):
                 resolution,
                 frame_range,
                 task_size,
-            )
+            )"""
 
-        # Take the first path job title
+        """# Take the first path job title
         if len(scene_to_layer_dict) != 0:
             first_key = list(scene_to_layer_dict.keys())[0]
             render_layer = scene_to_layer_dict[first_key]
             scene_name = str(first_key.stem).split(render_layer)[0][:-1]
 
         if not re.match(r"\w", scene_name):
-            scene_name = vray_scenes[0].stem.split(".")[0]
+            scene_name = vray_scenes[0].stem.split(".")[0]"""
 
         return {
-            "commands": render_layers_cmd,
+            "tasks": [],
             "file_name": scene_name,
         }

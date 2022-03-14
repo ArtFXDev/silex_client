@@ -39,8 +39,8 @@ blender:
       label: "Setup render parameters"
       index: 20
       commands:
-        build_blender_cmd:
-          path: "silex_client.commands.build_blender_cmd.BlenderCommand"
+        build_blender_tasks:
+          path: "silex_client.commands.BlenderRenderTasksCommand"
           label: "Blender Job parameters"
           ask_user: true
           parameters:
@@ -53,10 +53,10 @@ blender:
 
         submit_to_tractor:
           label: "Submit"
-          path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
+          path: "silex_client.commands.SubmitToTractorCommand"
           ask_user: true
           parameters:
-            commands:
-              value: !command-output "send_blender_render:build_blender_cmd:commands"
+            tasks:
+              value: !command-output "send_blender_render:build_blender_tasks:tasks"
             job_title:
-              value: !command-output "send_blender_render:build_blender_cmd:file_name"
+              value: !command-output "send_blender_render:build_blender_tasks:file_name"
