@@ -173,7 +173,7 @@ class TractorSubmiter(CommandBase):
             task.newCommand(
                 argv=command.as_argv(),
                 # Run commands on the same host
-                samehost=1,
+                samehost=True,
                 # Limit tags with rez packages
                 # Useful when limiting the amout of vray jobs on the farm for example
                 tags=command.rez_packages,
