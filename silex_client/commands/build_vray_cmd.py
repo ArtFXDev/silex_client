@@ -46,15 +46,15 @@ class VrayCommand(CommandBase):
         "skip_existing": {
             "label": "Skip existing frames",
             "type": bool,
-            "value": False,
+            "value": True,
         },
         "output_path": {"type": pathlib.Path, "hide": True, "value": ""},
         "engine": {
             "label": "RT engine",
             "type": RadioSelectParameterMeta(
-                **{"Regular": 0, "CPU RT": 1, "GPU CUDA": 5, "GPU RTX": 7}
+                **{"Regular": "regular", "GPU CUDA": "cuda", "GPU RTX": "optix"}
             ),
-            "value": 0,
+            "value": "regular",
         },
         "parameter_overrides": {
             "type": bool,
@@ -107,10 +107,12 @@ class VrayCommand(CommandBase):
         """Build command for every task (depending on a task size), store them in a dict and return it"""
 
         # Build the V-Ray command
-        vray_cmd = command_builder.CommandBuilder("vray", rez_packages=["vray"])
-        vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
-        vray_cmd.param("progressIncrement", 5)
-        vray_cmd.param("verboseLevel", 3)
+        vray_cmd = (
+            command_builder.CommandBuilder("python", rez_packages=["vrender"])
+            .value("-m")
+            .value("vrender")
+        )
+
         vray_cmd.param("rtEngine", engine)
         vray_cmd.param("sceneFile", dirmap(scene.as_posix()))
         vray_cmd.param("skipExistingFrames", skip_existing)
