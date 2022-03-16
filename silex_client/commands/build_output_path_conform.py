@@ -100,9 +100,10 @@ class BuildOutputPathConform(BuildOutputPath):
 
         # Store the result of the built output path
         action_query.store["build_conform_path:output"].append(result["directory"])
-        action_query.store[
-            f"fast_conform_enabled:{file_paths.dirname()}"
-        ] = fast_conform
+        fast_conform_key = f"fast_conform_enabled:{file_paths.dirname()}"
+        action_query.store[fast_conform_key] = (
+            action_query.store.get(fast_conform_key) or fast_conform
+        )
         action_query.store[input_key] = result
 
         result["store_conform_key"] = input_key
