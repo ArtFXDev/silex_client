@@ -130,7 +130,7 @@ def slugify(value: str, allow_unicode=False) -> str:
             .decode("ascii")
         )
     value = re.sub(r"[^\w\s-]", "", value.lower())
-    return re.sub(r"[-\s]+", "-", value).strip("-_")
+    return re.sub(r"[-\s]+", "_", value).strip("-_")
 
 
 def find_sequence_from_path(file_path: pathlib.Path) -> fileseq.FileSequence:

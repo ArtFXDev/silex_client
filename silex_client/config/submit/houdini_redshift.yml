@@ -1,73 +1,30 @@
-houdini_redshift:
+houdini_redshift: !inherit
+  parent: ".houdini"
   label: "Submit Houdini Redshift scene"
 
   steps:
-    build_output_path:
-      label: "Build output path"
-      index: 10
-      commands:
-        build_rs_path:
-          label: "RS proxy scene output"
-          path: "silex_client.commands.build_output_path.BuildOutputPath"
-          ask_user: true
-          parameters:
-            output_type:
-              value: "rs"
-              hide: true
-            create_temp_dir: false
-            create_output_dir: true
-            task:
-              hide: true
-            use_current_context:
-              value: true
-              hide: true
-            frame_set:
-              hide: true
-            name:
-              value: "scene_proxy"
-
-        build_exr_path:
-          label: "Image output (exr)"
-          path: "silex_client.commands.build_output_path.BuildOutputPath"
-          ask_user: true
-          parameters:
-            output_type:
-              value: "exr"
-              hide: true
-            create_temp_dir: false
-            create_output_dir: true
-            task:
-              hide: true
-            use_current_context:
-              value: true
-              hide: true
-            frame_set:
-              hide: true
-            name:
-              value: "render"
-
     redshift_license:
       index: 15
       hide: true
       commands:
         build_redshift_license_cmd:
-          path: "silex_client.commands.build_redshift_license_cmd.RedshiftLicenseCommands"
+          path: "silex_client.commands.farm.build_redshift_license_cmd.RedshiftLicenseCommand"
 
-    send_houdini_render:
+    houdini_render:
       label: "Setup render parameters"
       index: 20
       commands:
-        build_houdini_cmd:
-          path: "silex_client.commands.build_houdini_cmd.HoudiniCommand"
+        build_houdini_tasks:
           label: "Houdini Redshift job parameters"
-          ask_user: true
           parameters:
-            output_filename:
-              value: !command-output "build_output_path:build_output_path:full_path"
+            pre_command:
+              value: !command-output "redshift_license:build_redshift_license_cmd:pre_command"
+            cleanup_command:
+              value: !command-output "redshift_license:build_redshift_license_cmd:cleanup_command"
 
         submit_to_tractor:
           label: "Submit"
-          path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
+          path: "silex_client.commands.farm.submit_to_tractor.SubmitToTractorCommand"
           ask_user: true
           parameters:
             job_tags:
@@ -75,10 +32,9 @@ houdini_redshift:
                 - "houdini"
                 - "redshift"
             job_title:
-              value: !command-output "send_houdini_render:build_houdini_cmd:file_name"
-            precommands:
-              value: !command-output "redshift_license:build_redshift_license_cmd:precommands"
-            commands:
-              value: !command-output "send_houdini_render:build_houdini_cmd:commands"
-            task_cleanup_cmd:
-              value: !command-output "redshift_license:build_redshift_license_cmd:task_cleanup_cmd"
+              value: !command-output "houdini_render:build_houdini_tasks:file_name"
+            tasks:
+              value: !command-output "houdini_render:build_houdini_tasks:tasks"
+            blade_and_filters:
+              value:
+                - "REDSHIFT"

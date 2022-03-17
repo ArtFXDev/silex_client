@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class RedshiftLicenseCommands(CommandBase):
+class RedshiftLicenseCommand(CommandBase):
     """
     Construct Redshift license commands
     """
@@ -30,10 +30,10 @@ class RedshiftLicenseCommands(CommandBase):
             delimiter=None,
         ).param("m", "redshift_license_client.main")
 
-        stop_cmd = redshift_cmd.deepcopy().value("stop")
+        start = redshift_cmd.deepcopy().value("start")
+        stop = redshift_cmd.deepcopy().value("stop")
 
         return {
-            "precommands": [redshift_cmd.deepcopy().value("start")],
-            "postcommands": [stop_cmd],
-            "task_cleanup_cmd": stop_cmd,
+            "pre_command": str(start),
+            "cleanup_command": str(stop),
         }

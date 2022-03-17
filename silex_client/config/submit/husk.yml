@@ -9,7 +9,7 @@ husk:
           label: "Enter extension"
           path: "silex_client.commands.select_list.SelectList"
           parameters:
-            param_name: "Render type"
+            param_name: "Output extension"
             parameters_list:
               - "exr"
               - "png"
@@ -34,13 +34,15 @@ husk:
               hide: true
             frame_set:
               hide: true
+            name:
+              value: "render"
 
-    send_husk_render:
+    husk_render:
       label: "Setup render parameters"
       index: 20
       commands:
         build_husk_tasks:
-          path: "silex_client.commands.HuskRenderTasksCommand"
+          path: "silex_client.commands.farm.husk_render_tasks.HuskRenderTasksCommand"
           label: "Husk Job parameters"
           ask_user: true
           parameters:
@@ -53,10 +55,10 @@ husk:
 
         submit_to_tractor:
           label: "Submit"
-          path: "silex_client.commands.SubmitToTractorCommand"
+          path: "silex_client.commands.farm.submit_to_tractor.SubmitToTractorCommand"
           ask_user: true
           parameters:
             tasks:
-              value: !command-output "send_husk_render:build_husk_tasks:tasks"
+              value: !command-output "husk_render:build_husk_tasks:tasks"
             job_title:
-              value: !command-output "send_husk_render:build_husk_tasks:file_name"
+              value: !command-output "husk_render:build_husk_tasks:file_name"

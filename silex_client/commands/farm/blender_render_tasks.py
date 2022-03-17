@@ -30,9 +30,7 @@ class BlenderRenderTasksCommand(CommandBase):
     parameters = {
         "scene_file": {
             "label": "Scene file",
-            "type": TaskFileParameterMeta(
-                extensions=[".blend"], use_current_context=True
-            ),
+            "type": TaskFileParameterMeta(extensions=[".blend"]),
         },
         "frame_range": {
             "label": "Frame range (start, end, step)",
@@ -71,7 +69,10 @@ class BlenderRenderTasksCommand(CommandBase):
 
         # Build the Blender command
         blender_cmd = command_builder.CommandBuilder(
-            "blender", rez_packages=["blender"], delimiter=" ", dashes="--"
+            "blender",
+            rez_packages=["blender", action_query.context_metadata["project"].lower()],
+            delimiter=" ",
+            dashes="--",
         )
         blender_cmd.param("background")
         # Scene file

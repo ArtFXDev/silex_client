@@ -29,9 +29,7 @@ class HuskRenderTasksCommand(CommandBase):
     parameters = {
         "scene_file": {
             "label": "Scene file",
-            "type": TaskFileParameterMeta(
-                extensions=[".usd", ".usda", ".usdc"], use_current_context=True
-            ),
+            "type": TaskFileParameterMeta(extensions=[".usd", ".usda", ".usdc"]),
         },
         "frame_range": {
             "label": "Frame range (start, end, step)",
@@ -61,7 +59,10 @@ class HuskRenderTasksCommand(CommandBase):
         full_path = f"{(parameters['output_directory'] / parameters['output_filename']).as_posix()}.$F4.{parameters['output_extension']}"
 
         husk_cmd = command_builder.CommandBuilder(
-            "husk", rez_packages=["houdini"], delimiter=" ", dashes="--"
+            "husk",
+            rez_packages=["houdini", action_query.context_metadata["project"].lower()],
+            delimiter=" ",
+            dashes="--",
         )
         husk_cmd.param("usd-input", dirmap(scene.as_posix()))
         husk_cmd.param("output", dirmap(full_path))

@@ -24,7 +24,7 @@ class NukeRenderTasksCommand(CommandBase):
     parameters = {
         "scene_file": {
             "label": "Scene file",
-            "type": TaskFileParameterMeta(extensions=[".nk"], use_current_context=True),
+            "type": TaskFileParameterMeta(extensions=[".nk"]),
         },
         "frame_range": {
             "label": "Frame range (start, end, step)",
@@ -50,7 +50,9 @@ class NukeRenderTasksCommand(CommandBase):
         task_size: int = parameters["task_size"]
 
         nuke_cmd = command_builder.CommandBuilder(
-            "nuke", rez_packages=["nuke"], delimiter=" "
+            "nuke",
+            rez_packages=["nuke", action_query.context_metadata["project"].lower()],
+            delimiter=" ",
         )
         nuke_cmd.param("-gpu").param("-multigpu")  # Use gpu
         nuke_cmd.param("-sro")  # Follow write order

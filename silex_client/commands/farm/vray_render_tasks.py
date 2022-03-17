@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import pathlib
-import re
 import typing
 from typing import Any, Dict, List
 
@@ -29,15 +28,13 @@ class VrayRenderTasksCommand(CommandBase):
     parameters = {
         "vrscenes": {
             "label": "Scene file(s) (You can select multiple render layers)",
-            "type": TaskFileParameterMeta(
-                multiple=True, extensions=[".vrscene"], use_current_context=True
-            ),
+            "type": TaskFileParameterMeta(multiple=True, extensions=[".vrscene"]),
         },
         "output_directory": {"type": pathlib.Path, "hide": True},
-        "output_filename": {"type": str, "hide": True, "value": ""},
-        "output_extension": {"type": str, "hide": True, "value": "exr"},
+        "output_filename": {"type": str, "hide": True},
+        "output_extension": {"type": str, "hide": True},
         "frame_range": {
-            "label": "Frame range (start, end, step)",
+            "label": "Frame range",
             "type": FrameSet,
             "value": "1-50x1",
         },
@@ -49,14 +46,14 @@ class VrayRenderTasksCommand(CommandBase):
         "skip_existing": {
             "label": "Skip existing frames",
             "type": bool,
-            "value": False,
+            "value": True,
         },
         "engine": {
             "label": "RT engine",
             "type": RadioSelectParameterMeta(
-                **{"Regular": 0, "CPU RT": 1, "GPU CUDA": 5, "GPU RTX": 7}
+                **{"Regular": "regular", "GPU CUDA": "cuda", "GPU RTX": "optix"}
             ),
-            "value": 0,
+            "value": "regular",
         },
         "parameter_overrides": {
             "type": bool,
@@ -81,67 +78,6 @@ class VrayRenderTasksCommand(CommandBase):
         hide_overrides = not parameters["parameter_overrides"]
         self.command_buffer.parameters["resolution"].hide = hide_overrides
 
-    def _get_layers_from_scenes(
-        self, scenes: List[pathlib.Path]
-    ) -> Dict[pathlib.Path, str]:
-        """Create a conrespondance dict { scene_name: render_layer }"""
-
-        scene_to_layer_dict = dict()
-
-        for scene in scenes:
-
-            layer = scene.stem.split(f"{scene.parents[0].stem}_")[-1]
-            scene_to_layer_dict[scene] = layer
-
-        return scene_to_layer_dict
-
-    def _create_render_layer_task(
-        self,
-        scene: pathlib.Path,
-        skip_existing: int,
-        output_path: pathlib.Path,
-        engine: int,
-        parameter_overrides: bool,
-        resolution: List[int],
-        frame_range: FrameSet,
-        task_size: int,
-    ):
-        # Build the V-Ray command
-        vray_cmd = command_builder.CommandBuilder("vray", rez_packages=["vray"])
-        vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
-        vray_cmd.param("progressIncrement", 5)
-        vray_cmd.param("verboseLevel", 3)
-        vray_cmd.param("rtEngine", engine)
-        vray_cmd.param("sceneFile", dirmap(scene.as_posix()))
-        vray_cmd.param("skipExistingFrames", skip_existing)
-        vray_cmd.param("imgFile", dirmap(output_path.as_posix()))
-
-        if parameter_overrides:
-            vray_cmd.param("imgWidth", resolution[0]).param("imgHeight", resolution[1])
-
-        commands: Dict[str, command_builder.CommandBuilder] = {}
-
-        # Split frames by task size
-        frame_chunks = frames.split_frameset(frame_range, task_size)
-
-        # Creating tasks for each frame chunk
-        for chunk in frame_chunks:
-            chunk_cmd = vray_cmd.deepcopy()
-            fmt_frames = ";".join(map(str, list(chunk)))
-
-            task_title = chunk.frameRange()
-
-            chunk_cmd.param("frames", fmt_frames)
-
-            task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
-            task.add_mount_command(action_query.context_metadata["project_nas"])
-            tasks.append(task)
-
-            # Add the frames argument
-            commands[task_title] = chunk_cmd
-
-        return commands
-
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -151,7 +87,7 @@ class VrayRenderTasksCommand(CommandBase):
     ):
         vrscenes: List[pathlib.Path] = parameters["vrscenes"]
 
-        output_folder: pathlib.Path = parameters["output_folder"]
+        output_directory: pathlib.Path = parameters["output_directory"]
         output_filename: str = parameters["output_filename"]
         output_extension: str = parameters["output_extension"]
 
@@ -162,53 +98,82 @@ class VrayRenderTasksCommand(CommandBase):
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
 
-        # Match selected vrscenes with their attributed render layers
-        # scene_to_layer_dict = self._get_layers_from_scenes(vray_scenes)
-
         tasks: List[farm.Task] = []
 
         for vrscene in vrscenes:
-            layer_name = str(vrscene).split(output_filename)
+            # Detect the render layer name from the parent folder
+            split_by_name = vrscene.stem.split(f"{vrscene.parents[0].stem}_")
 
-            if len(layer_name) > 0:
-                layer_name = layer_name[0]
+            if len(split_by_name) > 1:
+                layer_name = split_by_name[-1]
             else:
-                layer_name = str(vrscene)
+                # Otherwise take the filename
+                layer_name = vrscene.stem
 
             full_output_path = (
-                output_folder
+                output_directory
                 / layer_name
                 / f"{output_filename}_{layer_name}.{output_extension}"
             )
 
-            logger.error(vrscene)
-            logger.error(layer_name)
-            logger.error(full_output_path)
+            # Build the V-Ray command
 
-            # Get tasks for each render layer
-            """render_layers_cmd[
-                f"Render layer: {layer_name}"
-            ] = self._create_render_layer_task(
-                scene,
-                skip_existing,
-                full_output_path,
-                engine,
-                parameter_overrides,
-                resolution,
-                frame_range,
-                task_size,
-            )"""
+            """vray_cmd = (
+                command_builder.CommandBuilder(
+                    "python",
+                    rez_packages=[
+                        "vrender",
+                        action_query.context_metadata["project"].lower(),
+                    ],
+                )
+                .value("-m")
+                .value("vrender")
+            )
 
-        """# Take the first path job title
-        if len(scene_to_layer_dict) != 0:
-            first_key = list(scene_to_layer_dict.keys())[0]
-            render_layer = scene_to_layer_dict[first_key]
-            scene_name = str(first_key.stem).split(render_layer)[0][:-1]
+            vray_cmd.param("rtEngine", engine)
+            vray_cmd.param("sceneFile", vrscene.as_posix())
+            vray_cmd.param("skipExistingFrames", skip_existing)
+            vray_cmd.param("imgFile", full_output_path.as_posix())"""
 
-        if not re.match(r"\w", scene_name):
-            scene_name = vray_scenes[0].stem.split(".")[0]"""
+            vray_cmd = command_builder.CommandBuilder(
+                "vray",
+                rez_packages=["vray", action_query.context_metadata["project"].lower()],
+            )
+            vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
+            vray_cmd.param("progressIncrement", 5)
+            vray_cmd.param("verboseLevel", 3)
+            vray_cmd.param("rtEngine", engine)
+            vray_cmd.param("sceneFile", vrscene.as_posix())
+            vray_cmd.param("skipExistingFrames", skip_existing)
+            vray_cmd.param("imgFile", full_output_path.as_posix())
+
+            if parameter_overrides:
+                vray_cmd.param("imgWidth", resolution[0]).param(
+                    "imgHeight", resolution[1]
+                )
+
+            render_layer_task = farm.Task(title=layer_name)
+            frame_chunks = frames.split_frameset(frame_range, task_size)
+
+            # Creating tasks for each frame chunk
+            for chunk in frame_chunks:
+                chunk_cmd = vray_cmd.deepcopy()
+                fmt_frames = ";".join(map(str, list(chunk)))
+
+                chunk_cmd.param("frames", fmt_frames)
+
+                task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
+                task.add_mount_command(action_query.context_metadata["project_nas"])
+
+                if len(vrscenes) > 1:
+                    render_layer_task.addChild(task)
+                else:
+                    tasks.append(task)
+
+            if len(vrscenes) > 1:
+                tasks.append(render_layer_task)
 
         return {
-            "tasks": [],
-            "file_name": scene_name,
+            "file_name": vrscenes[0].stem,
+            "tasks": tasks,
         }

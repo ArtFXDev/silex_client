@@ -28,9 +28,7 @@ class MayaRenderTasksCommand(CommandBase):
     parameters = {
         "scene_file": {
             "label": "Scene file",
-            "type": TaskFileParameterMeta(
-                extensions=[".ma", ".mb"], use_current_context=True
-            ),
+            "type": TaskFileParameterMeta(extensions=[".ma", ".mb"]),
         },
         "renderer": {
             "label": "Renderer",
@@ -66,7 +64,10 @@ class MayaRenderTasksCommand(CommandBase):
 
         # Build the Blender command
         maya_cmd = command_builder.CommandBuilder(
-            "Render", rez_packages=["maya"], delimiter=" ", dashes="-"
+            "Render",
+            rez_packages=["maya", action_query.context_metadata["project"].lower()],
+            delimiter=" ",
+            dashes="-",
         )
         maya_cmd.param("r", parameters["renderer"])
 

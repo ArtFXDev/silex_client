@@ -9,7 +9,7 @@ blender:
           label: "Enter extension"
           path: "silex_client.commands.select_list.SelectList"
           parameters:
-            param_name: "Render type"
+            param_name: "Output extension"
             parameters_list:
               - "exr"
               - "png"
@@ -34,13 +34,15 @@ blender:
               hide: true
             frame_set:
               hide: true
+            name:
+              value: "render"
 
-    send_blender_render:
+    blender_render:
       label: "Setup render parameters"
       index: 20
       commands:
         build_blender_tasks:
-          path: "silex_client.commands.BlenderRenderTasksCommand"
+          path: "silex_client.commands.farm.blender_render_tasks.BlenderRenderTasksCommand"
           label: "Blender Job parameters"
           ask_user: true
           parameters:
@@ -53,10 +55,10 @@ blender:
 
         submit_to_tractor:
           label: "Submit"
-          path: "silex_client.commands.SubmitToTractorCommand"
+          path: "silex_client.commands.farm.submit_to_tractor.SubmitToTractorCommand"
           ask_user: true
           parameters:
             tasks:
-              value: !command-output "send_blender_render:build_blender_tasks:tasks"
+              value: !command-output "blender_render:build_blender_tasks:tasks"
             job_title:
-              value: !command-output "send_blender_render:build_blender_tasks:file_name"
+              value: !command-output "blender_render:build_blender_tasks:file_name"

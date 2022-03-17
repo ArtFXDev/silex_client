@@ -26,7 +26,7 @@ import os
 import subprocess
 
 
-class HoudiniCommand(CommandBase):
+class HoudiniRenderTasksCommand(CommandBase):
     """
     Construct Houdini Command
     """
@@ -34,9 +34,7 @@ class HoudiniCommand(CommandBase):
     parameters = {
         "scene_file": {
             "label": "Scene file",
-            "type": TaskFileParameterMeta(
-                extensions=[".hip", ".hipnc"], use_current_context=True
-            ),
+            "type": TaskFileParameterMeta(extensions=[".hip", ".hipnc"]),
         },
         "frame_range": {
             "label": "Frame range (start, end, step)",
@@ -84,6 +82,16 @@ class HoudiniCommand(CommandBase):
             "value": [1920, 1080],
             "hide": True,
         },
+        "pre_command": {
+            "type": str,
+            "hide": True,
+            "value": None,
+        },
+        "cleanup_command": {
+            "type": str,
+            "hide": True,
+            "value": None,
+        },
     }
 
     @CommandBase.conform_command()
@@ -102,6 +110,9 @@ class HoudiniCommand(CommandBase):
         rop_nodes: Union[str, List[str]] = parameters["rop_nodes"]
         output_file = pathlib.Path(parameters["output_filename"])
 
+        if not isinstance(rop_nodes, list):
+            rop_nodes = rop_nodes.split(" ")
+
         tasks: List[farm.Task] = []
 
         for rop_node in rop_nodes:
@@ -110,13 +121,18 @@ class HoudiniCommand(CommandBase):
             full_output_file = (
                 output_file.parent
                 / rop_name
-                / f"{output_file.with_suffix('').stem}_{rop_name}.$F4{''.join(output_file.suffixes)}"
+                / f"{output_file.stem}_{rop_name}.$F4{''.join(output_file.suffixes)}"
             )
 
             # Build the render command
             houdini_cmd = (
                 command_builder.CommandBuilder(
-                    "hython", rez_packages=["houdini"], delimiter=" "
+                    "hython",
+                    rez_packages=[
+                        "houdini",
+                        action_query.context_metadata["project"].lower(),
+                    ],
+                    delimiter=" ",
                 )
                 .param("m", "hrender")
                 .value(scene.as_posix())
@@ -137,6 +153,20 @@ class HoudiniCommand(CommandBase):
             for chunk in frame_chunks:
                 chunk_cmd = houdini_cmd.deepcopy()
                 chunk_cmd.param("f", ";".join(map(str, list(chunk))))
+
+                if len(parameters["pre_command"]) and len(
+                    parameters["cleanup_command"]
+                ):
+                    chunk_cmd = (
+                        command_builder.CommandBuilder(
+                            "python", rez_packages=["command_wrapper"], dashes="--"
+                        )
+                        .value("-m")
+                        .value("command_wrapper.main")
+                        .param("pre", f'"{str(parameters["pre_command"])}"')
+                        .param("cleanup", f'"{str(parameters["cleanup_command"])}"')
+                        .param("command", f'"{str(chunk_cmd)}"')
+                    )
 
                 task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
                 task.add_mount_command(action_query.context_metadata["project_nas"])

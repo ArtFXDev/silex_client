@@ -6,7 +6,7 @@ nuke:
       index: 20
       commands:
         build_nuke_tasks:
-          path: "silex_client.commands.NukeRenderTasksCommand"
+          path: "silex_client.commands.farm.NukeRenderTasksCommand"
           label: "Nuke Job parameters"
           ask_user: true
           parameters:
@@ -14,7 +14,7 @@ nuke:
               value: "1001-1050x1"
 
         submit_to_tractor:
-          path: "silex_client.commands.SubmitToTractorCommand"
+          path: "silex_client.commands.farm.submit_to_tractor.SubmitToTractorCommand"
           ask_user: true
           parameters:
             job_title:

@@ -9,7 +9,7 @@ maya:
           label: "Enter extension"
           path: "silex_client.commands.select_list.SelectList"
           parameters:
-            param_name: "Render type"
+            param_name: "Output extension"
             parameters_list:
               - "exr"
               - "png"
@@ -34,13 +34,15 @@ maya:
               hide: true
             frame_set:
               hide: true
+            name:
+              value: "render"
 
-    send_maya_render:
+    maya_render:
       label: "Setup render parameters"
       index: 20
       commands:
         build_maya_tasks:
-          path: "silex_client.commands.MayaRenderTasksCommand"
+          path: "silex_client.commands.farm.maya_render_tasks.MayaRenderTasksCommand"
           label: "Maya Job parameters"
           ask_user: true
           parameters:
@@ -53,10 +55,10 @@ maya:
 
         submit_to_tractor:
           label: "Submit"
-          path: "silex_client.commands.SubmitToTractorCommand"
+          path: "silex_client.commands.farm.submit_to_tractor.SubmitToTractorCommand"
           ask_user: true
           parameters:
             tasks:
-              value: !command-output "send_maya_render:build_maya_tasks:tasks"
+              value: !command-output "maya_render:build_maya_tasks:tasks"
             job_title:
-              value: !command-output "send_maya_render:build_maya_tasks:file_name"
+              value: !command-output "maya_render:build_maya_tasks:file_name"

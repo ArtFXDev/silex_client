@@ -15,7 +15,7 @@ def convert_to_tractor_command(command: farm.Command) -> author.Command:
     return author.Command(
         argv=command.argv,
         # Run commands on the same host
-        samehost=1,
+        samehost=True,
         # Limit tags with rez packages
         # Useful when limiting the amout of vray jobs on the farm for example
         tags=command.tags,

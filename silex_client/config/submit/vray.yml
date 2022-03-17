@@ -5,11 +5,11 @@ vray:
       label: "Build output path"
       index: 10
       commands:
-        select_list:
-          label: "Enter extension"
+        select_extension:
+          label: "Output extension"
           path: "silex_client.commands.select_list.SelectList"
           parameters:
-            param_name: "Render type"
+            param_name: "Output extension"
             parameters_list:
               - "exr"
               - "png"
@@ -23,7 +23,7 @@ vray:
           ask_user: true
           parameters:
             output_type:
-              value: !command-output "build_output_path:select_list"
+              value: !command-output "build_output_path:select_extension"
               hide: true
             create_temp_dir: false
             create_output_dir: false
@@ -34,28 +34,34 @@ vray:
               hide: true
             frame_set:
               hide: true
+            name:
+              value: "render"
 
-    send_vray_render:
+    vray_render:
       label: "Setup render parameters"
       index: 20
       commands:
         build_vray_tasks:
-          path: "silex_client.commands.VrayRenderTasksCommand"
+          path: "silex_client.commands.farm.vray_render_tasks.VrayRenderTasksCommand"
           label: "V-Ray Job parameters"
           ask_user: true
           parameters:
             output_directory:
               value: !command-output "build_output_path:build_output_path:directory"
+            output_filename:
+              value: !command-output "build_output_path:build_output_path:file_name"
+            output_extension:
+              value: !command-output "build_output_path:select_extension"
 
         submit_to_tractor:
           label: "Submit"
-          path: "silex_client.commands.SubmitToTractorCommand"
+          path: "silex_client.commands.farm.submit_to_tractor.SubmitToTractorCommand"
           ask_user: true
           parameters:
             tasks:
-              value: !command-output "send_vray_render:build_vray_tasks:tasks"
+              value: !command-output "vray_render:build_vray_tasks:tasks"
             job_title:
-              value: !command-output "send_vray_render:build_vray_cmd:file_name"
+              value: !command-output "vray_render:build_vray_tasks:file_name"
             job_tags:
               value:
                 - "vray"

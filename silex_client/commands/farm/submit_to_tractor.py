@@ -42,24 +42,6 @@ class SubmitToTractorCommand(CommandBase):
     """
 
     parameters = {
-        "precommands": {
-            "label": "Pre-commands list",
-            "type": ListParameterMeta(command_builder.CommandBuilder),
-            "value": [],
-            "hide": True,
-        },
-        "postcommands": {
-            "label": "Post-commands list",
-            "type": ListParameterMeta(command_builder.CommandBuilder),
-            "value": [],
-            "hide": True,
-        },
-        "task_cleanup_cmd": {
-            "label": "Task cleanup command",
-            "type": UnionParameterMeta([command_builder.CommandBuilder]),
-            "value": None,
-            "hide": True,
-        },
         "tasks": {
             "label": "Tasks list",
             "type": ListParameterMeta(farm.Task),
@@ -83,13 +65,18 @@ class SubmitToTractorCommand(CommandBase):
         },
         "blade_and_filters": {
             "label": "Restrict with filters",
-            "type": MultipleSelectParameterMeta("GPU", "REDSHIFT"),
+            "type": MultipleSelectParameterMeta(),
             "value": [],
         },
         "blade_ignore_filters": {
             "label": "Don't render on",
             "type": MultipleSelectParameterMeta(),
             "value": ["PC2014", "PC2015"],
+        },
+        "blade_blacklist": {
+            "type": ListParameterMeta(str),
+            "hide": True,
+            "value": ["BUG"],
         },
         "job_title": {
             "label": "Job title",
@@ -167,11 +154,11 @@ class SubmitToTractorCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        precommands: List[command_builder.CommandBuilder] = parameters["precommands"]
         tasks: List[farm.Task] = parameters["tasks"]
         blade_or_filters: List[str] = parameters["blade_or_filters"]
         blade_and_filters: List[str] = parameters["blade_and_filters"]
         blade_ignore_filters: List[str] = parameters["blade_ignore_filters"]
+        blade_blacklist: List[str] = parameters["blade_blacklist"]
         job_title: str = parameters["job_title"]
         job_tags: List[str] = parameters["job_tags"]
         priority: float = float(parameters["priority"])
@@ -187,8 +174,7 @@ class SubmitToTractorCommand(CommandBase):
         if len(blade_or_filters) > 0:
             services = self.join_svckey_filters(blade_or_filters, "||")
 
-        # We ignore some services
-        ignore_services = [f"!{s}" for s in blade_ignore_filters + ["BUG"]]
+        ignore_services = [f"!{s}" for s in blade_ignore_filters + blade_blacklist]
 
         # Add and && conditions
         if len(blade_and_filters) > 0 or len(ignore_services) > 0:
@@ -251,9 +237,8 @@ class SubmitToTractorCommand(CommandBase):
         )
 
         service_keys.sort()
-
-        # Rebuild the parameters with the new values
         blade_ignore_filters = self.command_buffer.parameters["blade_ignore_filters"]
-        blade_and_filters = self.command_buffer.parameters["blade_and_filters"]
         blade_ignore_filters.rebuild_type(*service_keys)
+
+        blade_and_filters = self.command_buffer.parameters["blade_and_filters"]
         blade_and_filters.rebuild_type(*service_keys)
