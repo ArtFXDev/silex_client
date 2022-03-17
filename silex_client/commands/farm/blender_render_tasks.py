@@ -3,11 +3,12 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder
+from silex_client.utils.farm import Task
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import (
     RadioSelectParameterMeta,
@@ -20,7 +21,7 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class BlenderCommand(CommandBase):
+class BlenderRenderTasksCommand(CommandBase):
     """
     Construct Blender render commands
     See: https://docs.blender.org/manual/en/dev/advanced/command_line/arguments.html
@@ -29,9 +30,7 @@ class BlenderCommand(CommandBase):
     parameters = {
         "scene_file": {
             "label": "Scene file",
-            "type": TaskFileParameterMeta(
-                extensions=[".blend"], use_current_context=True
-            ),
+            "type": TaskFileParameterMeta(extensions=[".blend"]),
         },
         "frame_range": {
             "label": "Frame range (start, end, step)",
@@ -70,24 +69,26 @@ class BlenderCommand(CommandBase):
 
         # Build the Blender command
         blender_cmd = command_builder.CommandBuilder(
-            "blender", rez_packages=["blender"], delimiter=" ", dashes="--"
+            "blender",
+            rez_packages=["blender", action_query.context_metadata["project"].lower()],
+            delimiter=" ",
+            dashes="--",
         )
         blender_cmd.param("background")
         # Scene file
         blender_cmd.value(dirmap(scene.as_posix()))
+
         blender_cmd.param("render-format", output_extension)
         blender_cmd.param("engine", parameters["engine"])
-        blender_cmd.param(
-            "render-output",
-            dirmap(
-                (
-                    parameters["output_directory"] / parameters["output_filename"]
-                ).as_posix()
-            ),
+
+        output_path = (
+            parameters["output_directory"] / f"{parameters['output_filename']}.####"
         )
+        output_file = dirmap((output_path).as_posix())
+        blender_cmd.param("render-output", output_file)
         blender_cmd.param("log-level", 0)
 
-        commands: Dict[str, command_builder.CommandBuilder] = {}
+        tasks: List[Task] = []
 
         # Split frames by task size
         frame_chunks = split_frameset(frame_range, task_size)
@@ -95,12 +96,14 @@ class BlenderCommand(CommandBase):
         # Creating tasks for each frame chunk
         for chunk in frame_chunks:
             chunk_cmd = blender_cmd.deepcopy()
-
             fmt_frames = ",".join(map(str, list(chunk)))
 
-            task_title = chunk.frameRange()
-
             # Add the frames argument
-            commands[task_title] = chunk_cmd.param("render-frame", fmt_frames)
+            chunk_cmd.param("render-frame", fmt_frames)
 
-        return {"commands": {f"Scene: {scene.stem}": commands}, "file_name": scene.stem}
+            # Create the task
+            task = Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
+            task.add_mount_command(action_query.context_metadata["project_nas"])
+            tasks.append(task)
+
+        return {"tasks": tasks, "file_name": scene.stem}

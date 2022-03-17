@@ -5,16 +5,19 @@ nuke:
       label: "Setup render parameters"
       index: 20
       commands:
-        build_nuke_cmd:
-          path: "silex_client.commands.build_nuke_cmd.BuildNukeCommand"
+        build_nuke_tasks:
+          path: "silex_client.commands.farm.NukeRenderTasksCommand"
           label: "Nuke Job parameters"
           ask_user: true
+          parameters:
+            frame_range:
+              value: "1001-1050x1"
 
         submit_to_tractor:
-          path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
+          path: "silex_client.commands.farm.submit_to_tractor.SubmitToTractorCommand"
           ask_user: true
           parameters:
             job_title:
-              value: !command-output "submit_job:build_nuke_cmd:file_name"
-            commands:
-              value: !command-output "submit_job:build_nuke_cmd:commands"
+              value: !command-output "submit_job:build_nuke_tasks:file_name"
+            tasks:
+              value: !command-output "submit_job:build_nuke_tasks:tasks"
