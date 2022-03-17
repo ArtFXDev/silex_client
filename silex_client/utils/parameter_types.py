@@ -158,9 +158,9 @@ def MultipleSelectParameterMeta(*list_options, **options):
 
 
 def TaskFileParameterMeta(
-    extensions: List[str] = None,
+    extensions: Optional[List[str]] = None,
     multiple: bool = False,
-    use_current_context: bool = False,
+    directory: bool = False,
 ):
     def __init__(self, value):
         if not isinstance(value, list):
@@ -176,7 +176,7 @@ def TaskFileParameterMeta(
             "name": "task_file",
             "extensions": extensions,
             "multiple": multiple,
-            "useCurrentContext": use_current_context,
+            "directory": directory,
         }
 
     def get_default():
@@ -197,7 +197,7 @@ def TaskFileParameterMeta(
     )
 
 
-def PathParameterMeta(extensions: List[str] = None, multiple: bool = False):
+def PathParameterMeta(extensions: List[str] = ["*"], multiple: bool = False):
     if extensions is None:
         extensions = ["*"]
 

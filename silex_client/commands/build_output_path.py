@@ -32,13 +32,13 @@ class BuildOutputPath(CommandBase):
 
     parameters = {
         "use_existing_name": {
-            "label": "Use existing name",
+            "label": "Use existing published filename",
             "type": bool,
             "value": False,
             "tooltip": "Replaced the name parameter by a drop down of all the exising names",
         },
         "name": {
-            "label": "Name",
+            "label": "Filename",
             "type": StringParameterMeta(max_lenght=40),
             "value": "",
             "tooltip": "This value can be left empty",
@@ -115,7 +115,7 @@ class BuildOutputPath(CommandBase):
         output_type = await gazu.files.get_output_type_by_short_name(output_type)
         if output_type is None:
             raise Exception(
-                "Could not build the output type {output_type}: The output type does not exists in the zou database",
+                f"Could not build the output type {output_type}: The output type does not exists in the zou database",
             )
 
         # Build the output path
