@@ -103,8 +103,11 @@ class IterateAction(InsertAction):
                     "hide_commands": hide_commands,
                 }
             )
+
+            logger.error('pre')
             output = await super().__call__(parameters, action_query, logger)
             outputs.append(output)
+            logger.error('after')
 
         return outputs
 

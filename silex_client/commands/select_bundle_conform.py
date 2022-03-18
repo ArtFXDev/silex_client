@@ -4,72 +4,51 @@ import copy
 import logging
 import pathlib
 import typing
+import os
 from typing import Any, Dict, List
 
 import fileseq
 
 from silex_client.action.command_base import CommandBase
-from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.resolve.config import Config
-from silex_client.utils.parameter_types import PathParameterMeta, SelectParameterMeta
+from silex_client.utils.parameter_types import PathParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class SelectConform(CommandBase):
+class SelectBundleConform(CommandBase):
     """
     Put the given file on database and to locked file system
     """
 
     parameters = {
         "file_paths": {
-            "label": "Insert the file to conform",
+            "label": "insert file to bundle",
             "type": PathParameterMeta(multiple=True),
-            "value": None,
-            "tooltip": "Insert the path to the file you want to conform",
         },
-        "find_sequence": {
+        "export_directory": {
+            "label" : 'Select an directory',
+            "type": pathlib.Path,
+        },
+         "find_sequence": {
             "label": "Conform the sequence of the selected file",
             "type": bool,
             "value": False,
             "tooltip": "The file sequences will be automaticaly detected from the file you select",
         },
-        "auto_select_type": {
-            "label": "Auto select the conform type",
-            "type": bool,
-            "value": True,
-            "tooltip": "Guess the conform type from the extension",
-        },
-        "conform_type": {
-            "label": "Select a conform type",
-            "type": SelectParameterMeta(
-                *[publish_action["name"] for publish_action in Config.get().conforms]
-            ),
-            "value": None,
-            "tooltip": "Select a conform type in the list",
-        },
     }
 
-    async def _prompt_new_type(self, action_query: ActionQuery) -> str:
-        """
-        Helper to prompt the user for a new conform type and wait for its response
-        """
-        # Create a new parameter to prompt for the new file path
-        new_parameter = ParameterBuffer(
-            type=SelectParameterMeta(
-                *[publish_action["name"] for publish_action in Config.get().conforms]
-            ),
-            name="new_type",
-            label="Conform type",
-        )
-        # Prompt the user to get the new path
-        new_type = await self.prompt_user(
-            action_query,
-            {"new_type": new_parameter},
-        )
-        return new_type["new_type"]
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+
+        if parameters['file_paths'] and parameters['export_directory'] is None:
+            self.command_buffer.parameters['export_directory'].value = pathlib.Path(parameters["file_paths"][0]).parents[0]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -80,9 +59,8 @@ class SelectConform(CommandBase):
     ):
         file_paths: List[pathlib.Path] = parameters["file_paths"]
         find_sequence: bool = parameters["find_sequence"]
-        conform_type: str = parameters["conform_type"]
-        auto_select_type: bool = parameters["auto_select_type"]
-
+        export_directory: pathlib.Path = parameters["export_directory"]
+        
         sequences = fileseq.findSequencesInList(file_paths)
         conform_types = []
         frame_sets = [
@@ -92,10 +70,8 @@ class SelectConform(CommandBase):
 
         # Guess the conform type from the extension of the given file
         for sequence in sequences:
-            if not auto_select_type:
-                conform_types.append(conform_type)
-                continue
-
+            
+            # Guess the conform type from the extension of the given file
             handled_conform = [
                 publish_action["name"] for publish_action in Config.get().conforms
             ]
@@ -131,9 +107,7 @@ class SelectConform(CommandBase):
                 conform_types.append(conform_type)
                 continue
 
-            # Some extensions are just not handled at all, the user can select one manually
-            logger.warning("Could not guess the conform type of %s", sequence)
-            conform_type = await self._prompt_new_type(action_query)
+            conform_type = 'default'
             conform_types.append(conform_type)
 
         # Convert the fileseq's sequences into list of pathlib.Path
@@ -173,6 +147,10 @@ class SelectConform(CommandBase):
                     paddings.pop(index - offset)
                     conform_types.pop(index - offset)
 
+        os.environ["BUNDLE_FOLDER"] = str(export_directory / f'BUNDLE_{file_paths[0].stem}')
+
+        os.makedirs(os.environ.get("BUNDLE_FOLDER"), exist_ok=True)
+
         return {
             "files": [
                 {"file_paths": sequence, "frame_set": frame_set, "padding": padding}
@@ -180,16 +158,3 @@ class SelectConform(CommandBase):
             ],
             "types": conform_types,
         }
-
-    
-
-    async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
-    ):
-        if parameters.get("auto_select_type", False):
-            self.command_buffer.parameters["conform_type"].hide = True
-        else:
-            self.command_buffer.parameters["conform_type"].hide = False

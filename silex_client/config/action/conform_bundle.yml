@@ -1,0 +1,29 @@
+conform_bundle:
+  shelf: "input"
+  thumbnail: "conform.svg"
+
+  steps:
+    setup:
+      lavel: "Setup"
+      index: 50
+      commands:
+        get_conform_output:
+          label: "Select conform type"
+          path: "silex_client.commands.select_bundle_conform.SelectBundleConform"
+
+        append_conform_actions:
+          label: "Append conform actions"
+          path: "silex_client.commands.iterate_action.IterateAction"
+          tooltip: "Append the selected conforms to the list of commands to execute"
+          parameters:
+            values:
+              value: !command-output "setup:get_conform_output:files"
+              hide: true
+            categories:
+              - "bundle"
+            actions:
+              value: !command-output "setup:get_conform_output:types"
+              hide: true
+            parameter: "input:input:input"
+            output: "output:output"
+            label_key: "file_paths"
