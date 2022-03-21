@@ -6,7 +6,7 @@ nuke:
       index: 20
       commands:
         build_nuke_tasks:
-          path: "silex_client.commands.farm.NukeRenderTasksCommand"
+          path: "silex_client.commands.farm.nuke_render_tasks.NukeRenderTasksCommand"
           label: "Nuke Job parameters"
           ask_user: true
           parameters:
