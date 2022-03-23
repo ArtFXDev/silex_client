@@ -1,4 +1,4 @@
-arnold:
+kick:
   label: "Submit ass sequence"
   steps:
     build_output_path:
@@ -9,12 +9,12 @@ arnold:
           label: "Enter extension"
           path: "silex_client.commands.select_list.SelectList"
           parameters:
+            param_name: "Output extension"
             parameters_list:
               - "exr"
               - "png"
               - "jpg"
               - "tiff"
-            param_name: "Render type"
 
         build_output_path:
           label: "Build output path"
@@ -37,12 +37,12 @@ arnold:
             name:
               value: "render"
 
-    send_kick_render:
-      label: "Setup render parameters"
+    kick_render:
+      label: "Setup Kick parameters"
       index: 20
       commands:
-        build_kick_cmd:
-          path: "silex_client.commands.build_kick_cmd.KickCommand"
+        kick_render_tasks:
+          path: "silex_client.commands.farm.kick_render_tasks.KickRenderTasksCommand"
           label: "Arnold job parameters"
           ask_user: true
           parameters:
@@ -51,10 +51,10 @@ arnold:
 
         submit_to_tractor:
           label: "Submit"
-          path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
+          path: "silex_client.commands.farm.submit_to_tractor.SubmitToTractorCommand"
           ask_user: true
           parameters:
             job_title:
-              value: !command-output "send_kick_render:build_kick_cmd:file_name"
-            commands:
-              value: !command-output "send_kick_render:build_kick_cmd:commands"
+              value: !command-output "kick_render:kick_render_tasks:file_name"
+            tasks:
+              value: !command-output "kick_render:kick_render_tasks:tasks"

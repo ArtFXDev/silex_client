@@ -11,8 +11,8 @@ from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.commands.build_work_path import BuildWorkPath
 from silex_client.core.context import Context
-from silex_client.utils.parameter_types import TaskFileParameterMeta, TextParameterMeta
 from silex_client.utils.files import expand_path
+from silex_client.utils.parameter_types import TaskFileParameterMeta, TextParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -27,7 +27,7 @@ class SelectPull(BuildWorkPath):
     parameters = {
         "publish": {
             "label": "Select a publish",
-            "type": TaskFileParameterMeta(use_current_context=True),
+            "type": TaskFileParameterMeta(),
             "value": None,
             "tooltip": "Select a submiter in the list",
         },
