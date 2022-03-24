@@ -41,6 +41,11 @@ class BuildBundlePath(CommandBase):
             "value": 1,
             "hide": True,
         },
+        "is_reference": {
+            "type": bool,
+            "value": 1,
+            "hide": True,
+        },
         "output_type": {
             "label": "Insert publish type",
             "type": str,
@@ -62,25 +67,26 @@ class BuildBundlePath(CommandBase):
         frame_set: fileseq.FrameSet = parameters["frame_set"]
         extension: str = parameters["output_type"]
         padding: int = parameters["padding"]
+        is_reference: bool = parameters["is_reference"]
 
         nb_elements = len(frame_set)
-        BUNDLE_FOLDER = pathlib.Path(os.environ.get('BUNDLE_FOLDER'))
-
+        BUNDLE_ROOT = pathlib.Path(os.environ.get('BUNDLE_ROOT'))
 
         file_name = file_to_bundle.stem
-        directory = pathlib.Path(f'$BUNDLE_FOLDER') / "references" / file_name
+        directory = pathlib.Path(f'$BUNDLE_ROOT') 
 
         if not files.is_valid_pipeline_path(pathlib.Path(file_to_bundle)):
             # Hashing name: makes sur the hashed value is positive to be intergrated in a path
             file_name = str(hash(file_to_bundle.stem) % ((sys.maxsize + 1) * 2) )
-            directory = pathlib.Path(f'$BUNDLE_FOLDER') / 'references' / file_name
+
+        if is_reference:
+            directory = directory / 'references' / file_name
         
         full_name = file_name
         full_names = []
         full_paths = [directory / full_name]
 
         # Create directoriy using the environement variable
-        os.makedirs( BUNDLE_FOLDER / "references" / file_name, exist_ok=True)
         logger.info(f"Output directory created: {directory}")
 
         # Handle the sequences of files
@@ -89,33 +95,18 @@ class BuildBundlePath(CommandBase):
                 full_names.append(
                     full_name + f".{str(item).zfill(padding)}.{extension}"
                 )
-            # For maya, rename must be without env variables
-            if extension == "ma":
-                full_paths = [BUNDLE_FOLDER / name for name in full_names]
-            else:
-                full_paths = [directory / name for name in full_names]
+            full_paths = [directory / name for name in full_names]
 
         else:
             full_names = full_name + f".{extension}"
-
-            # For maya, rename must be without env variables
-            if extension == "ma":
-                full_paths = BUNDLE_FOLDER / full_names
-            else:
-                full_paths = directory / full_names
+            full_paths = directory / full_names
 
         if isinstance(full_paths, list):
             sequence = fileseq.findSequencesInList(full_paths)
             logger.info("Output path(s) built: %s", sequence)
         else:
             logger.info("Output path(s) built: %s", full_paths)
-
-        logger.error(directory)
-        logger.error(file_name)
-        logger.error(full_names)
-        logger.error(full_paths)
-        logger.error(frame_set)
-
+        
         return {
             "directory": directory,
             "file_name": file_name,

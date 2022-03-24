@@ -18,9 +18,9 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class SelectBundleConform(CommandBase):
+class SelectBundle(CommandBase):
     """
-    Put the given file on database and to locked file system
+    Helper to prompt the user for a new bundle type and wait for its response
     """
 
     parameters = {
@@ -48,7 +48,7 @@ class SelectBundleConform(CommandBase):
     ):
 
         if parameters['file_paths'] and parameters['export_directory'] is None:
-            self.command_buffer.parameters['export_directory'].value = pathlib.Path(parameters["file_paths"][0]).parents[0]
+            self.command_buffer.parameters['export_directory'].value = pathlib.Path(parameters["file_paths"][0]).parents[0] 
 
     @CommandBase.conform_command()
     async def __call__(
@@ -147,13 +147,19 @@ class SelectBundleConform(CommandBase):
                     paddings.pop(index - offset)
                     conform_types.pop(index - offset)
 
-        os.environ["BUNDLE_FOLDER"] = str(export_directory / f'BUNDLE_{file_paths[0].stem}')
+        # Reset Environement variable if it already exists 
+        if "BUNDLE_ROOT" in os.environ : 
+            del os.environ["BUNDLE_ROOT"]
+        os.environ["BUNDLE_ROOT"] = str(export_directory / f'BUNDLE_{file_paths[0].stem}')
 
-        os.makedirs(os.environ.get("BUNDLE_FOLDER"), exist_ok=True)
+        logger.error(os.environ.get("BUNDLE_ROOT"))
+
+
+        os.makedirs(os.environ.get("BUNDLE_ROOT"), exist_ok=True)
 
         return {
             "files": [
-                {"file_paths": sequence, "frame_set": frame_set, "padding": padding}
+                {"file_paths": sequence, "frame_set": frame_set, "padding": padding, "is_reference": False}
                 for sequence, frame_set, padding in zip(sequences, frame_sets, paddings)
             ],
             "types": conform_types,

@@ -1,4 +1,4 @@
-conform_bundle:
+bundle:
   shelf: "input"
   thumbnail: "conform.svg"
 
@@ -8,11 +8,13 @@ conform_bundle:
       index: 50
       commands:
         get_conform_output:
-          label: "Select conform type"
-          path: "silex_client.commands.select_bundle_conform.SelectBundleConform"
+          label: "Select bundle type"
+          path: "silex_client.commands.select_bundle.SelectBundle"
+          parameters:
+            find_sequence: false
 
         append_conform_actions:
-          label: "Append conform actions"
+          label: "Append conform actions to the bundle folder"
           path: "silex_client.commands.iterate_action.IterateAction"
           tooltip: "Append the selected conforms to the list of commands to execute"
           parameters:

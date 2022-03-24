@@ -11,3 +11,9 @@ VRAY_MATCH_SEQUENCE = [
     re.compile(r"^.+[^\w#](#+)\W.+$"),
 ]
 
+# Match environement variable in path for differente format
+ENV_VARIABLE_FORMAT = [
+    re.compile(r'\$(\w+)'),
+    re.compile(r'\%(\w+)\%'),
+]
+
