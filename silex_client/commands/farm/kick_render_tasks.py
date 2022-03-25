@@ -35,6 +35,7 @@ class KickRenderTasksCommand(CommandBase):
         },
         "task_size": {
             "label": "Task size",
+            "tooltip": "Number of frames per computer",
             "type": int,
             "value": 10,
         },
@@ -75,7 +76,10 @@ class KickRenderTasksCommand(CommandBase):
             kick_cmd = (
                 command_builder.CommandBuilder(
                     "python",
-                    rez_packages=["krender", action_query.context_metadata["project"].lower()],
+                    rez_packages=[
+                        "krender",
+                        action_query.context_metadata["project"].lower(),
+                    ],
                 )
                 .param("m")
                 .value("krender")
