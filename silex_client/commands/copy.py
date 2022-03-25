@@ -82,7 +82,6 @@ class Copy(CommandBase):
         logger.info("Copying %s to %s", src_sequences, dst_sequences)
 
         full_dst_path = []
-        full_expanded_dst_path = [] # If the pth contains an environement variable
         label = self.command_buffer.label
         total_file_size = SharedVariable(
             sum(os.path.getsize(path) for path in src_paths)
@@ -96,32 +95,27 @@ class Copy(CommandBase):
                 self.command_buffer.label = f"{label} ({index+1}/{len(src_paths)})"
 
                 dst_path = dst_paths[index % len(dst_paths)]
-                
-                # Format environement variable if it exists
-                expanded_dst_path: pathlib.Path = files.expand_environement_variable(pathlib.Path(dst_path))
 
-                os.makedirs(str(expanded_dst_path), exist_ok=True)
+                os.makedirs(str(dst_path), exist_ok=True)
 
                 if not src_path.exists():
                     raise Exception(f"Source path {src_path} does not exists")
 
-                if expanded_dst_path.is_dir():
-                    expanded_dst_path = expanded_dst_path / src_path.name
+                if dst_path.is_dir():
                     dst_path = dst_path / src_path.name
 
-                full_expanded_dst_path.append(expanded_dst_path)
                 full_dst_path.append(dst_path)
 
                 # Handle override of existing file
-                if expanded_dst_path.exists() and force:
-                    await execute_in_thread(os.remove, expanded_dst_path)
-                elif expanded_dst_path.exists():
+                if dst_path.exists() and force:
+                    await execute_in_thread(os.remove, dst_path)
+                elif dst_path.exists():
                     conflict_behaviour = action_query.store.get(
                         "file_conflict_behaviour"
                     )
                     if conflict_behaviour is None:
                         conflict_behaviour = await prompt_override(
-                            self, expanded_dst_path, action_query
+                            self, dst_path, action_query
                         )
                     if conflict_behaviour in [
                         ConflictBehaviour.ALWAYS_OVERRIDE,
@@ -135,19 +129,17 @@ class Copy(CommandBase):
                         ConflictBehaviour.ALWAYS_OVERRIDE,
                     ]:
                         force = True
-                        await execute_in_thread(os.remove, expanded_dst_path)
+                        await execute_in_thread(os.remove, dst_path)
                     if conflict_behaviour in [
                         ConflictBehaviour.KEEP_EXISTING,
                         ConflictBehaviour.ALWAYS_KEEP_EXISTING,
                     ]:
                         continue
 
-                await execute_in_thread(self.copy, src_path, expanded_dst_path, progress)
+                await execute_in_thread(self.copy, src_path, dst_path, progress)
 
         return {
             "source_paths": src_paths,
             "destination_dirs": [dst_path.parent for dst_path in full_dst_path],
             "destination_paths": full_dst_path,
-            "destination_expanded_dirs": [dst_path.parent for dst_path in full_expanded_dst_path],
-            "destination_expanded_paths": full_expanded_dst_path,
         }

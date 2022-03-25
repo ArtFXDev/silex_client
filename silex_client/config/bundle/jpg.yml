@@ -1,4 +1,4 @@
-abc:
+jpg:
   steps:
     input:
       hide: true
@@ -24,14 +24,8 @@ abc:
             is_reference:
               value: !command-output "input:input:is_reference"
             output_type:
-              value: "abc"
-        expand_paths:
-          label: "Expand environement variables"
-          path: "silex_client.commands.expand_paths.ExpandPaths"
-          parameters:
-            paths_to_expand:
-              value: !command-output "bundle:build_bundle_path:directory"
-              hide: true
+              value: "jpg"
+
         copy:
           label: "Copy file"
           path: "silex_client.commands.copy.Copy"
@@ -40,26 +34,18 @@ abc:
               value: !command-output "input:input:file_paths"
               hide: true
             dst:
-              value: !command-output "bundle:expand_paths:expanded_paths"
+              value: !command-output "bundle:build_bundle_path:directory"
               hide: true
         rename:
           label: "Rename the copied files"
           path: "silex_client.commands.rename.Rename"
           parameters:
             src:
-              value: !command-output "bundle:copy:destination_paths"
+              value: !command-output "bundle:copy:destination_expanded_paths"
               hide: true
             name:
               value: !command-output "bundle:build_bundle_path:full_name"
               hide: true
-        set_env:
-          label: "Replace path by environement variables"
-          path: "silex_client.commands.set_env.SetEnv"
-          parameters:
-            paths:
-              value: !command-output "bundle:rename:new_paths"
-            envs:
-              value: !command-output "bundle_scene:expand_paths:envs"
 
     output:
       index: 30
@@ -68,4 +54,4 @@ abc:
         output:
           path: "silex_client.commands.pass.Pass"
           parameters:
-            input: !command-output "bundle:set_env:expanded_paths"
+            input: !command-output "bundle:rename:new_paths"

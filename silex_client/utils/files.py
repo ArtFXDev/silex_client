@@ -12,7 +12,7 @@ import re
 import sys
 import unicodedata
 from types import ModuleType
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Tuple
 from silex_client.utils.constants import ENV_VARIABLE_FORMAT
 
 import fileseq
@@ -56,7 +56,6 @@ def find_environement_variable(path: pathlib.Path) -> Union[re.Match, None]:
     for reg in ENV_VARIABLE_FORMAT:
         if re.match(reg, path_str) and re.match(reg, path_str).group(1) in os.environ:
             return re.match(reg, path_str)
-
     return None
     
 def expand_environement_variable(path: pathlib.Path) -> pathlib.Path:
@@ -67,7 +66,7 @@ def expand_environement_variable(path: pathlib.Path) -> pathlib.Path:
         # Format path 
         path_str: str = path.as_posix()
         
-        match:  Union[re.Match, None] = find_environement_variable(path)  
+        match:  Union[re.Match, None] = find_environement_variable(path)
         return pathlib.Path(path_str.replace(match.group(0), os.environ[match.group(1)]))
 
     return path

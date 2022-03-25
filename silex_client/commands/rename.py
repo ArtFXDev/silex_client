@@ -113,7 +113,6 @@ class Rename(CommandBase):
         logger.info("Renaming %s to %s", src_sequences, name_sequences)
 
         new_paths = []
-        new_expanded_paths = [] # If the pth contains an environement variable
         label = self.command_buffer.label
         progress = SharedVariable(0)
 
@@ -142,30 +141,25 @@ class Rename(CommandBase):
                 new_name = os.path.splitext(new_name)[0] + extension
                 new_path = src_path.parent / new_name
 
-                # Format environement variable if it exists
-                new_expanded_path: pathlib.Path = files.expand_environement_variable(pathlib.Path(new_path))
-
                 new_paths.append(new_path)
-                new_expanded_paths.append(new_expanded_path)
 
                 # Handle override of existing file
 
-                if new_expanded_path.exists() and force:
-                    await execute_in_thread(os.remove, new_expanded_path)
-                elif new_expanded_path.exists():
+                if new_path.exists() and force:
+                    await execute_in_thread(os.remove, new_path)
+                elif new_path.exists():
 
                     conflict_behaviour = action_query.store.get(
                         "file_conflict_behaviour"
                     )
                     if conflict_behaviour is None:
                         conflict_behaviour, new_name = await prompt_override(
-                            self, new_expanded_path, action_query, os.path.splitext(new_name)[0]
+                            self, new_path, action_query, os.path.splitext(new_name)[0]
                         )
                     if conflict_behaviour is ConflictBehaviour.RENAME:
                         new_name = new_name + extension
-                        new_expanded_path = src_path.parent / new_name
+                        new_path = src_path.parent / new_name
                         new_paths[-1] = new_path
-                        new_expanded_paths[-1] = new_expanded_path
                     if conflict_behaviour in [
                         ConflictBehaviour.ALWAYS_OVERRIDE,
                         ConflictBehaviour.ALWAYS_KEEP_EXISTING,
@@ -178,7 +172,7 @@ class Rename(CommandBase):
                         ConflictBehaviour.ALWAYS_OVERRIDE,
                     ]:
                         force = True
-                        await execute_in_thread(os.remove, new_expanded_path)
+                        await execute_in_thread(os.remove, new_path)
                     if conflict_behaviour in [
                         ConflictBehaviour.KEEP_EXISTING,
                         ConflictBehaviour.ALWAYS_KEEP_EXISTING,
@@ -186,12 +180,11 @@ class Rename(CommandBase):
                         await execute_in_thread(os.remove, src_path)
                         continue
 
-                await execute_in_thread(os.rename, src_path, new_expanded_path)
+                await execute_in_thread(os.rename, src_path, new_path)
 
         return {
             "source_paths": src_paths,
             "new_paths": new_paths,
-            "new_expanded_paths": new_expanded_paths,
         }
 
     async def setup(
