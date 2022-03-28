@@ -43,6 +43,7 @@ class HoudiniRenderTasksCommand(CommandBase):
         },
         "task_size": {
             "label": "Task size",
+            "tooltip": "Number of frames per computer",
             "type": int,
             "value": 10,
         },
