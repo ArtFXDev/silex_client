@@ -28,6 +28,11 @@ class KickRenderTasksCommand(CommandBase):
                 extensions=[".ass"], directory=True, multiple=True
             ),
         },
+        "use_xgen": {
+            "label": "Use XGen",
+            "type": bool,
+            "value": False,
+        },
         "frame_range": {
             "label": "Frame range",
             "type": fileseq.FrameSet,
@@ -87,6 +92,13 @@ class KickRenderTasksCommand(CommandBase):
                 .param("imgFile", output_path_layer.as_posix())
                 .param("skipExistingFrames", skip_existing)
             )
+
+            if parameters["use_xgen"]:
+                kick_cmd.add_rez_package("xgen")
+                kick_cmd.param(
+                    "pluginLibraries",
+                    "C:/PROGRA~1/Autodesk/Arnold/maya2022/procedurals",
+                )
 
             folder_task = farm.Task(title=ass_folder.stem)
             frame_chunks = frames.split_frameset(frame_range, task_size)
