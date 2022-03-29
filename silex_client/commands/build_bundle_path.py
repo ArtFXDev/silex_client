@@ -70,9 +70,10 @@ class BuildBundlePath(CommandBase):
         is_reference: bool = parameters["is_reference"]
 
         nb_elements = len(frame_set)
-        BUNDLE_ROOT = pathlib.Path(os.environ.get('BUNDLE_ROOT'))
 
-        directory = pathlib.Path(f'$BUNDLE_ROOT') 
+        BUNDLE_ROOT = pathlib.Path(os.environ.get('BUNDLE_ROOT'))
+        directory = pathlib.Path('${BUNDLE_ROOT}') 
+
         file_name = file_to_bundle[0].stem
 
         # get rid of increment if there are multiple elements
@@ -90,7 +91,8 @@ class BuildBundlePath(CommandBase):
         full_names = []
         full_paths = [directory / full_name]
 
-        # Create directoriy using the environement variable
+        # Create directory using the environement variable
+        os.makedirs( str(directory).replace('${BUNDLE_ROOT}', str(BUNDLE_ROOT)), exist_ok=True)
         logger.info(f"Output directory created: {directory}")
 
         # Handle the sequences of files

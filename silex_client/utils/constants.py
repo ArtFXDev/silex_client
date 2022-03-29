@@ -14,6 +14,7 @@ VRAY_MATCH_SEQUENCE = [
 # Match environement variable in path for differente format
 ENV_VARIABLE_FORMAT = [
     re.compile(r'\$(\w+)'),
+    re.compile(r'\${(\w+)}'),
     re.compile(r'\%(\w+)\%'),
 ]
 

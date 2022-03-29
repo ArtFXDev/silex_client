@@ -46,6 +46,6 @@ class SetEnv(CommandBase):
                 if env and env in os.environ:
                     formated_path =  pathlib.Path(path).as_posix()
                     env_value = pathlib.Path(os.environ.get(env)).as_posix()
-                    paths[paths.index(path)] = pathlib.Path(str(formated_path).replace(env_value, f'${env}'))
+                    paths[paths.index(path)] = pathlib.Path(str(formated_path).replace(env_value, '${%s}' % env))
         
         return {'expanded_paths': paths}

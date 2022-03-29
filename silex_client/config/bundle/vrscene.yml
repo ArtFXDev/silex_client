@@ -50,9 +50,9 @@ vrscene:
               value: !command-output "bundle_references:get_vrscene_references:references"
               hide: true
             actions:
-              - "conform"
+              - "reference_bundle"
             categories:
-              - "action"
+              - "bundle"
             parameter: "setup:get_conform_output:file_paths"
             label_key: "references"
             output: "setup:append_conform_actions"

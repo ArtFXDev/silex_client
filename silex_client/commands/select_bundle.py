@@ -152,8 +152,6 @@ class SelectBundle(CommandBase):
             del os.environ["BUNDLE_ROOT"]
         os.environ["BUNDLE_ROOT"] = str(export_directory / f'BUNDLE_{file_paths[0].stem}')
 
-        logger.error(os.environ.get("BUNDLE_ROOT"))
-
 
         os.makedirs(os.environ.get("BUNDLE_ROOT"), exist_ok=True)
 
