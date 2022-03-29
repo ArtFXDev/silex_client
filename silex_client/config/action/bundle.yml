@@ -1,5 +1,5 @@
 bundle:
-  shelf: "input"
+  shelf: "output"
   thumbnail: "bundle.svg"
 
   steps:
