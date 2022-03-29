@@ -7,7 +7,7 @@ reference_bundle: !inherit
       lavel: "Setup"
       index: 50
       commands:
-        get_conform_output:
+        get_bundle_output:
           label: "Select bundle type"
           path: "silex_client.commands.select_bundle_reference.SelectBundleReference"
           parameters:

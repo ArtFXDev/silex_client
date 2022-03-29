@@ -5,13 +5,15 @@ import os
 import pathlib
 import typing
 import uuid
-from typing import Any, Dict, Optional
+from typing import List
 import sys
 
 import fileseq
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.files import slugify
 from silex_client.utils import files
+from silex_client.utils.parameter_types import ListParameter
+
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -25,14 +27,12 @@ class BuildBundlePath(CommandBase):
 
     parameters = {
         "file_to_bundle": {
-            "type": pathlib.Path,
+            "type": ListParameter,
             "hide": True
         },
          "frame_set": {
-            "label": "Insert the quantity of items if file sequence",
             "type": fileseq.FrameSet,
             "value": fileseq.FrameSet(0),
-            "tooltip": "The range is start, end, increment",
             "hide": True,
         },
         "padding": {
@@ -63,7 +63,7 @@ class BuildBundlePath(CommandBase):
         logger: logging.Logger,
     ):
     
-        file_to_bundle: pathlib.Path = parameters['file_to_bundle']
+        file_to_bundle: List[pathlib.Path] = parameters['file_to_bundle']
         frame_set: fileseq.FrameSet = parameters["frame_set"]
         extension: str = parameters["output_type"]
         padding: int = parameters["padding"]
@@ -72,12 +72,16 @@ class BuildBundlePath(CommandBase):
         nb_elements = len(frame_set)
         BUNDLE_ROOT = pathlib.Path(os.environ.get('BUNDLE_ROOT'))
 
-        file_name = file_to_bundle.stem
         directory = pathlib.Path(f'$BUNDLE_ROOT') 
+        file_name = file_to_bundle[0].stem
 
-        if not files.is_valid_pipeline_path(pathlib.Path(file_to_bundle)):
+        # get rid of increment if there are multiple elements
+        if nb_elements > 1:
+            file_name = pathlib.Path(file_name).stem
+
+        if not files.is_valid_pipeline_path(pathlib.Path(file_to_bundle[0])):
             # Hashing name: makes sur the hashed value is positive to be intergrated in a path
-            file_name = str(hash(file_to_bundle.stem) % ((sys.maxsize + 1) * 2) )
+            file_name = str(hash(file_to_bundle[0].stem) % ((sys.maxsize + 1) * 2) )
 
         if is_reference:
             directory = directory / 'references' / file_name
@@ -109,8 +113,6 @@ class BuildBundlePath(CommandBase):
         
         return {
             "directory": directory,
-            "file_name": file_name,
             "full_name": full_names,
             "full_path": full_paths,
-            "frame_set": frame_set,
         }

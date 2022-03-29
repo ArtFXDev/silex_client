@@ -36,6 +36,6 @@ class ExpandPaths(CommandBase):
         file_paths = parameters['paths_to_expand']
 
         expanded_paths = list(map(expand_environement_variable,file_paths))
-        environement_var = list(set([find_environement_variable(path).group(1) for path in file_paths]  ))      
+        environement_var = list(set([find_environement_variable(path).group(1) for path in file_paths]  )) 
 
         return {"expanded_paths": expanded_paths , 'envs': environement_var}

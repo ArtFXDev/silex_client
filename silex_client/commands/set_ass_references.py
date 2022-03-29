@@ -91,7 +91,6 @@ class SetAssReferences(CommandBase):
         node_names: List[str] = parameters["node_names"]
         ass_files: List[pathlib.Path] = parameters["ass_files"]
         new_ass_files: List[pathlib.Path] = parameters["new_ass_files"]
-        new_expanded_ass_files = list(map(files.expand_environement_variable, new_ass_files)) # Format environement variable if it exists
 
         # TODO: This should be done in the get_value method of the ParameterBuffer
         references: List[pathlib.Path] = []
@@ -109,7 +108,6 @@ class SetAssReferences(CommandBase):
 
         # Format paths (add asset folder)
         new_ass_files = list(map(add_asset_folder, new_ass_files))
-        new_expanded_ass_files = list(map(add_asset_folder, new_expanded_ass_files)) 
         
         # set references paths and display progress bar
         progress = SharedVariable(0)
@@ -121,6 +119,6 @@ class SetAssReferences(CommandBase):
             SharedVariable(len(ass_files)),
             0.2,
         ):
-            await thread_maya.execute_in_main_thread(self._set_reference_in_ass, progress, new_expanded_ass_files, ass_files, node_names, references)
+            await thread_maya.execute_in_main_thread(self._set_reference_in_ass, progress, new_ass_files, ass_files, node_names, references)
 
-        return {"new_ass_files": new_ass_files, "new_expanded_ass_files": new_expanded_ass_files}
+        return {"new_ass_files": new_ass_files}

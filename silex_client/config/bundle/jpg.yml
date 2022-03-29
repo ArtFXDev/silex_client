@@ -1,57 +1,10 @@
-jpg:
-  steps:
-    input:
-      hide: true
-      index: 10
-      commands:
-        input:
-          path: "silex_client.commands.pass.Pass"
+jpg: !inherit
+  parent: ".default"
 
+  steps:
     bundle:
-      label: "bundle"
-      index: 20
       commands:
         build_bundle_path:
-          label: "Build path"
-          path: "silex_client.commands.build_bundle_path.BuildBundlePath"
           parameters:
-            file_to_bundle:
-              value: !command-output "input:input:file_paths"
-            frame_set:
-              value: !command-output "input:input:frame_set"
-            padding:
-              value: !command-output "input:input:padding"
-            is_reference:
-              value: !command-output "input:input:is_reference"
             output_type:
               value: "jpg"
-
-        copy:
-          label: "Copy file"
-          path: "silex_client.commands.copy.Copy"
-          parameters:
-            src:
-              value: !command-output "input:input:file_paths"
-              hide: true
-            dst:
-              value: !command-output "bundle:build_bundle_path:directory"
-              hide: true
-        rename:
-          label: "Rename the copied files"
-          path: "silex_client.commands.rename.Rename"
-          parameters:
-            src:
-              value: !command-output "bundle:copy:destination_expanded_paths"
-              hide: true
-            name:
-              value: !command-output "bundle:build_bundle_path:full_name"
-              hide: true
-
-    output:
-      index: 30
-      hide: true
-      commands:
-        output:
-          path: "silex_client.commands.pass.Pass"
-          parameters:
-            input: !command-output "bundle:rename:new_paths"

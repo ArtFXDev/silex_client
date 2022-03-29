@@ -1,4 +1,4 @@
-abc: !inherit
+bmp: !inherit
   parent: ".default"
 
   steps:
@@ -7,4 +7,4 @@ abc: !inherit
         build_bundle_path:
           parameters:
             output_type:
-              value: "abc"
+              value: "bmp"
