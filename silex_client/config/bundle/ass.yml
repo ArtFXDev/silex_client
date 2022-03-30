@@ -34,7 +34,8 @@ ass:
           label: "Get referenced files"
           path: "silex_client.commands.get_ass_references.GetAssReferences"
           parameters:
-            ass_files: !command-output "input:input:file_paths"
+            ass_files:
+              value: !command-output "input:input:file_paths"
         bundle_references:
           label: "bundle references found"
           path: "silex_client.commands.iterate_action.IterateAction"

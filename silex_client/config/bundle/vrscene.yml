@@ -27,23 +27,19 @@ vrscene:
               value: "vrscene"
 
     bundle_references:
-      label: "Conform vray scene's references"
+      label: "bundle vray scene's references"
       index: 20
       commands:
-        step_exit:
-          label: "Skip reconform"
-          path: "silex_client.commands.exit_step.ExitStep"
-          parameters:
-            enable: !command-output "get_conform_location:get_output_cache:value"
-          hide: true
-
         get_vrscene_references:
           label: "Get referenced files"
           path: "silex_client.commands.get_vrscene_references.GetVrsceneReferences"
           parameters:
-            vrscene_files: !command-output "input:input:file_paths"
+            vrscene_files:
+              value: !command-output "input:input:file_paths"
+            skip_prompt:
+              value: true
         bundle_references:
-          label: "Conform references found"
+          label: "bundle found references"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
             values:
@@ -53,21 +49,14 @@ vrscene:
               - "reference_bundle"
             categories:
               - "bundle"
-            parameter: "setup:get_conform_output:file_paths"
+            parameter: "setup:get_bundle_output:file_paths"
             label_key: "references"
-            output: "setup:append_conform_actions"
+            output: "setup:append_bundle_actions"
 
     bundle_vrscene:
-      label: "Conform vray scene"
+      label: "bundle vray scene"
       index: 30
       commands:
-        step_exit:
-          label: "Skip reconform"
-          path: "silex_client.commands.exit_step.ExitStep"
-          parameters:
-            enable: !command-output "get_conform_location:get_output_cache:value"
-          hide: true
-
         expand_paths:
           label: "Expand environement variables"
           path: "silex_client.commands.expand_paths.ExpandPaths"
