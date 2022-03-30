@@ -46,7 +46,8 @@ class SubmitToTractorCommand(CommandBase):
                     "Standard": 100,
                     "Specific frames": 120,
                     "Retake": 90,
-                    "Camap": 130,
+                    "Static frame": 130,
+                    "Supervision": 125,
                 }
             ),
         },

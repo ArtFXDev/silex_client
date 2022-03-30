@@ -86,12 +86,12 @@ class HoudiniRenderTasksCommand(CommandBase):
         "pre_command": {
             "type": str,
             "hide": True,
-            "value": None,
+            "value": "",
         },
         "cleanup_command": {
             "type": str,
             "hide": True,
-            "value": None,
+            "value": "",
         },
     }
 
