@@ -15,8 +15,6 @@ from silex_client.utils.prompt import UpdateProgress, prompt_override
 from silex_client.utils.parameter_types import PathParameterMeta
 from silex_client.utils.thread import execute_in_thread
 from silex_client.utils.datatypes import SharedVariable
-from silex_client.utils import files
-
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
