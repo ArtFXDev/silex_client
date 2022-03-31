@@ -26,7 +26,7 @@ class BuildBundlePath(CommandBase):
     """
 
     parameters = {
-        "file_to_bundle": {
+        "files_to_bundle": {
             "type": ListParameter,
             "hide": True
         },
@@ -63,26 +63,25 @@ class BuildBundlePath(CommandBase):
         logger: logging.Logger,
     ):
     
-        file_to_bundle: List[pathlib.Path] = parameters['file_to_bundle']
+        files_to_bundle: List[pathlib.Path] = parameters['files_to_bundle']
         frame_set: fileseq.FrameSet = parameters["frame_set"]
         extension: str = parameters["output_type"]
         padding: int = parameters["padding"]
         is_reference: bool = parameters["is_reference"]
-
-        nb_elements = len(frame_set)
+        nb_elements = len(files_to_bundle)
 
         BUNDLE_ROOT = pathlib.Path(os.environ.get('BUNDLE_ROOT'))
         directory = pathlib.Path('${BUNDLE_ROOT}') 
 
-        file_name = file_to_bundle[0].stem
+        file_name = files_to_bundle[0].stem
 
         # get rid of increment if there are multiple elements
         if nb_elements > 1:
             file_name = pathlib.Path(file_name).stem
 
-        if not files.is_valid_pipeline_path(pathlib.Path(file_to_bundle[0])):
+        if not files.is_valid_pipeline_path(pathlib.Path(files_to_bundle[0])):
             # Hashing name: makes sur the hashed value is positive to be intergrated in a path
-            file_name = str(hash(file_to_bundle[0].stem) % ((sys.maxsize + 1) * 2) )
+            file_name = str(hash(files_to_bundle[0].stem) % ((sys.maxsize + 1) * 2) )
 
         if is_reference:
             directory = directory / 'references' / file_name

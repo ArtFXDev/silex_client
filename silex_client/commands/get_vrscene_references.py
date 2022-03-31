@@ -36,11 +36,11 @@ class GetVrsceneReferences(CommandBase):
     """
 
     parameters = {
-        "vrscene_files": {"type": PathParameterMeta(multiple=True), "value": []}, "skip_prompt": {'type': bool, 'value': False},
+        "vrscene_files": {"type": PathParameterMeta(multiple=True), "value": []}, "skip_pipeline_files" :{'type': bool, "value": True}, "skip_prompt": {'type': bool, 'value': False},
     }
 
     @staticmethod
-    def _get_vrscene_references(file_path: pathlib.Path) -> Dict[str, pathlib.Path]:
+    def _get_vrscene_references(file_path: pathlib.Path, skip_pipeline_files: bool) -> Dict[str, pathlib.Path]:
         """
         Parse an .vrscene file for textures and return a dictionary : dict(node_name: reference_path)
         """
@@ -54,7 +54,7 @@ class GetVrsceneReferences(CommandBase):
                     continue
                 for reference_value in reference_values:
                     file_path = plugin.getValueAsString(reference_value)
-                    if not is_valid_pipeline_path(pathlib.Path(file_path)):
+                    if not is_valid_pipeline_path(pathlib.Path(file_path)) or not skip_pipeline_files:
                         plugin_key = f"{plugin.getName()}:{reference_value}"
                         plugins_references[plugin_key] = pathlib.Path(file_path)
 
@@ -68,11 +68,12 @@ class GetVrsceneReferences(CommandBase):
         logger: logging.Logger,
     ):
         vrscene_files: List[pathlib.Path] = parameters["vrscene_files"]
+        skip_pipeline_files: bool = parameters["skip_pipeline_files"]
         skip_prompt: bool = parameters["skip_prompt"]
         
         # Get texture paths in the .vrscene file
         plugins_references: Dict[str, pathlib.Path] = await execute_in_thread(
-            self._get_vrscene_references, vrscene_files[0]
+            self._get_vrscene_references, vrscene_files[0], skip_pipeline_files
         )
 
         # Create two lists with corresponding indexes

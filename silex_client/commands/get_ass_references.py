@@ -21,16 +21,24 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
+NODE_TYPES = [
+    'image',
+    'procedural',
+    'volume',
+    'photometric_light',
+]
+
+
 class GetAssReferences(CommandBase):
     """
     Retrieve a stored value from the action's global store
     """
 
     parameters = {
-        "ass_files": {"type": ListParameterMeta(pathlib.Path), "value": []}, "skip_prompt":{'type': bool, "value": False},
+        "ass_files": {"type": ListParameterMeta(pathlib.Path), "value": []}, "skip_pipeline_files":{'type': bool, "value": True}, "skip_prompt":{'type': bool, "value": False}, 
     }
 
-    def _get_references_in_ass(self, ass_file: pathlib.Path) -> Dict[str, pathlib.Path]:
+    def _get_references_in_ass(self, ass_file: pathlib.Path, skip_pipeline_files: bool) -> Dict[str, pathlib.Path]:
         """Parse an .ass file for references then return a dictionary : dict(node_name: reference_path)"""
 
         # Open ass file
@@ -47,21 +55,13 @@ class GetAssReferences(CommandBase):
             node = AiNodeIteratorGetNext(iter)
             node_name = AiNodeGetName(node)
 
-            if AiNodeIs(node, 'image'):
-                # Look for textures (images)
-                node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
-          
-            elif AiNodeIs(node, 'procedural'):
-                # Look for procedurals (can be ass references,...)
-                node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
+            for node_type in NODE_TYPES:
+                if AiNodeIs(node, node_type):
+                    path = pathlib.Path(AiNodeGetStr( node, "filename" ))
+                    if skip_pipeline_files and files.is_valid_pipeline_path(pathlib.Path(path)): 
+                        continue
 
-            elif AiNodeIs(node, 'volume'):
-                # Look for procedurals (can be ass references,...)
-                node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
-
-            elif AiNodeIs(node, 'photometric_light'):
-                # Look for photometric_light
-                node_to_path_dict[node_name] = pathlib.Path(AiNodeGetStr( node, "filename" ))
+                    node_to_path_dict[node_name] = path
 
         AiNodeIteratorDestroy(iter)
         AiEnd()
@@ -76,16 +76,16 @@ class GetAssReferences(CommandBase):
         logger: logging.Logger,
     ):
         ass_files: List[pathlib.Path] = parameters["ass_files"]
+        skip_pipeline_files: bool = parameters["skip_pipeline_files"]
         skip_prompt: bool = parameters["skip_prompt"]
 
         # Get texture paths in the .ass file
         node_to_path_dict: Dict[
             str, pathlib.Path
         ] = await thread_maya.execute_in_main_thread(
-            self._get_references_in_ass, ass_files[0]
+            self._get_references_in_ass, ass_files[0], skip_pipeline_files
         )
 
-        temp_dict: Dict[str, pathlib.Path] = dict()
 
         for node, reference in node_to_path_dict.items():
             temp_list = []
@@ -93,21 +93,18 @@ class GetAssReferences(CommandBase):
             # Add sequence to the references list
             sequence =  files.expand_template_to_sequence(reference, constants.ARNOLD_MATCH_SEQUENCE)
 
-            if sequence and not files.is_valid_pipeline_path(pathlib.Path(sequence[0])):
+            if sequence:
                 for path in sequence:
-
                     # Check if path already conformed                    
                     temp_list.append(pathlib.Path(path))                    
 
-                temp_dict[node] = temp_list
-
+                node_to_path_dict[node] = temp_list
             else:
                 # Add, non-sequence paths to the references list
-                if not files.is_valid_pipeline_path(pathlib.Path(reference)):
-                    temp_dict[node] = [reference]
+                node_to_path_dict[node] = [reference]
         
-        node_names = list(temp_dict.keys())
-        references = list(temp_dict.values())
+        node_names = list(node_to_path_dict.keys())
+        references = list(node_to_path_dict.values())
 
         # Display a message to the user to inform about all the references to conform
         message = f"The assfile\n{fileseq.findSequencesInList(ass_files)[0]}\nis referencing non conformed file(s) :\n\n"

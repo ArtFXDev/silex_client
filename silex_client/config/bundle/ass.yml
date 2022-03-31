@@ -15,7 +15,7 @@ ass:
           label: "Build path"
           path: "silex_client.commands.build_bundle_path.BuildBundlePath"
           parameters:
-            file_to_bundle:
+            files_to_bundle:
               value: !command-output "input:input:file_paths"
             frame_set:
               value: !command-output "input:input:frame_set"
@@ -38,6 +38,8 @@ ass:
               value: !command-output "input:input:file_paths"
             skip_prompt:
               value: true
+            skip_pipeline_files:
+              value: false
         bundle_references:
           label: "bundle references found"
           path: "silex_client.commands.iterate_action.IterateAction"
