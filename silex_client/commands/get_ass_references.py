@@ -27,7 +27,7 @@ class GetAssReferences(CommandBase):
     """
 
     parameters = {
-        "ass_files": {"type": ListParameterMeta(pathlib.Path), "value": []},
+        "ass_files": {"type": ListParameterMeta(pathlib.Path), "value": []}, "skip_prompt":{'type': bool, "value": False},
     }
 
     def _get_references_in_ass(self, ass_file: pathlib.Path) -> Dict[str, pathlib.Path]:
@@ -76,6 +76,7 @@ class GetAssReferences(CommandBase):
         logger: logging.Logger,
     ):
         ass_files: List[pathlib.Path] = parameters["ass_files"]
+        skip_prompt: bool = parameters["skip_prompt"]
 
         # Get texture paths in the .ass file
         node_to_path_dict: Dict[
@@ -109,7 +110,7 @@ class GetAssReferences(CommandBase):
         references = list(temp_dict.values())
 
         # Display a message to the user to inform about all the references to conform
-        message = f"The vrscenes\n{fileseq.findSequencesInList(ass_files)[0]}\nis referencing non conformed file(s) :\n\n"
+        message = f"The assfile\n{fileseq.findSequencesInList(ass_files)[0]}\nis referencing non conformed file(s) :\n\n"
         for file_path in references:
             message += f"- {file_path}\n"
 
