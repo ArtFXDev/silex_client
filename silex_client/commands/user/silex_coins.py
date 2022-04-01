@@ -37,6 +37,9 @@ class AddSilexCoinsCommand(CommandBase):
         if parameters["amount"] == 0:
             return
 
+        if action_query.store.get("silexCoins", False):
+            return
+
         current_user = await gazu.client.get_current_user()
         user_data = current_user["data"]
 
@@ -63,3 +66,5 @@ class AddSilexCoinsCommand(CommandBase):
                 }
             },
         )
+
+        action_query.store["silexCoins"] = True
