@@ -83,13 +83,23 @@ def IntArrayParameterMeta(size: int):
     return CommandParameterMeta("IntArrayParameter", (list,), attributes)
 
 
-def RangeParameterMeta(start: int, end: int, increment: int = 1):
+def RangeParameterMeta(
+    start: int,
+    end: int,
+    increment: int = 1,
+    value_label: Optional[str] = None,
+    marks: bool = False,
+    n_marks: Optional[int] = None,
+):
     def serialize():
         return {
             "name": "range",
             "start": start,
             "end": end,
             "increment": increment,
+            "value_label": value_label,
+            "marks": marks,
+            "n_marks": n_marks,
         }
 
     def get_default():

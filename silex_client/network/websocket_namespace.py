@@ -10,7 +10,6 @@ from __future__ import annotations
 import typing
 
 import socketio
-
 from silex_client.utils.log import logger
 
 # Forward references

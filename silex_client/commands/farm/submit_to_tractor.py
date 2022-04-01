@@ -6,12 +6,12 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder, farm
+from silex_client.utils import farm
 from silex_client.utils.parameter_types import (
     ListParameterMeta,
     MultipleSelectParameterMeta,
     RadioSelectParameterMeta,
-    UnionParameterMeta,
+    RangeParameterMeta,
 )
 from silex_client.utils.tractor import convert_to_tractor_task
 
@@ -26,14 +26,6 @@ from aiohttp.client_exceptions import (
     ContentTypeError,
     InvalidURL,
 )
-
-# Service key filters for Tractor job
-# See: https://rmanwiki.pixar.com/display/TRA/Job+Scripting#JobScripting-servicekeys
-SERVICE_FILTERS = {
-    "16RAM": "(@.mem >= 0) && (@.mem < 8)",
-    "32RAM": "(@.mem >= 8) && (@.mem < 16)",
-    "64RAM": "(@.mem >= 16)",
-}
 
 
 class SubmitToTractorCommand(CommandBase):
@@ -54,14 +46,18 @@ class SubmitToTractorCommand(CommandBase):
                     "Standard": 100,
                     "Specific frames": 120,
                     "Retake": 90,
-                    "Camap": 130,
+                    "Static frame": 130,
+                    "Supervision": 125,
                 }
             ),
         },
-        "blade_or_filters": {
-            "label": "Render on",
-            "type": MultipleSelectParameterMeta(**SERVICE_FILTERS),
-            "value": [SERVICE_FILTERS[k] for k in ["16RAM", "32RAM", "64RAM"]],
+        "min_blade_ram": {
+            "label": "Min RAM needed",
+            "tooltip": "Amount of available RAM for a blade to take a task",
+            "type": RangeParameterMeta(
+                start=0, end=64, increment=2, value_label="GB", marks=True, n_marks=4
+            ),
+            "value": 8,
         },
         "blade_and_filters": {
             "label": "Restrict with filters",
@@ -88,11 +84,6 @@ class SubmitToTractorCommand(CommandBase):
             "type": ListParameterMeta(str),
             "hide": True,
         },
-        "add_mount": {
-            "type": bool,
-            "value": True,
-            "hide": True,
-        },
     }
 
     def join_svckey_filters(self, filters: List[str], op: str) -> str:
@@ -102,51 +93,6 @@ class SubmitToTractorCommand(CommandBase):
         """
         return f" {op} ".join([f"({f})" for f in filters])
 
-    async def create_task_with_commands(
-        self,
-        parameters: Dict[str, Any],
-        title: str,
-        project: str,
-        command: command_builder.CommandBuilder,
-    ):
-        cleanup = parameters["task_cleanup_cmd"]
-        task: author.Task = author.Task(title=title)
-
-        # Add the project in the Rez requires
-        # This is useful to require ACES and define OCIO for example
-        command.add_rez_package(project)
-
-        # Since Tractor's task.addCleanup doesn't work
-        # We use a custom python wrapper script
-        if cleanup is not None:
-            command = (
-                command_builder.CommandBuilder(
-                    "python", rez_packages=["command_wrapper"], dashes="--"
-                )
-                .value("-m")
-                .value("command_wrapper.main")
-                .param("cleanup", f'"{str(cleanup)}"')
-                .param("command", f'"{str(command)}"')
-            )
-
-        # Add pre and post commands to each subtask
-        all_commands = (
-            parameters["precommands"] + [command] + parameters["postcommands"]
-        )
-
-        # Add every command to the subtask
-        for command in all_commands:
-            task.newCommand(
-                argv=command.as_argv(),
-                # Run commands on the same host
-                samehost=True,
-                # Limit tags with rez packages
-                # Useful when limiting the amout of vray jobs on the farm for example
-                tags=command.rez_packages,
-            )
-
-        return task
-
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -155,7 +101,6 @@ class SubmitToTractorCommand(CommandBase):
         logger: logging.Logger,
     ):
         tasks: List[farm.Task] = parameters["tasks"]
-        blade_or_filters: List[str] = parameters["blade_or_filters"]
         blade_and_filters: List[str] = parameters["blade_and_filters"]
         blade_ignore_filters: List[str] = parameters["blade_ignore_filters"]
         blade_blacklist: List[str] = parameters["blade_blacklist"]
@@ -167,20 +112,16 @@ class SubmitToTractorCommand(CommandBase):
         context = action_query.context_metadata
         owner = context["user_email"].split("@")[0]
 
-        # Construct service keys to restrict the blades the tasks will run on
-        services = ""
+        # Filter by available RAM
+        services = f"@.mem >= {parameters['min_blade_ram']}"
 
-        # Set the services the job will run on (groups of blades and filter tags using service keys)
-        if len(blade_or_filters) > 0:
-            services = self.join_svckey_filters(blade_or_filters, "||")
-
+        # Ignore services and blacklist
         ignore_services = [f"!{s}" for s in blade_ignore_filters + blade_blacklist]
 
         # Add and && conditions
         if len(blade_and_filters) > 0 or len(ignore_services) > 0:
-            services = self.join_svckey_filters(
-                [services] + blade_and_filters + ignore_services, "&&"
-            )
+            all_services = [services] + blade_and_filters + ignore_services
+            services = self.join_svckey_filters(all_services, "&&")
 
         # Create a Tractor job
         job = author.Job(
@@ -190,9 +131,6 @@ class SubmitToTractorCommand(CommandBase):
             projects=[context["project"]],
             service=services,
         )
-
-        # Directory mapping for Linux
-        # job.newDirMap("P:", f"/mnt/{nas}", "NFS")
 
         # Add the tasks to the job by converting them to Tractor specific classes
         for task in tasks:
@@ -224,18 +162,15 @@ class SubmitToTractorCommand(CommandBase):
                 "Could not query the tractor pool list, the config is unreachable"
             )
 
-        # Filter the pools
-        service_keys = list(
-            set(
-                [
-                    svckey
-                    for profile in tractor_pools["BladeProfiles"]
-                    if "Provides" in profile
-                    for svckey in profile["Provides"]
-                ]
-            )
-            - set(parameters["blade_blacklist"])
-        )
+        service_keys = [
+            svckey
+            for profile in tractor_pools["BladeProfiles"]
+            if "Provides" in profile
+            for svckey in profile["Provides"]
+        ]
+
+        # Filter the services
+        service_keys = list(set(service_keys) - set(parameters["blade_blacklist"]))
 
         service_keys.sort()
         blade_ignore_filters = self.command_buffer.parameters["blade_ignore_filters"]

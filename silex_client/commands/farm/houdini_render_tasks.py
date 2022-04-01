@@ -43,6 +43,7 @@ class HoudiniRenderTasksCommand(CommandBase):
         },
         "task_size": {
             "label": "Task size",
+            "tooltip": "Number of frames per computer",
             "type": int,
             "value": 10,
         },
@@ -85,12 +86,12 @@ class HoudiniRenderTasksCommand(CommandBase):
         "pre_command": {
             "type": str,
             "hide": True,
-            "value": None,
+            "value": "",
         },
         "cleanup_command": {
             "type": str,
             "hide": True,
-            "value": None,
+            "value": "",
         },
     }
 

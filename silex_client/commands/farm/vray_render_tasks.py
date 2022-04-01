@@ -40,6 +40,7 @@ class VrayRenderTasksCommand(CommandBase):
         },
         "task_size": {
             "label": "Task size",
+            "tooltip": "Number of frames per computer",
             "type": int,
             "value": 10,
         },
@@ -130,9 +131,9 @@ class VrayRenderTasksCommand(CommandBase):
                 .value("vrender")
             )
 
+            vray_cmd.param("skipExistingFrames", skip_existing)
             vray_cmd.param("rtEngine", engine)
             vray_cmd.param("sceneFile", vrscene.as_posix())
-            vray_cmd.param("skipExistingFrames", skip_existing)
             vray_cmd.param("imgFile", full_output_path.as_posix())"""
 
             engine_map = {"regular": 0, "cuda": 5, "optix": 7}
@@ -141,12 +142,12 @@ class VrayRenderTasksCommand(CommandBase):
                 "vray",
                 rez_packages=["vray", action_query.context_metadata["project"].lower()],
             )
+            vray_cmd.param("skipExistingFrames", skip_existing)
             vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
             vray_cmd.param("progressIncrement", 5)
             vray_cmd.param("verboseLevel", 3)
             vray_cmd.param("rtEngine", engine_map[engine])
             vray_cmd.param("sceneFile", vrscene.as_posix())
-            vray_cmd.param("skipExistingFrames", skip_existing)
             vray_cmd.param("imgFile", full_output_path.as_posix())
 
             if parameter_overrides:

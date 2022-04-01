@@ -42,8 +42,14 @@ class MayaRenderTasksCommand(CommandBase):
         },
         "task_size": {
             "label": "Task size",
+            "tooltip": "Number of frames per computer",
             "type": int,
             "value": 10,
+        },
+        "keep_output_type": {
+            "label": "Keep output type specified in the scene",
+            "type": bool,
+            "value": False,
         },
         # "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
         "output_folder": {"type": pathlib.Path, "hide": True, "value": ""},
@@ -59,6 +65,7 @@ class MayaRenderTasksCommand(CommandBase):
         logger: logging.Logger,
     ):
         scene: pathlib.Path = parameters["scene_file"]
+        keep_output_type: bool = parameters["keep_output_type"]
         frame_range: List[int] = parameters["frame_range"]
         task_size: int = parameters["task_size"]
 
@@ -75,7 +82,8 @@ class MayaRenderTasksCommand(CommandBase):
         # maya_cmd.param("skipExistingFrames", str(parameters["skip_existing"]).lower())
         maya_cmd.param("rd", parameters["output_folder"].as_posix())
         maya_cmd.param("im", parameters["output_filename"])
-        maya_cmd.param("of", parameters["output_extension"])
+        if not keep_output_type:
+            maya_cmd.param("of", parameters["output_extension"])
 
         if parameters["renderer"] == "arnold":
             maya_cmd.param("ai:lve", 2)  # log level
