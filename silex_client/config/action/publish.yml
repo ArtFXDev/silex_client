@@ -56,3 +56,10 @@ publish: !inherit
             action:
               value: !command-output "setup:get_publish_type:publish_type"
               hide: true
+
+    silex_coins:
+      index: 500
+      hide: true
+      commands:
+        add_silex_coins:
+          path: "silex_client.commands.user.silex_coins.AddSilexCoinsCommand"

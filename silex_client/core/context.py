@@ -14,16 +14,7 @@ import sys
 import uuid
 from concurrent import futures
 from queue import Queue
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    ItemsView,
-    KeysView,
-    Tuple,
-    ValuesView,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, ItemsView, KeysView, ValuesView
 
 import gazu
 import gazu.client
@@ -226,6 +217,7 @@ class Context:
         """
         user = asyncio.run(gazu.client.get_current_user())
         self._metadata["user"] = user.get("full_name")
+        self._metadata["user_id"] = user.get("id")
         self._metadata["user_email"] = user.get("email")
 
     @staticmethod

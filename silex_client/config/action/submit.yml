@@ -22,3 +22,13 @@ submit:
             action:
               value: !command-output "setup:get_submiter:action"
               hide: true
+
+    silex_coins:
+      index: 500
+      hide: true
+      commands:
+        add_silex_coins:
+          path: "silex_client.commands.user.silex_coins.AddSilexCoinsCommand"
+          parameters:
+            amount:
+              value: 3
