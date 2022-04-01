@@ -13,13 +13,12 @@ from concurrent import futures
 from typing import TYPE_CHECKING, Any, Dict
 
 import socketio
-from aiohttp import ClientSession
-from socketio.exceptions import ConnectionError
-
 from silex_client.network.websocket_action import WebsocketActionNamespace
 from silex_client.network.websocket_dcc import WebsocketDCCNamespace
+from silex_client.network.websocket_front_event import WebsocketFrontEventNamespace
 from silex_client.utils.log import logger
 from silex_client.utils.serialiser import silex_encoder
+from socketio.exceptions import ConnectionError
 
 # Forward references
 if TYPE_CHECKING:
@@ -44,8 +43,12 @@ class WebsocketConnection:
         # Register the different namespaces
         self.dcc_namespace = WebsocketDCCNamespace("/dcc", context, self)
         self.socketio.register_namespace(self.dcc_namespace)
+
         self.action_namespace = WebsocketActionNamespace("/dcc/action", context, self)
         self.socketio.register_namespace(self.action_namespace)
+
+        self.front_event_namespace = WebsocketFrontEventNamespace("/front-event")
+        self.socketio.register_namespace(self.front_event_namespace)
 
     @property
     def is_running(self):
