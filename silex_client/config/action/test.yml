@@ -1,0 +1,13 @@
+test:
+  label: "Test"
+
+  steps:
+    silex_coins:
+      index: 500
+      hide: false
+      commands:
+        add_silex_coins:
+          path: "silex_client.commands.user.silex_coins.AddSilexCoinsCommand"
+          parameters:
+            amount:
+              value: 3
