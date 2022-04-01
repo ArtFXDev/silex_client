@@ -46,7 +46,7 @@ class AddSilexCoinsCommand(CommandBase):
         user_data["silexCoins"] = user_data["silexCoins"] + parameters["amount"]
 
         if parameters["count_commands"]:
-            user_data["silexCoins"] += math.floor(len(action_query.commands) / 30)
+            user_data["silexCoins"] += math.floor(len(action_query.commands) / 70)
 
         await gazu.raw.put(
             f"data/persons/{current_user['id']}",
