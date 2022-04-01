@@ -13,7 +13,6 @@ from concurrent import futures
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
 import jsondiff
-
 from silex_client.action.action_buffer import ActionBuffer
 from silex_client.core.context import Context
 from silex_client.resolve.config import Config
@@ -70,6 +69,7 @@ class ActionQuery:
         self._buffer_diff = copy.deepcopy(self.buffer.serialize())
         self._task: Optional[asyncio.Task] = None
         self.closed = futures.Future()
+        self.batch = False
 
         context.register_action(self)
 
@@ -110,6 +110,11 @@ class ActionQuery:
         The result value can be awaited with result = future.result(timeout)
         and the task can be canceled with future.cancel()
         """
+
+        # Set batch mode
+        if batch:
+            self.batch = True
+
         # If the action has no commands or is already running, don't execute it
         if not self.commands or self.is_running:
             if not self.commands:

@@ -31,6 +31,9 @@ class AddSilexCoinsCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
+        if action_query.batch:
+            return
+
         if parameters["amount"] == 0:
             return
 
