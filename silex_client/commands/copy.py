@@ -136,6 +136,10 @@ class Copy(CommandBase):
 
                 await execute_in_thread(self.copy, src_path, dst_path, progress)
 
+                # Check if copy was done successfully
+                if not os.path.exists(dst_path):
+                    Exception(f"Fail to copy {src_path} to {dst_path}")
+
         return {
             "source_paths": src_paths,
             "destination_dirs": [dst_path.parent for dst_path in full_dst_path],
