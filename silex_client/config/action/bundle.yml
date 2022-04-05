@@ -30,14 +30,14 @@ bundle:
             output: "output:output"
             label_key: "file_paths"
 
-  silex_coins:
-    index: 500
-    hide: true
-    commands:
-      add_silex_coins:
-        path: "silex_client.commands.user.silex_coins.AddSilexCoinsCommand"
-        parameters:
-          amount:
-            value: 5
-          count_commands:
-            value: true
+    silex_coins:
+      index: 500
+      hide: true
+      commands:
+        add_silex_coins:
+          path: "silex_client.commands.user.silex_coins.AddSilexCoinsCommand"
+          parameters:
+            amount:
+              value: 5
+            count_commands:
+              value: true
