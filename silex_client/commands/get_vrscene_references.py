@@ -86,21 +86,22 @@ class GetVrsceneReferences(CommandBase):
             for item in list(plugins_references.values())
         ]
 
-        # Display a message to the user to inform about all the references to conform
-        message = f"The vrscenes\n{fileseq.findSequencesInList(vrscene_files)[0]}\nis referencing non conformed file(s) :\n\n"
-        for file_path in plugins_references.values():
-            message += f"- {file_path}\n"
-
-        message += "\nThese files must be conformed and repathed first. "
-        message += "Press continue to conform and repath them"
-        info_parameter = ParameterBuffer(
-            type=TextParameterMeta("info"),
-            name="info",
-            label="Info",
-            value=message,
-        )
+        
         # Send the message to inform the user
         if references and not skip_prompt:
+            # Display a message to the user to inform about all the references to conform
+            message = f"The vrscenes\n{fileseq.findSequencesInList(vrscene_files)[0]}\nis referencing non conformed file(s) :\n\n"
+            for file_path in plugins_references.values():
+                message += f"- {file_path}\n"
+
+            message += "\nThese files must be conformed and repathed first. "
+            message += "Press continue to conform and repath them"
+            info_parameter = ParameterBuffer(
+                type=TextParameterMeta("info"),
+                name="info",
+                label="Info",
+                value=message,
+            )
             await self.prompt_user(action_query, {"info": info_parameter})
 
         return {

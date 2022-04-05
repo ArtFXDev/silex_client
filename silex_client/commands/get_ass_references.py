@@ -106,22 +106,22 @@ class GetAssReferences(CommandBase):
         node_names = list(node_to_path_dict.keys())
         references = list(node_to_path_dict.values())
 
-        # Display a message to the user to inform about all the references to conform
-        message = f"The assfile\n{fileseq.findSequencesInList(ass_files)[0]}\nis referencing non conformed file(s) :\n\n"
-        for file_path in references:
-            message += f"- {file_path}\n"
-
-        message += "\nThese files must be conformed and repathed first. "
-        message += "Press continue to conform and repath them"
-        info_parameter = ParameterBuffer(
-            type=TextParameterMeta("info"),
-            name="info",
-            label="Info",
-            value=message,
-        )
-
         # Send the message to inform the user
         if references and not skip_prompt:
+            # Display a message to the user to inform about all the references to conform
+            message = f"The assfile\n{fileseq.findSequencesInList(ass_files)[0]}\nis referencing non conformed file(s) :\n\n"
+            for file_path in references:
+                message += f"- {file_path}\n"
+
+            message += "\nThese files must be conformed and repathed first. "
+            message += "Press continue to conform and repath them"
+            info_parameter = ParameterBuffer(
+                type=TextParameterMeta("info"),
+                name="info",
+                label="Info",
+                value=message,
+            )
+
             await self.prompt_user(action_query, {"info": info_parameter})
 
         return {

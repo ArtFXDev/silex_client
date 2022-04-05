@@ -45,6 +45,8 @@ default:
             dst:
               value: !command-output "bundle:expand_paths:expanded_paths"
               hide: true
+            force:
+              value: false
         rename:
           label: "Rename the copied files"
           path: "silex_client.commands.rename.Rename"

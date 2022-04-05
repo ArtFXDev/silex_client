@@ -94,13 +94,13 @@ class Copy(CommandBase):
 
                 dst_path = dst_paths[index % len(dst_paths)]
 
-                os.makedirs(str(dst_path), exist_ok=True)
-
                 if not src_path.exists():
                     raise Exception(f"Source path {src_path} does not exists")
 
                 if dst_path.is_dir():
                     dst_path = dst_path / src_path.name
+                
+                os.makedirs(str(dst_path.parents[0]), exist_ok=True)
 
                 full_dst_path.append(dst_path)
 
