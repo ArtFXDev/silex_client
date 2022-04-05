@@ -81,10 +81,10 @@ class BuildBundlePath(CommandBase):
 
         if not files.is_valid_pipeline_path(pathlib.Path(files_to_bundle[0])):
             # Hashing name: makes sur the hashed value is positive to be intergrated in a path
-            file_name = str(hash(files_to_bundle) % ((sys.maxsize + 1) * 2) )
+            file_name = str(hash(files_to_bundle[0]) % ((sys.maxsize + 1) * 2) )
 
         if is_reference:
-            directory = directory / 'references' 
+            directory = directory / 'references'
         
         full_name = file_name
         full_names = []

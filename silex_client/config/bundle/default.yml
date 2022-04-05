@@ -33,7 +33,7 @@ default:
           path: "silex_client.commands.expand_paths.ExpandPaths"
           parameters:
             paths_to_expand:
-              value: !command-output "bundle:build_bundle_path:directory"
+              value: !command-output "bundle:build_bundle_path:full_path"
               hide: true
         copy:
           label: "Copy file"
@@ -47,22 +47,12 @@ default:
               hide: true
             force:
               value: false
-        rename:
-          label: "Rename the copied files"
-          path: "silex_client.commands.rename.Rename"
-          parameters:
-            src:
-              value: !command-output "bundle:copy:destination_paths"
-              hide: true
-            name:
-              value: !command-output "bundle:build_bundle_path:full_name"
-              hide: true
         set_env:
           label: "Replace path by environement variables"
           path: "silex_client.commands.set_env.SetEnv"
           parameters:
             paths:
-              value: !command-output "bundle:rename:new_paths"
+              value: !command-output "bundle:copy:destination_paths"
             envs:
               value: !command-output "bundle:expand_paths:envs"
 
