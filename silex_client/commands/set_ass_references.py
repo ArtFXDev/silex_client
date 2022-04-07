@@ -35,7 +35,7 @@ class SetAssReferences(CommandBase):
         "node_names": {"type": ListParameterMeta(str)},
         "ass_files": {"type": ListParameterMeta(pathlib.Path)},
         "new_ass_files": {"type": ListParameterMeta(pathlib.Path)},
-        "is_bundle": {"type": bool, 'value': False},
+        "is_asset": {"type": bool, 'value': False},
     }
 
     def _set_reference_in_ass(self, progress, new_ass_files: List[pathlib.Path], ass_files: List[pathlib.Path], node_names: List[str], references: List[pathlib.Path]):
@@ -92,7 +92,7 @@ class SetAssReferences(CommandBase):
         node_names: List[str] = parameters["node_names"]
         ass_files: List[pathlib.Path] = parameters["ass_files"]
         new_ass_files: List[pathlib.Path] = parameters["new_ass_files"]
-        is_bundle: bool = parameters["is_bundle"]
+        is_asset: bool = parameters["is_asset"]
 
         # TODO: This should be done in the get_value method of the ParameterBuffer
         references: List[pathlib.Path] = []
@@ -101,7 +101,7 @@ class SetAssReferences(CommandBase):
             reference = reference.get_value(action_query)
             references.append(reference)
         
-        if not is_bundle:
+        if not is_asset:
             def add_asset_folder(ass):
                 """Add asset folder """
                 directory = ass.parents[0]

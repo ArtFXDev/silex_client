@@ -83,7 +83,7 @@ ass:
             new_ass_files:
               value: !command-output "bundle_ass:expand_paths:expanded_paths"
               hide: true
-            is_bundle:
+            is_asset:
               value: true
 
         set_env:
