@@ -146,6 +146,8 @@ class BuildOutputPath(CommandBase):
         frame_set: fileseq.FrameSet = parameters["frame_set"]
         padding: int = parameters["padding"]
         nb_elements = len(frame_set)
+        name_path = "/".join([slugify(split) for split in name.split("/")])
+        name = slugify(name_path)
 
         if use_current_context:
             task_id = action_query.context_metadata["task_id"]
@@ -156,7 +158,7 @@ class BuildOutputPath(CommandBase):
         if output_path is None:
             raise Exception("Could not get the output path from gazu")
 
-        directory = output_path.parent / name if name else output_path.parent
+        directory = output_path.parent / name_path if name else output_path.parent
         temp_directory = output_path.parent / str(uuid.uuid4())
         file_name = output_path.name + f"_{name}" if name else output_path.name
         full_name = file_name
@@ -205,10 +207,7 @@ class BuildOutputPath(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        # Slugify the name
         name_parameter = self.command_buffer.parameters["name"]
-        name_value = name_parameter.get_value(action_query)
-        name_parameter.value = slugify(str(name_value))
 
         # This action can be used with or without a context
         for context_value in ["entity_id", "task_type_id", "entity_type", "task"]:

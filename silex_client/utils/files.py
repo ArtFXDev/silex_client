@@ -6,13 +6,11 @@ Can be used for development purposes
 """
 
 import errno
-import importlib
 import os
 import pathlib
 import re
 import sys
 import unicodedata
-from types import ModuleType
 from typing import Dict, List
 
 import fileseq
@@ -195,6 +193,9 @@ def expand_template_to_sequence(
 
     Each regex in the list must contain a single capturing group that will capture the expression
     """
+    if not os.path.exists(path_template.parent):
+        return fileseq.FileSequence(path_template)
+
     file_matches = []
     for regex in regexes:
         match = regex.match(str(path_template))
