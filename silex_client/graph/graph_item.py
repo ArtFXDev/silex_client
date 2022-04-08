@@ -11,34 +11,34 @@ from silex_client.utils.files import slugify
 
 
 @dataclass()
-class BaseBuffer(ABC):
+class GraphItem(ABC):
     """
-    A buffer can be serialized and deserialized to json format. It is used
-    as a communication payload between the different parts of silex. Each part
-    can update the buffer.
+    Every GraphItem can be serialized and deserialized to json format. They are used
+    as communication payloads between the different parts of silex.
+    An action is composed of multiple ActionItems
 
     Example:
 
-                      [buffer]                    [buffer]
-        silex-client <---------> socket-service <----------> silex-front
+                       [item]                    [item]
+        silex-client <--------> socket-service <--------> silex-front
     """
 
-    #: Name of the buffer, must have no space or special characters
+    #: Name of the item, must have no space or special characters
     name: str = field()
 
-    #: The name of the buffer, only meant to be displayed in the interface
+    #: The name of the item, only meant to be displayed in the interface
     label: Optional[str] = field(compare=False, repr=False, default=None)
 
-    #: Parent in the buffer hierarchy
-    parent: Optional[BaseBuffer] = field(compare=False, repr=False, default=None)
+    #: Parent in the item hierarchy
+    parent: Optional[GraphItem] = field(compare=False, repr=False, default=None)
 
-    #: Specify if the buffer must be displayed by the UI or not, hidden buffer are not sent at all
+    #: Specify if the item must be displayed by the UI or not, hidden item are not sent at all
     hide: bool = field(compare=False, repr=False, default=False)
 
     #: Small explanation for the user
     tooltip: Optional[str] = field(compare=False, repr=False, default=None)
 
-    #: A Unique ID to help differentiate multiple buffers
+    #: A Unique ID to help differentiate multiple item
     uuid: str = field(default_factory=lambda: str(unique_id.uuid4()))
 
     #: Marquer to know if the serialize cache is outdated or not
@@ -49,9 +49,9 @@ class BaseBuffer(ABC):
 
     def __setattr__(self, name, value):
         """
-        Everytime an attribute of this buffer is set, this will help setting the
+        Everytime an attribute of this item is set, this will help setting the
         outdated_cache attribute for you automatically, so you don't have to set
-        outdated_cache = True every time you modify an attribute of the buffer
+        outdated_cache = True every time you modify an attribute of the item
 
         Warning: This does not work when modifying container attributes, appending
         a value to a list attribute does not call __setattr__

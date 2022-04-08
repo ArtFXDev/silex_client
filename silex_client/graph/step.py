@@ -1,27 +1,29 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
-from silex_client.buffer.base_buffer import BaseBuffer
-from silex_client.buffer.command_buffer import CommandBuffer
-from silex_client.utils.enums import Execution, Status
+from silex_client.graph.graph_item import GraphItem
+from silex_client.graph.pluggable_item import PluggableItem
+from silex_client.graph.command import Command
+from silex_client.utils.enums import Status
 
 
 @dataclass()
-class StepBuffer(BaseBuffer):
+class Step(GraphItem, PluggableItem):
     """
     A step could be compared to a function that would contain
     multple statements (commands) or other functions (steps)
 
     Example:
 
-        [StepBuffer]:
-            [CommandBuffer]
-            [CommandBuffer]
-            [StepBuffer]:
-                [CommandBuffer]
-                [CommandBuffer]
+    [Action]
+        [Step]:
+            [Command]
+            [Command]
+            [Step]:
+                [Command]
+                [Command]
     """
 
     #: The status is readonly, it is computed from the commands's status
@@ -31,19 +33,13 @@ class StepBuffer(BaseBuffer):
     index: int = field(default=0)
 
     #: This attribute follows the composite design pattern
-    children: Dict[str, StepBuffer | CommandBuffer] = field(default_factory=dict)
+    children: Dict[str, Step | Command] = field(default_factory=dict)
 
     #: Dict of variables that are global to the children of this step (basically a tote)
-    store: Dict[str, Any] = field(compare=False, default_factory=dict)
+    store: Dict[Any, Any] = field(compare=False, default_factory=dict)
 
-    #: Snapshot of the context's metadata when this buffer is created
-    context_metadata: Dict[str, Any] = field(default_factory=dict)
-
-    #: The thumbnail is only for user display
-    thumbnail: Optional[str] = field(default=None)
-
-    #: Category when displaying the action in shelves of DCCs
-    shelf: Optional[str] = field(default=None)
+    #: Overrides of the action's context metadata for this step
+    context_overrides: Dict[str, Any] = field(default_factory=dict)
 
     def reorder_children(self):
         """
