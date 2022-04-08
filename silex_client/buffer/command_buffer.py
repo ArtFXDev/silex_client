@@ -36,17 +36,6 @@ class CommandBuffer(BaseBuffer):
     Store the data of a command, it is used as a comunication payload with the UI
     """
 
-    PRIVATE_FIELDS = [
-        "output_result",
-        "executor",
-        "parent",
-        "outdated_cache",
-        "serialize_cache",
-    ]
-    READONLY_FIELDS = ["logs", "label"]
-    CHILD_NAME = "parameters"
-    ALLOW_HIDE_CHILDS = False
-
     #: Childs in the buffer hierarchy of buffer of the action
     children: Dict[str, ParameterBuffer] = field(default_factory=dict)
     #: The path to the command's module
@@ -73,14 +62,6 @@ class CommandBuffer(BaseBuffer):
 
         # Get the executor
         self.executor = self._get_executor(self.path)
-
-    @property
-    def child_type(self):
-        return ParameterBuffer
-
-    @property
-    def parameters(self) -> Dict[str, ParameterBuffer]:
-        return self.children
 
     def _get_executor(self, path: str) -> CommandBase:
         """
@@ -154,71 +135,3 @@ class CommandBuffer(BaseBuffer):
             self.status = Status.COMPLETED
         elif execution_type == Execution.BACKWARD:
             self.status = Status.INITIALIZED
-
-    def require_prompt(self) -> bool:
-        """
-        Check if this command require a user input, by testing the ask_user field
-        and none values on the parameters
-        """
-        if self.skip:
-            return False
-        if self.ask_user:
-            return True
-        if all(
-            parameter.value is not None or parameter.hide
-            for parameter in self.children.values()
-        ):
-            return False
-        return True
-
-    async def setup(self, action_query: ActionQuery):
-        """
-        Call the setup of the command, the setup method is used to edit the command attributes
-        dynamically (parameters, states...)
-        """
-        # Create a dictionary that only contains the name and the value of the parameters
-        # without infos like the type, label...
-        parameters = {
-            key: value.get_value(action_query) for key, value in self.children.items()
-        }
-        with suppress(TypeError):
-            parameters = copy.deepcopy(parameters)
-
-        async with RedirectWebsocketLogs(action_query, self) as log:
-            await self.executor.setup(parameters, action_query, log)
-
-    @classmethod
-    def construct(
-        cls, serialized_data: Dict[str, Any], parent: BaseBuffer = None
-    ) -> CommandBuffer:
-        """
-        Create an command buffer from serialized data
-        """
-        config = dacite_config.Config(cast=[Status, CommandOutput])
-
-        # Initialize the buffer without the children, since the children needs special treatment
-        filtered_data = serialized_data
-        filtered_data["parent"] = parent
-        if cls.CHILD_NAME in serialized_data:
-            filtered_data = copy.copy(serialized_data)
-            del filtered_data[cls.CHILD_NAME]
-        command = dacite.from_dict(cls, filtered_data, config)
-
-        # Get the default data from the executor and patch it with the serialized data
-        executor_parameters = copy.deepcopy(command.executor.parameters)
-        serialized_parameters = serialized_data.get("parameters", {})
-        for parameter_name, parameter in executor_parameters.items():
-            parameter["name"] = parameter_name
-
-            # The parameters can be defined with <key>=<value> as a shortcut
-            if not isinstance(serialized_parameters.get(parameter_name, {}), dict):
-                serialized_parameters[parameter_name] = {
-                    "value": serialized_parameters[parameter_name]
-                }
-
-            # Apply the parameters to the default parameters
-            serialized_data["parameters"] = jsondiff.patch(
-                executor_parameters, serialized_parameters
-            )
-
-        return super().construct(serialized_data, parent)
