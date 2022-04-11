@@ -43,7 +43,7 @@ class BuildBundlePath(CommandBase):
         },
         "is_reference": {
             "type": bool,
-            "value": 1,
+            "value": True,
             "hide": True,
         },
         "output_type": {
