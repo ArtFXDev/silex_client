@@ -35,6 +35,7 @@ class SetAssReferences(CommandBase):
         "node_names": {"type": ListParameterMeta(str)},
         "ass_files": {"type": ListParameterMeta(pathlib.Path)},
         "new_ass_files": {"type": ListParameterMeta(pathlib.Path)},
+        "is_asset": {"type": bool, 'value': False},
     }
 
     def _set_reference_in_ass(self, progress, new_ass_files: List[pathlib.Path], ass_files: List[pathlib.Path], node_names: List[str], references: List[pathlib.Path]):
@@ -91,6 +92,7 @@ class SetAssReferences(CommandBase):
         node_names: List[str] = parameters["node_names"]
         ass_files: List[pathlib.Path] = parameters["ass_files"]
         new_ass_files: List[pathlib.Path] = parameters["new_ass_files"]
+        is_asset: bool = parameters["is_asset"]
 
         # TODO: This should be done in the get_value method of the ParameterBuffer
         references: List[pathlib.Path] = []
@@ -98,15 +100,17 @@ class SetAssReferences(CommandBase):
             reference = reference.get_value(action_query)[0]
             reference = reference.get_value(action_query)
             references.append(reference)
+        
+        if not is_asset:
+            def add_asset_folder(ass):
+                """Add asset folder """
+                directory = ass.parents[0]
+                file_name = str(ass).split('\\')[-1]
+                extension = ass.suffix
+                return directory / 'assets' / file_name
 
-        def add_asset_folder(ass):
-            """Add asset folder """
-            directory = ass.parents[0]
-            file_name = str(ass).split('\\')[-1]
-            extension = ass.suffix
-            return directory / 'assets' / file_name
-
-        new_ass_files = list(map(add_asset_folder, new_ass_files))
+            # Format paths (add asset folder)
+            new_ass_files = list(map(add_asset_folder, new_ass_files))
         
         # set references paths and display progress bar
         progress = SharedVariable(0)
@@ -120,4 +124,4 @@ class SetAssReferences(CommandBase):
         ):
             await thread_maya.execute_in_main_thread(self._set_reference_in_ass, progress, new_ass_files, ass_files, node_names, references)
 
-        return new_ass_files
+        return {"new_ass_files": new_ass_files}

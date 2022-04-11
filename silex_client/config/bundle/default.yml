@@ -1,0 +1,66 @@
+default:
+  shelf: "input"
+
+  steps:
+    input:
+      hide: true
+      index: 10
+      commands:
+        input:
+          path: "silex_client.commands.pass.Pass"
+
+    bundle:
+      label: "bundle"
+      index: 20
+      commands:
+        build_bundle_path:
+          label: "Build path"
+          path: "silex_client.commands.build_bundle_path.BuildBundlePath"
+          parameters:
+            files_to_bundle:
+              value: !command-output "input:input:file_paths"
+            frame_set:
+              value: !command-output "input:input:frame_set"
+            padding:
+              value: !command-output "input:input:padding"
+            is_reference:
+              value: !command-output "input:input:is_reference"
+            output_type:
+              hide: true
+
+        expand_paths:
+          label: "Expand environment variables"
+          path: "silex_client.commands.expand_paths.ExpandPaths"
+          parameters:
+            paths_to_expand:
+              value: !command-output "bundle:build_bundle_path:full_path"
+              hide: true
+        copy:
+          label: "Copy file"
+          path: "silex_client.commands.copy.Copy"
+          parameters:
+            src:
+              value: !command-output "input:input:file_paths"
+              hide: true
+            dst:
+              value: !command-output "bundle:expand_paths:expanded_paths"
+              hide: true
+            force:
+              value: false
+        set_env:
+          label: "Replace path by environment variables"
+          path: "silex_client.commands.set_env.SetEnv"
+          parameters:
+            paths:
+              value: !command-output "bundle:copy:destination_paths"
+            envs:
+              value: !command-output "bundle:expand_paths:envs"
+
+    output:
+      index: 30
+      hide: true
+      commands:
+        output:
+          path: "silex_client.commands.pass.Pass"
+          parameters:
+            input: !command-output "bundle:set_env:expanded_paths"

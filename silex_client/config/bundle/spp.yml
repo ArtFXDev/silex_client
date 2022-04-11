@@ -1,0 +1,10 @@
+spp: !inherit
+  parent: ".default"
+
+  steps:
+    bundle:
+      commands:
+        build_bundle_path:
+          parameters:
+            output_type:
+              value: "spp"

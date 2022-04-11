@@ -93,13 +93,14 @@ class Copy(CommandBase):
                 self.command_buffer.label = f"{label} ({index+1}/{len(src_paths)})"
 
                 dst_path = dst_paths[index % len(dst_paths)]
-                os.makedirs(str(dst_path), exist_ok=True)
 
                 if not src_path.exists():
                     raise Exception(f"Source path {src_path} does not exists")
 
                 if dst_path.is_dir():
                     dst_path = dst_path / src_path.name
+                
+                os.makedirs(str(dst_path.parents[0]), exist_ok=True)
 
                 full_dst_path.append(dst_path)
 
@@ -134,6 +135,10 @@ class Copy(CommandBase):
                         continue
 
                 await execute_in_thread(self.copy, src_path, dst_path, progress)
+
+                # Check if copy was done successfully
+                if not os.path.exists(dst_path):
+                    raise Exception(f"Fail to copy {src_path} to {dst_path}")
 
         return {
             "source_paths": src_paths,
