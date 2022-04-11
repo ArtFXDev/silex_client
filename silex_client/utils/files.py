@@ -11,63 +11,12 @@ import pathlib
 import re
 import sys
 import unicodedata
-from typing import Dict, List
+from typing import List
 
 import fileseq
-from silex_client.core.context import Context
 
 # Sadly, Python fails to provide the following magic number for us.
 ERROR_INVALID_NAME = 123
-
-
-def is_valid_pipeline_path(file_path: pathlib.Path, mode: str = "output") -> bool:
-    """
-    Test if the given path is a valid path in the pipeline or not
-    """
-    mode_templates = Context.get()["project_file_tree"].get(mode, {})
-    if mode_templates.get("mountpoint") != file_path.drive:
-        return False
-
-    return bool(expand_path(file_path, mode))
-
-
-def expand_path(file_path: pathlib.Path, mode: str = "output") -> Dict[str, str]:
-    """
-    Convert a path into a dict of variables
-
-    Example:
-        - P:/test_pipe/shots/s04/p010/fx_main/publish/v000/ma/demo/test_pipe_s04_p010_fx_main_publish_v000_demo.ma
-        will returns:
-            {'Name': 'main',
-             'OutputType': 'ma',
-             'Project': 'test_pipe',
-             'Sequence': 's04',
-             'Shot': 'p010',
-             'TaskType': 'fx',
-             'Version': '000',
-             'template': 'shot'}
-    """
-    path_variable = {}
-    mode_templates = Context.get()["project_file_tree"].get(mode, {})
-    template_var = re.compile(r"<(\w+)>")
-    # The path can be a path of asset, shot, sequence...
-    for template_name, path_template in mode_templates.get("folder_path", {}).items():
-        path_template = re.escape(str(pathlib.Path(path_template)))
-        regex = template_var.sub(r"([0-9a-zA-Z_]+)", path_template)
-        file_match = re.search(regex, str(file_path))
-        if file_match is None:
-            continue
-
-        # Find the relations between the template and the given path
-        path_variable["template"] = template_name
-        for index, match in enumerate(template_var.finditer(path_template)):
-            if not match.groups():
-                continue
-
-            path_variable[match.groups()[0]] = file_match.group(index + 1)
-        return path_variable
-
-    return path_variable
 
 
 def is_valid_path(pathname: str) -> bool:
