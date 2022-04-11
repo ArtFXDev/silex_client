@@ -84,9 +84,15 @@ class SelectBundle(SelectConform):
             del os.environ["BUNDLE_ROOT"]
         os.environ["BUNDLE_ROOT"] = str(export_directory / f'BUNDLE_{file_paths[0].stem}')
 
-
         os.makedirs(os.environ.get("BUNDLE_ROOT"), exist_ok=True)
 
-        return await super().__call__(parameters, action_query, logger)
+        output =  await super().__call__(parameters, action_query, logger)
+
+        for file in  output['files']:
+            file.update({'is_reference': False})
+
+        return output
+
+
   
       
