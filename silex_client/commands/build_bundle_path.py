@@ -90,7 +90,7 @@ class BuildBundlePath(CommandBase):
         full_names = []
         full_paths = [directory / full_name]
 
-        # Create directory using the environement variable
+        # Create directory using the environment variable
         os.makedirs( str(directory).replace('${BUNDLE_ROOT}', str(BUNDLE_ROOT)), exist_ok=True)
         logger.info(f"Output directory created: {directory}")
 

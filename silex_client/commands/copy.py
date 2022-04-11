@@ -138,7 +138,7 @@ class Copy(CommandBase):
 
                 # Check if copy was done successfully
                 if not os.path.exists(dst_path):
-                    Exception(f"Fail to copy {src_path} to {dst_path}")
+                    raise Exception(f"Fail to copy {src_path} to {dst_path}")
 
         return {
             "source_paths": src_paths,

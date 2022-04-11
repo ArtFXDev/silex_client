@@ -147,7 +147,7 @@ class SelectBundle(CommandBase):
                     paddings.pop(index - offset)
                     conform_types.pop(index - offset)
 
-        # Reset Environement variable if it already exists 
+        # Reset environment variable if it already exists 
         if "BUNDLE_ROOT" in os.environ : 
             del os.environ["BUNDLE_ROOT"]
         os.environ["BUNDLE_ROOT"] = str(export_directory / f'BUNDLE_{file_paths[0].stem}')

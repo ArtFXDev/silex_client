@@ -6,7 +6,7 @@ import pathlib
 import os
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.files import expand_environement_variable
+from silex_client.utils.files import expand_environment_variable
 from silex_client.utils.parameter_types import ListParameter
 
 if typing.TYPE_CHECKING:
@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
 
 class SetEnv(CommandBase):
     """
-    Replace path by environement variables if it exists
+    Replace path by environment variables if it exists
     """
 
     parameters = {

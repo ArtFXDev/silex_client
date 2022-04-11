@@ -5,7 +5,7 @@ import typing
 import pathlib
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.files import expand_environement_variable, find_environement_variable
+from silex_client.utils.files import expand_environment_variable, find_environment_variable
 from silex_client.utils.parameter_types import ListParameter
 
 if typing.TYPE_CHECKING:
@@ -14,7 +14,7 @@ if typing.TYPE_CHECKING:
 
 class ExpandPaths(CommandBase):
     """
-    Expand environement variable if it exists
+    Expand environment variable if it exists
     """
 
     parameters = {
@@ -35,7 +35,7 @@ class ExpandPaths(CommandBase):
 
         file_paths = parameters['paths_to_expand']
 
-        expanded_paths = list(map(expand_environement_variable,file_paths))
-        environement_var = list(set([find_environement_variable(path).group(1) for path in file_paths]  )) 
+        expanded_paths = list(map(expand_environment_variable,file_paths))
+        environment_var = list(set([find_environment_variable(path).group(1) for path in file_paths]  )) 
 
-        return {"expanded_paths": expanded_paths , 'envs': environement_var}
+        return {"expanded_paths": expanded_paths , 'envs': environment_var}

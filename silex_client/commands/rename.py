@@ -21,7 +21,6 @@ from silex_client.utils.parameter_types import (
     TextParameterMeta,
 )
 from silex_client.utils.thread import execute_in_thread
-from silex_client.utils import files
 
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery

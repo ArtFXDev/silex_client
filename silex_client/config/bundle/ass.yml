@@ -60,7 +60,7 @@ ass:
       index: 30
       commands:
         expand_paths:
-          label: "Expand environement variables"
+          label: "Expand environment variables"
           path: "silex_client.commands.expand_paths.ExpandPaths"
           parameters:
             paths_to_expand:
@@ -87,7 +87,7 @@ ass:
               value: true
 
         set_env:
-          label: "Replace path by environement variables"
+          label: "Replace path by environment variables"
           path: "silex_client.commands.set_env.SetEnv"
           parameters:
             paths:
