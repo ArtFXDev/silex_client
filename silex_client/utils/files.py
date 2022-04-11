@@ -11,13 +11,40 @@ import pathlib
 import re
 import sys
 import unicodedata
-from typing import Dict, List
+from types import ModuleType
+from typing import List, Dict, Union, Tuple
+from silex_client.utils.constants import ENV_VARIABLE_FORMAT
 
 import fileseq
 from silex_client.core.context import Context
 
 # Sadly, Python fails to provide the following magic number for us.
 ERROR_INVALID_NAME = 123
+
+def find_environment_variable(path: pathlib.Path) -> Union[re.Match, None]:
+    """
+    Find an environment variable in a path, if it exists
+    """
+    # Format path 
+    path_str: str = path.as_posix()
+    # Look for the variable 
+    for reg in ENV_VARIABLE_FORMAT:
+        if re.match(reg, path_str) and re.match(reg, path_str).group(1) in os.environ:
+            return re.match(reg, path_str)
+    return None
+    
+def expand_environment_variable(path: pathlib.Path) -> pathlib.Path:
+    """
+    Replace an environment variable in a path by its value and return it
+    """
+    if find_environment_variable( path):      
+        # Format path 
+        path_str: str = path.as_posix()
+        
+        match:  Union[re.Match, None] = find_environment_variable(path)
+        return pathlib.Path(path_str.replace(match.group(0), os.environ[match.group(1)]))
+
+    return path
 
 
 def is_valid_pipeline_path(file_path: pathlib.Path, mode: str = "output") -> bool:
