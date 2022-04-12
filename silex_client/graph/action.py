@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
 from silex_client.graph.step import Step
+from silex_client.utils.enums import Execution
+
 
 
 @dataclass()
@@ -20,3 +22,9 @@ class Action(Step):
 
     #: Category when displaying the action in shelves of DCCs
     shelf: Optional[str] = field(default=None)
+
+    #: This attribute follows the composite design pattern
+    children: Dict[str, Step] = field(default_factory=dict)
+
+    #: This defines the way the children of the action will be executed (either forward, backward, or paused)
+    execution_type: int = field(default=Execution.FORWARD)

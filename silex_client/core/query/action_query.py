@@ -13,8 +13,9 @@ from concurrent import futures
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
 import jsondiff
-from silex_client.action.action_buffer import ActionBuffer
+from silex_client.graph.action import Action
 from silex_client.core.context import Context
+from silex_client.core.query.command_query import CommandQuery
 from silex_client.resolve.config import Config
 from silex_client.utils.datatypes import ReadOnlyDict
 from silex_client.utils.enums import Execution, Status
@@ -23,8 +24,8 @@ from silex_client.utils.serialiser import silex_diff
 
 # Forward references
 if TYPE_CHECKING:
-    from silex_client.action.command_buffer import CommandBuffer
-    from silex_client.action.step_buffer import StepBuffer
+    from silex_client.graph.command import Command
+    from silex_client.graph.step import Step
     from silex_client.core.event_loop import EventLoop
     from silex_client.network.websocket import WebsocketConnection
 
@@ -47,13 +48,13 @@ class ActionQuery:
             resolved_config = Config.get().resolve_action(name, category)
 
         if resolved_config is None:
-            self.buffer = ActionBuffer("none")
+            self.buffer = Action("none")
             return
 
         self.event_loop: EventLoop = context.event_loop
         self.ws_connection: WebsocketConnection = context.ws_connection
 
-        self.buffer: ActionBuffer = ActionBuffer(
+        self.buffer: Action = Action(
             name, context_metadata=metadata_snapshot
         )
         self._initialize_buffer(
@@ -324,6 +325,7 @@ class ActionQuery:
             )
         return confirm
 
+    #####################################################################################
     @property
     def current_command(self):
         """Get the current command or the last command before stopping"""
@@ -393,6 +395,7 @@ class ActionQuery:
                 parameters[f"{step.name}:{command.name}"] = command.parameters
 
         return parameters
+    ###########################################################################################
 
     def iter_commands(self) -> CommandIterator:
         """
@@ -400,65 +403,65 @@ class ActionQuery:
         """
         return CommandIterator(self.buffer)
 
-    def set_parameter(self, parameter_name: str, value: Any, **kwargs) -> None:
-        """
-        Shortcut to set variables on the buffer easly
+    # def set_parameter(self, parameter_name: str, value: Any, **kwargs) -> None:
+    #     """
+    #     Shortcut to set variables on the buffer easly
 
-        The parameter name is parsed, according to the scheme : <step>:<command>:<parameter>
-        The missing values can be guessed if there is no ambiguity, only <parameter> is required
-        """
-        step = None
-        command = None
+    #     The parameter name is parsed, according to the scheme : <step>:<command>:<parameter>
+    #     The missing values can be guessed if there is no ambiguity, only <parameter> is required
+    #     """
+    #     step = None
+    #     command = None
 
-        # Get the infos that are provided
-        parameter_split = parameter_name.split(":")
-        name = parameter_split[-1]
-        if len(parameter_split) == 3:
-            step = parameter_split[0]
-            command = parameter_split[1]
-        elif len(parameter_split) == 2:
-            command = parameter_split[0]
-        elif len(parameter_split) != 1:
-            logger.warning(
-                "Invalid parameter path: The given parameter path %s has too many separators",
-                parameter_name,
-            )
+    #     # Get the infos that are provided
+    #     parameter_split = parameter_name.split(":")
+    #     name = parameter_split[-1]
+    #     if len(parameter_split) == 3:
+    #         step = parameter_split[0]
+    #         command = parameter_split[1]
+    #     elif len(parameter_split) == 2:
+    #         command = parameter_split[0]
+    #     elif len(parameter_split) != 1:
+    #         logger.warning(
+    #             "Invalid parameter path: The given parameter path %s has too many separators",
+    #             parameter_name,
+    #         )
 
-        # Guess the info that were not provided by taking the first match
-        index = None
-        for parameter_path, parameters in self.parameters.items():
-            parameter_step = parameter_path.split(":")[0]
-            parameter_command = parameter_path.split(":")[1]
-            # If only the parameter is provided
-            if step is None and command is None and name in parameters:
-                step = parameter_step
-                index = parameter_command
-                break
-            # If the command name and the parameter are provided
-            elif step is None and command == parameter_command and name in parameters:
-                step = parameter_step
-                index = parameter_command
-                break
-            # If everything is provided
-            elif step is not None and command is not None:
-                if (
-                    step == parameter_step
-                    and command == parameter_command
-                    and name in parameters
-                ):
-                    index = parameter_command
-                    break
+    #     # Guess the info that were not provided by taking the first match
+    #     index = None
+    #     for parameter_path, parameters in self.parameters.items():
+    #         parameter_step = parameter_path.split(":")[0]
+    #         parameter_command = parameter_path.split(":")[1]
+    #         # If only the parameter is provided
+    #         if step is None and command is None and name in parameters:
+    #             step = parameter_step
+    #             index = parameter_command
+    #             break
+    #         # If the command name and the parameter are provided
+    #         elif step is None and command == parameter_command and name in parameters:
+    #             step = parameter_step
+    #             index = parameter_command
+    #             break
+    #         # If everything is provided
+    #         elif step is not None and command is not None:
+    #             if (
+    #                 step == parameter_step
+    #                 and command == parameter_command
+    #                 and name in parameters
+    #             ):
+    #                 index = parameter_command
+    #                 break
 
-        if step is None or index is None:
-            logger.error(
-                "Could not set parameter %s: The parameter does not exists",
-                parameter_name,
-            )
-            return
+    #     if step is None or index is None:
+    #         logger.error(
+    #             "Could not set parameter %s: The parameter does not exists",
+    #             parameter_name,
+    #         )
+    #         return
 
-        self.buffer.set_parameter(step, index, name, value, **kwargs)
+    #     self.buffer.set_parameter(step, index, name, value, **kwargs)
 
-    def get_command(self, command_path: str) -> Optional[CommandBuffer]:
+    def get_command(self, command_name: str) -> Optional[CommandBuffer]:
         """
         Shortcut to get a command easly
 
@@ -466,66 +469,50 @@ class ActionQuery:
         If you only provide a <command> the first occurence will be returned
         """
 
-        command_split = command_path.split(":")
-        name = command_split[-1]
-        step = None
-
-        if len(command_split) == 2:
-            step = command_split[0]
-        elif len(command_split) != 1:
-            logger.warning(
-                "Invalid command path: The given command path %s has too many separators",
-                command_path,
-            )
-            return None
-
-        # If the command path is explicit, get the command directly
-        if step is not None:
-            try:
-                return self.buffer.steps[step].commands[name]
-            except KeyError:
-                logger.error(
-                    "Could not retrieve the command %s: The command does not exists",
-                    command_path,
-                )
-                return None
-
-        # If only the command is given, get the first occurence
         for command in self.iter_commands():
-            if command.name == name:
+            if command.name == command_name:
                 return command
 
         logger.error(
             "Could not retrieve the command %s: The command does not exists",
             command_path,
         )
+
         return None
 
 
 class CommandIterator(Iterator):
     """
-    Iterator for the commands of an action_buffer
+    Iterator for the commands of an action
     """
 
-    def __init__(self, action_buffer: ActionBuffer):
-        self.action_buffer = action_buffer
+    def __init__(self, action: Action):
+        self.action = action
         self.command_index = -1
 
     def __iter__(self) -> CommandIterator:
         return self
 
-    def __next__(self) -> CommandBuffer:
-        commands = self.action_buffer.commands
-        # We store the index in a temporary variable to not edit the real index
-        # in case we raise a StopIteration
-        new_index = self.command_index
+    def __next__(self) -> Command:
+                
+        action_children = self.action.children
 
-        if self.action_buffer.execution_type == Execution.PAUSE:
+        if len(action_children) > 1:
+            logger.error(
+            f"The action : {self.buffer.name}, has no children (No steps found)",
+            )
+
+            raise StopIteration
+
+        for step in action_children.values:
+            commands = CommandQuery.get_commands_from_step(step)
+        
+        if self.action.execution_type == Execution.PAUSE:
             raise StopIteration
         # Increment the index according to the callback
-        if self.action_buffer.execution_type == Execution.FORWARD:
+        if self.action.execution_type == Execution.FORWARD:
             new_index += 1
-        if self.action_buffer.execution_type == Execution.BACKWARD:
+        if self.action.execution_type == Execution.BACKWARD:
             new_index -= 1
 
         # Test if the command is out of bound and raise StopIteration if so
