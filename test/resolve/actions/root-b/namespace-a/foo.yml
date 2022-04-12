@@ -1,7 +1,4 @@
-foo: !inherit
-  parent: ".bar"
-  category: "test"
-
+foo:
   steps:
     action:
       commands:

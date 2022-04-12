@@ -12,6 +12,7 @@ class CommandResolver(Resolver):
 
     CONFIG_ENV = "SILEX_COMMAND_CONFIG"
     CONFIG_ENTRY_PONT = "silex_command_config"
+    CONFIG_ENABLE_CACHE_ENV = "SILEX_ENABLE_CONFIG_CACHE"
 
     @staticmethod
     def get() -> CommandResolver:

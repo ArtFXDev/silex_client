@@ -12,6 +12,7 @@ class ActionResolver(Resolver):
 
     CONFIG_ENV = "SILEX_ACTION_CONFIG"
     CONFIG_ENTRY_PONT = "silex_action_config"
+    CONFIG_ENABLE_CACHE_ENV = "SILEX_ENABLE_ACTION_CACHE"
 
     @staticmethod
     def get() -> ActionResolver:
