@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from silex_client.graph.graph_item import GraphItem
-from silex_client.socket_types.socket_type import SocketType
-from silex_client.socket_types.void_socket import VoidSocket
+from silex_client.core.types.socket_type import SocketType
+from silex_client.core.types.void_socket import VoidSocket
 
 
 @dataclass()
