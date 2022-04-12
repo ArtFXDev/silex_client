@@ -1,0 +1,43 @@
+bundle:
+  shelf: "output"
+  thumbnail: "bundle.svg"
+
+  steps:
+    setup:
+      lavel: "Setup"
+      index: 50
+      commands:
+        get_bundle_output:
+          label: "Select bundle type"
+          path: "silex_client.commands.select_bundle.SelectBundle"
+          parameters:
+            find_sequence: false
+
+        append_bundle_actions:
+          label: "Append bundle actions to the bundle folder"
+          path: "silex_client.commands.iterate_action.IterateAction"
+          tooltip: "Append the selected bundles to the list of commands to execute"
+          parameters:
+            values:
+              value: !command-output "setup:get_bundle_output:files"
+              hide: true
+            categories:
+              - "bundle"
+            actions:
+              value: !command-output "setup:get_bundle_output:types"
+              hide: true
+            parameter: "input:input:input"
+            output: "output:output"
+            label_key: "file_paths"
+
+    silex_coins:
+      index: 500
+      hide: true
+      commands:
+        add_silex_coins:
+          path: "silex_client.commands.user.silex_coins.AddSilexCoinsCommand"
+          parameters:
+            amount:
+              value: 5
+            count_commands:
+              value: true

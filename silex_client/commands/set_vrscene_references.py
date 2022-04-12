@@ -93,7 +93,7 @@ class SetVrsceneReferences(CommandBase):
             reference = reference.get_value(action_query)[0]
             reference = reference.get_value(action_query)
             reference_values.append(reference)
-
+        
         # set references paths
         for vrscene_src, vrscene_dst in zip(vrscenes_src, vrscenes_dst):
             await execute_in_thread(

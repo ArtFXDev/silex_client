@@ -103,6 +103,7 @@ class IterateAction(InsertAction):
                     "hide_commands": hide_commands,
                 }
             )
+
             output = await super().__call__(parameters, action_query, logger)
             outputs.append(output)
 

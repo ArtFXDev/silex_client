@@ -1,0 +1,105 @@
+ass:
+  steps:
+    input:
+      index: 10
+      hide: True
+      commands:
+        input:
+          path: "silex_client.commands.pass.Pass"
+
+    bundle:
+      label: "Get ass bundle location"
+      index: 15
+      commands:
+        build_bundle_path:
+          label: "Build path"
+          path: "silex_client.commands.build_bundle_path.BuildBundlePath"
+          parameters:
+            files_to_bundle:
+              value: !command-output "input:input:file_paths"
+            frame_set:
+              value: !command-output "input:input:frame_set"
+            padding:
+              value: !command-output "input:input:padding"
+            is_reference:
+              value: !command-output "input:input:is_reference"
+            output_type:
+              value: "ass"
+
+    bundle_references:
+      label: "bundle ass scene's references"
+      index: 20
+      commands:
+        get_ass_references:
+          label: "Get referenced files"
+          path: "silex_client.commands.get_ass_references.GetAssReferences"
+          parameters:
+            ass_files:
+              value: !command-output "input:input:file_paths"
+            skip_prompt:
+              value: true
+            skip_pipeline_files:
+              value: false
+        bundle_references:
+          label: "bundle references found"
+          path: "silex_client.commands.iterate_action.IterateAction"
+          parameters:
+            values:
+              value: !command-output "bundle_references:get_ass_references:references"
+              hide: true
+            actions:
+              - "reference_bundle"
+            categories:
+              - "bundle"
+            parameter: "setup:get_bundle_output:file_paths"
+            label_key: "references"
+            output: "setup:append_bundle_actions"
+
+    bundle_ass:
+      label: "bundle ass scene"
+      index: 30
+      commands:
+        expand_paths:
+          label: "Expand environment variables"
+          path: "silex_client.commands.expand_paths.ExpandPaths"
+          parameters:
+            paths_to_expand:
+              value: !command-output "bundle:build_bundle_path:full_path"
+              hide: true
+        set_ass_references:
+          label: "Repath attributes"
+          path: "silex_client.commands.set_ass_references.SetAssReferences"
+          tooltip: "Set the new path on the attributes"
+          parameters:
+            node_names:
+              value: !command-output "bundle_references:get_ass_references:node_names"
+              hide: true
+            references:
+              value: !command-output "bundle_references:bundle_references"
+              hide: true
+            ass_files:
+              value: !command-output "input:input:file_paths"
+              hide: true
+            new_ass_files:
+              value: !command-output "bundle_ass:expand_paths:expanded_paths"
+              hide: true
+            is_asset:
+              value: true
+
+        set_env:
+          label: "Replace path by environment variables"
+          path: "silex_client.commands.set_env.SetEnv"
+          parameters:
+            paths:
+              value: !command-output "bundle_ass:set_ass_references:new_ass_files"
+            envs:
+              value: !command-output "bundle_ass:expand_paths:envs"
+
+    output:
+      index: 40
+      hide: true
+      commands:
+        output:
+          path: "silex_client.commands.pass.Pass"
+          parameters:
+            input: !command-output "bundle_ass:set_env:expanded_paths"
