@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
-from silex_client.graph.graph_item import GraphItem
+from silex_client.graph.step import Step
 
 
 @dataclass()
-class Action(GraphItem):
+class Action(Step):
     """
     An action is always at the root of an action tree.
     """
