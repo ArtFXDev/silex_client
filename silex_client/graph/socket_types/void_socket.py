@@ -1,4 +1,4 @@
-from silex_client.socket_types.socket_type import SocketType
+from silex_client.graph.socket_types.socket_type import SocketType
 
 
 class VoidSocket(SocketType[None]):

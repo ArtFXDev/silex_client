@@ -6,6 +6,7 @@ from importlib.util import spec_from_file_location, module_from_spec
 from importlib.machinery import SourceFileLoader
 import inspect
 from pathlib import Path
+import sys
 from typing import cast, List, Optional
 
 from silex_client.resolve.resolver import Resolver
@@ -28,14 +29,19 @@ class SocketResolver(Resolver):
         self,
         name: str,
         search_paths: Optional[List[Path]] = None,
-    ) -> Optional[dict]:
+    ) -> Optional[type]:
         """
         Find and load the socket definition in the list of search paths
         The first occurence is returned
         """
 
         for path in search_paths or self.search_paths:
-            spec = spec_from_file_location(name, path)
+            if path.is_dir():
+                path = path / "__init__.py"
+            if not path.exists():
+                continue
+
+            spec = spec_from_file_location(name.lower(), path)
 
             if spec is None or spec.loader is None:
                 continue
@@ -52,3 +58,14 @@ class SocketResolver(Resolver):
                 )
 
         return None
+
+    @staticmethod
+    def get() -> SocketResolver:
+        """
+        Return a globaly instanciated config. This static method is just for conveniance
+        """
+        # Get the instance of Context created in this same module
+        return getattr(sys.modules[__name__], "socket_resolver")
+
+
+socket_resolver = SocketResolver()
