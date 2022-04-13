@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 import jsondiff
 from silex_client.graph.action import Action
 from silex_client.core.context import Context
-from silex_client.core.query.command_query import CommandQuery
 from silex_client.resolve.config import Config
 from silex_client.utils.datatypes import ReadOnlyDict
 from silex_client.utils.enums import Execution, Status
@@ -26,6 +25,8 @@ from silex_client.utils.serialiser import silex_diff
 if TYPE_CHECKING:
     from silex_client.graph.command import Command
     from silex_client.graph.step import Step
+    from silex_client.graph.graph_item import GraphItem
+    from silex_client.graph.socket import Socket
     from silex_client.core.event_loop import EventLoop
     from silex_client.network.websocket import WebsocketConnection
 
@@ -40,7 +41,6 @@ class ActionQuery:
         name: str,
         resolved_config: Optional[dict] = None,
         category="action",
-        simplify=False,
     ):
         context = Context.get()
         metadata_snapshot = ReadOnlyDict(copy.deepcopy(context.metadata))
@@ -48,29 +48,26 @@ class ActionQuery:
             resolved_config = Config.get().resolve_action(name, category)
 
         if resolved_config is None:
-            self.buffer = Action("none")
+            self.action = Action("none")
             return
 
         self.event_loop: EventLoop = context.event_loop
         self.ws_connection: WebsocketConnection = context.ws_connection
 
-        self.buffer: Action = Action(
+        self.action: Action = Action(
             name, context_metadata=metadata_snapshot
         )
         self._initialize_buffer(
             resolved_config, {"context_metadata": metadata_snapshot}
         )
 
-        if simplify or os.getenv("SILEX_SIMPLE_MODE"):
-            self.buffer.simplify = True
-            for commands in self.commands:
-                commands.hide = True
 
         self.command_iterator: CommandIterator = self.iter_commands()
-        self._buffer_diff = copy.deepcopy(self.buffer.serialize())
+        self._buffer_diff = copy.deepcopy(self.action.serialize())
         self._task: Optional[asyncio.Task] = None
         self.closed = futures.Future()
         self.batch = False
+        self.execution_type: Execution = Execution.FORWARD
 
         context.register_action(self)
 
@@ -84,7 +81,7 @@ class ActionQuery:
             # Set the status to initialized
             command.status = Status.INITIALIZED
             # Only run the command if it is valid
-            if self.buffer.status in [Status.INVALID, Status.ERROR]:
+            if self.action.status in [Status.INVALID, Status.ERROR]:
                 logger.error(
                     "Stopping action %s because the buffer is invalid or errored out",
                     self.name,
@@ -132,7 +129,7 @@ class ActionQuery:
 
         # The batch mode just set the action to hidden
         if batch:
-            self.buffer.hide = True
+            self.action.hide = True
 
         # Initialize the communication with the websocket server
         self.initialize_websocket()
@@ -170,7 +167,7 @@ class ActionQuery:
         # Send the update to the UI and wait for its response
         while (
             self.ws_connection.is_running
-            and not self.buffer.hide
+            and not self.action.hide
             and self.commands[start].require_prompt()
         ):
             # Call the setup on all the commands
@@ -198,7 +195,7 @@ class ActionQuery:
 
         if emit_clear and self.ws_connection.is_running:
             self.ws_connection.send(
-                "/dcc/action", "clearAction", {"uuid": self.buffer.uuid}
+                "/dcc/action", "clearAction", {"uuid": self.action.uuid}
             )
 
         self._task.cancel()
@@ -216,7 +213,7 @@ class ActionQuery:
             if self.execution_type is not Execution.BACKWARD:
                 self.command_iterator.command_index += 1
 
-        for command in self.commands[self.current_command_index :]:
+        for command in self.commands:
             command.status = Status.INITIALIZED
 
         self.execution_type = Execution.BACKWARD
@@ -239,7 +236,7 @@ class ActionQuery:
         self, resolved_config: dict, custom_data: Union[dict, None] = None
     ) -> None:
         """
-        Initialize the buffer from the config
+        Initialize the action from the config
         """
         # If no config could be found or is invalid, the result is {}
         if not resolved_config:
@@ -268,21 +265,21 @@ class ActionQuery:
         if custom_data is not None:
             action_definition.update(custom_data)
 
-        # Update the buffer with the new data
-        self.buffer.deserialize(action_definition)
+        # Update the action with the new data
+        self.action.deserialize(action_definition)
 
     def initialize_websocket(self) -> None:
         """
         Send a serialised version of the buffer to the websocket server, and store a copy of it
         """
-        if not self.ws_connection.is_running or self.buffer.hide:
+        if not self.ws_connection.is_running or self.action.hide:
             return
-        self._buffer_diff = copy.deepcopy(self.buffer.serialize())
+        self._buffer_diff = copy.deepcopy(self.action.serialize())
         self.ws_connection.send("/dcc/action", "query", self._buffer_diff)
 
     def update_websocket(self, apply_response=False) -> futures.Future:
         """
-        Send a diff between the current state of the buffer and the last saved state of the buffer
+        Send a diff between the current state and the previous saved state of the action
         """
         return self.event_loop.register_task(
             self.async_update_websocket(apply_response)
@@ -290,24 +287,24 @@ class ActionQuery:
 
     async def async_update_websocket(self, apply_response=False) -> asyncio.Future:
         """
-        Send a diff between the current state of the buffer and the last saved state of the buffer
+        Send a diff between the current state and the previous state of the action
         """
-        serialized_buffer = self.buffer.serialize()
+        serialized_buffer = self.action.serialize()
         diff = silex_diff(self._buffer_diff, serialized_buffer)
 
         if (
             not self.ws_connection.is_running
-            or self.buffer.hide
+            or self.action.hide
             or not (diff or apply_response)
         ):
             future = self.event_loop.loop.create_future()
             future.set_result(None)
             return future
 
-        serialized_buffer = self.buffer.serialize()
+        serialized_buffer = self.action.serialize()
         diff = silex_diff(self._buffer_diff, serialized_buffer)
         self._buffer_diff = serialized_buffer
-        diff["uuid"] = self.buffer.uuid
+        diff["uuid"] = self.action.uuid
 
         confirm = await self.ws_connection.async_send("/dcc/action", "update", diff)
 
@@ -316,20 +313,24 @@ class ActionQuery:
                 return
 
             logger.debug("Applying update: %s", response.result())
-            self.buffer.deserialize(response.result())
-            self._buffer_diff = self.buffer.serialize()
+            self.action.deserialize(response.result())
+            self._buffer_diff = self.action.serialize()
 
         if apply_response:
             return await self.ws_connection.action_namespace.register_update_callback(
-                self.buffer.uuid, apply_update
+                self.action.uuid, apply_update
             )
         return confirm
 
-    #####################################################################################
     @property
     def current_command(self):
         """Get the current command or the last command before stopping"""
-        return self.commands[self.current_command_index]
+        return self.command_iterator.current_command
+    
+    @property
+    def current_command_index(self):
+        """Get the index stored in the command iterator"""
+        return self.command_iterator.command_index
 
     @property
     def is_running(self):
@@ -337,52 +338,37 @@ class ActionQuery:
         return not (self._task is None or self._task.done())
 
     @property
-    def execution_type(self) -> Execution:
-        """Shortcut to get the status of the action stored in the buffer"""
-        return self.buffer.execution_type
-
-    @property
-    def current_command_index(self):
-        """Get the index stored in the command iterator"""
-        return self.command_iterator.command_index
-
-    @execution_type.setter
-    def execution_type(self, value: Execution) -> None:
-        """Shortcut to get the status of the action stored in the buffer"""
-        self.buffer.execution_type = value
-
-    @property
     def name(self) -> str:
-        """Shortcut to get the name  of the action stored in the buffer"""
-        return self.buffer.name
+        """Shortcut to get the name  of the action"""
+        return self.action.name
 
     @property
     def status(self) -> Status:
-        """Shortcut to get the status of the action stored in the buffer"""
-        return self.buffer.status
+        """Shortcut to get the status of the action"""
+        return self.action.status
 
     @property
     def store(self) -> Dict[str, Any]:
-        """Shortcut to get the variable of the buffer"""
-        return self.buffer.store
+        """Shortcut to get the variables in the store dict"""
+        return self.action.store
 
     @property
-    def steps(self) -> List[StepBuffer]:
-        """Shortcut to get the steps of the buffer"""
-        return list(self.buffer.steps.values())
+    def steps(self) -> List[Step]:
+        """Shortcut to get the steps"""
+        return list(self.action.children.values())
 
     @property
-    def commands(self) -> list[CommandBuffer]:
-        """Shortcut to get the commands of the buffer"""
-        return self.buffer.commands
+    def commands(self) -> list[Command]:
+        """Shortcut to get the commands"""
+        return self.get_all_commands(self.action)
 
     @property
     def context_metadata(self) -> dict:
-        """Shortcut to get the context's metadata  of the buffer"""
-        return self.buffer.context_metadata
+        """Shortcut to get the context's metadata of the action"""
+        return self.action.context_metadata
 
     @property
-    def parameters(self) -> dict:
+    def parameters(self) -> Union[Dict[str, Dict[str, Socket]], None]:
         """
         Helper to get a list of all the parameters of the action,
         usually used for printing infos about the action
@@ -390,18 +376,33 @@ class ActionQuery:
         The format of the output is {<step>:<command> : parameters}
         """
         parameters = {}
-        for step in self.steps:
-            for command in step.commands.values():
-                parameters[f"{step.name}:{command.name}"] = command.parameters
+
+        if self.commands is None:
+            return None
+
+        for command in self.commands:
+            # Get parents (i call it parenting chaine)
+            parents: List[str] = []
+            parent: Union[GraphItem, None] = self.get_parent(command)
+
+            if parent is not None:
+                parents.append(parent.name)
+
+                while parent is not None:
+                    parent = self. get_parent(parent)
+                    if parent is not None:
+                        parents.insert(0, parent.name)
+            
+            # Store parameters (inputs) and return it
+            parameters[':'.join(parents)] = command.inputs
 
         return parameters
-    ###########################################################################################
 
     def iter_commands(self) -> CommandIterator:
         """
         Iterate over all the commands in order
         """
-        return CommandIterator(self.buffer)
+        return CommandIterator(self.action)
 
     # def set_parameter(self, parameter_name: str, value: Any, **kwargs) -> None:
     #     """
@@ -459,26 +460,69 @@ class ActionQuery:
     #         )
     #         return
 
-    #     self.buffer.set_parameter(step, index, name, value, **kwargs)
+    #     self.action.set_parameter(step, index, name, value, **kwargs)
 
-    def get_command(self, command_name: str) -> Optional[CommandBuffer]:
+    def get_parent(self, item: GraphItem) -> Union[GraphItem, None]:
+        return item.parent
+
+    def get_command(self, command_name: str) -> Union[Command, None]:
         """
-        Shortcut to get a command easly
-
-        The command path is parsed, according to the scheme : <step>:<command>
-        If you only provide a <command> the first occurence will be returned
+        Shortcut to get a command easly using its name
         """
 
         for command in self.iter_commands():
             if command.name == command_name:
                 return command
-
+        
         logger.error(
-            "Could not retrieve the command %s: The command does not exists",
-            command_path,
+            "Could not retrieve the command %s: The command does not exists", 
+            command_name
         )
 
         return None
+
+    @staticmethod 
+    def get_commands_from_step(step: Step, cmd_list: List[Command] = []) ->  List[Command]:
+        """
+        Gather all the commands in a step
+
+        returns: Dict(command_index : command_object)
+        """
+
+        step_children = step.children
+        commands: List[Command] = cmd_list
+        if len(step_children) < 1:
+            logger.error(
+            f"The step : {step.name}, has no children",
+            )
+            return []
+
+        for child in step_children.values():
+            if isinstance(child, Command):
+                commands.append(child)
+
+            if isinstance(child, Step):
+                ActionQuery.get_commands_from_step(child, commands)
+
+        return commands
+
+    @staticmethod
+    def get_all_commands(action: Action) -> List[ Command]:
+        
+        action_children = action.children
+        commands: List[Command] = list()
+
+        if len(action_children) < 1:
+            logger.error(
+            f"The action : {action.name}, has no children (No steps found)",
+            )
+
+            return []
+
+        for step in action_children.values():
+            commands.extend(ActionQuery.get_commands_from_step(step))
+        
+        return commands
 
 
 class CommandIterator(Iterator):
@@ -486,33 +530,31 @@ class CommandIterator(Iterator):
     Iterator for the commands of an action
     """
 
-    def __init__(self, action: Action):
+    def __init__(self, action: Action, execution_type: Execution = Execution.FORWARD):
         self.action = action
         self.command_index = -1
+        self.current_command
+        self.execution_type = execution_type
 
     def __iter__(self) -> CommandIterator:
         return self
 
     def __next__(self) -> Command:
-                
-        action_children = self.action.children
 
-        if len(action_children) > 1:
-            logger.error(
-            f"The action : {self.buffer.name}, has no children (No steps found)",
-            )
+        commands: List[Command] = ActionQuery.get_all_commands(self.action)
 
+        if commands is None:
             raise StopIteration
 
-        for step in action_children.values:
-            commands = CommandQuery.get_commands_from_step(step)
+        index_to_command = dict(zip([cmd.index for cmd in commands], commands))
+        new_index = self.command_index
         
-        if self.action.execution_type == Execution.PAUSE:
+        if self.execution_type == Execution.PAUSE:
             raise StopIteration
         # Increment the index according to the callback
-        if self.action.execution_type == Execution.FORWARD:
+        if self.execution_type == Execution.FORWARD:
             new_index += 1
-        if self.action.execution_type == Execution.BACKWARD:
+        if self.execution_type == Execution.BACKWARD:
             new_index -= 1
 
         # Test if the command is out of bound and raise StopIteration if so
@@ -520,8 +562,8 @@ class CommandIterator(Iterator):
             raise StopIteration
 
         try:
-            command = commands[new_index]
+            self.current_command = index_to_command[new_index]
             self.command_index = new_index
-            return command
-        except IndexError:
+            return self.current_command
+        except KeyError:
             raise StopIteration
