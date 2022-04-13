@@ -3,7 +3,7 @@ from typing import Any, List, Tuple
 
 import pytest
 
-from silex_client.resolve.loader import Loader
+from silex_client.resolve.yaml_loader import YAMLLoader
 from silex_client.resolve.action_resolver import ActionResolver
 
 
@@ -35,7 +35,7 @@ def test_load_action(resolver: ActionResolver, load_action_data: Tuple[Path, Any
     action_path, action_assert = load_action_data
 
     with open(action_path, "r", encoding="utf-8") as action_data:
-        loader = Loader(action_data, action_path, resolver)
+        loader = YAMLLoader(action_data, action_path, resolver)
         action = loader.get_single_data()
         loader.dispose()
 

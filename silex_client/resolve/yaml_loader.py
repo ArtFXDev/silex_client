@@ -9,10 +9,10 @@ import jsondiff
 import yaml
 
 if TYPE_CHECKING:
-    from silex_client.resolve.resolver import Resolver
+    from silex_client.resolve.yaml_resolver import YAMLResolver
 
 
-class Loader(yaml.SafeLoader):
+class YAMLLoader(yaml.SafeLoader):
     """
     Override of the default loader to be able to create custom tags in YAML files,
     like !include or !inherit
@@ -21,7 +21,11 @@ class Loader(yaml.SafeLoader):
     INHERIT_KEY_SEPARATOR = ":"
 
     def __init__(
-        self, stream: IO, path: Path, resolver: Resolver, traceback: List[Path] = None
+        self,
+        stream: IO,
+        path: Path,
+        resolver: YAMLResolver,
+        traceback: List[Path] = None,
     ) -> None:
         self.resolver = resolver
         self.config_name = resolver.get_namespace(path)
@@ -106,4 +110,4 @@ class Loader(yaml.SafeLoader):
 
 
 # Set the inherit method as a handler for the !inherit statement
-Loader.add_constructor("!inherit", Loader.inherit)
+YAMLLoader.add_constructor("!inherit", YAMLLoader.inherit)

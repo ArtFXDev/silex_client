@@ -7,13 +7,13 @@ import contextlib
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-import pkg_resources
+from pkg_resources import iter_entry_points, DistributionNotFound
 
-from silex_client.resolve.loader import Loader
+from silex_client.resolve.yaml_loader import YAMLLoader
 from silex_client.utils.log import logger
 
 
-class Resolver(ABC):
+class YAMLResolver(ABC):
     """
     Utility class that lazy load and resolve yaml configuration
     This class is meant to be inherited from
@@ -154,7 +154,7 @@ class Resolver(ABC):
         with open(config_path, "r", encoding="utf-8") as config_data:
             resolver = copy.deepcopy(self)
             resolver.search_paths = search_paths
-            loader = Loader(config_data, config_path, resolver, traceback)
+            loader = YAMLLoader(config_data, config_path, resolver, traceback)
             try:
                 return loader.get_single_data()
             finally:
@@ -172,8 +172,8 @@ class Resolver(ABC):
             action_search_path += env_config_path.split(os.pathsep)
 
         # Look for config search path in silex_config entry_point
-        for entry_point in pkg_resources.iter_entry_points(self.CONFIG_ENTRY_PONT):
-            with contextlib.suppress(pkg_resources.DistributionNotFound):
+        for entry_point in iter_entry_points(self.CONFIG_ENTRY_PONT):
+            with contextlib.suppress(DistributionNotFound, ModuleNotFoundError):
                 action_search_path += entry_point.load()
 
         return action_search_path

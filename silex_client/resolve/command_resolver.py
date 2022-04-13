@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import sys
 
-from silex_client.resolve.resolver import Resolver
+from silex_client.resolve.yaml_resolver import YAMLResolver
 
 
-class CommandResolver(Resolver):
+class CommandResolver(YAMLResolver):
     """
     Utility class that lazy load and resolve yaml configuration for commands
     """

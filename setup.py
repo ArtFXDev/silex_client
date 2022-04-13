@@ -12,9 +12,6 @@ setup(
     version=main_ns["__version__"],
     python_requires=">=3.7.*",
     entry_points={
-        "silex_action_config": [
-            "base=silex_client.config.entry_point:action_entry_points",
-        ],
         "console_scripts": [
             "silex=silex_client.cli.parser:main",
         ],
