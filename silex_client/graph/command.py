@@ -3,9 +3,16 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
+from typing_extensions import TypedDict
+
 from silex_client.graph.graph_item import GraphItem
 from silex_client.graph.pluggable_item import PluggableItem
 from silex_client.utils.enums import Status
+
+
+class CommandDefinition(TypedDict):
+    executor: str
+    name: str
 
 
 @dataclass()
@@ -15,7 +22,7 @@ class Command(GraphItem, PluggableItem):
     """
 
     #: The name of the command definition
-    definition: Optional[str] = field(default=None)
+    definition: Optional[CommandDefinition] = field(default=None)
 
     #: The index defines the order in wich the commands are iterated
     index: int = field(default=0)
