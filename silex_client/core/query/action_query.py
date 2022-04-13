@@ -367,37 +367,6 @@ class ActionQuery:
         """Shortcut to get the context's metadata of the action"""
         return self.action.context_metadata
 
-    @property
-    def parameters(self) -> Union[Dict[str, Dict[str, Socket]], None]:
-        """
-        Helper to get a list of all the parameters of the action,
-        usually used for printing infos about the action
-
-        The format of the output is {<step>:<command> : parameters}
-        """
-        parameters = {}
-
-        if self.commands is None:
-            return None
-
-        for command in self.commands:
-            # Get parents (i call it parenting chaine)
-            parents: List[str] = []
-            parent: Union[GraphItem, None] = self.get_parent(command)
-
-            if parent is not None:
-                parents.append(parent.name)
-
-                while parent is not None:
-                    parent = self. get_parent(parent)
-                    if parent is not None:
-                        parents.insert(0, parent.name)
-            
-            # Store parameters (inputs) and return it
-            parameters[':'.join(parents)] = command.inputs
-
-        return parameters
-
     def iter_commands(self) -> CommandIterator:
         """
         Iterate over all the commands in order
@@ -461,9 +430,6 @@ class ActionQuery:
     #         return
 
     #     self.action.set_parameter(step, index, name, value, **kwargs)
-
-    def get_parent(self, item: GraphItem) -> Union[GraphItem, None]:
-        return item.parent
 
     def get_command(self, command_name: str) -> Union[Command, None]:
         """

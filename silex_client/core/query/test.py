@@ -13,6 +13,8 @@ socket_1 = Socket(name='param_1', value=1)
 command_1 = Command(name="command_1", index=0, inputs={'param_1':socket_1})
 step_1 = Step(name='step_1', index=0, children={'command_1':command_1})
 
+command_1.parent = step_1
+
 # COMMAND 2 #
 socket_2 = Socket(name='param_2', value=2)
 command_2 = Command(name="command_2", index=1, inputs={'param_2':socket_2})
@@ -24,6 +26,7 @@ STEP = Step(name='main_step', index=0, children={'step_1':step_1, 'step_2':step_
 
 # ACTION
 action = Action(name='Action', children={'main_step':STEP})
+step_1.parent = action
 
 query = CommandQuery(command_1)
 
@@ -146,8 +149,51 @@ def get_all_commands(action: Action):
 # query.set_parameter('param_1', 5)
 # print(query.command.inputs)
 
+class A:
+    def __init__(self):
+        self.commands = commands()
 
-print(command_1.parent)
+    @property
+    def parameters(self):
+        """
+        Helper to get a list of all the parameters of the action,
+        usually used for printing infos about the action
+
+        The format of the output is {<step>:<command> : parameters}
+        """
+        parameters = {}
+
+        if self.commands is None:
+            return None
+
+        for command in self.commands:
+            print(command.name)
+            # Get parents (i call it parenting chaine)
+            parents= [command.name]
+            parent = self.get_parent(command)
+            print (parent)
+
+            if parent is not None:
+                parents.append(parent.name)
+
+                while parent is not None:
+                    parent = self. get_parent(parent)
+                    if parent is not None:
+                        parents.insert(0, parent.name)
+            
+            print(parents)
+            
+            # Store parameters (inputs) and return it
+            parameters[':'.join(parents)] = command.inputs
+
+        return parameters
+    
+    def get_parent(self, item):
+        return item.parent
+
+
+a = A()
+print(a.parameters)
 
 
 
