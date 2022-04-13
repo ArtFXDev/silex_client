@@ -10,9 +10,9 @@ class CommandResolver(YAMLResolver):
     Utility class that lazy load and resolve yaml configuration for commands
     """
 
-    CONFIG_ENV = "SILEX_COMMAND_CONFIG"
-    CONFIG_ENTRY_PONT = "silex_command_config"
-    CONFIG_ENABLE_CACHE_ENV = "SILEX_ENABLE_CONFIG_CACHE"
+    SEARCH_ENV = "SILEX_COMMAND_CONFIG"
+    SEARCH_ENTRY_PONT = "silex_command_config"
+    ENABLE_CACHE_ENV = "SILEX_ENABLE_CONFIG_CACHE"
 
     @staticmethod
     def get() -> CommandResolver:

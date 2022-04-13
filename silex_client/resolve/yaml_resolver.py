@@ -1,34 +1,30 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from collections import defaultdict
 import copy
 import contextlib
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-from pkg_resources import iter_entry_points, DistributionNotFound
 
+from silex_client.resolve.resolver import Resolver
 from silex_client.resolve.yaml_loader import YAMLLoader
 from silex_client.utils.log import logger
 
 
-class YAMLResolver(ABC):
+class YAMLResolver(Resolver):
     """
     Utility class that lazy load and resolve yaml configuration
     This class is meant to be inherited from
     """
 
-    CONFIG_ENV = "NONE"
-    CONFIG_ENTRY_PONT = "NONE"
-    CONFIG_ENABLE_CACHE_ENV = "NONE"
-
+    ENABLE_CACHE_ENV = "NONE"
     NAMESPACE_SEP = "::"
 
     def __init__(self, search_paths: Optional[List[Path]] = None):
-        self.search_paths = search_paths or self.get_default_search_paths()
+        super().__init__(search_paths)
         self._config_cache: Dict[str, Dict[str, Any]] = {}
-        self.enable_cache = bool(os.getenv(self.CONFIG_ENABLE_CACHE_ENV))
+        self.enable_cache = bool(os.getenv(self.ENABLE_CACHE_ENV))
 
     @classmethod
     def split_namespace(cls, name: str) -> Tuple[List[str], str]:
@@ -159,26 +155,3 @@ class YAMLResolver(ABC):
                 return loader.get_single_data()
             finally:
                 loader.dispose()
-
-    def get_default_search_paths(self) -> List[Path]:
-        """
-        Get a list of search path from environment variables and entry points
-        """
-        action_search_path = []
-
-        # Look for config search path in the environment variables
-        env_config_path = os.getenv(self.CONFIG_ENV)
-        if env_config_path is not None:
-            action_search_path += env_config_path.split(os.pathsep)
-
-        # Look for config search path in silex_config entry_point
-        for entry_point in iter_entry_points(self.CONFIG_ENTRY_PONT):
-            with contextlib.suppress(DistributionNotFound, ModuleNotFoundError):
-                action_search_path += entry_point.load()
-
-        return action_search_path
-
-    @staticmethod
-    @abstractmethod
-    def get():
-        pass
