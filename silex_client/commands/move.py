@@ -57,8 +57,8 @@ class Move(CommandBase):
         if os.path.isfile(path):
             os.remove(path)
 
-    @staticmethod
-    def move(src: str, dst: str):
+    @classmethod
+    def move(cls, src: str, dst: str):
 
         os.makedirs(dst, exist_ok=True)
 
@@ -67,8 +67,8 @@ class Move(CommandBase):
             # Move all file in dst folder
             file_names = os.listdir(src)
             for file_name in file_names:
-                if os.path.exists(file_name):
-                    os.remove(file_name)
+                if os.path.exists(os.path.join(dst, file_name)):
+                    cls.remove(os.path.join(dst, file_name))
                 shutil.move(os.path.join(src, file_name), dst)
         else:
             shutil.move(src, dst)
