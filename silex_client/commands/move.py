@@ -42,6 +42,11 @@ class Move(CommandBase):
             "value": True,
             "tooltip": "If a file already exists, it will be overriden without prompt",
         },
+        "merge": {
+            "label": "Merge files into folders",
+            "type": bool,
+            "value": False,
+        },
     }
 
     @staticmethod
@@ -52,8 +57,8 @@ class Move(CommandBase):
         if os.path.isfile(path):
             os.remove(path)
 
-    @staticmethod
-    def move(src: str, dst: str):
+    @classmethod
+    def move(cls, src: str, dst: str):
 
         os.makedirs(dst, exist_ok=True)
 
@@ -62,6 +67,8 @@ class Move(CommandBase):
             # Move all file in dst folder
             file_names = os.listdir(src)
             for file_name in file_names:
+                if os.path.exists(os.path.join(dst, file_name)):
+                    cls.remove(os.path.join(dst, file_name))
                 shutil.move(os.path.join(src, file_name), dst)
         else:
             shutil.move(src, dst)
@@ -76,6 +83,7 @@ class Move(CommandBase):
         src_paths: List[pathlib.Path] = parameters["src"]
         dst_path: pathlib.Path = parameters["dst"]
         force: bool = parameters["force"]
+        merge: bool = parameters["merge"]
 
         os.makedirs(dst_path, exist_ok=True)
 
@@ -103,9 +111,9 @@ class Move(CommandBase):
                 new_path = dst_path
 
                 # Handle override of existing file
-                if new_path.exists() and force:
+                if new_path.exists() and force and not merge:
                     await execute_in_thread(self.remove, new_path)
-                elif new_path.exists():
+                elif new_path.exists() and not merge:
 
                     conflict_behaviour = action_query.store.get(
                         "file_conflict_behaviour"

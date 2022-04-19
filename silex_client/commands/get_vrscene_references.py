@@ -36,11 +36,11 @@ class GetVrsceneReferences(CommandBase):
     """
 
     parameters = {
-        "vrscene_files": {"type": PathParameterMeta(multiple=True), "value": []},
+        "vrscene_files": {"type": PathParameterMeta(multiple=True), "value": []}, "skip_pipeline_files" :{'type': bool, "value": True}, "skip_prompt": {'type': bool, 'value': False},
     }
 
     @staticmethod
-    def _get_vrscene_references(file_path: pathlib.Path) -> Dict[str, pathlib.Path]:
+    def _get_vrscene_references(file_path: pathlib.Path, skip_pipeline_files: bool) -> Dict[str, pathlib.Path]:
         """
         Parse an .vrscene file for textures and return a dictionary : dict(node_name: reference_path)
         """
@@ -54,7 +54,7 @@ class GetVrsceneReferences(CommandBase):
                     continue
                 for reference_value in reference_values:
                     file_path = plugin.getValueAsString(reference_value)
-                    if not is_valid_pipeline_path(pathlib.Path(file_path)):
+                    if not is_valid_pipeline_path(pathlib.Path(file_path)) or not skip_pipeline_files:
                         plugin_key = f"{plugin.getName()}:{reference_value}"
                         plugins_references[plugin_key] = pathlib.Path(file_path)
 
@@ -68,10 +68,12 @@ class GetVrsceneReferences(CommandBase):
         logger: logging.Logger,
     ):
         vrscene_files: List[pathlib.Path] = parameters["vrscene_files"]
-
+        skip_pipeline_files: bool = parameters["skip_pipeline_files"]
+        skip_prompt: bool = parameters["skip_prompt"]
+        
         # Get texture paths in the .vrscene file
         plugins_references: Dict[str, pathlib.Path] = await execute_in_thread(
-            self._get_vrscene_references, vrscene_files[0]
+            self._get_vrscene_references, vrscene_files[0], skip_pipeline_files
         )
 
         # Create two lists with corresponding indexes
@@ -84,21 +86,22 @@ class GetVrsceneReferences(CommandBase):
             for item in list(plugins_references.values())
         ]
 
-        # Display a message to the user to inform about all the references to conform
-        message = f"The vrscenes\n{fileseq.findSequencesInList(vrscene_files)[0]}\nis referencing non conformed file(s) :\n\n"
-        for file_path in plugins_references.values():
-            message += f"- {file_path}\n"
-
-        message += "\nThese files must be conformed and repathed first. "
-        message += "Press continue to conform and repath them"
-        info_parameter = ParameterBuffer(
-            type=TextParameterMeta("info"),
-            name="info",
-            label="Info",
-            value=message,
-        )
+        
         # Send the message to inform the user
-        if references:
+        if references and not skip_prompt:
+            # Display a message to the user to inform about all the references to conform
+            message = f"The vrscenes\n{fileseq.findSequencesInList(vrscene_files)[0]}\nis referencing non conformed file(s) :\n\n"
+            for file_path in plugins_references.values():
+                message += f"- {file_path}\n"
+
+            message += "\nThese files must be conformed and repathed first. "
+            message += "Press continue to conform and repath them"
+            info_parameter = ParameterBuffer(
+                type=TextParameterMeta("info"),
+                name="info",
+                label="Info",
+                value=message,
+            )
             await self.prompt_user(action_query, {"info": info_parameter})
 
         return {
