@@ -42,6 +42,12 @@ class NukeRenderTasksCommand(CommandBase):
             "tooltip": "Name of the write node to execute",
             "type": str,
         },
+        "use_selection": {
+            "label": "Fill selected write node",
+            "tooltip": "This feature works only if you launched this submit from nuke",
+            "type": bool,
+            "value": False,
+        },
     }
 
     @CommandBase.conform_command()
@@ -98,8 +104,12 @@ class NukeRenderTasksCommand(CommandBase):
         except ImportError:
             return
 
-        write_node_parameter = self.command_buffer.parameters["write_node"]
-        for node in nuke.selectedNodes():
-            if node.Class() == "Write":
-                write_node_parameter.value = node.name()
-                break
+        use_selection_parameter = self.command_buffer.parameters["use_selection"]
+        if use_selection_parameter.get_value(action_query):
+            write_node_parameter = self.command_buffer.parameters["write_node"]
+            for node in nuke.selectedNodes():
+                if node.Class() == "Write":
+                    write_node_parameter.value = node.name()
+                    break
+
+            use_selection_parameter.value = False
