@@ -31,6 +31,11 @@ class NukeRenderTasksCommand(CommandBase):
             "type": FrameSet,
             "value": "1-50x1",
         },
+        "enable_gpu": {
+            "label": "Enable GPU",
+            "type": bool,
+            "value": True,
+        },
         "task_size": {
             "label": "Task size",
             "tooltip": "Number of frames per computer",
@@ -59,6 +64,7 @@ class NukeRenderTasksCommand(CommandBase):
     ):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
+        enable_gpu: bool = parameters["enable_gpu"]
         task_size: int = parameters["task_size"]
         write_node: str = parameters["write_node"]
 
@@ -67,7 +73,8 @@ class NukeRenderTasksCommand(CommandBase):
             rez_packages=["nuke", action_query.context_metadata["project"].lower()],
             delimiter=" ",
         )
-        nuke_cmd.param("-gpu").param("-multigpu")  # Use gpu
+        if enable_gpu:
+            nuke_cmd.param("-gpu").param("-multigpu")  # Use gpu
         nuke_cmd.param("-sro")  # Follow write order
         nuke_cmd.param("-priority", "high")
         nuke_cmd.param("X", write_node)  # Specify the write node
