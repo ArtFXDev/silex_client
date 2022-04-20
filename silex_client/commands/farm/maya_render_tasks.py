@@ -109,7 +109,11 @@ class MayaRenderTasksCommand(CommandBase):
         )
         maya_cmd.param("r", parameters["renderer"])
 
-        maya_cmd.param("skipExistingFrames", str(parameters["skip_existing"]).lower())
+        if parameters["skip_existing"] and parameters["renderer"] is not "vray":
+            maya_cmd.param(
+                "skipExistingFrames", str(parameters["skip_existing"]).lower()
+            )
+
         maya_cmd.param("rd", parameters["output_folder"].as_posix())
 
         if not keep_output_type:
