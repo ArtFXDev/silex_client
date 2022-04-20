@@ -51,6 +51,11 @@ class MayaRenderTasksCommand(CommandBase):
             "type": bool,
             "value": False,
         },
+        "render_layers": {
+            "label": "Render layers (separated by comma)",
+            "type": str,
+            "value": "masterLayer",
+        },
         # "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
         "output_folder": {"type": pathlib.Path, "hide": True, "value": ""},
         "output_filename": {"type": str, "hide": True, "value": ""},
@@ -81,7 +86,7 @@ class MayaRenderTasksCommand(CommandBase):
         # Doesn't work need to check on a forum
         # maya_cmd.param("skipExistingFrames", str(parameters["skip_existing"]).lower())
         maya_cmd.param("rd", parameters["output_folder"].as_posix())
-        maya_cmd.param("im", parameters["output_filename"])
+
         if not keep_output_type:
             maya_cmd.param("of", parameters["output_extension"])
 
@@ -97,19 +102,37 @@ class MayaRenderTasksCommand(CommandBase):
             task_size,
         )
 
-        # Creating tasks for each frame chunk
-        for chunk in frame_chunks:
-            chunk_cmd = maya_cmd.deepcopy()
+        render_layers = parameters["render_layers"].replace(" ", "").split(",")
 
-            chunk_cmd.param("s", chunk[0])
-            chunk_cmd.param("e", chunk[-1])
-            chunk_cmd.param("b", frame_range[2])
+        # Create subtasks for each render layer
+        for render_layer in render_layers:
+            render_layer_task = farm.Task(title=render_layer)
 
-            # Add the scene file
-            chunk_cmd.value(scene.as_posix())
+            # Add render layer to the image name
+            output_filename = f"{parameters['output_filename']}_{render_layer}"
 
-            task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
-            task.add_mount_command(action_query.context_metadata["project_nas"])
-            tasks.append(task)
+            # Creating tasks for each frame chunk
+            for chunk in frame_chunks:
+                chunk_cmd = maya_cmd.deepcopy()
+
+                chunk_cmd.param("im", output_filename)
+                chunk_cmd.param("rl", render_layer)
+                chunk_cmd.param("s", chunk[0])
+                chunk_cmd.param("e", chunk[-1])
+                chunk_cmd.param("b", frame_range[2])
+
+                # Add the scene file
+                chunk_cmd.value(scene.as_posix())
+
+                task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
+                task.add_mount_command(action_query.context_metadata["project_nas"])
+
+                if len(render_layers) > 1:
+                    render_layer_task.addChild(task)
+                else:
+                    tasks.append(task)
+
+            if len(render_layers) > 1:
+                tasks.append(render_layer_task)
 
         return {"tasks": tasks, "file_name": scene.stem}
