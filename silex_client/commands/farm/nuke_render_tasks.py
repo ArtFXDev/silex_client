@@ -37,6 +37,11 @@ class NukeRenderTasksCommand(CommandBase):
             "type": int,
             "value": 10,
         },
+        "write_node": {
+            "label": "Write node",
+            "tooltip": "Name of the write node to execute",
+            "type": str,
+        },
     }
 
     @CommandBase.conform_command()
@@ -49,6 +54,7 @@ class NukeRenderTasksCommand(CommandBase):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
+        write_node: str = parameters["write_node"]
 
         nuke_cmd = command_builder.CommandBuilder(
             "nuke",
@@ -58,6 +64,7 @@ class NukeRenderTasksCommand(CommandBase):
         nuke_cmd.param("-gpu").param("-multigpu")  # Use gpu
         nuke_cmd.param("-sro")  # Follow write order
         nuke_cmd.param("-priority", "high")
+        nuke_cmd.param("X", write_node)  # Specify the write node
 
         frame_chunks = split_frameset(frame_range, task_size)
         tasks: List[farm.Task] = []
@@ -79,3 +86,20 @@ class NukeRenderTasksCommand(CommandBase):
             "tasks": tasks,
             "file_name": scene.stem,
         }
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        try:
+            import nuke
+        except ImportError:
+            return
+
+        write_node_parameter = self.command_buffer.parameters["write_node"]
+        for node in nuke.selectedNodes():
+            if node.Class() == "Write":
+                write_node_parameter.value = node.name()
+                break
