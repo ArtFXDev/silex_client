@@ -56,7 +56,7 @@ class MayaRenderTasksCommand(CommandBase):
             "type": str,
             "value": "masterLayer",
         },
-        # "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
+        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
         "output_folder": {"type": pathlib.Path, "hide": True, "value": ""},
         "output_filename": {"type": str, "hide": True, "value": ""},
         "output_extension": {"type": str, "hide": True, "value": "exr"},
@@ -83,8 +83,7 @@ class MayaRenderTasksCommand(CommandBase):
         )
         maya_cmd.param("r", parameters["renderer"])
 
-        # Doesn't work need to check on a forum
-        # maya_cmd.param("skipExistingFrames", str(parameters["skip_existing"]).lower())
+        maya_cmd.param("skipExistingFrames", str(parameters["skip_existing"]).lower())
         maya_cmd.param("rd", parameters["output_folder"].as_posix())
 
         if not keep_output_type:
