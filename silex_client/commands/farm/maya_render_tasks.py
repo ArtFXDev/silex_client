@@ -130,8 +130,9 @@ class MayaRenderTasksCommand(CommandBase):
                 task_size,
             )
         else:
-            # Otherwise take individual frames
-            frame_chunks = list(parameters["specific_frames_frameset"])
+            patterns = str(parameters["specific_frames_frameset"]).split(",")
+            # Otherwise split framesets and take them individually
+            frame_chunks = [FrameSet(pattern) for pattern in patterns]
 
         render_layers = parameters["render_layers"].replace(" ", "").split(",")
 
@@ -143,27 +144,20 @@ class MayaRenderTasksCommand(CommandBase):
             output_filename = f"{parameters['output_filename']}_{render_layer}"
 
             # Creating tasks for each frame chunk
-            for chunk_or_frame in frame_chunks:
+            for chunk in frame_chunks:
                 chunk_cmd = maya_cmd.deepcopy()
 
                 chunk_cmd.param("im", output_filename)
                 chunk_cmd.param("rl", render_layer)
 
-                if chunk_render:
-                    chunk_cmd.param("s", chunk_or_frame[0])
-                    chunk_cmd.param("e", chunk_or_frame[-1])
-                    chunk_cmd.param("b", frame_range[2])
-                else:
-                    chunk_cmd.param("s", chunk_or_frame)
-                    chunk_cmd.param("e", chunk_or_frame)
+                chunk_cmd.param("s", chunk.start())
+                chunk_cmd.param("e", chunk.end())
+                chunk_cmd.param("b", frame_range[2])
 
                 # Add the scene file
                 chunk_cmd.value(scene.as_posix())
 
-                task_title = (
-                    chunk_or_frame.frameRange() if chunk_render else str(chunk_or_frame)
-                )
-                task = farm.Task(title=task_title, argv=chunk_cmd.as_argv())
+                task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
                 task.add_mount_command(action_query.context_metadata["project_nas"])
 
                 if len(render_layers) > 1:
