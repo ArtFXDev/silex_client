@@ -88,6 +88,10 @@ class MayaRenderTasksCommand(CommandBase):
         self.command_buffer.parameters["frame_range"].hide = specific_frames
         self.command_buffer.parameters["task_size"].hide = specific_frames
 
+        self.command_buffer.parameters["skip_existing"].hide = (
+            parameters["renderer"] == "vray"
+        )
+
     @CommandBase.conform_command()
     async def __call__(
         self,
