@@ -92,6 +92,7 @@ class MayaRenderTasksCommand(CommandBase):
             import maya.cmds as cmds
 
             render_layers: List[str] = cmds.ls(type="renderLayer")
+            render_layers = [rl for rl in render_layers if not ":" in rl]
             self.command_buffer.parameters["render_layers"].rebuild_type(*render_layers)
             self.command_buffer.parameters["render_layers"].value = render_layers
         except:
