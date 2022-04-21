@@ -88,10 +88,6 @@ class MayaRenderTasksCommand(CommandBase):
         self.command_buffer.parameters["frame_range"].hide = specific_frames
         self.command_buffer.parameters["task_size"].hide = specific_frames
 
-        self.command_buffer.parameters["skip_existing"].hide = (
-            parameters["renderer"] == "vray"
-        )
-
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -105,30 +101,33 @@ class MayaRenderTasksCommand(CommandBase):
         task_size: int = parameters["task_size"]
 
         # Build the Blender command
-        maya_cmd = command_builder.CommandBuilder(
-            "Render",
-            rez_packages=["maya", action_query.context_metadata["project"].lower()],
-            delimiter=" ",
-            dashes="-",
-        )
-        maya_cmd.param("r", parameters["renderer"])
-
-        if parameters["skip_existing"] and parameters["renderer"] is not "vray":
-            maya_cmd.param(
-                "skipExistingFrames", str(parameters["skip_existing"]).lower()
+        maya_cmd = (
+            command_builder.CommandBuilder(
+                "Render",
+                rez_packages=["maya", action_query.context_metadata["project"].lower()],
+                delimiter=" ",
+                dashes="-",
             )
-
-        maya_cmd.param("rd", parameters["output_folder"].as_posix())
+            .param("r", parameters["renderer"])
+            .param("rd", parameters["output_folder"].as_posix())
+        )
 
         if not keep_output_type:
             maya_cmd.param("of", parameters["output_extension"])
 
+        # Renderer specific options
         if parameters["renderer"] == "arnold":
+            maya_cmd.param(
+                "skipExistingFrames", str(parameters["skip_existing"]).lower()
+            )
             maya_cmd.param("ai:lve", 2)  # log level
             maya_cmd.param("fnc", 3)  # File naming name.#.ext
+        elif parameters["renderer"] == "vray":
+            # Skip existing frames is a different flag
+            # See: https://forums.autodesk.com/t5/maya-forum/maya-batch-with-render-skipexistingframes/td-p/11117913
+            maya_cmd.param("rep", 0 if parameters["skip_existing"] else 1)
 
         tasks: List[farm.Task] = []
-
         chunk_render = not parameters["render_specific_frames"]
 
         if chunk_render:
@@ -138,8 +137,8 @@ class MayaRenderTasksCommand(CommandBase):
                 task_size,
             )
         else:
-            patterns = str(parameters["specific_frames_frameset"]).split(",")
             # Otherwise split framesets and take them individually
+            patterns = str(parameters["specific_frames_frameset"]).split(",")
             frame_chunks = [FrameSet(pattern) for pattern in patterns]
 
         render_layers = parameters["render_layers"].replace(" ", "").split(",")
