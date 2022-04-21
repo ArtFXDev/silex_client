@@ -298,7 +298,7 @@ def StringParameterMeta(multiline: bool = False, max_lenght: int = 1000):
     def __new__(cls, value):
         value = str(value)
         # Trim the name with the max lenght
-        value = value[:max_lenght]
+        value = value[len(value) - max_lenght:]
         return str.__new__(cls, value)
 
     def serialize():
