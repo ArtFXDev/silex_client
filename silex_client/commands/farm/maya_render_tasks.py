@@ -11,6 +11,7 @@ from silex_client.utils import command_builder, farm
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
+    MultipleSelectParameterMeta,
     SelectParameterMeta,
     TaskFileParameterMeta,
 )
@@ -63,9 +64,8 @@ class MayaRenderTasksCommand(CommandBase):
             "value": False,
         },
         "render_layers": {
-            "label": "Render layers (separated by comma)",
-            "type": str,
-            "value": "masterLayer",
+            "label": "Render layers",
+            "type": MultipleSelectParameterMeta(),
         },
         "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
         "output_folder": {"type": pathlib.Path, "hide": True, "value": ""},
@@ -87,6 +87,15 @@ class MayaRenderTasksCommand(CommandBase):
 
         self.command_buffer.parameters["frame_range"].hide = specific_frames
         self.command_buffer.parameters["task_size"].hide = specific_frames
+
+        try:
+            import maya.cmds as cmds
+
+            render_layers: List[str] = cmds.ls(type="renderLayer")
+            self.command_buffer.parameters["render_layers"].rebuild_type(*render_layers)
+            self.command_buffer.parameters["render_layers"].value = render_layers
+        except:
+            self.command_buffer.parameters["render_layers"].type = str
 
     @CommandBase.conform_command()
     async def __call__(
@@ -141,10 +150,8 @@ class MayaRenderTasksCommand(CommandBase):
             patterns = str(parameters["specific_frames_frameset"]).split(",")
             frame_chunks = [FrameSet(pattern) for pattern in patterns]
 
-        render_layers = parameters["render_layers"].replace(" ", "").split(",")
-
         # Create subtasks for each render layer
-        for render_layer in render_layers:
+        for render_layer in parameters["render_layers"]:
             render_layer_task = farm.Task(title=render_layer)
 
             # Add render layer to the image name
@@ -167,12 +174,12 @@ class MayaRenderTasksCommand(CommandBase):
                 task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
                 task.add_mount_command(action_query.context_metadata["project_nas"])
 
-                if len(render_layers) > 1:
+                if len(parameters["render_layers"]) > 1:
                     render_layer_task.addChild(task)
                 else:
                     tasks.append(task)
 
-            if len(render_layers) > 1:
+            if len(parameters["render_layers"]) > 1:
                 tasks.append(render_layer_task)
 
         return {"tasks": tasks, "file_name": scene.stem}
