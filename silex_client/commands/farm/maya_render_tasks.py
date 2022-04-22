@@ -88,15 +88,19 @@ class MayaRenderTasksCommand(CommandBase):
         self.command_buffer.parameters["frame_range"].hide = specific_frames
         self.command_buffer.parameters["task_size"].hide = specific_frames
 
-        try:
-            import maya.cmds as cmds
+        if not action_query.store.get("get_maya_render_layer"):
+            try:
+                import maya.cmds as cmds
 
-            render_layers: List[str] = cmds.ls(type="renderLayer")
-            render_layers = [rl for rl in render_layers if not ":" in rl]
-            self.command_buffer.parameters["render_layers"].rebuild_type(*render_layers)
-            self.command_buffer.parameters["render_layers"].value = render_layers
-        except:
-            self.command_buffer.parameters["render_layers"].type = str
+                render_layers: List[str] = cmds.ls(type="renderLayer")
+                render_layers = [rl for rl in render_layers if not ":" in rl]
+                self.command_buffer.parameters["render_layers"].rebuild_type(
+                    *render_layers
+                )
+                self.command_buffer.parameters["render_layers"].value = render_layers
+                action_query.store["get_maya_render_layer"] = True
+            except:
+                self.command_buffer.parameters["render_layers"].type = str
 
     @CommandBase.conform_command()
     async def __call__(
