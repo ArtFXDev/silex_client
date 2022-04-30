@@ -37,23 +37,23 @@ class AddSilexCoinsCommand(CommandBase):
         if parameters["amount"] == 0:
             return
 
+        # It means we already gave some coins
         if action_query.store.get("silexCoins", False):
             return
 
         current_user = await gazu.client.get_current_user()
-        user_data = current_user["data"]
 
-        if user_data is None or "silexCoins" not in user_data:
+        if "coins" not in current_user:
             return
 
-        user_data["silexCoins"] = user_data["silexCoins"] + parameters["amount"]
+        new_coins_amount = current_user["coins"] + parameters["amount"]
 
         if parameters["count_commands"]:
-            user_data["silexCoins"] += math.floor(len(action_query.commands) / 70)
+            new_coins_amount += math.floor(len(action_query.commands) / 70)
 
         await gazu.raw.put(
             f"data/persons/{current_user['id']}",
-            {"data": user_data},
+            {"coins": new_coins_amount},
         )
 
         await action_query.ws_connection.async_send(
@@ -62,7 +62,7 @@ class AddSilexCoinsCommand(CommandBase):
             {
                 "data": {
                     "type": "silexCoins",
-                    "data": {"new_coins": user_data["silexCoins"]},
+                    "data": {"new_coins": new_coins_amount},
                 }
             },
         )
