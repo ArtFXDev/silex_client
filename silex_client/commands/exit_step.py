@@ -30,7 +30,6 @@ class ExitStep(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        logger.error(parameters["enable"])
         enable: bool = parameters["enable"]
 
         if not enable:
