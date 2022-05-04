@@ -44,10 +44,11 @@ class SubmitToTractorCommand(CommandBase):
             "type": RadioSelectParameterMeta(
                 **{
                     "Standard": 100,
-                    "Specific frames": 120,
+                    "Specific frames": 128,
                     "Retake": 90,
                     "Static frame": 130,
-                    "Supervision": 125,
+                    "Supervision high": 125,
+                    "Supervision low": 124,
                 }
             ),
         },
