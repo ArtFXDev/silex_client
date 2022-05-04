@@ -134,7 +134,7 @@ class MayaRenderTasksCommand(CommandBase):
             maya_cmd.param(
                 "skipExistingFrames", str(parameters["skip_existing"]).lower()
             )
-            maya_cmd.param("ai:lve", 2)  # log level
+            maya_cmd.param("ai:lve", 1)  # log level
             maya_cmd.param("fnc", 3)  # File naming name.#.ext
         elif parameters["renderer"] == "vray":
             # Skip existing frames is a different flag
