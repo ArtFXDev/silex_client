@@ -49,6 +49,7 @@ class SubmitToTractorCommand(CommandBase):
                     "Static frame": 130,
                     "Supervision high": 125,
                     "Supervision low": 124,
+                    "MOF & demoreel": 50,
                 }
             ),
         },
