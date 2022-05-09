@@ -50,6 +50,7 @@ class SubmitToTractorCommand(CommandBase):
                     "Supervision high": 125,
                     "Supervision low": 124,
                     "MOF & demoreel": 50,
+                    "Personal project": 30,
                 }
             ),
         },
