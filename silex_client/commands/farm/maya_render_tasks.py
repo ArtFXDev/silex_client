@@ -134,7 +134,7 @@ class MayaRenderTasksCommand(CommandBase):
             maya_cmd.param(
                 "skipExistingFrames", str(parameters["skip_existing"]).lower()
             )
-            maya_cmd.param("ai:lve", 1)  # log level
+            maya_cmd.param("ai:lve", 2)  # log level
             maya_cmd.param("fnc", 3)  # File naming name.#.ext
         elif parameters["renderer"] == "vray":
             # Skip existing frames is a different flag
@@ -176,8 +176,13 @@ class MayaRenderTasksCommand(CommandBase):
                 # Add the scene file
                 chunk_cmd.value(scene.as_posix())
 
-                task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
-                task.add_mount_command(action_query.context_metadata["project_nas"])
+                task = farm.Task(title=chunk.frameRange())
+
+                task.addCommand(
+                    farm.wrap_with_mount(
+                        chunk_cmd, action_query.context_metadata["project_nas"]
+                    )
+                )
 
                 if len(parameters["render_layers"]) > 1:
                     render_layer_task.addChild(task)
