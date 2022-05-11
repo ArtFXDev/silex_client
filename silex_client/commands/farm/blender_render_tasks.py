@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder
+from silex_client.utils import command_builder, farm
 from silex_client.utils.farm import Task
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import (
@@ -103,8 +103,13 @@ class BlenderRenderTasksCommand(CommandBase):
             chunk_cmd.param("render-frame", fmt_frames)
 
             # Create the task
-            task = Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
-            task.add_mount_command(action_query.context_metadata["project_nas"])
+            task = Task(title=chunk.frameRange())
+            task.addCommand(
+                farm.wrap_with_mount(
+                    chunk_cmd, action_query.context_metadata["project_nas"]
+                )
+            )
+
             tasks.append(task)
 
         return {"tasks": tasks, "file_name": scene.stem}

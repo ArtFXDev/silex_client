@@ -91,8 +91,12 @@ class HuskRenderTasksCommand(CommandBase):
             chunk_cmd.param("frame-count", end - start + 1)
             chunk_cmd.param("frame-inc", step)
 
-            task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
-            task.add_mount_command(action_query.context_metadata["project_nas"])
+            task = farm.Task(title=chunk.frameRange())
+            task.addCommand(
+                farm.wrap_with_mount(
+                    chunk_cmd, action_query.context_metadata["project_nas"]
+                )
+            )
             tasks.append(task)
 
         return {"tasks": tasks, "file_name": scene.stem}
