@@ -91,8 +91,13 @@ class NukeRenderTasksCommand(CommandBase):
             # Specify the scene file
             chunk_cmd.param("xi", scene.as_posix())
 
-            task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
-            task.add_mount_command(action_query.context_metadata["project_nas"])
+            task = farm.Task(title=chunk.frameRange())
+            task.addCommand(
+                farm.wrap_with_mount(
+                    chunk_cmd, action_query.context_metadata["project_nas"]
+                )
+            )
+
             tasks.append(task)
 
         return {
