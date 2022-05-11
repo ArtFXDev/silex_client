@@ -92,7 +92,7 @@ class VrayRenderTasksCommand(CommandBase):
         output_filename: str = parameters["output_filename"]
         output_extension: str = parameters["output_extension"]
 
-        engine: int = parameters["engine"]
+        engine: str = parameters["engine"]
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
         skip_existing = int(parameters["skip_existing"])
@@ -165,8 +165,12 @@ class VrayRenderTasksCommand(CommandBase):
 
                 chunk_cmd.param("frames", fmt_frames)
 
-                task = farm.Task(title=chunk.frameRange(), argv=chunk_cmd.as_argv())
-                task.add_mount_command(action_query.context_metadata["project_nas"])
+                task = farm.Task(title=chunk.frameRange())
+                task.addCommand(
+                    farm.wrap_with_mount(
+                        chunk_cmd, action_query.context_metadata["project_nas"]
+                    )
+                )
 
                 if len(vrscenes) > 1:
                     render_layer_task.addChild(task)

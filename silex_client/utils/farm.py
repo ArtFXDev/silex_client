@@ -38,9 +38,6 @@ class Task:
     def addPreCommand(self, cmd: Command):
         self.precommands.append(cmd)
 
-    def add_mount_command(self, nas: str):
-        self.addPreCommand(get_mount_command(nas))
-
     def addCommand(self, cmd: Command):
         self._commands.append(cmd)
 
@@ -70,3 +67,35 @@ def get_mount_command(nas: str) -> Command:
 
     mount_cmd.value(nas)
     return Command(argv=mount_cmd.as_argv())
+
+
+def wrap_command(
+    pres: List[Command], cmd: Command, post: Optional[Command] = None
+) -> Command:
+    """
+    Wraps a command with cmd-wrapper
+    Combines a pre, cmd and post command into a single one
+    """
+    wrap_cmd = command_builder.CommandBuilder(
+        "cmd-wrapper", dashes="--", rez_packages=["cmd_wrapper"]
+    )
+
+    for pre in pres:
+        wrap_cmd.param("pre", f'"{str(pre)}"')
+
+    wrap_cmd.param("cmd", f'"{str(cmd)}"').param(
+        "post", f'"{str(post)}"', condition=post is not None
+    )
+
+    return Command(argv=wrap_cmd.as_argv())
+
+
+def wrap_with_mount(
+    cmd: command_builder.CommandBuilder, nas: str, post: Optional[Command] = None
+):
+    """
+    Wrap command with a pre-command mounting the network drive
+    """
+    return wrap_command(
+        pres=[get_mount_command(nas)], cmd=Command(cmd.as_argv()), post=post
+    )
