@@ -155,11 +155,6 @@ class HoudiniRenderTasksCommand(CommandBase):
                 chunk_cmd = houdini_cmd.deepcopy()
                 chunk_cmd.param("f", ";".join(map(str, list(chunk))))
 
-                # Wrap the command with the mount drive
-                chunk_cmd = farm.wrap_with_mount(
-                    chunk_cmd, action_query.context_metadata["project_nas"]
-                )
-
                 # In case of a more complicated setup add a pre and cleanup command
                 if len(parameters["pre_command"]) and len(
                     parameters["cleanup_command"]
@@ -173,8 +168,13 @@ class HoudiniRenderTasksCommand(CommandBase):
                             mount_cmd,
                             farm.Command(argv=parameters["pre_command"].split(" ")),
                         ],
-                        cmd=chunk_cmd,
+                        cmd=farm.Command(chunk_cmd.as_argv()),
                         post=farm.Command(parameters["cleanup_command"].split(" ")),
+                    )
+                else:
+                    # Wrap the command with the mount drive
+                    chunk_cmd = farm.wrap_with_mount(
+                        chunk_cmd, action_query.context_metadata["project_nas"]
                     )
 
                 task = farm.Task(title=chunk.frameRange())
