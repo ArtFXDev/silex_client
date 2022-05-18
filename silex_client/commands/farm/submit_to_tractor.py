@@ -75,7 +75,7 @@ class SubmitToTractorCommand(CommandBase):
         "blade_blacklist": {
             "type": ListParameterMeta(str),
             "hide": True,
-            "value": ["BUG"],
+            "value": ["BUG", "DONOTUSE", "RTXPLUS"],
         },
         "job_title": {
             "label": "Job title",
