@@ -33,6 +33,11 @@ class KickRenderTasksCommand(CommandBase):
             "type": bool,
             "value": False,
         },
+        "use_mtoa": {
+            "label": "Use Maya shaders (MtoA)",
+            "type": bool,
+            "value": False,
+        },
         "frame_range": {
             "label": "Frame range",
             "type": fileseq.FrameSet,
@@ -98,6 +103,12 @@ class KickRenderTasksCommand(CommandBase):
                 kick_cmd.param(
                     "pluginLibraries",
                     "C:/PROGRA~1/Autodesk/Arnold/maya2022/procedurals",
+                )
+
+            if parameters["use_mtoa"]:
+                kick_cmd.param(
+                    "pluginLibraries",
+                    "C:/PROGRA~1/Autodesk/Arnold/maya2022/shaders",
                 )
 
             folder_task = farm.Task(title=ass_folder.stem)
