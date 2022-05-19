@@ -70,12 +70,12 @@ class SubmitToTractorCommand(CommandBase):
         "blade_ignore_filters": {
             "label": "Don't render on",
             "type": MultipleSelectParameterMeta(),
-            "value": ["PC2014", "PC2015"],
+            "value": ["PC2014", "PC2015", "RTXQUADRO"],
         },
         "blade_blacklist": {
             "type": ListParameterMeta(str),
             "hide": True,
-            "value": ["BUG", "DONOTUSE", "RTXPLUS"],
+            "value": ["BUG", "DONOTUSE"],
         },
         "job_title": {
             "label": "Job title",
