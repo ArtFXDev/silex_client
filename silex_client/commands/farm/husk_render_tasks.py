@@ -13,7 +13,6 @@ from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
     TaskFileParameterMeta,
 )
-from silex_client.utils.tractor import dirmap
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -65,8 +64,8 @@ class HuskRenderTasksCommand(CommandBase):
             delimiter=" ",
             dashes="--",
         )
-        husk_cmd.param("usd-input", dirmap(scene.as_posix()))
-        husk_cmd.param("output", dirmap(full_path))
+        husk_cmd.param("usd-input", scene.as_posix())
+        husk_cmd.param("output", full_path)
         husk_cmd.param("make-output-path")
         husk_cmd.param("exrmode", 1)
         husk_cmd.param("verbose", "3a")
