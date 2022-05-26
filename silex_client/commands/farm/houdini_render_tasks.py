@@ -37,7 +37,7 @@ class HoudiniRenderTasksCommand(CommandBase):
             "type": TaskFileParameterMeta(extensions=[".hip", ".hipnc"]),
         },
         "frame_range": {
-            "label": "Frame range (start, end, step)",
+            "label": "Frame range",
             "type": FrameSet,
             "value": "1-50x1",
         },
