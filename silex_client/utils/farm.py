@@ -1,5 +1,6 @@
-from typing import List, Optional
+from typing import List, Optional, cast
 
+from fileseq import FrameSet
 from silex_client.utils import command_builder
 
 
@@ -23,7 +24,11 @@ class Task:
     """
 
     def __init__(self, title: str = "", argv: Optional[List[str]] = None):
-        self.title = title
+        if len(title) and title[0] == "-":
+            self.title = f"({title})"
+        else:
+            self.title = title
+
         self.precommands: List[Command] = []
         self._commands: List[Command] = []
         self.children: List[Task] = []
@@ -99,3 +104,8 @@ def wrap_with_mount(
     return wrap_command(
         pres=[get_mount_command(nas)], cmd=Command(cmd.as_argv()), post=post
     )
+
+
+def frameset_to_frames_str(frameset: FrameSet, sep: str = ";") -> str:
+    frames_list = cast(List[str], list(frameset))
+    return sep.join(map(str, frames_list))
