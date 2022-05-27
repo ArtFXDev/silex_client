@@ -97,13 +97,12 @@ class BlenderRenderTasksCommand(CommandBase):
         # Creating tasks for each frame chunk
         for chunk in frame_chunks:
             chunk_cmd = blender_cmd.deepcopy()
-            fmt_frames = ",".join(map(str, list(chunk)))
 
             # Add the frames argument
-            chunk_cmd.param("render-frame", fmt_frames)
+            chunk_cmd.param("render-frame", farm.frameset_to_frames_str(chunk, sep=","))
 
             # Create the task
-            task = Task(title=chunk.frameRange())
+            task = Task(title=str(chunk))
             task.addCommand(
                 farm.wrap_with_mount(
                     chunk_cmd, action_query.context_metadata["project_nas"]
