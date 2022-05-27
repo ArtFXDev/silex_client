@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import typing
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import farm
@@ -113,7 +113,7 @@ class SubmitToTractorCommand(CommandBase):
 
         # Get user context information
         context = action_query.context_metadata
-        owner = context["user_email"].split("@")[0]
+        owner = cast(str, context["user_email"]).split("@")[0]
 
         # Filter by available RAM
         services = f"@.mem >= {parameters['min_blade_ram']}"
@@ -140,8 +140,7 @@ class SubmitToTractorCommand(CommandBase):
             job.addChild(convert_to_tractor_task(task))
 
         # Submit the job to Tractor
-        jid = job.spool(owner=owner)
-        logger.info(f"Sent job: {job_title} ({jid})")
+        job.spool(owner=owner)
 
     async def setup(
         self,
@@ -149,7 +148,7 @@ class SubmitToTractorCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        tractor_pools = {"BladeProfiles": []}
+        tractor_pools: Dict[str, List[Dict[str, str]]] = {"BladeProfiles": []}
 
         # Query the Tractor config
         try:

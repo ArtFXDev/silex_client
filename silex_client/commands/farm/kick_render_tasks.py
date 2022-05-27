@@ -117,8 +117,8 @@ class KickRenderTasksCommand(CommandBase):
             for chunk in frame_chunks:
                 chunk_cmd = kick_cmd.deepcopy()
 
-                chunk_cmd.param("frames", chunk.frameRange())
-                task = farm.Task(title=chunk.frameRange())
+                chunk_cmd.param("frames", str(chunk))
+                task = farm.Task(title=str(chunk))
                 task.addCommand(
                     farm.wrap_with_mount(
                         chunk_cmd, action_query.context_metadata["project_nas"]
