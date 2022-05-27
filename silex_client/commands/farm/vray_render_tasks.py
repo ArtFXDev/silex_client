@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
@@ -52,9 +52,9 @@ class VrayRenderTasksCommand(CommandBase):
         "engine": {
             "label": "RT engine",
             "type": RadioSelectParameterMeta(
-                **{"Regular": "regular", "GPU CUDA": "cuda", "GPU RTX": "optix"}
+                **{"Regular": 0, "GPU CUDA": 5, "GPU RTX": 7}
             ),
-            "value": "regular",
+            "value": 0,
         },
         "parameter_overrides": {
             "type": bool,
@@ -92,7 +92,7 @@ class VrayRenderTasksCommand(CommandBase):
         output_filename: str = parameters["output_filename"]
         output_extension: str = parameters["output_extension"]
 
-        engine: str = parameters["engine"]
+        engine: int = parameters["engine"]
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
         skip_existing = int(parameters["skip_existing"])
@@ -118,26 +118,6 @@ class VrayRenderTasksCommand(CommandBase):
             )
 
             # Build the V-Ray command
-
-            """vray_cmd = (
-                command_builder.CommandBuilder(
-                    "python",
-                    rez_packages=[
-                        "vrender",
-                        action_query.context_metadata["project"].lower(),
-                    ],
-                )
-                .value("-m")
-                .value("vrender")
-            )
-
-            vray_cmd.param("skipExistingFrames", skip_existing)
-            vray_cmd.param("rtEngine", engine)
-            vray_cmd.param("sceneFile", vrscene.as_posix())
-            vray_cmd.param("imgFile", full_output_path.as_posix())"""
-
-            engine_map = {"regular": 0, "cuda": 5, "optix": 7}
-
             vray_cmd = command_builder.CommandBuilder(
                 "vray",
                 rez_packages=["vray", action_query.context_metadata["project"].lower()],
@@ -146,7 +126,7 @@ class VrayRenderTasksCommand(CommandBase):
             vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
             vray_cmd.param("progressIncrement", 5)
             vray_cmd.param("verboseLevel", 3)
-            vray_cmd.param("rtEngine", engine_map[engine])
+            vray_cmd.param("rtEngine", engine)
             vray_cmd.param("sceneFile", vrscene.as_posix())
             vray_cmd.param("imgFile", full_output_path.as_posix())
 
@@ -160,17 +140,16 @@ class VrayRenderTasksCommand(CommandBase):
 
             # Creating tasks for each frame chunk
             for chunk in frame_chunks:
+                logger.error(list(chunk))
                 chunk_cmd = vray_cmd.deepcopy()
                 fmt_frames = ";".join(map(str, list(chunk)))
 
                 chunk_cmd.param("frames", fmt_frames)
 
-                task = farm.Task(title=chunk.frameRange())
-                task.addCommand(
-                    farm.wrap_with_mount(
-                        chunk_cmd, action_query.context_metadata["project_nas"]
-                    )
-                )
+                task = farm.Task(title=str(chunk))
+
+                project_nas = cast(str, action_query.context_metadata["project_nas"])
+                task.addCommand(farm.wrap_with_mount(chunk_cmd, project_nas))
 
                 if len(vrscenes) > 1:
                     render_layer_task.addChild(task)
