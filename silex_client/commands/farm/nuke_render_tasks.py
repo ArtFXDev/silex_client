@@ -27,7 +27,7 @@ class NukeRenderTasksCommand(CommandBase):
             "type": TaskFileParameterMeta(extensions=[".nk"]),
         },
         "frame_range": {
-            "label": "Frame range (start, end, step)",
+            "label": "Frame range",
             "type": FrameSet,
             "value": "1-50x1",
         },
