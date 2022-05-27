@@ -13,7 +13,6 @@ from silex_client.utils.parameter_types import (
     RadioSelectParameterMeta,
     TaskFileParameterMeta,
 )
-from silex_client.utils.tractor import dirmap
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -118,9 +117,10 @@ class VrayRenderTasksCommand(CommandBase):
             )
 
             # Build the V-Ray command
+            project = cast(str, action_query.context_metadata["project"]).lower()
             vray_cmd = command_builder.CommandBuilder(
                 "vray",
-                rez_packages=["vray", action_query.context_metadata["project"].lower()],
+                rez_packages=["vray", project],
             )
             vray_cmd.param("skipExistingFrames", skip_existing)
             vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
@@ -140,11 +140,9 @@ class VrayRenderTasksCommand(CommandBase):
 
             # Creating tasks for each frame chunk
             for chunk in frame_chunks:
-                logger.error(list(chunk))
                 chunk_cmd = vray_cmd.deepcopy()
-                fmt_frames = ";".join(map(str, list(chunk)))
 
-                chunk_cmd.param("frames", fmt_frames)
+                chunk_cmd.param("frames", farm.frameset_to_frames_str(chunk))
 
                 task = farm.Task(title=str(chunk))
 

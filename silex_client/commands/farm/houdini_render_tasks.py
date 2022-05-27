@@ -5,7 +5,7 @@ import logging
 import pathlib
 import tempfile
 import typing
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, cast
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
@@ -126,12 +126,13 @@ class HoudiniRenderTasksCommand(CommandBase):
             )
 
             # Build the render command
+            project = cast(str, action_query.context_metadata["project"]).lower()
             houdini_cmd = (
                 command_builder.CommandBuilder(
                     "hython",
                     rez_packages=[
                         "houdini",
-                        action_query.context_metadata["project"].lower(),
+                        project,
                     ],
                     delimiter=" ",
                 )
@@ -153,7 +154,7 @@ class HoudiniRenderTasksCommand(CommandBase):
             # Create tasks for each frame chunk
             for chunk in frame_chunks:
                 chunk_cmd = houdini_cmd.deepcopy()
-                chunk_cmd.param("f", ";".join(map(str, list(chunk))))
+                chunk_cmd.param("f", farm.frameset_to_frames_str(chunk))
 
                 # In case of a more complicated setup add a pre and cleanup command
                 if len(parameters["pre_command"]) and len(
@@ -177,7 +178,7 @@ class HoudiniRenderTasksCommand(CommandBase):
                         chunk_cmd, action_query.context_metadata["project_nas"]
                     )
 
-                task = farm.Task(title=chunk.frameRange())
+                task = farm.Task(title=str(chunk))
                 task.addCommand(chunk_cmd)
                 rop_task.addChild(task)
 
