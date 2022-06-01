@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
@@ -14,7 +14,6 @@ from silex_client.utils.parameter_types import (
     RadioSelectParameterMeta,
     TaskFileParameterMeta,
 )
-from silex_client.utils.tractor import dirmap
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -45,7 +44,14 @@ class BlenderRenderTasksCommand(CommandBase):
         },
         "output_directory": {"type": pathlib.Path, "hide": True, "value": ""},
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
+        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
         "output_extension": {"type": str, "hide": True, "value": "exr"},
+        "multi_layer_exr": {
+            "label": "Export Multi-Layer EXR",
+            "type": bool,
+            "hide": True,
+            "value": False,
+        },
         "engine": {
             "label": "Render engine",
             "type": RadioSelectParameterMeta(
@@ -55,6 +61,16 @@ class BlenderRenderTasksCommand(CommandBase):
     }
 
     EXTENSIONS_MAPPING = {"exr": "OPEN_EXR", "png": "PNG", "jpg": "JPG", "tiff": "TIFF"}
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        self.command_buffer.parameters["multi_layer_exr"].hide = (
+            not parameters["output_extension"] == "exr"
+        )
 
     @CommandBase.conform_command()
     async def __call__(
@@ -68,16 +84,22 @@ class BlenderRenderTasksCommand(CommandBase):
         task_size: int = parameters["task_size"]
         output_extension = self.EXTENSIONS_MAPPING[parameters["output_extension"]]
 
+        if parameters["output_extension"] == "exr" and parameters["multi_layer_exr"]:
+            output_extension = "OPEN_EXR_MULTILAYER"
+
         # Build the Blender command
+        project = cast(str, action_query.context_metadata["project"]).lower()
         blender_cmd = command_builder.CommandBuilder(
             "blender",
-            rez_packages=["blender", action_query.context_metadata["project"].lower()],
+            rez_packages=["blender", project],
             delimiter=" ",
             dashes="--",
         )
         blender_cmd.param("background")
+        blender_cmd.value("-noaudio")
+
         # Scene file
-        blender_cmd.value(dirmap(scene.as_posix()))
+        blender_cmd.value(scene.as_posix())
 
         blender_cmd.param("render-format", output_extension)
         blender_cmd.param("engine", parameters["engine"])
@@ -85,7 +107,7 @@ class BlenderRenderTasksCommand(CommandBase):
         output_path = (
             parameters["output_directory"] / f"{parameters['output_filename']}.####"
         )
-        output_file = dirmap((output_path).as_posix())
+        output_file = (output_path).as_posix()
         blender_cmd.param("render-output", output_file)
         blender_cmd.param("log-level", 0)
 
