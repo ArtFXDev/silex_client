@@ -168,11 +168,18 @@ class MayaRenderTasksCommand(CommandBase):
 
                 task = farm.Task(title=str(chunk))
 
-                task.addCommand(
-                    farm.wrap_with_mount(
-                        chunk_cmd, action_query.context_metadata["project_nas"]
-                    )
+                command = farm.wrap_command(
+                    [
+                        farm.get_mount_command(
+                            action_query.context_metadata["project_nas"]
+                        ),
+                        farm.get_clear_frames_command(
+                            parameters["output_folder"], chunk
+                        ),
+                    ],
+                    cmd=farm.Command(chunk_cmd.as_argv()),
                 )
+                task.addCommand(command)
 
                 if len(parameters["render_layers"]) > 1:
                     render_layer_task.addChild(task)

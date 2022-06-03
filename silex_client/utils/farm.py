@@ -1,3 +1,4 @@
+import pathlib
 from typing import List, Optional, cast
 
 from fileseq import FrameSet
@@ -72,6 +73,22 @@ def get_mount_command(nas: str) -> Command:
 
     mount_cmd.value(nas)
     return Command(argv=mount_cmd.as_argv())
+
+
+def get_clear_frames_command(folder: pathlib.Path, frame_range: FrameSet) -> Command:
+    """
+    Constructs the clear frames command in order to clear empty frames before rendering
+    """
+    clear_cmd = command_builder.CommandBuilder(
+        "clear_frames",
+        delimiter=None,
+        dashes="--",
+        rez_packages=["clear_frames"],
+    )
+
+    clear_cmd.param("folder", folder.as_posix())
+    clear_cmd.param("frange", str(frame_range))
+    return Command(argv=clear_cmd.as_argv())
 
 
 def wrap_command(
