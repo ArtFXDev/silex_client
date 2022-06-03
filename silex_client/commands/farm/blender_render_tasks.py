@@ -44,7 +44,6 @@ class BlenderRenderTasksCommand(CommandBase):
         },
         "output_directory": {"type": pathlib.Path, "hide": True, "value": ""},
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
-        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
         "output_extension": {"type": str, "hide": True, "value": "exr"},
         "multi_layer_exr": {
             "label": "Export Multi-Layer EXR",
@@ -56,6 +55,12 @@ class BlenderRenderTasksCommand(CommandBase):
             "label": "Render engine",
             "type": RadioSelectParameterMeta(
                 **{"Cycles": "CYCLES", "Evee": "BLENDER_EEVEE"}
+            ),
+        },
+        "cycles-device": {
+            "label": "Cycles device",
+            "type": RadioSelectParameterMeta(
+                **{k: k for k in ["CPU", "CUDA", "OPTIX", "CUDA+CPU", "OPTIX+CPU"]}
             ),
         },
     }
@@ -70,6 +75,10 @@ class BlenderRenderTasksCommand(CommandBase):
     ):
         self.command_buffer.parameters["multi_layer_exr"].hide = (
             not parameters["output_extension"] == "exr"
+        )
+
+        self.command_buffer.parameters["cycles-device"].hide = (
+            not parameters["engine"] == "CYCLES"
         )
 
     @CommandBase.conform_command()
@@ -122,6 +131,11 @@ class BlenderRenderTasksCommand(CommandBase):
 
             # Add the frames argument
             chunk_cmd.param("render-frame", farm.frameset_to_frames_str(chunk, sep=","))
+
+            if parameters["engine"] == "CYCLES":
+                # See: https://docs.blender.org/manual/en/latest/advanced/command_line/render.html#cycles
+                chunk_cmd.value("--")
+                chunk_cmd.param("cycles-device", parameters["cycles-device"])
 
             # Create the task
             task = Task(title=str(chunk))
