@@ -147,7 +147,15 @@ class VrayRenderTasksCommand(CommandBase):
                 task = farm.Task(title=str(chunk))
 
                 project_nas = cast(str, action_query.context_metadata["project_nas"])
-                task.addCommand(farm.wrap_with_mount(chunk_cmd, project_nas))
+
+                command = farm.wrap_command(
+                    [
+                        farm.get_mount_command(project_nas),
+                        farm.get_clear_frames_command(full_output_path.parent, chunk),
+                    ],
+                    cmd=farm.Command(chunk_cmd.as_argv()),
+                )
+                task.addCommand(command)
 
                 if len(vrscenes) > 1:
                     render_layer_task.addChild(task)

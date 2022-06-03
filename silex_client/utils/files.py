@@ -11,8 +11,7 @@ import pathlib
 import re
 import sys
 import unicodedata
-from types import ModuleType
-from typing import List, Dict, Union, Tuple
+from typing import List, Dict, Union
 from silex_client.utils.constants import ENV_VARIABLE_FORMAT
 
 import fileseq
@@ -131,7 +130,7 @@ def is_valid_path(pathname: str) -> bool:
                         return False
                 elif exc.errno in {errno.ENAMETOOLONG, errno.ERANGE}:
                     return False
-    except TypeError as exc:
+    except TypeError:
         return False
     else:
         return True
