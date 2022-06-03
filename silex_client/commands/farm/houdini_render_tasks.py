@@ -168,14 +168,25 @@ class HoudiniRenderTasksCommand(CommandBase):
                         pres=[
                             mount_cmd,
                             farm.Command(argv=parameters["pre_command"].split(" ")),
+                            farm.get_clear_frames_command(
+                                full_output_file.parent, chunk
+                            ),
                         ],
                         cmd=farm.Command(chunk_cmd.as_argv()),
                         post=farm.Command(parameters["cleanup_command"].split(" ")),
                     )
                 else:
                     # Wrap the command with the mount drive
-                    chunk_cmd = farm.wrap_with_mount(
-                        chunk_cmd, action_query.context_metadata["project_nas"]
+                    chunk_cmd = farm.wrap_command(
+                        [
+                            farm.get_mount_command(
+                                action_query.context_metadata["project_nas"]
+                            ),
+                            farm.get_clear_frames_command(
+                                full_output_file.parent, chunk
+                            ),
+                        ],
+                        cmd=farm.Command(chunk_cmd.as_argv()),
                     )
 
                 task = farm.Task(title=str(chunk))
