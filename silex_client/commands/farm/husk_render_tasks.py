@@ -13,7 +13,6 @@ from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
     TaskFileParameterMeta,
 )
-from silex_client.utils.tractor import dirmap
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -65,8 +64,8 @@ class HuskRenderTasksCommand(CommandBase):
             delimiter=" ",
             dashes="--",
         )
-        husk_cmd.param("usd-input", dirmap(scene.as_posix()))
-        husk_cmd.param("output", dirmap(full_path))
+        husk_cmd.param("usd-input", scene.as_posix())
+        husk_cmd.param("output", full_path)
         husk_cmd.param("make-output-path")
         husk_cmd.param("exrmode", 1)
         husk_cmd.param("verbose", "3a")
@@ -85,18 +84,24 @@ class HuskRenderTasksCommand(CommandBase):
 
             start = cast(int, chunk[0])
             end = cast(int, chunk[-1])
-            step = cast(int, frame_range[2])
+            step = frame_range[2]
 
             chunk_cmd.param("frame", start)
             chunk_cmd.param("frame-count", end - start + 1)
             chunk_cmd.param("frame-inc", step)
 
-            task = farm.Task(title=chunk.frameRange())
-            task.addCommand(
-                farm.wrap_with_mount(
-                    chunk_cmd, action_query.context_metadata["project_nas"]
-                )
+            task = farm.Task(title=str(chunk))
+
+            command = farm.wrap_command(
+                [
+                    farm.get_mount_command(
+                        action_query.context_metadata["project_nas"]
+                    ),
+                    farm.get_clear_frames_command(pathlib.Path(full_path), chunk),
+                ],
+                cmd=farm.Command(chunk_cmd.as_argv()),
             )
+            task.addCommand(command)
             tasks.append(task)
 
         return {"tasks": tasks, "file_name": scene.stem}

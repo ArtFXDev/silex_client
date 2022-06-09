@@ -1,5 +1,7 @@
-from typing import List, Optional
+import pathlib
+from typing import List, Optional, cast
 
+from fileseq import FrameSet
 from silex_client.utils import command_builder
 
 
@@ -23,7 +25,11 @@ class Task:
     """
 
     def __init__(self, title: str = "", argv: Optional[List[str]] = None):
-        self.title = title
+        if len(title) and title[0] == "-":
+            self.title = f"({title})"
+        else:
+            self.title = title
+
         self.precommands: List[Command] = []
         self._commands: List[Command] = []
         self.children: List[Task] = []
@@ -69,6 +75,22 @@ def get_mount_command(nas: str) -> Command:
     return Command(argv=mount_cmd.as_argv())
 
 
+def get_clear_frames_command(folder: pathlib.Path, frame_range: FrameSet) -> Command:
+    """
+    Constructs the clear frames command in order to clear empty frames before rendering
+    """
+    clear_cmd = command_builder.CommandBuilder(
+        "clear_frames",
+        delimiter=None,
+        dashes="--",
+        rez_packages=["clear_frames"],
+    )
+
+    clear_cmd.param("folder", folder.as_posix())
+    clear_cmd.param("frange", str(frame_range))
+    return Command(argv=clear_cmd.as_argv())
+
+
 def wrap_command(
     pres: List[Command], cmd: Command, post: Optional[Command] = None
 ) -> Command:
@@ -99,3 +121,8 @@ def wrap_with_mount(
     return wrap_command(
         pres=[get_mount_command(nas)], cmd=Command(cmd.as_argv()), post=post
     )
+
+
+def frameset_to_frames_str(frameset: FrameSet, sep: str = ";") -> str:
+    frames_list = cast(List[str], list(frameset))
+    return sep.join(map(str, frames_list))

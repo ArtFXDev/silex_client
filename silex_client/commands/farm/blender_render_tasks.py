@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
@@ -14,7 +14,6 @@ from silex_client.utils.parameter_types import (
     RadioSelectParameterMeta,
     TaskFileParameterMeta,
 )
-from silex_client.utils.tractor import dirmap
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -33,7 +32,7 @@ class BlenderRenderTasksCommand(CommandBase):
             "type": TaskFileParameterMeta(extensions=[".blend"]),
         },
         "frame_range": {
-            "label": "Frame range (start, end, step)",
+            "label": "Frame range",
             "type": FrameSet,
             "value": "1-50x1",
         },
@@ -46,15 +45,41 @@ class BlenderRenderTasksCommand(CommandBase):
         "output_directory": {"type": pathlib.Path, "hide": True, "value": ""},
         "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
         "output_extension": {"type": str, "hide": True, "value": "exr"},
+        "multi_layer_exr": {
+            "label": "Export Multi-Layer EXR",
+            "type": bool,
+            "hide": True,
+            "value": False,
+        },
         "engine": {
             "label": "Render engine",
             "type": RadioSelectParameterMeta(
                 **{"Cycles": "CYCLES", "Evee": "BLENDER_EEVEE"}
             ),
         },
+        "cycles-device": {
+            "label": "Cycles device",
+            "type": RadioSelectParameterMeta(
+                **{k: k for k in ["CPU", "CUDA", "OPTIX", "CUDA+CPU", "OPTIX+CPU"]}
+            ),
+        },
     }
 
     EXTENSIONS_MAPPING = {"exr": "OPEN_EXR", "png": "PNG", "jpg": "JPG", "tiff": "TIFF"}
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        self.command_buffer.parameters["multi_layer_exr"].hide = (
+            not parameters["output_extension"] == "exr"
+        )
+
+        self.command_buffer.parameters["cycles-device"].hide = (
+            not parameters["engine"] == "CYCLES"
+        )
 
     @CommandBase.conform_command()
     async def __call__(
@@ -68,16 +93,22 @@ class BlenderRenderTasksCommand(CommandBase):
         task_size: int = parameters["task_size"]
         output_extension = self.EXTENSIONS_MAPPING[parameters["output_extension"]]
 
+        if parameters["output_extension"] == "exr" and parameters["multi_layer_exr"]:
+            output_extension = "OPEN_EXR_MULTILAYER"
+
         # Build the Blender command
+        project = cast(str, action_query.context_metadata["project"]).lower()
         blender_cmd = command_builder.CommandBuilder(
             "blender",
-            rez_packages=["blender", action_query.context_metadata["project"].lower()],
+            rez_packages=["blender", project],
             delimiter=" ",
             dashes="--",
         )
         blender_cmd.param("background")
+        blender_cmd.value("-noaudio")
+
         # Scene file
-        blender_cmd.value(dirmap(scene.as_posix()))
+        blender_cmd.value(scene.as_posix())
 
         blender_cmd.param("render-format", output_extension)
         blender_cmd.param("engine", parameters["engine"])
@@ -85,7 +116,7 @@ class BlenderRenderTasksCommand(CommandBase):
         output_path = (
             parameters["output_directory"] / f"{parameters['output_filename']}.####"
         )
-        output_file = dirmap((output_path).as_posix())
+        output_file = (output_path).as_posix()
         blender_cmd.param("render-output", output_file)
         blender_cmd.param("log-level", 0)
 
@@ -97,18 +128,30 @@ class BlenderRenderTasksCommand(CommandBase):
         # Creating tasks for each frame chunk
         for chunk in frame_chunks:
             chunk_cmd = blender_cmd.deepcopy()
-            fmt_frames = ",".join(map(str, list(chunk)))
 
             # Add the frames argument
-            chunk_cmd.param("render-frame", fmt_frames)
+            chunk_cmd.param("render-frame", farm.frameset_to_frames_str(chunk, sep=","))
+
+            if parameters["engine"] == "CYCLES":
+                # See: https://docs.blender.org/manual/en/latest/advanced/command_line/render.html#cycles
+                chunk_cmd.value("--")
+                chunk_cmd.param("cycles-device", parameters["cycles-device"])
 
             # Create the task
-            task = Task(title=chunk.frameRange())
-            task.addCommand(
-                farm.wrap_with_mount(
-                    chunk_cmd, action_query.context_metadata["project_nas"]
-                )
+            task = Task(title=str(chunk))
+
+            command = farm.wrap_command(
+                [
+                    farm.get_mount_command(
+                        action_query.context_metadata["project_nas"]
+                    ),
+                    farm.get_clear_frames_command(
+                        pathlib.Path(parameters["output_directory"]), chunk
+                    ),
+                ],
+                cmd=farm.Command(chunk_cmd.as_argv()),
             )
+            task.addCommand(command)
 
             tasks.append(task)
 

@@ -117,13 +117,19 @@ class KickRenderTasksCommand(CommandBase):
             for chunk in frame_chunks:
                 chunk_cmd = kick_cmd.deepcopy()
 
-                chunk_cmd.param("frames", chunk.frameRange())
-                task = farm.Task(title=chunk.frameRange())
-                task.addCommand(
-                    farm.wrap_with_mount(
-                        chunk_cmd, action_query.context_metadata["project_nas"]
-                    )
+                chunk_cmd.param("frames", str(chunk))
+                task = farm.Task(title=str(chunk))
+
+                command = farm.wrap_command(
+                    [
+                        farm.get_mount_command(
+                            action_query.context_metadata["project_nas"]
+                        ),
+                        farm.get_clear_frames_command(output_path_layer.parent, chunk),
+                    ],
+                    cmd=farm.Command(chunk_cmd.as_argv()),
                 )
+                task.addCommand(command)
 
                 if len(ass_folders) > 1:
                     folder_task.addChild(task)

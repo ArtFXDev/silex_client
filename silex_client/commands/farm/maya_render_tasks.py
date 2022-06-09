@@ -10,7 +10,6 @@ from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder, farm
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import (
-    IntArrayParameterMeta,
     MultipleSelectParameterMeta,
     SelectParameterMeta,
     TaskFileParameterMeta,
@@ -36,21 +35,10 @@ class MayaRenderTasksCommand(CommandBase):
             "type": SelectParameterMeta("vray", "arnold"),
             "value": "vray",
         },
-        "render_specific_frames": {
-            "label": "Render specific frames",
-            "type": bool,
-            "value": False,
-        },
         "frame_range": {
-            "label": "Frame range (start, end, step)",
-            "type": IntArrayParameterMeta(3),
-            "value": [1, 50, 1],
-        },
-        "specific_frames_frameset": {
-            "label": "Specific frames",
+            "label": "Frame range",
             "type": FrameSet,
-            "value": "1,15,180",
-            "hide": True,
+            "value": "1-50x1",
         },
         "task_size": {
             "label": "Task size",
@@ -79,21 +67,21 @@ class MayaRenderTasksCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        specific_frames = parameters["render_specific_frames"]
-
+        # Get value of frame range
         self.command_buffer.parameters[
-            "specific_frames_frameset"
-        ].hide = not specific_frames
+            "frame_range"
+        ].value = self.command_buffer.parameters["frame_range"].get_value(action_query)
 
-        self.command_buffer.parameters["frame_range"].hide = specific_frames
-        self.command_buffer.parameters["task_size"].hide = specific_frames
-
+        # Fill render layer parameter
         if not action_query.store.get("get_maya_render_layer"):
             try:
                 import maya.cmds as cmds
 
                 render_layers: List[str] = cmds.ls(type="renderLayer")
+
+                # Exclude layers in references
                 render_layers = [rl for rl in render_layers if not ":" in rl]
+
                 self.command_buffer.parameters["render_layers"].rebuild_type(
                     *render_layers
                 )
@@ -111,10 +99,9 @@ class MayaRenderTasksCommand(CommandBase):
     ):
         scene: pathlib.Path = parameters["scene_file"]
         keep_output_type: bool = parameters["keep_output_type"]
-        frame_range: List[int] = parameters["frame_range"]
         task_size: int = parameters["task_size"]
 
-        # Build the Blender command
+        # Build the Maya command
         maya_cmd = (
             command_builder.CommandBuilder(
                 "Render",
@@ -129,7 +116,7 @@ class MayaRenderTasksCommand(CommandBase):
         if not keep_output_type:
             maya_cmd.param("of", parameters["output_extension"])
 
-        # Renderer specific options
+        # Renderer specific options (arnold, vray...)
         if parameters["renderer"] == "arnold":
             maya_cmd.param(
                 "skipExistingFrames", str(parameters["skip_existing"]).lower()
@@ -142,18 +129,21 @@ class MayaRenderTasksCommand(CommandBase):
             maya_cmd.param("rep", 0 if parameters["skip_existing"] else 1)
 
         tasks: List[farm.Task] = []
-        chunk_render = not parameters["render_specific_frames"]
 
-        if chunk_render:
-            # Split frames by task size
-            frame_chunks = split_frameset(
-                FrameSet.from_range(frame_range[0], frame_range[1], frame_range[2]),
-                task_size,
-            )
-        else:
-            # Otherwise split framesets and take them individually
-            patterns = str(parameters["specific_frames_frameset"]).split(",")
-            frame_chunks = [FrameSet(pattern) for pattern in patterns]
+        # Split frame range since Maya only accepts start, end and step frames
+        # Ex: 5-10,3,17-180 -> [5-10, 3, 17-180]
+        #     With a task size of 2: [5-6, 7-8, 9-10, 3, 17-18...]
+        patterns = parameters["frame_range"].frameRange().split(",")
+        frame_chunks: List[FrameSet] = []
+
+        for pattern in patterns:
+            pattern_frames = FrameSet(pattern)
+
+            # Split sub pattern of frames by task size
+            if len(pattern_frames) > 1:
+                frame_chunks.extend(split_frameset(pattern_frames, task_size))
+            else:
+                frame_chunks.append(pattern_frames)
 
         # Create subtasks for each render layer
         for render_layer in parameters["render_layers"]:
@@ -169,20 +159,27 @@ class MayaRenderTasksCommand(CommandBase):
                 chunk_cmd.param("im", output_filename)
                 chunk_cmd.param("rl", render_layer)
 
+                # Frame range start, end
                 chunk_cmd.param("s", chunk.start())
                 chunk_cmd.param("e", chunk.end())
-                chunk_cmd.param("b", frame_range[2])
 
                 # Add the scene file
                 chunk_cmd.value(scene.as_posix())
 
-                task = farm.Task(title=chunk.frameRange())
+                task = farm.Task(title=str(chunk))
 
-                task.addCommand(
-                    farm.wrap_with_mount(
-                        chunk_cmd, action_query.context_metadata["project_nas"]
-                    )
+                command = farm.wrap_command(
+                    [
+                        farm.get_mount_command(
+                            action_query.context_metadata["project_nas"]
+                        ),
+                        farm.get_clear_frames_command(
+                            parameters["output_folder"], chunk
+                        ),
+                    ],
+                    cmd=farm.Command(chunk_cmd.as_argv()),
                 )
+                task.addCommand(command)
 
                 if len(parameters["render_layers"]) > 1:
                     render_layer_task.addChild(task)
