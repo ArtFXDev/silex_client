@@ -11,6 +11,7 @@ from silex_client.utils import command_builder, farm
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import (
     MultipleSelectParameterMeta,
+    RadioSelectParameterMeta,
     SelectParameterMeta,
     TaskFileParameterMeta,
 )
@@ -34,6 +35,15 @@ class MayaRenderTasksCommand(CommandBase):
             "label": "Renderer",
             "type": SelectParameterMeta("vray", "arnold"),
             "value": "vray",
+        },
+        "arnold_device": {
+            "label": "Render device",
+            "type": RadioSelectParameterMeta(
+                **{
+                    "CPU": 0,
+                    "GPU": 1,
+                }
+            ),
         },
         "frame_range": {
             "label": "Frame range",
@@ -71,6 +81,10 @@ class MayaRenderTasksCommand(CommandBase):
         self.command_buffer.parameters[
             "frame_range"
         ].value = self.command_buffer.parameters["frame_range"].get_value(action_query)
+
+        self.command_buffer.parameters["arnold_device"].hide = (
+            parameters["renderer"] != "arnold"
+        )
 
         # Fill render layer parameter
         if not action_query.store.get("get_maya_render_layer"):
@@ -122,6 +136,9 @@ class MayaRenderTasksCommand(CommandBase):
                 "skipExistingFrames", str(parameters["skip_existing"]).lower()
             )
             maya_cmd.param("ai:lve", 2)  # log level
+            maya_cmd.param("ai:device", parameters["arnold_device"])
+            maya_cmd.param("ai:alf", "true")  # Abort on license fail
+            maya_cmd.param("ai:aerr", "true")  # Abort on error
             maya_cmd.param("fnc", 3)  # File naming name.#.ext
         elif parameters["renderer"] == "vray":
             # Skip existing frames is a different flag
