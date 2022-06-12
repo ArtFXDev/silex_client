@@ -10,7 +10,9 @@ from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder, farm
 from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import (
+    EditableListParameterMeta,
     MultipleSelectParameterMeta,
+    PathParameterMeta,
     RadioSelectParameterMeta,
     SelectParameterMeta,
     TaskFileParameterMeta,
@@ -27,6 +29,7 @@ class MayaRenderTasksCommand(CommandBase):
     """
 
     parameters = {
+        "scene_file_out_of_pipeline": {"type": bool, "value": False, "hide": True},
         "scene_file": {
             "label": "Scene file",
             "type": TaskFileParameterMeta(extensions=[".ma", ".mb"]),
@@ -77,6 +80,11 @@ class MayaRenderTasksCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
+        if parameters["scene_file_out_of_pipeline"]:
+            self.command_buffer.parameters["scene_file"].type = PathParameterMeta(
+                [".ma", ".mb"]
+            )
+
         # Get value of frame range
         self.command_buffer.parameters[
             "frame_range"
@@ -100,9 +108,17 @@ class MayaRenderTasksCommand(CommandBase):
                     *render_layers
                 )
                 self.command_buffer.parameters["render_layers"].value = render_layers
-                action_query.store["get_maya_render_layer"] = True
+
             except:
-                self.command_buffer.parameters["render_layers"].type = str
+                self.command_buffer.parameters[
+                    "render_layers"
+                ].type = EditableListParameterMeta(str)
+
+                self.command_buffer.parameters["render_layers"].value = [
+                    "defaultRenderLayer",
+                ]
+
+            action_query.store["get_maya_render_layer"] = True
 
     @CommandBase.conform_command()
     async def __call__(
@@ -115,16 +131,25 @@ class MayaRenderTasksCommand(CommandBase):
         keep_output_type: bool = parameters["keep_output_type"]
         task_size: int = parameters["task_size"]
 
+        project = (
+            action_query.context_metadata["project"].lower()
+            if "project" in action_query.context_metadata
+            else None
+        )
+
         # Build the Maya command
         maya_cmd = (
             command_builder.CommandBuilder(
                 "Render",
-                rez_packages=["maya", action_query.context_metadata["project"].lower()],
+                rez_packages=["maya", project],
                 delimiter=" ",
                 dashes="-",
             )
             .param("r", parameters["renderer"])
-            .param("rd", parameters["output_folder"].as_posix())
+            .param(
+                "rd",
+                parameters["output_folder"].as_posix(),
+            )
         )
 
         if not keep_output_type:
@@ -188,7 +213,7 @@ class MayaRenderTasksCommand(CommandBase):
                 command = farm.wrap_command(
                     [
                         farm.get_mount_command(
-                            action_query.context_metadata["project_nas"]
+                            action_query.context_metadata.get("project_nas")
                         ),
                         farm.get_clear_frames_command(
                             parameters["output_folder"], chunk

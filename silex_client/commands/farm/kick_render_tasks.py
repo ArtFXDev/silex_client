@@ -123,7 +123,7 @@ class KickRenderTasksCommand(CommandBase):
                 command = farm.wrap_command(
                     [
                         farm.get_mount_command(
-                            action_query.context_metadata["project_nas"]
+                            action_query.context_metadata.get("project_nas")
                         ),
                         farm.get_clear_frames_command(output_path_layer.parent, chunk),
                     ],

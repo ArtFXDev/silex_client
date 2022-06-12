@@ -10,7 +10,7 @@ class CommandBuilder:
     def __init__(
         self,
         executable: str,
-        rez_packages: List[str] = [],
+        rez_packages: List[Optional[str]] = [],
         delimiter: Optional[str] = "=",
         dashes: str = "-",
     ):
@@ -100,7 +100,8 @@ class CommandBuilder:
 
         # Add rez packages to the command
         if self.rez_packages:
-            command = ["rez", "env"] + self.rez_packages + ["--"] + command
+            filter_packages = [p for p in self.rez_packages if p is not None]
+            command = ["rez", "env"] + filter_packages + ["--"] + command
 
         return command
 
