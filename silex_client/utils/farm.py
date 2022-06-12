@@ -60,18 +60,29 @@ class Task:
         return result
 
 
-def get_mount_command(nas: str) -> Command:
+def get_mount_command(nas: Optional[str]) -> Optional[Command]:
     """
     Constructs the mount command in order to access files on the render farm
     """
-    mount_cmd = command_builder.CommandBuilder(
-        "mount_rd_drive",
-        delimiter=None,
-        dashes="",
-        rez_packages=["mount_render_drive"],
-    )
 
-    mount_cmd.value(nas)
+    if not nas:
+        return None
+
+    if nas == "marvin":
+        mount_cmd = command_builder.CommandBuilder(
+            "mount_marvin",
+            delimiter=None,
+            dashes="",
+            rez_packages=["mount_marvin"],
+        )
+    else:
+        mount_cmd = command_builder.CommandBuilder(
+            "mount_rd_drive",
+            delimiter=None,
+            dashes="",
+            rez_packages=["mount_render_drive"],
+        ).value(nas)
+
     return Command(argv=mount_cmd.as_argv())
 
 
@@ -92,7 +103,7 @@ def get_clear_frames_command(folder: pathlib.Path, frame_range: FrameSet) -> Com
 
 
 def wrap_command(
-    pres: List[Command], cmd: Command, post: Optional[Command] = None
+    pres: List[Optional[Command]], cmd: Command, post: Optional[Command] = None
 ) -> Command:
     """
     Wraps a command with cmd-wrapper
@@ -103,7 +114,8 @@ def wrap_command(
     )
 
     for pre in pres:
-        wrap_cmd.param("pre", f'"{str(pre)}"')
+        if pre is not None:
+            wrap_cmd.param("pre", f'"{str(pre)}"')
 
     wrap_cmd.param("cmd", f'"{str(cmd)}"').param(
         "post", f'"{str(post)}"', condition=post is not None
