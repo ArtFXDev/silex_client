@@ -73,8 +73,10 @@ class NukeRenderTasksCommand(CommandBase):
             rez_packages=["nuke", action_query.context_metadata["project"].lower()],
             delimiter=" ",
         )
+
         if enable_gpu:
             nuke_cmd.param("-gpu").param("-multigpu")  # Use gpu
+
         nuke_cmd.param("-sro")  # Follow write order
         nuke_cmd.param("-priority", "high")
         nuke_cmd.param("X", write_node)  # Specify the write node
@@ -94,7 +96,7 @@ class NukeRenderTasksCommand(CommandBase):
             task = farm.Task(title=str(chunk))
             task.addCommand(
                 farm.wrap_with_mount(
-                    chunk_cmd, action_query.context_metadata["project_nas"]
+                    chunk_cmd, action_query.context_metadata.get("project_nas")
                 )
             )
 

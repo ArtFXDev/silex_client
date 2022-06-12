@@ -161,7 +161,7 @@ class HoudiniRenderTasksCommand(CommandBase):
                     parameters["cleanup_command"]
                 ):
                     mount_cmd = farm.get_mount_command(
-                        action_query.context_metadata["project_nas"]
+                        action_query.context_metadata.get("project_nas")
                     )
 
                     chunk_cmd = farm.wrap_command(

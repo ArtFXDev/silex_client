@@ -146,7 +146,9 @@ class VrayRenderTasksCommand(CommandBase):
 
                 task = farm.Task(title=str(chunk))
 
-                project_nas = cast(str, action_query.context_metadata["project_nas"])
+                project_nas = cast(
+                    str, action_query.context_metadata.get("project_nas")
+                )
 
                 command = farm.wrap_command(
                     [
