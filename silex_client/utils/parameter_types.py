@@ -276,6 +276,39 @@ def ListParameterMeta(parameter_type: Type):
     return CommandParameterMeta("ListParameter", (list,), attributes)
 
 
+def EditableListParameterMeta(parameter_type: Type):
+    def __init__(self, value):
+        if not isinstance(value, list):
+            value = [value]
+
+        for index, item in enumerate(value):
+            if not isinstance(item, parameter_type):
+                value[index] = parameter_type(item)
+
+        self.extend(value)
+
+    def serialize():
+        item_type = None
+
+        item_type = {"name": parameter_type.__name__}
+        if isinstance(parameter_type, CommandParameterMeta):
+            item_type = parameter_type.serialize()
+
+        return {"name": "editable_list", "itemType": item_type}
+
+    def get_default():
+        return []
+
+    attributes = {
+        "__init__": __init__,
+        "serialize": serialize,
+        "get_default": get_default,
+        "rebuild": EditableListParameterMeta,
+    }
+
+    return CommandParameterMeta("EditableListParameter", (list,), attributes)
+
+
 def TextParameterMeta(
     color=None, progress: Optional[Dict[str, Union[str, int]]] = None
 ):
@@ -300,7 +333,7 @@ def StringParameterMeta(multiline: bool = False, max_lenght: int = 1000):
 
         if len(value) > max_lenght:
             # Trim the name with the max lenght
-            value = value[len(value) - max_lenght:]
+            value = value[len(value) - max_lenght :]
         return str.__new__(cls, value)
 
     def serialize():

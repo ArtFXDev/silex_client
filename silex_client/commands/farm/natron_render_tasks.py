@@ -81,7 +81,7 @@ class NatronRenderTasksCommand(CommandBase):
             chunk_cmd.value(scene_file.as_posix())
 
             command = farm.wrap_with_mount(
-                chunk_cmd, action_query.context_metadata["project_nas"]
+                chunk_cmd, action_query.context_metadata.get("project_nas")
             )
 
             task = farm.Task(str(chunk))
