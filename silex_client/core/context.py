@@ -22,6 +22,7 @@ import gazu.exception
 import gazu.files
 import gazu.shot
 import gazu.task
+import gazu.user
 from silex_client.core.event_loop import EventLoop
 from silex_client.network.websocket import WebsocketConnection
 from silex_client.utils.authentification import authentificate_gazu
@@ -220,6 +221,9 @@ class Context:
         self._metadata["user_id"] = user.get("id")
         self._metadata["user_email"] = user.get("email")
 
+        projects = asyncio.run(gazu.user.all_open_projects())
+        self._metadata["user_projects"] = projects
+
     @staticmethod
     async def resolve_context(task_id: str) -> Dict[str, str]:
         """
@@ -237,7 +241,10 @@ class Context:
         resolved_context["task_type"] = task["task_type"]["name"]
         resolved_context["task_type_id"] = task["task_type"]["id"]
         resolved_context["project"] = task["project"]["name"]
-        resolved_context["project_nas"] = task["project"]["data"].get("nas", None)
+
+        if task["project"].get("data", None) is not None:
+            resolved_context["project_nas"] = task["project"]["data"].get("nas", None)
+
         resolved_context["project_id"] = task["project"]["id"]
         resolved_context["project_file_tree"] = task["project"]["file_tree"]
 

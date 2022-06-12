@@ -12,6 +12,7 @@ from silex_client.utils.parameter_types import (
     MultipleSelectParameterMeta,
     RadioSelectParameterMeta,
     RangeParameterMeta,
+    SelectParameterMeta,
 )
 from silex_client.utils.tractor import convert_to_tractor_task
 
@@ -39,6 +40,7 @@ class SubmitToTractorCommand(CommandBase):
             "type": ListParameterMeta(farm.Task),
             "hide": True,
         },
+        "project": {"label": "Project", "type": SelectParameterMeta()},
         "priority": {
             "label": "Job type",
             "type": RadioSelectParameterMeta(
@@ -126,12 +128,15 @@ class SubmitToTractorCommand(CommandBase):
             all_services = [services] + blade_and_filters + ignore_services
             services = self.join_svckey_filters(all_services, "&&")
 
+        # Get project from context or from parameter in case the submit was launched without a context
+        project = context.get("project", parameters["project"])
+
         # Create a Tractor job
         job = author.Job(
             title=job_title,
             priority=priority,
             tags=job_tags,
-            projects=[context["project"]],
+            projects=[project],
             service=services,
         )
 
@@ -148,35 +153,52 @@ class SubmitToTractorCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        tractor_pools: Dict[str, List[Dict[str, str]]] = {"BladeProfiles": []}
+        if "tractor_query_pool" not in action_query.store:
+            tractor_pools: Dict[str, List[Dict[str, str]]] = {"BladeProfiles": []}
 
-        # Query the Tractor config
-        try:
-            async with aiohttp.ClientSession() as session:
-                tractor_host = os.getenv("silex_tractor_host", "")
-                tractor_config_url = (
-                    f"{tractor_host}/Tractor/config?q=get&file=blade.config"
+            # Query the Tractor config
+            try:
+                async with aiohttp.ClientSession() as session:
+                    tractor_host = os.getenv("silex_tractor_host", "")
+                    tractor_config_url = (
+                        f"{tractor_host}/Tractor/config?q=get&file=blade.config"
+                    )
+                    async with session.get(tractor_config_url) as response:
+                        tractor_pools = await response.json()
+            except (ClientConnectionError, ContentTypeError, InvalidURL):
+                logger.warning(
+                    "Could not query the tractor pool list, the config is unreachable"
                 )
-                async with session.get(tractor_config_url) as response:
-                    tractor_pools = await response.json()
-        except (ClientConnectionError, ContentTypeError, InvalidURL):
-            logger.warning(
-                "Could not query the tractor pool list, the config is unreachable"
+
+            service_keys = [
+                svckey
+                for profile in tractor_pools["BladeProfiles"]
+                if "Provides" in profile
+                for svckey in profile["Provides"]
+            ]
+
+            # Filter the services
+            service_keys = list(set(service_keys) - set(parameters["blade_blacklist"]))
+
+            service_keys.sort()
+            blade_ignore_filters = self.command_buffer.parameters[
+                "blade_ignore_filters"
+            ]
+            blade_ignore_filters.rebuild_type(*service_keys)
+
+            blade_and_filters = self.command_buffer.parameters["blade_and_filters"]
+            blade_and_filters.rebuild_type(*service_keys)
+
+            action_query.store["tractor_query_pool"] = True
+
+        # Project selector
+        project_selector = self.command_buffer.parameters["project"]
+        project_in_context = "project" in action_query.context_metadata
+
+        project_selector.hide = project_in_context
+
+        # Rebuilt selector with project values
+        if not project_in_context:
+            project_selector.rebuild_type(
+                *[p["name"] for p in action_query.context_metadata["user_projects"]]
             )
-
-        service_keys = [
-            svckey
-            for profile in tractor_pools["BladeProfiles"]
-            if "Provides" in profile
-            for svckey in profile["Provides"]
-        ]
-
-        # Filter the services
-        service_keys = list(set(service_keys) - set(parameters["blade_blacklist"]))
-
-        service_keys.sort()
-        blade_ignore_filters = self.command_buffer.parameters["blade_ignore_filters"]
-        blade_ignore_filters.rebuild_type(*service_keys)
-
-        blade_and_filters = self.command_buffer.parameters["blade_and_filters"]
-        blade_and_filters.rebuild_type(*service_keys)
