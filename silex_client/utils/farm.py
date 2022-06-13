@@ -92,7 +92,6 @@ def get_clear_frames_command(folder: pathlib.Path, frame_range: FrameSet) -> Com
     """
     clear_cmd = command_builder.CommandBuilder(
         "clear_frames",
-        delimiter=None,
         dashes="--",
         rez_packages=["clear_frames"],
     )
