@@ -55,7 +55,7 @@ maya:
 
         submit_to_tractor:
           label: "Submit"
-          path: "silex_client.commands.farm.submit_to_tractor.SubmitToTractorCommand"
+          path: "silex_client.commands.farm.submit_to_deadline.SubmitToDeadlineCommand"
           ask_user: true
           parameters:
             tasks:
