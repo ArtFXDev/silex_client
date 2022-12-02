@@ -28,10 +28,9 @@ class SubmitToDeadlineCommand(CommandBase):
     """
 
     parameters = {
-        "tasks": {
-            "label": "Tasks list",
-            "type": ListParameterMeta(farm.Task),
-            "hide": True,
+        "message": {
+            "label": "message",
+            "type": str,
         }}
 
     @CommandBase.conform_command()
@@ -53,7 +52,7 @@ class SubmitToDeadlineCommand(CommandBase):
 
         PluginInfo = {
             "Executable": "C:\\rez\\__install__\\Scripts\\rez\\rez-env.exe",
-            "Arguments": '''testpipe python -- python -c "print('hello')"'''
+            "Arguments": f'''testpipe python -- python -c "print('{parameters["message"]}')"'''
         }
 
         logger.debug("deadline submit script called")
