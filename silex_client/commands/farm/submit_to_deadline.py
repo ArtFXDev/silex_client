@@ -4,9 +4,11 @@ import logging
 import os
 import typing
 from typing import Any, Dict, List, cast
+import asyncio
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import farm
+from silex_client.utils import farm, command_builder
+from silex_client.utils.log import logger
 from silex_client.utils.parameter_types import (
     ListParameterMeta,
     MultipleSelectParameterMeta,
@@ -21,17 +23,33 @@ if typing.TYPE_CHECKING:
   
 from Deadline.DeadlineConnect import DeadlineCon
 
+import gazu.user
 
 class SubmitToDeadlineCommand(CommandBase):
     """
     Send job to Deadline
     """
 
+    # parameters = {
+    #     "message": {
+    #         "label": "message",
+    #         "type": str,
+    #     }}
+
+
     parameters = {
-        "message": {
-            "label": "message",
+        "tasks": {
+            "label": "Tasks list",
+            "type": ListParameterMeta(farm.Task),
+            "hide": True,
+        },
+        "job_title": {
+            "label": "Job title",
             "type": str,
-        }}
+            "value": "untitled",
+            "hide": True,
+        }
+    }
 
     @CommandBase.conform_command()
     async def __call__(
@@ -40,21 +58,35 @@ class SubmitToDeadlineCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
+    # Connect to Deadline Web Service
         deadline = DeadlineCon('localhost', 8081)
 
+    # Get user context info & convert to Deadline user name
+        context = action_query.context_metadata
+        user = cast(str, context["user"]).lower().replace(' ', '.')
+
+    # Deadline Job Info
         JobInfo = {
-            "Name": "CommandLine submit test",
-            "UserName": "elise.vidal",
+            "Name": parameters["job_title"],
+            "UserName": user,
             "Frames": "0-1",
             "Plugin": "CommandLine"
 
         }
 
-        PluginInfo = {
-            "Executable": "C:\\rez\\__install__\\Scripts\\rez\\rez-env.exe",
-            "Arguments": f'''testpipe python -- python -c "print('{parameters["message"]}')"'''
-        }
+    # Get render command
+    
 
-        logger.debug("deadline submit script called")
+        # PluginInfo = {
+        #     "Executable": "C:\\rez\\__install__\\Scripts\\rez\\rez-env.exe",
+        #     "Arguments": f'''testpipe python -- python -c "print('{parameters["message"]}')"'''
+        # }
+
+        PluginInfo = {
+            "ShellExecute": True,
+            "Shell": "cmd",
+            "Arguments": f'''{parameters['tasks'][0].commands[0]})"'''
+        }
+        logger.debug(parameters['tasks'][0].commands)
 
         new_job = deadline.Jobs.SubmitJob(JobInfo, PluginInfo)

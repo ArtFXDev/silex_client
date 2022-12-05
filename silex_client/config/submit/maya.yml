@@ -53,12 +53,12 @@ maya:
             output_extension:
               value: !command-output "build_output_path:select_extension"
 
-        submit_to_tractor:
+        submit_to_deadline:
           label: "Submit"
           path: "silex_client.commands.farm.submit_to_deadline.SubmitToDeadlineCommand"
           ask_user: true
-          # parameters:
-          #   tasks:
-          #     value: !command-output "maya_render:build_maya_tasks:tasks"
-          #   job_title:
-          #     value: !command-output "maya_render:build_maya_tasks:file_name"
+          parameters:
+            tasks:
+              value: !command-output "maya_render:build_maya_tasks:tasks"
+            job_title:
+              value: !command-output "maya_render:build_maya_tasks:file_name"
