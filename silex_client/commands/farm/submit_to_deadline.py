@@ -85,7 +85,7 @@ class SubmitToDeadlineCommand(CommandBase):
         PluginInfo = {
             "ShellExecute": True,
             "Shell": "cmd",
-            "Arguments": f'''{parameters['tasks'][0].commands[0]})"'''
+            "Arguments": f'''{parameters['tasks'][0].commands[0]}'''
         }
         logger.debug(parameters['tasks'][0].commands)
 
