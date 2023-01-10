@@ -4,7 +4,7 @@ tester:
       label: "Setup"
       commands:
         get_input:
-          label: "Get input"
+          label: "Get Test input"
           path: "silex_client.commands.tester_get_input.InputTester"
           ask_user: true
           parameters:
@@ -16,3 +16,8 @@ tester:
           parameters:
             message: 
               value: !command-output "setup:get_input:message"
+            something:
+              value: !command-output "setup:get_input:something"
+
+
+

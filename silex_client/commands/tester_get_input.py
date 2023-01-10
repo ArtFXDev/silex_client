@@ -32,6 +32,9 @@ class InputTester(CommandBase):
             "type": str,
             "value": "test",
             "tooltip": "Testing the string parameters",
+        },
+        "something": {
+            "type": str,
         }
     }
     
@@ -44,3 +47,8 @@ class InputTester(CommandBase):
     ):
 
         logger.info(parameters["message"])
+
+        return {
+            "message": parameters["message"],
+            "something": "something"
+        }
