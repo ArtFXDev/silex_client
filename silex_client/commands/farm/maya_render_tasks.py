@@ -3,12 +3,14 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
+from pprint import pformat
 from typing import Any, Dict, List
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder, farm
 from silex_client.utils.frames import split_frameset
+from silex_client.utils.log import flog
 from silex_client.utils.parameter_types import (
     EditableListParameterMeta,
     MultipleSelectParameterMeta,
@@ -230,5 +232,16 @@ class MayaRenderTasksCommand(CommandBase):
 
             if len(parameters["render_layers"]) > 1:
                 tasks.append(render_layer_task)
+
+        # FIXME: for dev purposes, to clean up
+        # This logs into C:\Users\<USER>\AppData\Local\Temp\silex_client_logs
+        flog.info("Tasks: ")
+        for task in tasks:
+            for cmd in task._commands:
+                flog.info(cmd)
+        flog.info(pformat(scene.stem))
+
+        # Command:
+        # cmd = "rez env maya testpipe -- Render -r arnold -rd M:/testpipe/shots/s01/p010/lighting_main/publish/v000/exr/render -of exr -skipExistingFrames true -ai:lve 2 -ai:device 0 -ai:alf true -ai:aerr true -fnc 3 -im testpipe_s01_p010_lighting_main_publish_v000_render_defaultRenderLayer -rl defaultRenderLayer -s 1 -e 10 M:/testpipe/shots/s01/p010/lighting_main/publish/v000/ma/main/testpipe_s01_p010_lighting_main_publish_v000_main.ma
 
         return {"tasks": tasks, "file_name": scene.stem}
