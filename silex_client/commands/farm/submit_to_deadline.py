@@ -14,18 +14,19 @@ FOr these tests check if the silex_client rez package is resolved to the dev ver
 
 """
 
-
 from __future__ import annotations
 
 import logging
+import traceback
 import os
 import typing
 from typing import Any, Dict, List, cast
 import asyncio
 
+from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import farm, command_builder
-from silex_client.utils.log import logger
+from silex_client.utils.log import flog
 from silex_client.utils.parameter_types import (
     ListParameterMeta,
     MultipleSelectParameterMeta,
@@ -37,95 +38,126 @@ from silex_client.utils.parameter_types import (
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
-  
-from Deadline.DeadlineConnect import DeadlineCon
 
-import gazu.user
+from Deadline.DeadlineConnect import DeadlineCon
+import aiohttp
 
 class SubmitToDeadlineCommand(CommandBase):
     """
     Send job to Deadline
     """
 
-    # parameters = {
-    #     "message": {
-    #         "label": "message",
-    #         "type": str,
-    #     }}
-
-
     parameters = {
-        "message": {
-            "type": str,
+        "task_size": {
+            "label": "Task size",
+            "tooltip": "Number of frames per computer",
+            "type": int,
+            "value": 10,
         },
-        "something": {
+        "frame_range": {
+            "Label": "Frame Range",
+            "type": FrameSet,
+            "hide": True
+        },
+        "job_title": {
+            "label": "Job title",
             "type": str,
+            "value": "untitled",
+            "hide": True,
+        },
+        "groups": {
+            "label": "Groups",
+            "type": SelectParameterMeta(),
+            "hide": False,
+        },
+        "pools": {
+            "label": "Pool",
+            "type": SelectParameterMeta(),
+            "hide": False,
+        },
+        "command": {
+            "type": str,
+            "hide": True
         }
     }
-    """
-    "tasks": {
-        "label": "Tasks list",
-        "type": ListParameterMeta(str),
-        "hide": True,
-    },
-    "job_title": {
-        "label": "Job title",
-        "type": str,
-        "value": "untitled",
-        "hide": True,
-    }
-    }
-    """
 
-    @CommandBase.conform_command()
-    async def __call__(
+    async def setup(
         self,
         parameters: Dict[str, Any],
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
+        '''
+        Setup parameters by querying the Deadline rapository
+        '''
+        if "deadline_query_groups_pools" not in action_query.store:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    # RestAPI Queries
+                    deadline_group_url = 'http://localhost:8081/api/groups'
+                    async with session.get(deadline_group_url) as response:
+                        deadline_groups = await response.json()
 
-        print("Inside Submit Call")
-        logger.info("Inside Submit Call")
-    # Connect to Deadline Web Service
+                async with aiohttp.ClientSession() as session:
+                    deadline_group_url = 'http://localhost:8081/api/pools'
+                    async with session.get(deadline_group_url) as response:
+                        deadline_pools = await response.json()
+
+            except Exception as e:
+                #TODO: Catch specific exceptions
+                logger.error(
+                    "Could not connect to Deadline WebService and query Groups and Pool information: "
+                    + traceback.format_exc()
+                )
+
+            # Populate groups parameter with Deadline Groups
+            self.command_buffer.parameters['groups'].rebuild_type(*deadline_groups)
+            self.command_buffer.parameters['groups'].value = deadline_groups
+            # Populate pools parameter with Deadline pools
+            self.command_buffer.parameters['pools'].rebuild_type(*deadline_pools)
+            self.command_buffer.parameters['pools'].value = deadline_pools
+
+            # Store the query so it doesn't get executed unnecessarily
+
+            action_query.store["deadline_query_groups_pools"] = True
+
+    @CommandBase.conform_command()
+    async def __call__(
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
+    ):
+        # Connect to Deadline Web Service
         deadline = DeadlineCon('localhost', 8081)
 
         logger.info(f"Deadline : {deadline}")
 
-    # Get user context info & convert to Deadline user name
+        # Get user context info & convert to Deadline user name
         context = action_query.context_metadata
         user = cast(str, context["user"]).lower().replace(' ', '.')
 
-        logger.info(f"USer : {user}")
+        # Deadline Job Info
 
-        from pprint import pformat
-        logger.info(pformat(parameters))
-
-
-    # DUMMY JOB INFO to test
-
-    # Deadline Job Info
         JobInfo = {
             "Name": parameters["job_title"],
             "UserName": user,
-            "Frames": "0-1",
-            "Plugin": "CommandLine"
-
+            "Frames": parameters['frame_range'].frange,
+            "ChunkSize": parameters['task_size'],
+            "Group": parameters['groups'],
+            "Pool": parameters['pools'],
+            "Plugin": "CommandLine",
         }
 
-    # Get render command
-    
-
-        # PluginInfo = {
-        #     "Executable": "C:\\rez\\__install__\\Scripts\\rez\\rez-env.exe",
-        #     "Arguments": f'''testpipe python -- python -c "print('{parameters["message"]}')"'''
-        # }
+        # truncate "rez" from command because Deadline CommandLine plugin uses rez.exe
+        cmd = parameters['command']
+        cmd = cmd.split(' ', 1)[1]
 
         PluginInfo = {
-            "ShellExecute": True,
-            "Shell": "cmd",
-            "Arguments": f'''{parameters['tasks'][0].commands[0]}'''
+            "Executable": "C:\\rez\\__install__\\Scripts\\rez\\rez.exe",
+            "Arguments": f"{cmd}"
         }
-        logger.debug(parameters['tasks'][0].commands)
 
         new_job = deadline.Jobs.SubmitJob(JobInfo, PluginInfo)
+        flog.info(new_job)
+
