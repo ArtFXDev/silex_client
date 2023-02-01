@@ -55,19 +55,13 @@ class MayaRenderTasksCommand(CommandBase):
             "type": FrameSet,
             "value": "1-50x1",
         },
-        "task_size": {
-            "label": "Task size",
-            "tooltip": "Number of frames per computer",
-            "type": int,
-            "value": 10,
-        },
         "keep_output_type": {
             "label": "Keep output type specified in the scene",
             "type": bool,
             "value": False,
         },
         "render_layers": {
-            "label": "Render layers",
+            "label": "Seperate Render layers",
             "type": MultipleSelectParameterMeta(),
         },
         "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
@@ -77,12 +71,14 @@ class MayaRenderTasksCommand(CommandBase):
     }
 
     async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
     ):
         if parameters["scene_file_out_of_pipeline"]:
+            flog.info("scene_file")
+            flog.info(self.command_buffer.parameters["scene_file"])
             self.command_buffer.parameters["scene_file"].type = PathParameterMeta(
                 [".ma", ".mb"]
             )
@@ -93,7 +89,7 @@ class MayaRenderTasksCommand(CommandBase):
         ].value = self.command_buffer.parameters["frame_range"].get_value(action_query)
 
         self.command_buffer.parameters["arnold_device"].hide = (
-            parameters["renderer"] != "arnold"
+                parameters["renderer"] != "arnold"
         )
 
         # Fill render layer parameter
@@ -124,14 +120,16 @@ class MayaRenderTasksCommand(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
     ):
+        flog.info(f'scene path:{parameters["scene_file"]}')
         scene: pathlib.Path = parameters["scene_file"]
+        # Deadline resolves M:/testpipe as //tars/tespipetestpipe, changed to // to ensure it resolves as \\tars\\testpipe\\testpipe
+        # scene = pathlib.Path(scene.as_posix().replace('/', '//'))
         keep_output_type: bool = parameters["keep_output_type"]
-        task_size: int = parameters["task_size"]
 
         project = (
             action_query.context_metadata["project"].lower()
@@ -150,8 +148,10 @@ class MayaRenderTasksCommand(CommandBase):
             .param("r", parameters["renderer"])
             .param(
                 "rd",
-                parameters["output_folder"].as_posix(),
+                parameters["output_folder"],
+                # parameters["output_folder"].as_posix().replace('/','//'),
             )
+
         )
 
         if not keep_output_type:
@@ -163,7 +163,7 @@ class MayaRenderTasksCommand(CommandBase):
                 "skipExistingFrames", str(parameters["skip_existing"]).lower()
             )
             maya_cmd.param("ai:lve", 2)  # log level
-            maya_cmd.param("ai:device", parameters["arnold_device"])
+            maya_cmd.param("ai:device", parameters['arnold_device'])
             maya_cmd.param("ai:alf", "true")  # Abort on license fail
             maya_cmd.param("ai:aerr", "true")  # Abort on error
             maya_cmd.param("fnc", 3)  # File naming name.#.ext
@@ -172,76 +172,20 @@ class MayaRenderTasksCommand(CommandBase):
             # See: https://forums.autodesk.com/t5/maya-forum/maya-batch-with-render-skipexistingframes/td-p/11117913
             maya_cmd.param("rep", 0 if parameters["skip_existing"] else 1)
 
-        tasks: List[farm.Task] = []
+        # Deadline frame variable substitution
+        maya_cmd.param("s", "<STARTFRAME>")
+        maya_cmd.param("e", "<ENDFRAME>")
 
-        # Split frame range since Maya only accepts start, end and step frames
-        # Ex: 5-10,3,17-180 -> [5-10, 3, 17-180]
-        #     With a task size of 2: [5-6, 7-8, 9-10, 3, 17-18...]
-        patterns = parameters["frame_range"].frameRange().split(",")
-        frame_chunks: List[FrameSet] = []
-
-        for pattern in patterns:
-            pattern_frames = FrameSet(pattern)
-
-            # Split sub pattern of frames by task size
-            if len(pattern_frames) > 1:
-                frame_chunks.extend(split_frameset(pattern_frames, task_size))
-            else:
-                frame_chunks.append(pattern_frames)
-
-        # Create subtasks for each render layer
+        render_layers = []
         for render_layer in parameters["render_layers"]:
-            render_layer_task = farm.Task(title=render_layer)
-
-            # Add render layer to the image name
-            output_filename = f"{parameters['output_filename']}_{render_layer}"
-
-            # Creating tasks for each frame chunk
-            for chunk in frame_chunks:
-                chunk_cmd = maya_cmd.deepcopy()
-
-                chunk_cmd.param("im", output_filename)
-                chunk_cmd.param("rl", render_layer)
-
-                # Frame range start, end
-                chunk_cmd.param("s", chunk.start())
-                chunk_cmd.param("e", chunk.end())
-
-                # Add the scene file
-                chunk_cmd.value(scene.as_posix())
-
-                task = farm.Task(title=str(chunk))
-
-                command = farm.wrap_command(
-                    [
-                        farm.get_mount_command(
-                            action_query.context_metadata.get("project_nas")
-                        ),
-                        farm.get_clear_frames_command(
-                            parameters["output_folder"], chunk
-                        ),
-                    ],
-                    cmd=farm.Command(chunk_cmd.as_argv()),
-                )
-                task.addCommand(command)
-
-                if len(parameters["render_layers"]) > 1:
-                    render_layer_task.addChild(task)
-                else:
-                    tasks.append(task)
-
-            if len(parameters["render_layers"]) > 1:
-                tasks.append(render_layer_task)
-
-        # FIXME: for dev purposes, to clean up
-        # This logs into C:\Users\<USER>\AppData\Local\Temp\silex_client_logs
-        flog.info("Tasks: ")
-        for task in tasks:
-            for cmd in task._commands:
-                flog.info(cmd)
-        flog.info(pformat(scene.stem))
+            render_layers.append(render_layer)
+        maya_cmd.param("rl", render_layers)
+        output_filename = f"{parameters['output_filename']}"
+        maya_cmd.param("im", output_filename)
+        maya_cmd.value(scene.as_posix())
+        # maya_cmd.value(scene.as_posix().replace('/', '//'))
 
         # Command:
         # cmd = "rez env maya testpipe -- Render -r arnold -rd M:/testpipe/shots/s01/p010/lighting_main/publish/v000/exr/render -of exr -skipExistingFrames true -ai:lve 2 -ai:device 0 -ai:alf true -ai:aerr true -fnc 3 -im testpipe_s01_p010_lighting_main_publish_v000_render_defaultRenderLayer -rl defaultRenderLayer -s 1 -e 10 M:/testpipe/shots/s01/p010/lighting_main/publish/v000/ma/main/testpipe_s01_p010_lighting_main_publish_v000_main.ma
 
-        return {"tasks": tasks, "file_name": scene.stem}
+        return {"command": maya_cmd, "file_name": scene.stem, "frame_range": parameters["frame_range"].frameRange()}
