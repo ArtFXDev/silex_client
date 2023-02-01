@@ -22,6 +22,7 @@ requires = [
     "python_dotenv",
     "setuptools",
     "tractor",
+    "deadline",
     "Fileseq",
 ]
 
