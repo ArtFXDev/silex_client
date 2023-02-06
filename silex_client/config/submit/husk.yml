@@ -53,12 +53,14 @@ husk:
             output_extension:
               value: !command-output "build_output_path:select_extension"
 
-        submit_to_tractor:
+        submit_to_deadline:
           label: "Submit"
-          path: "silex_client.commands.farm.submit_to_tractor.SubmitToTractorCommand"
+          path: "silex_client.commands.farm.submit_to_deadline.SubmitToDeadlineCommand"
           ask_user: true
           parameters:
-            tasks:
-              value: !command-output "husk_render:build_husk_tasks:tasks"
+            command:
+              value: !command-output "husk_render:build_husk_tasks:command"
             job_title:
               value: !command-output "husk_render:build_husk_tasks:file_name"
+            frame_range:
+              value: !command-output "husk_render:build_husk_tasks:frame_range"
