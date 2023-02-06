@@ -42,6 +42,7 @@ if typing.TYPE_CHECKING:
 from Deadline.DeadlineConnect import DeadlineCon
 import aiohttp
 
+
 class SubmitToDeadlineCommand(CommandBase):
     """
     Send job to Deadline
@@ -82,10 +83,10 @@ class SubmitToDeadlineCommand(CommandBase):
     }
 
     async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
     ):
         '''
         Setup parameters by querying the Deadline rapository
@@ -104,7 +105,7 @@ class SubmitToDeadlineCommand(CommandBase):
                         deadline_pools = await response.json()
 
             except Exception as e:
-                #TODO: Catch specific exceptions
+                # TODO: Catch specific exceptions
                 logger.error(
                     "Could not connect to Deadline WebService and query Groups and Pool information: "
                     + traceback.format_exc()
@@ -160,4 +161,3 @@ class SubmitToDeadlineCommand(CommandBase):
 
         new_job = deadline.Jobs.SubmitJob(JobInfo, PluginInfo)
         flog.info(new_job)
-
