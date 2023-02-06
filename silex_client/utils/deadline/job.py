@@ -1,7 +1,6 @@
-
 import os
 import getpass
-
+from fileseq import FrameSet
 from silex_client.utils.log import logger as log
 
 DEFAULT_GROUP = ''
@@ -9,7 +8,9 @@ DEFAULT_POOL = ''
 DEFAULT_CHUNKSIZE = 5
 
 import logging
+
 log = logging.getLogger('deadline')
+
 
 class DeadlineJobTemplate:
     """
@@ -34,23 +35,61 @@ class DeadlineJobTemplate:
     }
 
     PLUGIN_INFO = {
-        #"RezRequires": os.environ["REZ_USED_REQUEST"],
+        # "RezRequires": os.environ["REZ_USED_REQUEST"],
     }
 
     def __init__(self):
         self.job_type = 'job'
 
     def get_job_name(self):
-        # to be implemented
-        name = "{}_{}".format(name, self.job_type)
-        return name
+        pass
+        # # to be implemented
+        # name = "{}_{}".format(name, self.job_type)
+        # return name
 
     def get_output_dir(self):
         pass
 
 
-class DeadlineMayaBatchJob(DeadlineJobTemplate):
+class DeadlineCommandLineJob(DeadlineJobTemplate):
 
+    EXECUTABLE = "C:\\rez\\__install__\\Scripts\\rez\\rez.exe"
+    def __init__(self,
+                 job_title: str,
+                 user_name: str,
+                 command: list,
+                 frame_range: FrameSet,
+                 group: str,
+                 pool: str,
+                 chunk_size=DEFAULT_CHUNKSIZE,
+                 batch_name=None):
+
+        self.job_info = self.JOB_INFO
+        self.plugin_info = self.PLUGIN_INFO
+        self.batch_name = batch_name
+
+        self.job_info.update({
+            "Name": job_title,
+            "UserName": user_name,
+            "Frames": frame_range.frange,
+            "ChunkSize": chunk_size,
+            "Group": group,
+            "Pool": pool,
+            "Plugin": "CommandLine"
+        })
+
+        self.plugin_info.update({
+            "Executable": self.EXECUTABLE,
+            "Arguments": command
+        })
+
+        if batch_name is not None:
+            self.job_info.update({
+                "BatchName": batch_name
+            })
+
+
+class DeadlineMayaBatchJob(DeadlineJobTemplate):
     # auto filled :
     #   - department (task)
     #   - pool : mapped by Sid
@@ -59,20 +98,19 @@ class DeadlineMayaBatchJob(DeadlineJobTemplate):
     job_type = 'render'
     plugin = 'RezMayaBatch'
 
-    def __init__(self, path, render_path=None, start=None, end=None, step=1, chunk_size=DEFAULT_CHUNKSIZE, priority=50,
+    def __init__(self, path, frame_range, render_path=None, chunk_size=DEFAULT_CHUNKSIZE, priority=50,
                  comment=None, renderer=None):
-
         # path to be implemented
 
         self.job_info = self.JOB_INFO
         self.plugin_info = self.PLUGIN_INFO
 
-        step_value = 'step{}'.format(step) if step > 1 else ''
-        frames = '{}-{}'.format(start, end) + step_value
+        # step_value = 'step{}'.format(step) if step > 1 else ''
+        # frames = '{}-{}'.format(start, end) + step_value
 
         self.job_info.update({
             "Name": self.get_job_name(),  # TODO: add pass ?
-            "Frames": frames,
+            "Frames": frame_range,
             "department": "to be implemented",
             "Priority": str(priority),
             "Plugin": self.plugin,
