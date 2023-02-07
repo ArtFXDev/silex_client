@@ -33,17 +33,12 @@ class HuskRenderTasksCommand(CommandBase):
         },
         "frame_range": {
             "label": "Frame range (start, end, step)",
-            #"type": IntArrayParameterMeta(3),
-            #"value": [1, 50, 1],
             "type": FrameSet,
             "value": "1-50x1",
         },
-        #"output_directory": {"type": pathlib.Path, "hide": True, "value": ""},
-        #"output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
-        #"output_extension": {"type": str, "hide": True, "value": "exr"},
-        "output_directory": {"type": pathlib.Path, "hide": False, "value": ""},
-        "output_filename": {"type": pathlib.Path, "hide": False, "value": ""},
-        "output_extension": {"type": str, "hide": False, "value": "exr"},
+        "output_directory": {"type": pathlib.Path, "hide": True, "value": ""},
+        "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
+        "output_extension": {"type": str, "hide": True, "value": "exr"},
         "task_size" : {
             "label": "Task Size",
             "type": int,
@@ -81,14 +76,16 @@ class HuskRenderTasksCommand(CommandBase):
         task_size: int = parameters["task_size"]
         task_size = str(task_size)
 
-
-
         husk_cmd.param("frame", "<STARTFRAME>")
-        flog.info("add frame param")
         husk_cmd.param("frame-inc", increment)
-        flog.info("add frame increment")
         husk_cmd.param("frame-count", task_size)
-        flog.info("add frame count")
 
         flog.info(husk_cmd)
-        return {"command": husk_cmd, "file_name": scene.stem, "frame_range": parameters["frame_range"].frameRange()}
+        flog.info(scene.stem)
+        flog.info(parameters["frame_range"].frameRange())
+        flog.info(parameters["task_size"])
+
+        return {"command": husk_cmd,
+                "file_name": scene.stem,
+                "frame_range": parameters["frame_range"].frameRange(),
+                "task_size": parameters["task_size"]}
