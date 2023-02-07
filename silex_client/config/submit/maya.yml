@@ -58,11 +58,5 @@ maya:
           path: "silex_client.commands.farm.submit_to_deadline.SubmitToDeadlineCommand"
           ask_user: true
           parameters:
-            command:
-              value: !command-output "maya_render:build_maya_tasks:command"
-            job_title:
-              value: !command-output "maya_render:build_maya_tasks:file_name"
-            frame_range:
-              value: !command-output "maya_render:build_maya_tasks:frame_range"
-            task_size:
-              value: !command-output "maya_render:build_maya_tasks:task_size"
+            jobs:
+              value: !command-output "maya_render:build_maya_tasks:jobs"

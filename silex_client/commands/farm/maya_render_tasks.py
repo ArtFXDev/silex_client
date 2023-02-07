@@ -4,7 +4,7 @@ import logging
 import pathlib
 import typing
 from pprint import pformat
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
@@ -23,6 +23,8 @@ from silex_client.utils.parameter_types import (
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
+
+from silex_client.utils.deadline.job import DeadlineCommandLineJob
 
 
 class MayaRenderTasksCommand(CommandBase):
@@ -190,10 +192,29 @@ class MayaRenderTasksCommand(CommandBase):
         maya_cmd.value(scene.as_posix())
         # maya_cmd.value(scene.as_posix().replace('/', '//'))
 
-        # Command:
+        # Typical maya batch command:
         # cmd = "rez env maya testpipe -- Render -r arnold -rd M:/testpipe/shots/s01/p010/lighting_main/publish/v000/exr/render -of exr -skipExistingFrames true -ai:lve 2 -ai:device 0 -ai:alf true -ai:aerr true -fnc 3 -im testpipe_s01_p010_lighting_main_publish_v000_render_defaultRenderLayer -rl defaultRenderLayer -s 1 -e 10 M:/testpipe/shots/s01/p010/lighting_main/publish/v000/ma/main/testpipe_s01_p010_lighting_main_publish_v000_main.ma
 
-        return {"command": maya_cmd,
-                "file_name": scene.stem,
-                "frame_range": parameters["frame_range"].frameRange(),
-                "task_size": parameters["task_size"]}
+        # Building Deadline Job:
+        # Get UserName
+        context = action_query.context_metadata
+        user = cast(str, context["user"]).lower().replace(' ', '.')
+
+        # Make DeadlineJob
+        jobs = []
+
+        # Truncate 'rez' from command
+        # TODO ideally we should use the command builder to do that?
+        cmd = str(maya_cmd).split(' ', 1)[1]
+
+        job = DeadlineCommandLineJob(
+            scene.stem,
+            user,
+            cmd,
+            parameters['frame_range'],
+            chunk_size=parameters['task_size'],
+        )
+
+        jobs.append(job)
+
+        return {"jobs": jobs}
