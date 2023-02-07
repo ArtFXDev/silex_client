@@ -64,3 +64,5 @@ husk:
               value: !command-output "husk_render:build_husk_tasks:file_name"
             frame_range:
               value: !command-output "husk_render:build_husk_tasks:frame_range"
+            task_size:
+              value: !command-output "husk_render:build_husk_tasks:task_size"
