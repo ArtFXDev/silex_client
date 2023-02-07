@@ -54,6 +54,7 @@ class DeadlineJobTemplate:
 class DeadlineCommandLineJob(DeadlineJobTemplate):
 
     EXECUTABLE = "C:\\rez\\__install__\\Scripts\\rez\\rez.exe"
+
     def __init__(self,
                  job_title: str,
                  user_name: str,
@@ -64,8 +65,9 @@ class DeadlineCommandLineJob(DeadlineJobTemplate):
                  chunk_size=DEFAULT_CHUNKSIZE,
                  batch_name=None):
 
-        self.job_info = self.JOB_INFO
-        self.plugin_info = self.PLUGIN_INFO
+        self.job_info = dict(self.JOB_INFO)
+        self.plugin_info = dict(self.PLUGIN_INFO)
+
         self.batch_name = batch_name
         self.group = group
         self.pool = pool
