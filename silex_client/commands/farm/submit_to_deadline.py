@@ -41,10 +41,8 @@ class SubmitToDeadlineCommand(CommandBase):
 
     parameters = {
         "task_size": {
-            "label": "Task size",
-            "tooltip": "Number of frames per computer",
             "type": int,
-            "value": 10,
+            "hide": True
         },
         "frame_range": {
             "Label": "Frame Range",
@@ -120,6 +118,8 @@ class SubmitToDeadlineCommand(CommandBase):
         # TODO do for each command in case of several commands
         cmd = parameters['command']
         cmd = cmd.split(' ', 1)[1]
+
+
 
         submit_info = DeadlineCommandLineJob(
             parameters['job_title'],

@@ -55,6 +55,11 @@ class MayaRenderTasksCommand(CommandBase):
             "type": FrameSet,
             "value": "1-50x1",
         },
+        "task_size": {
+            'label': "Task Size",
+            "type": int,
+            "value": 5
+        },
         "keep_output_type": {
             "label": "Keep output type specified in the scene",
             "type": bool,
@@ -188,4 +193,7 @@ class MayaRenderTasksCommand(CommandBase):
         # Command:
         # cmd = "rez env maya testpipe -- Render -r arnold -rd M:/testpipe/shots/s01/p010/lighting_main/publish/v000/exr/render -of exr -skipExistingFrames true -ai:lve 2 -ai:device 0 -ai:alf true -ai:aerr true -fnc 3 -im testpipe_s01_p010_lighting_main_publish_v000_render_defaultRenderLayer -rl defaultRenderLayer -s 1 -e 10 M:/testpipe/shots/s01/p010/lighting_main/publish/v000/ma/main/testpipe_s01_p010_lighting_main_publish_v000_main.ma
 
-        return {"command": maya_cmd, "file_name": scene.stem, "frame_range": parameters["frame_range"].frameRange()}
+        return {"command": maya_cmd,
+                "file_name": scene.stem,
+                "frame_range": parameters["frame_range"].frameRange(),
+                "task_size": parameters["task_size"]}
