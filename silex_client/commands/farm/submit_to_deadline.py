@@ -18,20 +18,16 @@ from __future__ import annotations
 
 import logging
 import typing
-from typing import Any, Dict, List, cast
-
-from fileseq import FrameSet
+from typing import Any, Dict
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.log import flog
 from silex_client.utils.parameter_types import SelectParameterMeta
-from silex_client.utils.deadline.job import DeadlineCommandLineJob
+
 from silex_client.utils.deadline.runner import DeadlineRunner
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
-
-from Deadline.DeadlineConnect import DeadlineCon
 
 
 class SubmitToDeadlineCommand(CommandBase):
@@ -40,20 +36,9 @@ class SubmitToDeadlineCommand(CommandBase):
     """
 
     parameters = {
-        "task_size": {
-            "type": int,
+        "jobs": {
+            "type": list,
             "hide": True
-        },
-        "frame_range": {
-            "Label": "Frame Range",
-            "type": FrameSet,
-            "hide": True
-        },
-        "job_title": {
-            "label": "Job title",
-            "type": str,
-            "value": "untitled",
-            "hide": True,
         },
         "groups": {
             "label": "Groups",
@@ -61,15 +46,10 @@ class SubmitToDeadlineCommand(CommandBase):
             "hide": False,
         },
         "pools": {
-            "label": "Pool",
+            "label": "Pools",
             "type": SelectParameterMeta(),
             "hide": False,
         },
-        "command": {
-            # TODO change to list of commands
-            "type": str,
-            "hide": True
-        }
     }
 
     async def setup(
@@ -79,7 +59,7 @@ class SubmitToDeadlineCommand(CommandBase):
             logger: logging.Logger,
     ):
         '''
-        Setup parameters by querying the Deadline rapository
+        Setup parameters by querying the Deadline repository
         '''
 
         if 'deadline_query_groups_pools' not in action_query.store:
@@ -95,7 +75,6 @@ class SubmitToDeadlineCommand(CommandBase):
             self.command_buffer.parameters['pools'].value = deadline_pools
 
             # Store the query so it doesn't get executed unnecessarily
-
             action_query.store["deadline_query_groups_pools"] = True
 
     @CommandBase.conform_command()
@@ -105,34 +84,11 @@ class SubmitToDeadlineCommand(CommandBase):
             action_query: ActionQuery,
             logger: logging.Logger,
     ):
-        # Connect to Deadline Web Service
-        deadline = DeadlineCon('localhost', 8081)
-
-        logger.info(f"Deadline : {deadline}")
-
-        # Get user context info & convert to Deadline username
-        context = action_query.context_metadata
-        user = cast(str, context["user"]).lower().replace(' ', '.')
-
-        # truncate "rez" from command because Deadline CommandLine plugin uses rez.exe
-        # TODO do for each command in case of several commands
-        cmd = parameters['command']
-        cmd = cmd.split(' ', 1)[1]
-
-
-
-        submit_info = DeadlineCommandLineJob(
-            parameters['job_title'],
-            user,
-            cmd,
-            parameters['frame_range'],
-            parameters['groups'],
-            parameters['pools'],
-            parameters['task_size']
-        )
-
-        # TODO Submit for every command received in case of batch job
 
         # Submit to Deadline Runner
         dr = DeadlineRunner()
-        dr.run(submit_info)
+
+        for job in parameters["jobs"]:
+            job.group = parameters['groups']
+            job.pool = parameters['pools']
+            dr.run(job)

@@ -57,24 +57,26 @@ class DeadlineCommandLineJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
                  user_name: str,
-                 command: list,
+                 command: str,
                  frame_range: FrameSet,
-                 group: str,
-                 pool: str,
+                 group=DEFAULT_GROUP,
+                 pool=DEFAULT_POOL,
                  chunk_size=DEFAULT_CHUNKSIZE,
                  batch_name=None):
 
         self.job_info = self.JOB_INFO
         self.plugin_info = self.PLUGIN_INFO
         self.batch_name = batch_name
+        self.group = group
+        self.pool = pool
 
         self.job_info.update({
             "Name": job_title,
             "UserName": user_name,
             "Frames": frame_range.frange,
             "ChunkSize": chunk_size,
-            "Group": group,
-            "Pool": pool,
+            "Group": self.group,
+            "Pool": self.pool,
             "Plugin": "CommandLine"
         })
 
@@ -85,7 +87,7 @@ class DeadlineCommandLineJob(DeadlineJobTemplate):
 
         if batch_name is not None:
             self.job_info.update({
-                "BatchName": batch_name
+                "BatchName": self.batch_name
             })
 
 

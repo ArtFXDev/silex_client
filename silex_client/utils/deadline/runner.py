@@ -57,9 +57,9 @@ class DeadlineRunner(object):
     def run(self, job):
         try:
             logger.debug('About to submit "{}"'.format(job))
-            job_sumission = self.dl.Jobs.SubmitJob(job.job_info, job.plugin_info)
-            if isinstance(job_sumission, str):
-                raise Exception(job_sumission)
+            job_submission = self.dl.Jobs.SubmitJob(job.job_info, job.plugin_info)
+            if isinstance(job_submission, str):
+                raise Exception(job_submission)
         except Exception as e:
             raise Exception(str(e))
     @staticmethod
