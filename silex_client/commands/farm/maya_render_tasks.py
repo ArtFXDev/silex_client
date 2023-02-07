@@ -134,8 +134,6 @@ class MayaRenderTasksCommand(CommandBase):
     ):
         flog.info(f'scene path:{parameters["scene_file"]}')
         scene: pathlib.Path = parameters["scene_file"]
-        # Deadline resolves M:/testpipe as //tars/tespipetestpipe, changed to // to ensure it resolves as \\tars\\testpipe\\testpipe
-        # scene = pathlib.Path(scene.as_posix().replace('/', '//'))
         keep_output_type: bool = parameters["keep_output_type"]
 
         project = (
@@ -156,9 +154,7 @@ class MayaRenderTasksCommand(CommandBase):
             .param(
                 "rd",
                 parameters["output_folder"],
-                # parameters["output_folder"].as_posix().replace('/','//'),
             )
-
         )
 
         if not keep_output_type:
@@ -190,7 +186,6 @@ class MayaRenderTasksCommand(CommandBase):
         output_filename = f"{parameters['output_filename']}"
         maya_cmd.param("im", output_filename)
         maya_cmd.value(scene.as_posix())
-        # maya_cmd.value(scene.as_posix().replace('/', '//'))
 
         # Typical maya batch command:
         # cmd = "rez env maya testpipe -- Render -r arnold -rd M:/testpipe/shots/s01/p010/lighting_main/publish/v000/exr/render -of exr -skipExistingFrames true -ai:lve 2 -ai:device 0 -ai:alf true -ai:aerr true -fnc 3 -im testpipe_s01_p010_lighting_main_publish_v000_render_defaultRenderLayer -rl defaultRenderLayer -s 1 -e 10 M:/testpipe/shots/s01/p010/lighting_main/publish/v000/ma/main/testpipe_s01_p010_lighting_main_publish_v000_main.ma
