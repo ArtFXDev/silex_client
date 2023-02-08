@@ -89,6 +89,6 @@ class SubmitToDeadlineCommand(CommandBase):
         dr = DeadlineRunner()
 
         for job in parameters["jobs"]:
-            job.group = parameters['groups']
-            job.pool = parameters['pools']
+            job.set_group(parameters['groups'])
+            job.set_pool(parameters['pools'])
             dr.run(job)
