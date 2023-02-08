@@ -108,7 +108,6 @@ class HoudiniRenderTasksCommand(CommandBase):
     ):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
-        task_size: int = parameters["task_size"]
         skip_existing = parameters["skip_existing"]
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
@@ -155,13 +154,17 @@ class HoudiniRenderTasksCommand(CommandBase):
                 .param("i", incr)
                 .param("o", full_output_file.as_posix() )
                 .param("v")
-                .param("d", rop_node)
-                .value(scene.as_posix())
             )
 
             if parameter_overrides:
                 houdini_cmd.param("w", resolution[0])
                 houdini_cmd.param("h", resolution[1])
+
+            if skip_existing:
+                houdini_cmd.param("S")
+                
+            houdini_cmd.param("d", rop_node)
+            houdini_cmd.value(scene.as_posix())
 
             ###### BUILD DEADLINE JOB
 
