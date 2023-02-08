@@ -125,8 +125,6 @@ class HoudiniRenderTasksCommand(CommandBase):
 
             ######### BUILD HOUDINI COMMAND
             rop_name = rop_node.split("/")[-1]
-            frame_range_str = str(frame_range)
-            incr = frame_range_str.split("x")[-1]
             frame_range_se = "<STARTFRAME> <ENDFRAME>"
 
             flog.info(f"output_file : {output_file}")
@@ -151,7 +149,6 @@ class HoudiniRenderTasksCommand(CommandBase):
                 .param("m", "hrender")
                 .param("e")
                 .param("f", frame_range_se)
-                .param("i", incr)
                 .param("o", full_output_file.as_posix() )
                 .param("v")
             )
@@ -162,7 +159,13 @@ class HoudiniRenderTasksCommand(CommandBase):
 
             if skip_existing:
                 houdini_cmd.param("S")
-                
+
+            frame_range_str = str(frame_range)
+            frame_range_split = frame_range_str.split("x")
+            if len(frame_range_split) == 2:
+                incr = frame_range_split[-1]
+                houdini_cmd.param("i", incr)
+
             houdini_cmd.param("d", rop_node)
             houdini_cmd.value(scene.as_posix())
 
