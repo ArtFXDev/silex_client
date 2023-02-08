@@ -57,4 +57,4 @@ houdini:
           ask_user: true
           parameters:
             jobs:
-              value: !command-output "husk_render:build_husk_tasks:jobs"
+              value: !command-output "houdini_render:build_houdini_tasks:jobs"

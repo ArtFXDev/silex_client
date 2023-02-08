@@ -119,57 +119,70 @@ class HoudiniRenderTasksCommand(CommandBase):
         if not isinstance(rop_nodes, list):
             rop_nodes = rop_nodes.split(" ")
 
-        ######### BUILD HOUDINI COMMAND
+        # For each rop_node
+        jobs = []
 
-        rop_node = rop_nodes[0]
-        rop_name = rop_node.split("/")[-1]
-        frame_range_str = str(frame_range)
-        incr = frame_range_str.split("x")[-1]
-        frame_range_se = frame_range_str.split("x").replace("-", " ")
+        for rop_node in rop_nodes:
 
-        full_output_file = (
-                output_file.parent
-                / rop_name
-                / f"{output_file.stem}_{rop_name}.$F4{''.join(output_file.suffixes)}"
-        )
-        flog.info(f"full_output_file : {full_output_file}")
-        project = cast(str, action_query.context_metadata["project"]).lower()
-        houdini_cmd = (
-            command_builder.CommandBuilder(
-                "hython",
-                rez_packages=[
-                    "houdini",
-                    project,
-                ],
-                delimiter=" ",
+            ######### BUILD HOUDINI COMMAND
+            rop_name = rop_node.split("/")[-1]
+            frame_range_str = str(frame_range)
+            incr = frame_range_str.split("x")[-1]
+            frame_range_se = "<STARTFRAME> <ENDFRAME>"
+
+            flog.info(f"output_file : {output_file}")
+            flog.info(f"output_file.parent : {output_file.parent}")
+
+            full_output_file = (
+                    output_file.parent
+                    / rop_name
+                    / f"{output_file.stem}_{rop_name}.$F4{''.join(output_file.suffixes)}"
             )
-            .param("m", "hrender")
-            .param("e")
-            .param("f", frame_range_se)
-            .param("i", incr)
-            .param("o", full_output_file.as_posix())
-            .param("v")
-            .param("d", rop_node)
-            .value(scene.as_posix())
-        )
+            flog.info(f"full_output_file : {full_output_file}")
+            project = cast(str, action_query.context_metadata["project"]).lower()
+            houdini_cmd = (
+                command_builder.CommandBuilder(
+                    "hython",
+                    rez_packages=[
+                        "houdini",
+                        project,
+                    ],
+                    delimiter=" ",
+                )
+                .param("m", "hrender")
+                .param("e")
+                .param("f", frame_range_se)
+                .param("i", incr)
+                .param("o", full_output_file.as_posix() )
+                .param("v")
+                .param("d", rop_node)
+                .value(scene.as_posix())
+            )
 
-        if parameter_overrides:
-            houdini_cmd.param("w", resolution[0])
-            houdini_cmd.param("h", resolution[1])
+            if parameter_overrides:
+                houdini_cmd.param("w", resolution[0])
+                houdini_cmd.param("h", resolution[1])
 
-        '''
-        frame_range_str = str(frame_range)
-        flog.info(f"frame_range : {frame_range}, {type(frame_range)}")
-        frame_range_split = frame_range_str.split("x")
-        houdini_cmd.param("i", frame_range_split[-1])
-        flog.info(f"i : {frame_range_split[-1]}, {type(frame_range_split[-1])}")
-        frame_range_frames = frame_range_split[0].replace("-", " ")
-        houdini_cmd.param("f", frame_range_frames)
-        flog.info(f"f : {frame_range_frames}, {type(frame_range_frames)}")
-        '''
+            ###### BUILD DEADLINE JOB
 
+            context = action_query.context_metadata
+            user = context["user"].lower().replace(' ', '.')
+            cmd = str(houdini_cmd).split(' ', 1)[1]
 
-        '''
+            flog.info(f"cmd : {cmd}")
+            flog.info(f"")
+
+            job = DeadlineCommandLineJob(
+                scene.stem,
+                user,
+                cmd,
+                parameters["frame_range"],
+                chunk_size=parameters['task_size']
+            )
+
+            jobs.append(job)
+
+        ''' 
         for rop_node in rop_nodes:
             rop_name = rop_node.split("/")[-1]
 
@@ -250,30 +263,7 @@ class HoudiniRenderTasksCommand(CommandBase):
                 rop_task.addChild(task)
 
         flog.info(f"chunk_cmd 2 : {chunk_cmd}")
-        
         '''
-
-        ###### BUILD DEADLINE JOB
-
-        context = action_query.context_metadata
-        user = context["user"].lower().replace(' ', '.')
-        cmd = str(houdini_cmd).split(' ', 1)[1]
-
-        flog.info(f"cmd : {cmd}")
-
-        jobs = []
-
-        job = DeadlineCommandLineJob(
-            scene.stem,
-            user,
-            cmd,
-            parameters["frame_range"],
-            chunk_size=parameters['task_size']
-        )
-
-        jobs.append(job)
-
-        flog.info(f"jobs : {jobs}" )
 
         return {"jobs": jobs}
 
