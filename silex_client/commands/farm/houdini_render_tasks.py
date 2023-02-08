@@ -123,6 +123,9 @@ class HoudiniRenderTasksCommand(CommandBase):
 
         rop_node = rop_nodes[0]
         rop_name = rop_node.split("/")[-1]
+        frame_range_str = str(frame_range)
+        incr = frame_range_str.split("x")[-1]
+        frame_range_se = frame_range_str.split("x").replace("-", " ")
 
         full_output_file = (
                 output_file.parent
@@ -141,23 +144,18 @@ class HoudiniRenderTasksCommand(CommandBase):
                 delimiter=" ",
             )
             .param("m", "hrender")
-            .value(scene.as_posix())
-            .param("d", rop_node)
+            .param("e")
+            .param("f", frame_range_se)
+            .param("i", incr)
             .param("o", full_output_file.as_posix())
             .param("v")
-            .param("S", condition=skip_existing)
+            .param("d", rop_node)
+            .value(scene.as_posix())
         )
 
         if parameter_overrides:
             houdini_cmd.param("w", resolution[0])
             houdini_cmd.param("h", resolution[1])
-
-        chunk = FrameSet("1-10")
-        incr = "1"
-
-        all_frames = farm.frameset_to_frames_str(chunk)
-        houdini_cmd.param("f", all_frames)
-        houdini_cmd.param("i", incr)
 
         '''
         frame_range_str = str(frame_range)
@@ -274,6 +272,8 @@ class HoudiniRenderTasksCommand(CommandBase):
         )
 
         jobs.append(job)
+
+        flog.info(f"jobs : {jobs}" )
 
         return {"jobs": jobs}
 
