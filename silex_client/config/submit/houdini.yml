@@ -51,15 +51,10 @@ houdini:
             output_filename:
               value: !command-output "build_output_path:build_output_path:full_path"
 
-        submit_to_tractor:
+        submit_to_deadline:
           label: "Submit"
-          path: "silex_client.commands.farm.submit_to_tractor.SubmitToTractorCommand"
+          path: "silex_client.commands.farm.submit_to_deadline.SubmitToDeadlineCommand"
           ask_user: true
           parameters:
-            job_tags:
-              value:
-                - "houdini"
-            job_title:
-              value: !command-output "houdini_render:build_houdini_tasks:file_name"
-            tasks:
-              value: !command-output "houdini_render:build_houdini_tasks:tasks"
+            jobs:
+              value: !command-output "husk_render:build_husk_tasks:jobs"

@@ -4,7 +4,6 @@ import logging
 import pathlib
 import typing
 from typing import Any, Dict, List, cast
-from silex_client.utils.log import flog
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
@@ -19,6 +18,8 @@ from silex_client.utils.parameter_types import (
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
+from silex_client.utils.deadline.job import DeadlineCommandLineJob
+from silex_client.utils.log import flog
 
 class HuskRenderTasksCommand(CommandBase):
     """
@@ -54,9 +55,10 @@ class HuskRenderTasksCommand(CommandBase):
         logger: logging.Logger,
     ):
         scene: pathlib.Path = parameters["scene_file"]
-
         full_path = f"\{(parameters['output_directory'] / parameters['output_filename']).as_posix()}.$F4.{parameters['output_extension']}"
 
+
+        ##### BUILD HUSK COMMAND
         husk_cmd = command_builder.CommandBuilder(
             "husk",
             rez_packages=["houdini", action_query.context_metadata["project"].lower()],
@@ -80,12 +82,23 @@ class HuskRenderTasksCommand(CommandBase):
         husk_cmd.param("frame-inc", increment)
         husk_cmd.param("frame-count", task_size)
 
-        flog.info(husk_cmd)
-        flog.info(scene.stem)
-        flog.info(parameters["frame_range"].frameRange())
-        flog.info(parameters["task_size"])
+        #### BUILD DEADLINE JOBS
+        context = action_query.context_metadata
+        user = context["user"].lower().replace(' ', '.')
+        cmd = str(husk_cmd).split(' ', 1)[1]
 
-        return {"command": husk_cmd,
-                "file_name": scene.stem,
-                "frame_range": parameters["frame_range"].frameRange(),
-                "task_size": parameters["task_size"]}
+        flog.info(f"cmd : {cmd}")
+
+        jobs=[]
+
+        job = DeadlineCommandLineJob(
+            scene.stem,
+            user,
+            cmd,
+            parameters["frame_range"],
+            chunk_size=parameters['task_size']
+        )
+
+        jobs.append(job)
+
+        return {"jobs" : jobs}
