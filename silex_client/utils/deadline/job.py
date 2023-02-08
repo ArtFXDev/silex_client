@@ -92,6 +92,12 @@ class DeadlineCommandLineJob(DeadlineJobTemplate):
                 "BatchName": self.batch_name
             })
 
+    def set_group(self, group):
+        self.job_info.update({'Group': group})
+
+    def set_pool(self, pool):
+        self.job_info.update({'Pool': pool})
+
 
 class DeadlineMayaBatchJob(DeadlineJobTemplate):
     # auto filled :
@@ -127,3 +133,4 @@ class DeadlineMayaBatchJob(DeadlineJobTemplate):
             "SceneFile": self.sid.path,
             "Renderer": renderer,
         })
+
