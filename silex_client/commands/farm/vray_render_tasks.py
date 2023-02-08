@@ -13,10 +13,12 @@ from silex_client.utils.parameter_types import (
     RadioSelectParameterMeta,
     TaskFileParameterMeta,
 )
+from silex_client.utils.log import flog
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
+from silex_client.utils.deadline.job import DeadlineCommandLineJob
 
 
 class VrayRenderTasksCommand(CommandBase):
@@ -38,10 +40,9 @@ class VrayRenderTasksCommand(CommandBase):
             "value": "1-50x1",
         },
         "task_size": {
-            "label": "Task size",
-            "tooltip": "Number of frames per computer",
+            "label": "task_size",
             "type": int,
-            "value": 10,
+            "value": 10
         },
         "skip_existing": {
             "label": "Skip existing frames",
@@ -69,10 +70,10 @@ class VrayRenderTasksCommand(CommandBase):
     }
 
     async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
     ):
         # Overriding resolution is optional
         hide_overrides = not parameters["parameter_overrides"]
@@ -80,10 +81,10 @@ class VrayRenderTasksCommand(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
     ):
         vrscenes: List[pathlib.Path] = parameters["vrscenes"]
 
@@ -91,15 +92,19 @@ class VrayRenderTasksCommand(CommandBase):
         output_filename: str = parameters["output_filename"]
         output_extension: str = parameters["output_extension"]
 
-        engine: int = parameters["engine"]
         frame_range: FrameSet = parameters["frame_range"]
         task_size: int = parameters["task_size"]
         skip_existing = int(parameters["skip_existing"])
+        engine: int = parameters["engine"]
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
 
-        tasks: List[farm.Task] = []
+        # tasks: List[farm.Task] = []
 
+        # Store each render layer cmd into a list
+        commands = []
+
+        # One Vrscene file per render layer
         for vrscene in vrscenes:
             # Detect the render layer name from the parent folder
             split_by_name = vrscene.stem.split(f"{vrscene.parents[0].stem}_")
@@ -111,9 +116,9 @@ class VrayRenderTasksCommand(CommandBase):
                 layer_name = vrscene.stem
 
             full_output_path = (
-                output_directory
-                / layer_name
-                / f"{output_filename}_{layer_name}.{output_extension}"
+                    output_directory
+                    / layer_name
+                    / f"{output_filename}_{layer_name}.{output_extension}"
             )
 
             # Build the V-Ray command
@@ -135,39 +140,53 @@ class VrayRenderTasksCommand(CommandBase):
                     "imgHeight", resolution[1]
                 )
 
-            render_layer_task = farm.Task(title=layer_name)
-            frame_chunks = frames.split_frameset(frame_range, task_size)
+            # Set frame range
+            vray_cmd.param("frames", "<STARTFRAME>-<ENDFRAME>")
 
-            # Creating tasks for each frame chunk
-            for chunk in frame_chunks:
-                chunk_cmd = vray_cmd.deepcopy()
+            command = {
+                "command": vray_cmd,
+                "vrscene": vrscene,
+                "layer_name": layer_name
+            }
+            commands.append(command)
 
-                chunk_cmd.param("frames", farm.frameset_to_frames_str(chunk))
+        # Building Deadline Job:
+        # Get UserName
+        context = action_query.context_metadata
+        user = cast(str, context["user"]).lower().replace(' ', '.')
 
-                task = farm.Task(title=str(chunk))
+        # Make DeadlineJob
+        jobs = []
+        flog.info(commands)
+        for command in commands:
+            # Truncate 'rez' from command
+            # TODO ideally we should use the command builder to do that?
+            cmd = str(command['command']).split(' ', 1)[1]
 
-                project_nas = cast(
-                    str, action_query.context_metadata.get("project_nas")
-                )
+            # Add batch name if multiple commands are to be submitted
+            if len(commands) > 1:
+                scene = command['vrscene']
+                batch_name = scene.stem.split(f"{scene.parents[0].stem}_")[0][:-1]
+                job_title = command['layer_name']
+                flog.info("render layer: " + job_title)
 
-                command = farm.wrap_command(
-                    [
-                        farm.get_mount_command(project_nas),
-                        farm.get_clear_frames_command(full_output_path.parent, chunk),
-                    ],
-                    cmd=farm.Command(chunk_cmd.as_argv()),
-                )
-                task.addCommand(command)
+            else:
+                batch_name = None
+                scene = command['vrscene']
+                job_title = scene.stem.split(f"{scene.parents[0].stem}_")[0][:-1]
 
-                if len(vrscenes) > 1:
-                    render_layer_task.addChild(task)
-                else:
-                    tasks.append(task)
+            job = DeadlineCommandLineJob(
+                job_title,
+                user,
+                cmd,
+                frame_range,
+                chunk_size=task_size,
+                batch_name=batch_name
+            )
 
-            if len(vrscenes) > 1:
-                tasks.append(render_layer_task)
+            jobs.append(job)
 
-        return {
-            "file_name": vrscenes[0].stem,
-            "tasks": tasks,
-        }
+        for job in jobs:
+            flog.info(job.job_info)
+
+        return {"jobs": jobs}
