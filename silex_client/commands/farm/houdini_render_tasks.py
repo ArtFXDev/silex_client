@@ -6,15 +6,17 @@ import pathlib
 import tempfile
 import typing
 from typing import Any, Dict, List, Union, cast
+from silex_client.utils.log import flog
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder, farm, frames
 from silex_client.utils.parameter_types import (
-    IntArrayParameterMeta,
     MultipleSelectParameterMeta,
+    SelectParameterMeta,
     TaskFileParameterMeta,
     TextParameterMeta,
+    IntArrayParameterMeta
 )
 from silex_client.utils.thread import execute_in_thread
 
@@ -24,6 +26,8 @@ if typing.TYPE_CHECKING:
 
 import os
 import subprocess
+
+from silex_client.utils.deadline.job import DeadlineCommandLineJob
 
 
 class HoudiniRenderTasksCommand(CommandBase):
@@ -109,13 +113,65 @@ class HoudiniRenderTasksCommand(CommandBase):
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
         rop_nodes: Union[str, List[str]] = parameters["rop_nodes"]
+        flog.info(rop_nodes)
         output_file = pathlib.Path(parameters["output_filename"])
 
         if not isinstance(rop_nodes, list):
             rop_nodes = rop_nodes.split(" ")
 
-        tasks: List[farm.Task] = []
+        ######### BUILD HOUDINI COMMAND
 
+        rop_node = rop_nodes[0]
+        rop_name = rop_node.split("/")[-1]
+
+        full_output_file = (
+                output_file.parent
+                / rop_name
+                / f"{output_file.stem}_{rop_name}.$F4{''.join(output_file.suffixes)}"
+        )
+        flog.info(f"full_output_file : {full_output_file}")
+        project = cast(str, action_query.context_metadata["project"]).lower()
+        houdini_cmd = (
+            command_builder.CommandBuilder(
+                "hython",
+                rez_packages=[
+                    "houdini",
+                    project,
+                ],
+                delimiter=" ",
+            )
+            .param("m", "hrender")
+            .value(scene.as_posix())
+            .param("d", rop_node)
+            .param("o", full_output_file.as_posix())
+            .param("v")
+            .param("S", condition=skip_existing)
+        )
+
+        if parameter_overrides:
+            houdini_cmd.param("w", resolution[0])
+            houdini_cmd.param("h", resolution[1])
+
+        chunk = FrameSet("1-10")
+        incr = "1"
+
+        all_frames = farm.frameset_to_frames_str(chunk)
+        houdini_cmd.param("f", all_frames)
+        houdini_cmd.param("i", incr)
+
+        '''
+        frame_range_str = str(frame_range)
+        flog.info(f"frame_range : {frame_range}, {type(frame_range)}")
+        frame_range_split = frame_range_str.split("x")
+        houdini_cmd.param("i", frame_range_split[-1])
+        flog.info(f"i : {frame_range_split[-1]}, {type(frame_range_split[-1])}")
+        frame_range_frames = frame_range_split[0].replace("-", " ")
+        houdini_cmd.param("f", frame_range_frames)
+        flog.info(f"f : {frame_range_frames}, {type(frame_range_frames)}")
+        '''
+
+
+        '''
         for rop_node in rop_nodes:
             rop_name = rop_node.split("/")[-1]
 
@@ -151,10 +207,12 @@ class HoudiniRenderTasksCommand(CommandBase):
             rop_task = farm.Task(title=f"ROP node: {rop_name}")
             frame_chunks = frames.split_frameset(frame_range, task_size)
 
+            flog.info(f"frame_chunks : {frame_chunks}")
             # Create tasks for each frame chunk
             for chunk in frame_chunks:
                 chunk_cmd = houdini_cmd.deepcopy()
                 chunk_cmd.param("f", farm.frameset_to_frames_str(chunk))
+                flog.info(f"chunk_cmd 1 : {chunk_cmd}")
 
                 # In case of a more complicated setup add a pre and cleanup command
                 if len(parameters["pre_command"]) and len(
@@ -193,9 +251,31 @@ class HoudiniRenderTasksCommand(CommandBase):
                 task.addCommand(chunk_cmd)
                 rop_task.addChild(task)
 
-            tasks.append(rop_task)
+        flog.info(f"chunk_cmd 2 : {chunk_cmd}")
+        
+        '''
 
-        return {"tasks": tasks, "file_name": scene.stem}
+        ###### BUILD DEADLINE JOB
+
+        context = action_query.context_metadata
+        user = context["user"].lower().replace(' ', '.')
+        cmd = str(houdini_cmd).split(' ', 1)[1]
+
+        flog.info(f"cmd : {cmd}")
+
+        jobs = []
+
+        job = DeadlineCommandLineJob(
+            scene.stem,
+            user,
+            cmd,
+            parameters["frame_range"],
+            chunk_size=parameters['task_size']
+        )
+
+        jobs.append(job)
+
+        return {"jobs": jobs}
 
     async def setup(
         self,

@@ -58,11 +58,5 @@ husk:
           path: "silex_client.commands.farm.submit_to_deadline.SubmitToDeadlineCommand"
           ask_user: true
           parameters:
-            command:
-              value: !command-output "husk_render:build_husk_tasks:command"
-            job_title:
-              value: !command-output "husk_render:build_husk_tasks:file_name"
-            frame_range:
-              value: !command-output "husk_render:build_husk_tasks:frame_range"
-            task_size:
-              value: !command-output "husk_render:build_husk_tasks:task_size"
+            jobs:
+              value: !command-output "husk_render:build_husk_tasks:jobs"

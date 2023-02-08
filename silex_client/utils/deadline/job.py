@@ -3,7 +3,7 @@ import getpass
 from fileseq import FrameSet
 from silex_client.utils.log import logger as log
 
-DEFAULT_GROUP = ''
+DEFAULT_GROUP = 'angele'
 DEFAULT_POOL = ''
 DEFAULT_CHUNKSIZE = 5
 
