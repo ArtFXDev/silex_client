@@ -146,39 +146,237 @@ class DeadlineVrayJob(DeadlineJobTemplate):
     def set_pool(self, pool):
         self.job_info.update({'Pool': pool})
 
+class DeadlineArnoldJob(DeadlineJobTemplate):
+    def __init__(self,
+                 job_title: str,
+                 user_name: str,
+                 scenefile_name: str,
+                 outputfile_name: str,
+                 version: str,
+                 frame_range: FrameSet,
+                 rez_requires: str,
+                 group=DEFAULT_GROUP,
+                 pool=DEFAULT_POOL,
+                 chunk_size=DEFAULT_CHUNKSIZE,
+                 batch_name=None):
 
-class DeadlineMayaBatchJob(DeadlineJobTemplate):
-    # auto filled :
-    #   - department (task)
-    #   - pool : mapped by Sid
-    #   - group render | user
+        self.job_info = dict(self.JOB_INFO)
+        self.plugin_info = dict(self.PLUGIN_INFO)
 
-    job_type = 'render'
-    plugin = 'RezMayaBatch'
-
-    def __init__(self, path, frame_range, render_path=None, chunk_size=DEFAULT_CHUNKSIZE, priority=50,
-                 comment=None, renderer=None):
-        # path to be implemented
-
-        self.job_info = self.JOB_INFO
-        self.plugin_info = self.PLUGIN_INFO
-
-        # step_value = 'step{}'.format(step) if step > 1 else ''
-        # frames = '{}-{}'.format(start, end) + step_value
+        self.batch_name = batch_name
+        self.group = group
+        self.pool = pool
 
         self.job_info.update({
-            "Name": self.get_job_name(),  # TODO: add pass ?
-            "Frames": frame_range,
-            "department": "to be implemented",
-            "Priority": str(priority),
-            "Plugin": self.plugin,
-            'OutputDirectory0': render_path,
-            'ChunkSize': chunk_size
+            "Name": job_title,
+            "UserName": user_name,
+            "Frames": frame_range.frange,
+            "ChunkSize": chunk_size,
+            "Group": self.group,
+            "Pool": self.pool,
+            # "RezRequires": rez_requires,
+            "Plugin": "Arnold"
         })
 
         self.plugin_info.update({
-            "Version": os.environ["REZ_MAYA_MAJOR_VERSION"],  # needed in "RezMayaBatch.py" in StartJob()
-            "SceneFile": self.sid.path,
-            "Renderer": renderer,
+            "InputFile": scenefile_name,
+            "OutputFile": outputfile_name,
+            "Version": version
         })
 
+        if batch_name is not None:
+            self.job_info.update({
+                "BatchName": self.batch_name
+            })
+
+    def set_group(self, group):
+        self.job_info.update({'Group': group})
+
+    def set_pool(self, pool):
+        self.job_info.update({'Pool': pool})
+
+class DeadlineHuskJob(DeadlineJobTemplate):
+    def __init__(self,
+                 job_title: str,
+                 user_name: str,
+                 scenefile_name: str,
+                 outputfile_name: str,
+                 log_level: str,
+                 frame_range: FrameSet,
+                 rez_requires: str,
+                 group=DEFAULT_GROUP,
+                 pool=DEFAULT_POOL,
+                 chunk_size=DEFAULT_CHUNKSIZE,
+                 batch_name=None):
+
+        self.job_info = dict(self.JOB_INFO)
+        self.plugin_info = dict(self.PLUGIN_INFO)
+
+        self.batch_name = batch_name
+        self.group = group
+        self.pool = pool
+
+        self.job_info.update({
+            "Name": job_title,
+            "UserName": user_name,
+            "Frames": frame_range.frange,
+            "ChunkSize": chunk_size,
+            "Group": self.group,
+            "Pool": self.pool,
+            # "RezRequires": rez_requires,
+            "Plugin": "Husk"
+        })
+
+        self.plugin_info.update({
+            "SceneFile": scenefile_name,
+            "ImageOutputDirectory": outputfile_name,
+            "LogLevel": log_level
+        })
+
+        if batch_name is not None:
+            self.job_info.update({
+                "BatchName": self.batch_name
+            })
+
+    def set_group(self, group):
+        self.job_info.update({'Group': group})
+
+    def set_pool(self, pool):
+        self.job_info.update({'Pool': pool})
+
+class DeadlineHoudiniJob(DeadlineJobTemplate):
+    def __init__(self,
+                 job_title: str,
+                 user_name: str,
+                 scenefile_name: str,
+                 outputfile_name: str,
+                 frame_range: FrameSet,
+                 rez_requires: str,
+                 sim_job=False,
+                 group=DEFAULT_GROUP,
+                 pool=DEFAULT_POOL,
+                 chunk_size=DEFAULT_CHUNKSIZE,
+                 batch_name=None):
+
+        self.job_info = dict(self.JOB_INFO)
+        self.plugin_info = dict(self.PLUGIN_INFO)
+
+        self.batch_name = batch_name
+        self.group = group
+        self.pool = pool
+
+        self.job_info.update({
+            "Name": job_title,
+            "UserName": user_name,
+            "Frames": frame_range.frange,
+            "ChunkSize": chunk_size,
+            "Group": self.group,
+            "Pool": self.pool,
+            # "RezRequires": rez_requires,
+            "Plugin": "Houdini"
+        })
+
+        self.plugin_info.update({
+            "SceneFile": scenefile_name,
+            "Output": outputfile_name,
+            "SimJob": sim_job
+        })
+
+        if batch_name is not None:
+            self.job_info.update({
+                "BatchName": self.batch_name
+            })
+
+    def set_group(self, group):
+        self.job_info.update({'Group': group})
+
+    def set_pool(self, pool):
+        self.job_info.update({'Pool': pool})
+
+class DeadlineMayaBatchJob(DeadlineJobTemplate):
+    def __init__(self,
+                 job_title: str,
+                 user_name: str,
+                 scenefile_name: str,
+                 project_path: str,
+                 outputfile_name: str,
+                 renderer : str,
+                 frame_range: FrameSet,
+                 rez_requires: str,
+                 group=DEFAULT_GROUP,
+                 pool=DEFAULT_POOL,
+                 chunk_size=DEFAULT_CHUNKSIZE,
+                 batch_name=None):
+
+        self.job_info = dict(self.JOB_INFO)
+        self.plugin_info = dict(self.PLUGIN_INFO)
+
+        self.batch_name = batch_name
+        self.group = group
+        self.pool = pool
+
+        self.job_info.update({
+            "Name": job_title,
+            "UserName": user_name,
+            "Frames": frame_range.frange,
+            "ChunkSize": chunk_size,
+            "Group": self.group,
+            "Pool": self.pool,
+            # "RezRequires": rez_requires,
+            "Plugin": "MayaBatch"
+        })
+
+        self.plugin_info.update({
+            "SceneFile": scenefile_name,
+            "ProjectPath": project_path,
+            "OutputFilePath": outputfile_name,
+            "Renderer": renderer
+        })
+
+        if batch_name is not None:
+            self.job_info.update({
+                "BatchName": self.batch_name
+            })
+
+    def set_group(self, group):
+        self.job_info.update({'Group': group})
+
+    def set_pool(self, pool):
+        self.job_info.update({'Pool': pool})
+
+
+# class DeadlineMayaBatchJob(DeadlineJobTemplate):
+#     # auto filled :
+#     #   - department (task)
+#     #   - pool : mapped by Sid
+#     #   - group render | user
+#
+#     job_type = 'render'
+#     plugin = 'RezMayaBatch'
+#
+#     def __init__(self, path, frame_range, render_path=None, chunk_size=DEFAULT_CHUNKSIZE, priority=50,
+#                  comment=None, renderer=None):
+#         # path to be implemented
+#
+#         self.job_info = self.JOB_INFO
+#         self.plugin_info = self.PLUGIN_INFO
+#
+#         # step_value = 'step{}'.format(step) if step > 1 else ''
+#         # frames = '{}-{}'.format(start, end) + step_value
+#
+#         self.job_info.update({
+#             "Name": self.get_job_name(),  # TODO: add pass ?
+#             "Frames": frame_range,
+#             "department": "to be implemented",
+#             "Priority": str(priority),
+#             "Plugin": self.plugin,
+#             'OutputDirectory0': render_path,
+#             'ChunkSize': chunk_size
+#         })
+#
+#         self.plugin_info.update({
+#             "Version": os.environ["REZ_MAYA_MAJOR_VERSION"],  # needed in "RezMayaBatch.py" in StartJob()
+#             "SceneFile": self.sid.path,
+#             "Renderer": renderer,
+#         })
+#
