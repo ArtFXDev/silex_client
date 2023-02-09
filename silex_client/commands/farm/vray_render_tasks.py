@@ -18,7 +18,7 @@ from silex_client.utils.log import flog
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
-from silex_client.utils.deadline.job import DeadlineCommandLineJob
+from silex_client.utils.deadline.job import DeadlineVrayJob
 
 
 class VrayRenderTasksCommand(CommandBase):
@@ -48,6 +48,7 @@ class VrayRenderTasksCommand(CommandBase):
             "label": "Skip existing frames",
             "type": bool,
             "value": True,
+            "hide": True
         },
         "engine": {
             "label": "RT engine",
@@ -60,6 +61,7 @@ class VrayRenderTasksCommand(CommandBase):
             "type": bool,
             "label": "Parameter overrides",
             "value": False,
+            "hide": True
         },
         "resolution": {
             "label": "Resolution (width, height)",
@@ -99,7 +101,6 @@ class VrayRenderTasksCommand(CommandBase):
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int] = parameters["resolution"]
 
-        # tasks: List[farm.Task] = []
 
         # Store each render layer cmd into a list
         commands = []
@@ -121,32 +122,15 @@ class VrayRenderTasksCommand(CommandBase):
                     / f"{output_filename}_{layer_name}.{output_extension}"
             )
 
-            # Build the V-Ray command
-            project = cast(str, action_query.context_metadata["project"]).lower()
-            vray_cmd = command_builder.CommandBuilder(
-                "vray",
-                rez_packages=["vray", project],
-            )
-            vray_cmd.param("skipExistingFrames", skip_existing)
-            vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
-            vray_cmd.param("progressIncrement", 5)
-            vray_cmd.param("verboseLevel", 3)
-            vray_cmd.param("rtEngine", engine)
-            vray_cmd.param("sceneFile", vrscene.as_posix())
-            vray_cmd.param("imgFile", full_output_path.as_posix())
-
-            if parameter_overrides:
-                vray_cmd.param("imgWidth", resolution[0]).param(
-                    "imgHeight", resolution[1]
-                )
-
-            # Set frame range
-            vray_cmd.param("frames", "<STARTFRAME>-<ENDFRAME>")
+            rez_requires = "vray " + cast(str, action_query.context_metadata["project"]).lower()
 
             command = {
-                "command": vray_cmd,
+                "rez_requires": rez_requires,
                 "vrscene": vrscene,
-                "layer_name": layer_name
+                "vrscene_posix": vrscene.as_posix(),
+                "layer_name": layer_name,
+                "output": full_output_path.as_posix(),
+                "engine": engine
             }
             commands.append(command)
 
@@ -159,27 +143,26 @@ class VrayRenderTasksCommand(CommandBase):
         jobs = []
         flog.info(commands)
         for command in commands:
-            # Truncate 'rez' from command
-            # TODO ideally we should use the command builder to do that?
-            cmd = str(command['command']).split(' ', 1)[1]
-
             # Add batch name if multiple commands are to be submitted
             if len(commands) > 1:
                 scene = command['vrscene']
                 batch_name = scene.stem.split(f"{scene.parents[0].stem}_")[0][:-1]
                 job_title = command['layer_name']
-                flog.info("render layer: " + job_title)
 
             else:
                 batch_name = None
                 scene = command['vrscene']
                 job_title = scene.stem.split(f"{scene.parents[0].stem}_")[0][:-1]
 
-            job = DeadlineCommandLineJob(
+            file_name = command['vrscene'].as_posix()
+
+            job = DeadlineVrayJob(
                 job_title,
                 user,
-                cmd,
+                file_name,
+                command['output'],
                 frame_range,
+                command["rez_requires"],
                 chunk_size=task_size,
                 batch_name=batch_name
             )

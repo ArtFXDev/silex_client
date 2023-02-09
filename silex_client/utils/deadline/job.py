@@ -99,6 +99,54 @@ class DeadlineCommandLineJob(DeadlineJobTemplate):
         self.job_info.update({'Pool': pool})
 
 
+class DeadlineVrayJob(DeadlineJobTemplate):
+    def __init__(self,
+                 job_title: str,
+                 user_name: str,
+                 scenefile_name: str,
+                 outputfile_name: str,
+                 frame_range: FrameSet,
+                 rez_requires: str,
+                 group=DEFAULT_GROUP,
+                 pool=DEFAULT_POOL,
+                 chunk_size=DEFAULT_CHUNKSIZE,
+                 batch_name=None):
+
+        self.job_info = dict(self.JOB_INFO)
+        self.plugin_info = dict(self.PLUGIN_INFO)
+
+        self.batch_name = batch_name
+        self.group = group
+        self.pool = pool
+
+        self.job_info.update({
+            "Name": job_title,
+            "UserName": user_name,
+            "Frames": frame_range.frange,
+            "ChunkSize": chunk_size,
+            "Group": self.group,
+            "Pool": self.pool,
+            # "RezRequires": rez_requires,
+            "Plugin": "Vray"
+        })
+
+        self.plugin_info.update({
+            "InputFilename": scenefile_name,
+            "OutputFilename": outputfile_name,
+        })
+
+        if batch_name is not None:
+            self.job_info.update({
+                "BatchName": self.batch_name
+            })
+
+    def set_group(self, group):
+        self.job_info.update({'Group': group})
+
+    def set_pool(self, pool):
+        self.job_info.update({'Pool': pool})
+
+
 class DeadlineMayaBatchJob(DeadlineJobTemplate):
     # auto filled :
     #   - department (task)
