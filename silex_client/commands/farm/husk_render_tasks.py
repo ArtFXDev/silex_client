@@ -74,13 +74,18 @@ class HuskRenderTasksCommand(CommandBase):
         #set cmd frames
         frame_range: List[int] = parameters["frame_range"]
         frame_range = str(frame_range)
-        increment = frame_range[0].split("x")[-1]
-        task_size: int = parameters["task_size"]
-        task_size = str(task_size)
+        frame_range_split = frame_range.split("x")
+
+        if len(frame_range_split) == 2:
+            increment = frame_range[0].split("x")[-1]
+            husk_cmd.param("frame-inc", increment)
+            husk_cmd.param("frame-count", 1)
+        else:
+            task_size: int = parameters["task_size"]
+            task_size = str(task_size)
+            husk_cmd.param("frame-count", task_size)
 
         husk_cmd.param("frame", "<STARTFRAME>")
-        husk_cmd.param("frame-inc", increment)
-        husk_cmd.param("frame-count", task_size)
 
         #### BUILD DEADLINE JOBS
         context = action_query.context_metadata
