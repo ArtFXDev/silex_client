@@ -131,11 +131,7 @@ class HuskRenderTasksCommand(CommandBase):
                 / usd_name
                 / f"{parameters['output_filename']}_{usd_name}.$F4.{parameters['output_extension']}"
             )
-            """
-            f"\{(parameters['output_directory'] / 
-                            usd_name /
-                            parameters['output_filename']).as_posix()}.$F4.{parameters['output_extension']}"
-            """
+
             flog.info(f"full_path : {full_path}, type : {type(full_path)}")
 
             project = cast(str, action_query.context_metadata["project"]).lower()
