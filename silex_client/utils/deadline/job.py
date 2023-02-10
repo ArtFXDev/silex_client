@@ -152,6 +152,7 @@ class DeadlineArnoldJob(DeadlineJobTemplate):
                  user_name: str,
                  scenefile_name: str,
                  outputfile_name: str,
+                 output_dir: str,
                  version: str,
                  frame_range: FrameSet,
                  rez_requires: str,
@@ -174,6 +175,7 @@ class DeadlineArnoldJob(DeadlineJobTemplate):
             "ChunkSize": chunk_size,
             "Group": self.group,
             "Pool": self.pool,
+            "OutputDir": output_dir,
             # "RezRequires": rez_requires,
             "Plugin": "Arnold"
         })
