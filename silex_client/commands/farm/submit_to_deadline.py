@@ -50,6 +50,12 @@ class SubmitToDeadlineCommand(CommandBase):
             "type": SelectParameterMeta(),
             "hide": False,
         },
+        "task_size": {
+            "label": "Task size",
+            "tooltip": "Number of frames per computer",
+            "type": int,
+            "value": 10,
+        }
     }
 
     async def setup(
@@ -91,4 +97,5 @@ class SubmitToDeadlineCommand(CommandBase):
         for job in parameters["jobs"]:
             job.set_group(parameters['groups'])
             job.set_pool(parameters['pools'])
+            job.set_chunksize(parameters['task_size'])
             dr.run(job)

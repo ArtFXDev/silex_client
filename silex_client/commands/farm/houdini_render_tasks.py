@@ -27,7 +27,7 @@ if typing.TYPE_CHECKING:
 import os
 import subprocess
 
-from silex_client.utils.deadline.job import DeadlineCommandLineJob
+from silex_client.utils.deadline.job import DeadlineHoudiniJob
 
 
 class HoudiniRenderTasksCommand(CommandBase):
@@ -45,24 +45,27 @@ class HoudiniRenderTasksCommand(CommandBase):
             "type": FrameSet,
             "value": "1-50x1",
         },
-        "task_size": {
-            "label": "Task size",
-            "tooltip": "Number of frames per computer",
-            "type": int,
-            "value": 10,
-        },
         "skip_existing": {
             "label": "Skip existing frames",
             "type": bool,
             "value": False,
             "hide": True,
         },
-        "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
-        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
+        "output_filename": {
+            "type": pathlib.Path,
+            "hide": True,
+            "value": ""
+        },
+        "skip_existing": {
+            "label": "Skip existing frames",
+            "type": bool,
+            "value": True,
+            "hide": True # Until fixed
+        },
         "rop_from_hip": {
             "label": "Get ROP node list from scene file",
             "type": bool,
-            "value": False,
+            "value": False
         },
         "get_rop_progress": {
             "type": TextParameterMeta(
@@ -80,6 +83,7 @@ class HoudiniRenderTasksCommand(CommandBase):
             "type": bool,
             "label": "Parameter overrides",
             "value": False,
+            "hide" : True, # Until fixed
         },
         "resolution": {
             "label": "Resolution (width, height)",
@@ -110,9 +114,12 @@ class HoudiniRenderTasksCommand(CommandBase):
         frame_range: FrameSet = parameters["frame_range"]
         skip_existing = parameters["skip_existing"]
         parameter_overrides: bool = parameters["parameter_overrides"]
-        resolution: List[int] = parameters["resolution"]
+        resolution: List[int]
+        if parameter_overrides:
+            resolution = parameters["resolution"]
+        else:
+            resolution = None
         rop_nodes: Union[str, List[str]] = parameters["rop_nodes"]
-        flog.info(rop_nodes)
         output_file = pathlib.Path(parameters["output_filename"])
 
         if not isinstance(rop_nodes, list):
@@ -122,68 +129,29 @@ class HoudiniRenderTasksCommand(CommandBase):
         jobs = []
 
         for rop_node in rop_nodes:
+            ###### BUILD DEADLINE JOB
 
-            ######### BUILD HOUDINI COMMAND
+            context = action_query.context_metadata
+            user = context["user"].lower().replace(' ', '.')
+            project = cast(str, action_query.context_metadata["project"]).lower()
             rop_name = rop_node.split("/")[-1]
-            frame_range_se = "<STARTFRAME> <ENDFRAME>"
-
-            flog.info(f"output_file : {output_file}")
-            flog.info(f"output_file.parent : {output_file.parent}")
-
             full_output_file = (
                     output_file.parent
                     / rop_name
                     / f"{output_file.stem}_{rop_name}.$F4{''.join(output_file.suffixes)}"
             )
-            flog.info(f"full_output_file : {full_output_file}")
-            project = cast(str, action_query.context_metadata["project"]).lower()
-            houdini_cmd = (
-                command_builder.CommandBuilder(
-                    "hython",
-                    rez_packages=[
-                        "houdini",
-                        project,
-                    ],
-                    delimiter=" ",
-                )
-                .param("m", "hrender")
-                .param("e")
-                .param("f", frame_range_se)
-                .param("o", full_output_file.as_posix() )
-                .param("v")
-            )
 
-            if parameter_overrides:
-                houdini_cmd.param("w", resolution[0])
-                houdini_cmd.param("h", resolution[1])
+            flog.info(f"resolution : {resolution}")
 
-            if skip_existing:
-                houdini_cmd.param("S")
-
-            frame_range_str = str(frame_range)
-            frame_range_split = frame_range_str.split("x")
-            if len(frame_range_split) == 2:
-                incr = frame_range_split[-1]
-                houdini_cmd.param("i", incr)
-
-            houdini_cmd.param("d", rop_node)
-            houdini_cmd.value(scene.as_posix())
-
-            ###### BUILD DEADLINE JOB
-
-            context = action_query.context_metadata
-            user = context["user"].lower().replace(' ', '.')
-            cmd = str(houdini_cmd).split(' ', 1)[1]
-
-            flog.info(f"cmd : {cmd}")
-            flog.info(f"")
-
-            job = DeadlineCommandLineJob(
-                rop_name,
-                user,
-                cmd,
-                parameters["frame_range"],
-                chunk_size=parameters['task_size'],
+            job = DeadlineHoudiniJob(
+                job_title=rop_name,
+                user_name=user,
+                scenefile_path=str(scene),
+                outputfile_path=str(full_output_file),
+                frame_range=frame_range,
+                rez_requires=f"houdini {project}",
+                rop_node=rop_node,
+                resolution=resolution,
                 batch_name=scene.stem
             )
 
