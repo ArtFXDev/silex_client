@@ -57,11 +57,6 @@ class MayaRenderTasksCommand(CommandBase):
             "type": FrameSet,
             "value": "1-50x1",
         },
-        "task_size": {
-            'label': "Task Size",
-            "type": int,
-            "value": 5
-        },
         "keep_output_type": {
             "label": "Keep output type specified in the scene",
             "type": bool,
@@ -165,7 +160,7 @@ class MayaRenderTasksCommand(CommandBase):
             maya_cmd.param(
                 "skipExistingFrames", str(parameters["skip_existing"]).lower()
             )
-            maya_cmd.param("ai:lve", 2)  # log level
+            maya_cmd.param("ai:lve", 3)  # log level
             maya_cmd.param("ai:device", parameters['arnold_device'])
             maya_cmd.param("ai:alf", "true")  # Abort on license fail
             maya_cmd.param("ai:aerr", "true")  # Abort on error
@@ -182,6 +177,7 @@ class MayaRenderTasksCommand(CommandBase):
         render_layers = []
         for render_layer in parameters["render_layers"]:
             render_layers.append(render_layer)
+
         maya_cmd.param("rl", render_layers)
         output_filename = f"{parameters['output_filename']}"
         maya_cmd.param("im", output_filename)
@@ -202,12 +198,13 @@ class MayaRenderTasksCommand(CommandBase):
         # TODO ideally we should use the command builder to do that?
         cmd = str(maya_cmd).split(' ', 1)[1]
 
+
+
         job = DeadlineCommandLineJob(
             scene.stem,
             user,
             cmd,
             parameters['frame_range'],
-            chunk_size=parameters['task_size'],
         )
 
         jobs.append(job)

@@ -39,11 +39,6 @@ class VrayRenderTasksCommand(CommandBase):
             "type": FrameSet,
             "value": "1-50x1",
         },
-        "task_size": {
-            "label": "task_size",
-            "type": int,
-            "value": 10
-        },
         "skip_existing": {
             "label": "Skip existing frames",
             "type": bool,
