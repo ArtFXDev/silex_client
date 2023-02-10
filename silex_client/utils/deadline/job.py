@@ -10,6 +10,7 @@ DEFAULT_CHUNKSIZE = 5
 import logging
 
 log = logging.getLogger('deadline')
+from silex_client.utils.log import flog
 
 
 class DeadlineJobTemplate:
@@ -49,6 +50,16 @@ class DeadlineJobTemplate:
 
     def get_output_dir(self):
         pass
+
+
+    def set_group(self, group):
+        self.job_info.update({'Group': group})
+
+    def set_pool(self, pool):
+        self.job_info.update({'Pool': pool})
+
+    def set_chunksize(self, chunksize):
+        self.job_info.update({'ChunkSize': chunksize})
 
 
 class DeadlineCommandLineJob(DeadlineJobTemplate):
@@ -92,13 +103,6 @@ class DeadlineCommandLineJob(DeadlineJobTemplate):
                 "BatchName": self.batch_name
             })
 
-    def set_group(self, group):
-        self.job_info.update({'Group': group})
-
-    def set_pool(self, pool):
-        self.job_info.update({'Pool': pool})
-
-
 class DeadlineVrayJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
@@ -139,12 +143,6 @@ class DeadlineVrayJob(DeadlineJobTemplate):
             self.job_info.update({
                 "BatchName": self.batch_name
             })
-
-    def set_group(self, group):
-        self.job_info.update({'Group': group})
-
-    def set_pool(self, pool):
-        self.job_info.update({'Pool': pool})
 
 class DeadlineArnoldJob(DeadlineJobTemplate):
     def __init__(self,
@@ -191,12 +189,6 @@ class DeadlineArnoldJob(DeadlineJobTemplate):
                 "BatchName": self.batch_name
             })
 
-    def set_group(self, group):
-        self.job_info.update({'Group': group})
-
-    def set_pool(self, pool):
-        self.job_info.update({'Pool': pool})
-
 class DeadlineHuskJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
@@ -240,24 +232,19 @@ class DeadlineHuskJob(DeadlineJobTemplate):
                 "BatchName": self.batch_name
             })
 
-    def set_group(self, group):
-        self.job_info.update({'Group': group})
-
-    def set_pool(self, pool):
-        self.job_info.update({'Pool': pool})
-
 class DeadlineHoudiniJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
                  user_name: str,
-                 scenefile_name: str,
-                 outputfile_name: str,
+                 scenefile_path: str,
+                 outputfile_path: str,
                  frame_range: FrameSet,
                  rez_requires: str,
+                 rop_node: str,
+                 resolution=None,
                  sim_job=False,
                  group=DEFAULT_GROUP,
                  pool=DEFAULT_POOL,
-                 chunk_size=DEFAULT_CHUNKSIZE,
                  batch_name=None):
 
         self.job_info = dict(self.JOB_INFO)
@@ -271,16 +258,16 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
             "Name": job_title,
             "UserName": user_name,
             "Frames": frame_range.frange,
-            "ChunkSize": chunk_size,
             "Group": self.group,
             "Pool": self.pool,
-            # "RezRequires": rez_requires,
+            #"RezRequires": rez_requires,
             "Plugin": "Houdini"
         })
 
         self.plugin_info.update({
-            "SceneFile": scenefile_name,
-            "Output": outputfile_name,
+            "SceneFile": scenefile_path,
+            "Output": outputfile_path,
+            "OutputDriver": rop_node,
             "SimJob": sim_job
         })
 
@@ -289,11 +276,17 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
                 "BatchName": self.batch_name
             })
 
-    def set_group(self, group):
-        self.job_info.update({'Group': group})
 
-    def set_pool(self, pool):
-        self.job_info.update({'Pool': pool})
+        if resolution is not None:
+            self.plugin_info.update({
+               "Width": resolution[0]
+            })
+            self.plugin_info.update({
+                "Height": resolution[1]
+            })
+
+        flog.info(self.job_info)
+        flog.info(self.plugin_info)
 
 class DeadlineMayaBatchJob(DeadlineJobTemplate):
     def __init__(self,
@@ -339,12 +332,6 @@ class DeadlineMayaBatchJob(DeadlineJobTemplate):
             self.job_info.update({
                 "BatchName": self.batch_name
             })
-
-    def set_group(self, group):
-        self.job_info.update({'Group': group})
-
-    def set_pool(self, pool):
-        self.job_info.update({'Pool': pool})
 
 
 # class DeadlineMayaBatchJob(DeadlineJobTemplate):
