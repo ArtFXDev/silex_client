@@ -7,6 +7,7 @@ import tempfile
 import typing
 from typing import Any, Dict, List, Union, cast
 from silex_client.utils.log import flog
+from silex_client.config.priority_rank import priority_rank
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
@@ -72,6 +73,11 @@ class HoudiniRenderTasksCommand(CommandBase):
             "label": "ROP node(s) path(s)",
             "type": MultipleSelectParameterMeta(),
             "value": None,
+        },
+        "priority_rank":{
+            "label": "Priority rank",
+            "type": SelectParameterMeta("normal", "camap", "test sampling", "priority sup", "retake", "making of", "personal"),
+            "value" : "normal"
         },
         "parameter_overrides": {
             "type": bool,
@@ -146,7 +152,8 @@ class HoudiniRenderTasksCommand(CommandBase):
                 rez_requires=f"houdini {project}",
                 rop_node=rop_node,
                 resolution=resolution,
-                batch_name=scene.stem
+                batch_name=scene.stem,
+                priority_rank = priority_rank.get(parameters['priority_rank'])
             )
 
             # add job to the job list

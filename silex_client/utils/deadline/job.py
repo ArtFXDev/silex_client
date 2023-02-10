@@ -21,7 +21,7 @@ class DeadlineJobTemplate:
     JOB_INFO = {
         # "Name": self.get_jobname(),
         "Group": DEFAULT_GROUP,
-        "Priority": '50',
+        #"Priority": '50',
         "UserName": getpass.getuser().lower(),  # already checked by submitter
         # "Plugin": "RezHoudini",
         # "LimitGroups": DEFAULT_LIMIT_GROUP,
@@ -245,7 +245,8 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
                  sim_job=False,
                  group=DEFAULT_GROUP,
                  pool=DEFAULT_POOL,
-                 batch_name=None):
+                 batch_name=None,
+                 priority_rank=100):
 
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
@@ -261,7 +262,8 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
             "Group": self.group,
             "Pool": self.pool,
             #"RezRequires": rez_requires,
-            "Plugin": "Houdini"
+            "Plugin": "Houdini",
+            "Priority": priority_rank
         })
 
         self.plugin_info.update({
