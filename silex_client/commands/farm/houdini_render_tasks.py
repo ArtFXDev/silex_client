@@ -45,12 +45,6 @@ class HoudiniRenderTasksCommand(CommandBase):
             "type": FrameSet,
             "value": "1-50x1",
         },
-        "skip_existing": {
-            "label": "Skip existing frames",
-            "type": bool,
-            "value": False,
-            "hide": True,
-        },
         "output_filename": {
             "type": pathlib.Path,
             "hide": True,
