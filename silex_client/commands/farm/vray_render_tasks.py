@@ -7,7 +7,6 @@ from typing import Any, Dict, List, cast
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder, farm, frames
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
     RadioSelectParameterMeta,
@@ -90,12 +89,7 @@ class VrayRenderTasksCommand(CommandBase):
         output_extension: str = parameters["output_extension"]
 
         frame_range: FrameSet = parameters["frame_range"]
-        task_size: int = parameters["task_size"]
-        skip_existing = int(parameters["skip_existing"])
         engine: int = parameters["engine"]
-        parameter_overrides: bool = parameters["parameter_overrides"]
-        resolution: List[int] = parameters["resolution"]
-
 
         # Store each render layer cmd into a list
         commands = []
@@ -158,7 +152,6 @@ class VrayRenderTasksCommand(CommandBase):
                 command['output'],
                 frame_range,
                 command["rez_requires"],
-                chunk_size=task_size,
                 batch_name=batch_name
             )
 
