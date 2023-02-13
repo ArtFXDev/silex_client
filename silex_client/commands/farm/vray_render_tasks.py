@@ -90,12 +90,7 @@ class VrayRenderTasksCommand(CommandBase):
         output_extension: str = parameters["output_extension"]
 
         frame_range: FrameSet = parameters["frame_range"]
-        task_size: int = parameters["task_size"]
-        skip_existing = int(parameters["skip_existing"])
         engine: int = parameters["engine"]
-        parameter_overrides: bool = parameters["parameter_overrides"]
-        resolution: List[int] = parameters["resolution"]
-
 
         # Store each render layer cmd into a list
         commands = []
@@ -158,7 +153,6 @@ class VrayRenderTasksCommand(CommandBase):
                 command['output'],
                 frame_range,
                 command["rez_requires"],
-                chunk_size=task_size,
                 batch_name=batch_name
             )
 
