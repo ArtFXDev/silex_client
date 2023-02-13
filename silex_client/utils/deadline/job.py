@@ -150,6 +150,7 @@ class DeadlineArnoldJob(DeadlineJobTemplate):
                  job_title: str,
                  user_name: str,
                  scenefile_name: str,
+                 output_path: str,
                  outputfile_name: str,
                  output_dir: str,
                  version: str,
@@ -174,14 +175,15 @@ class DeadlineArnoldJob(DeadlineJobTemplate):
             "ChunkSize": chunk_size,
             "Group": self.group,
             "Pool": self.pool,
-            "OutputDir": output_dir,
+            "OutputDirectory0": output_dir,
+            "OutputFilename0": outputfile_name,
             # "RezRequires": rez_requires,
             "Plugin": "Arnold"
         })
 
         self.plugin_info.update({
             "InputFile": scenefile_name,
-            "OutputFile": outputfile_name,
+            "OutputFile": output_path,
             "Version": version
         })
 
