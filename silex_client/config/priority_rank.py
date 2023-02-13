@@ -1,10 +1,10 @@
 
 priority_rank = {
-    "camap": 150,
-    "test sampling": 140,
-    "priority sup": 130,
-    "normal": 100,
-    "retake": 90,
-    "making of": 80,
-    "personal": 70
+    "camap": 100,
+    "test sampling": 90,
+    "priority sup": 80,
+    "normal": 50,
+    "retake": 40,
+    "making of": 30,
+    "personal": 20
 }

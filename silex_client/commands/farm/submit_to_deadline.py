@@ -24,6 +24,7 @@ from silex_client.utils.log import flog
 from silex_client.utils.parameter_types import SelectParameterMeta
 
 from silex_client.utils.deadline.runner import DeadlineRunner
+from silex_client.config.priority_rank import priority_rank
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -55,6 +56,12 @@ class SubmitToDeadlineCommand(CommandBase):
             "tooltip": "Number of frames per computer",
             "type": int,
             "value": 10,
+        },
+        "priority_rank": {
+            "label": "Priority rank",
+            "type": SelectParameterMeta("normal", "camap", "test sampling", "priority sup", "retake", "making of",
+                                        "personal"),
+            "value": "normal"
         }
     }
 
@@ -98,4 +105,5 @@ class SubmitToDeadlineCommand(CommandBase):
             job.set_group(parameters['groups'])
             job.set_pool(parameters['pools'])
             job.set_chunksize(parameters['task_size'])
+            job.set_priority(priority_rank.get(parameters['priority_rank']))
             dr.run(job)
