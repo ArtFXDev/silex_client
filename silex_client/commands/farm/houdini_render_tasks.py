@@ -7,7 +7,6 @@ import tempfile
 import typing
 from typing import Any, Dict, List, Union, cast
 from silex_client.utils.log import flog
-from silex_client.config.priority_rank import priority_rank
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
@@ -51,6 +50,11 @@ class HoudiniRenderTasksCommand(CommandBase):
             "hide": True,
             "value": ""
         },
+        "renderer": {
+            "label": "Renderer",
+            "type": SelectParameterMeta("vray", "arnold", "mantra"),
+            "value": "vray",
+        },
         "skip_existing": {
             "label": "Skip existing frames",
             "type": bool,
@@ -74,11 +78,6 @@ class HoudiniRenderTasksCommand(CommandBase):
             "type": MultipleSelectParameterMeta(),
             "value": None,
         },
-        "priority_rank":{
-            "label": "Priority rank",
-            "type": SelectParameterMeta("normal", "camap", "test sampling", "priority sup", "retake", "making of", "personal"),
-            "value" : "normal"
-        },
         "parameter_overrides": {
             "type": bool,
             "label": "Parameter overrides",
@@ -100,7 +99,7 @@ class HoudiniRenderTasksCommand(CommandBase):
             "type": str,
             "hide": True,
             "value": "",
-        },
+        }
     }
 
     @CommandBase.conform_command()
@@ -143,18 +142,22 @@ class HoudiniRenderTasksCommand(CommandBase):
 
             flog.info(f"resolution : {resolution}")
 
+            renderer=parameters['renderer']
+            if renderer =='mantra':
+                renderer=''
+
             job = DeadlineHoudiniJob(
                 job_title=rop_name,
                 user_name=user,
                 scenefile_path=str(scene),
                 outputfile_path=str(full_output_file),
                 frame_range=frame_range,
-                rez_requires=f"houdini {project}",
+                rez_requires=f"houdini {project} {renderer}",
                 rop_node=rop_node,
                 resolution=resolution,
-                batch_name=scene.stem,
-                priority_rank = priority_rank.get(parameters['priority_rank'])
+                batch_name=scene.stem
             )
+
 
             # add job to the job list
             jobs.append(job)

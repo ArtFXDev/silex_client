@@ -62,6 +62,10 @@ class DeadlineJobTemplate:
     def set_chunksize(self, chunksize):
         self.job_info.update({'ChunkSize': chunksize})
 
+    def set_priority(self, value):
+        flog.info(f"priority = {value}")
+        self.job_info.update({"Priority": value})
+
 
 class DeadlineCommandLineJob(DeadlineJobTemplate):
 
@@ -209,16 +213,12 @@ class DeadlineHuskJob(DeadlineJobTemplate):
         self.plugin_info = dict(self.PLUGIN_INFO)
 
         self.batch_name = batch_name
-        self.group = group
-        self.pool = pool
 
         self.job_info.update({
             "Name": job_title,
             "UserName": user_name,
             "Frames": frame_range.frange,
-            "Group": self.group,
-            "Pool": self.pool,
-            # "RezRequires": outputfile_path,
+            "RezRequires": outputfile_path,
             "Plugin": "Husk_Dev"
         })
 
@@ -250,8 +250,7 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
                  sim_job=False,
                  group=DEFAULT_GROUP,
                  pool=DEFAULT_POOL,
-                 batch_name=None,
-                 priority_rank=100):
+                 batch_name=None):
 
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
@@ -267,8 +266,7 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
             "Group": self.group,
             "Pool": self.pool,
             #"RezRequires": rez_requires,
-            "Plugin": "Houdini",
-            "Priority": priority_rank
+            "Plugin": "Houdini"
         })
 
         self.plugin_info.update({
@@ -300,7 +298,6 @@ class DeadlineMayaBatchJob(DeadlineJobTemplate):
                  job_title: str,
                  user_name: str,
                  scenefile_name: str,
-                 project_path: str,
                  outputfile_name: str,
                  renderer : str,
                  frame_range: FrameSet,
@@ -333,6 +330,44 @@ class DeadlineMayaBatchJob(DeadlineJobTemplate):
             "ProjectPath": project_path,
             "OutputFilePath": outputfile_name,
             "Renderer": renderer
+        })
+
+        if batch_name is not None:
+            self.job_info.update({
+                "BatchName": self.batch_name
+            })
+
+class DeadlineNukeJob(DeadlineJobTemplate):
+    def __init__(self,
+                 job_title: str,
+                 user_name: str,
+                 scenefile_name: str,
+                 project_path: str,
+                 outputfile_name: str,
+                 frame_range: FrameSet,
+                 rez_requires: str,
+                 write_node: str,
+                 use_gpu: bool,
+                 batch_name=None):
+
+        self.job_info = dict(self.JOB_INFO)
+        self.plugin_info = dict(self.PLUGIN_INFO)
+
+        self.batch_name = batch_name
+
+        self.job_info.update({
+            "Name": job_title,
+            "UserName": user_name,
+            "Frames": frame_range.frange,
+            # "RezRequires": rez_requires,
+            "Plugin": "Nuke"
+        })
+
+        self.plugin_info.update({
+            "SceneFile": scenefile_name,
+            "OutputFilePath": outputfile_name,
+            "WriteNode": write_node,
+            "UseGPU": use_gpu
         })
 
         if batch_name is not None:

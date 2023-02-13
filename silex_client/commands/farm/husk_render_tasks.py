@@ -21,6 +21,7 @@ if typing.TYPE_CHECKING:
 
 from silex_client.utils.deadline.job import DeadlineHuskJob
 from silex_client.utils.log import flog
+from silex_client.config.priority_rank import priority_rank
 
 class HuskRenderTasksCommand(CommandBase):
     """
@@ -73,49 +74,6 @@ class HuskRenderTasksCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        '''
-        scene: pathlib.Path = parameters["scene_file"]
-        full_path = f"\{(parameters['output_directory'] / parameters['output_filename']).as_posix()}.$F4.{parameters['output_extension']}"
-
-
-
-        ##### BUILD HUSK COMMAND
-        husk_cmd = command_builder.CommandBuilder(
-            "husk",
-            rez_packages=["houdini", action_query.context_metadata["project"].lower()],
-            delimiter=" ",
-            dashes="--",
-        )
-        husk_cmd.param("usd-input", scene.as_posix())
-        husk_cmd.param("output", full_path)
-        husk_cmd.param("make-output-path")
-        husk_cmd.param("exrmode", 1)
-        husk_cmd.param("verbose", "3a")
-
-        #set cmd frames
-        frame_range: List[int] = parameters["frame_range"]
-        frame_range = str(frame_range)
-        frame_range_split = frame_range.split("x")
-
-        if len(frame_range_split) == 2:
-            increment = frame_range[0].split("x")[-1]
-            husk_cmd.param("frame-inc", increment)
-            husk_cmd.param("frame-count", 1)
-        else:
-            task_size: int = parameters["task_size"]
-            task_size = str(task_size)
-            husk_cmd.param("frame-count", task_size)
-
-        husk_cmd.param("frame", "<STARTFRAME>")
-
-        #### BUILD DEADLINE JOBS
-        context = action_query.context_metadata
-        user = context["user"].lower().replace(' ', '.')
-        cmd = str(husk_cmd).split(' ', 1)[1]
-
-        flog.info(f"cmd : {cmd}")
-        '''
-
         jobs=[]
 
         files = parameters["scene_file"]
