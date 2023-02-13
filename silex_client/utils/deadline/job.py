@@ -21,7 +21,7 @@ class DeadlineJobTemplate:
     JOB_INFO = {
         # "Name": self.get_jobname(),
         "Group": DEFAULT_GROUP,
-        "Priority": '50',
+        #"Priority": '50',
         "UserName": getpass.getuser().lower(),  # already checked by submitter
         # "Plugin": "RezHoudini",
         # "LimitGroups": DEFAULT_LIMIT_GROUP,
@@ -193,14 +193,13 @@ class DeadlineHuskJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
                  user_name: str,
-                 scenefile_name: str,
-                 outputfile_name: str,
+                 scenefile_path: str,
+                 outputfile_path: str,
                  log_level: str,
                  frame_range: FrameSet,
                  rez_requires: str,
                  group=DEFAULT_GROUP,
                  pool=DEFAULT_POOL,
-                 chunk_size=DEFAULT_CHUNKSIZE,
                  batch_name=None):
 
         self.job_info = dict(self.JOB_INFO)
@@ -214,23 +213,26 @@ class DeadlineHuskJob(DeadlineJobTemplate):
             "Name": job_title,
             "UserName": user_name,
             "Frames": frame_range.frange,
-            "ChunkSize": chunk_size,
             "Group": self.group,
             "Pool": self.pool,
-            # "RezRequires": rez_requires,
-            "Plugin": "Husk"
+            # "RezRequires": outputfile_path,
+            "Plugin": "Husk_Dev"
         })
 
         self.plugin_info.update({
-            "SceneFile": scenefile_name,
-            "ImageOutputDirectory": outputfile_name,
-            "LogLevel": log_level
+            "SceneFile": scenefile_path,
+            "ImageOutputDirectory": outputfile_path,
+            "LogLevel": log_level,
+            "HuskRenderExecutable": "C:/Houdini19/bin/husk.exe"
         })
 
         if batch_name is not None:
             self.job_info.update({
                 "BatchName": self.batch_name
             })
+
+        flog.info(self.job_info)
+        flog.info(self.plugin_info)
 
 class DeadlineHoudiniJob(DeadlineJobTemplate):
     def __init__(self,
@@ -245,7 +247,8 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
                  sim_job=False,
                  group=DEFAULT_GROUP,
                  pool=DEFAULT_POOL,
-                 batch_name=None):
+                 batch_name=None,
+                 priority_rank=100):
 
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
@@ -261,7 +264,8 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
             "Group": self.group,
             "Pool": self.pool,
             #"RezRequires": rez_requires,
-            "Plugin": "Houdini"
+            "Plugin": "Houdini",
+            "Priority": priority_rank
         })
 
         self.plugin_info.update({
