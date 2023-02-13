@@ -181,13 +181,13 @@ class DeadlineArnoldJob(DeadlineJobTemplate):
             "Pool": self.pool,
             "OutputDirectory0": output_dir,
             "OutputFilename0": outputfile_name,
-            # "RezRequires": rez_requires,
             "Plugin": "Arnold"
         })
 
         self.plugin_info.update({
             "InputFile": scenefile_name,
             "OutputFile": output_path,
+            "RezRequires": rez_requires,
             "Version": version
         })
 
