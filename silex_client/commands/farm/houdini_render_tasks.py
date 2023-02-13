@@ -59,7 +59,7 @@ class HoudiniRenderTasksCommand(CommandBase):
             "label": "Skip existing frames",
             "type": bool,
             "value": True,
-            "hide": True # Until fixed
+            "hide": True  # Until fixed
         },
         "rop_from_hip": {
             "label": "Get ROP node list from scene file",
@@ -82,7 +82,7 @@ class HoudiniRenderTasksCommand(CommandBase):
             "type": bool,
             "label": "Parameter overrides",
             "value": False,
-            "hide" : True, # Until fixed
+            "hide": True,  # Until fixed
         },
         "resolution": {
             "label": "Resolution (width, height)",
@@ -104,10 +104,10 @@ class HoudiniRenderTasksCommand(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
     ):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
@@ -142,22 +142,21 @@ class HoudiniRenderTasksCommand(CommandBase):
 
             flog.info(f"resolution : {resolution}")
 
-            renderer=parameters['renderer']
-            if renderer =='mantra':
-                renderer=''
+            renderer = parameters['renderer']
+            if renderer == 'mantra':
+                renderer = ''
 
             job = DeadlineHoudiniJob(
                 job_title=rop_name,
                 user_name=user,
-                scenefile_path=str(scene),
-                outputfile_path=str(full_output_file),
                 frame_range=frame_range,
                 rez_requires=f"houdini {project} {renderer}",
+                file_path=str(scene),
+                output_path=str(full_output_file),
                 rop_node=rop_node,
                 resolution=resolution,
                 batch_name=scene.stem
             )
-
 
             # add job to the job list
             jobs.append(job)
@@ -165,10 +164,10 @@ class HoudiniRenderTasksCommand(CommandBase):
         return {"jobs": jobs}
 
     async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
     ):
         scene: pathlib.Path = parameters["scene_file"]
         rop_from_hip: bool = parameters["rop_from_hip"]

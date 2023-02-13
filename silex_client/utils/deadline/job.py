@@ -1,6 +1,7 @@
 import os
 import getpass
 from fileseq import FrameSet
+from pathlib import Path
 from silex_client.utils.log import logger as log
 
 DEFAULT_GROUP = ''
@@ -19,38 +20,39 @@ class DeadlineJobTemplate:
     """
 
     JOB_INFO = {
-        # "Name": self.get_jobname(),
         "Group": DEFAULT_GROUP,
-        # "Priority": '50',
-        "UserName": getpass.getuser().lower(),  # already checked by submitter
-        # "Plugin": "RezHoudini",
-        # "LimitGroups": DEFAULT_LIMIT_GROUP,
         "MachineName": os.environ['COMPUTERNAME'],
-        # "ConcurrentTasks": self.submit_node.evalParm("concurrentTasks"),
         'MachineLimit': 0,
         'Pool': DEFAULT_POOL,
-        # 'OutputDirectory0': self.get_output_dir(),
-        # 'InitialStatus': 'Suspended'
-        # "Frames": frames,
         "ChunkSize": DEFAULT_CHUNKSIZE,
     }
 
-    PLUGIN_INFO = {
-        # "RezRequires": os.environ["REZ_USED_REQUEST"],
-    }
+    PLUGIN_INFO = {}
 
-    def __init__(self):
-        self.job_info = None
-        self.job_type = 'job'
+    def __init__(self,
+                 job_title: str,
+                 user_name: str,
+                 frame_range: FrameSet,
+                 rez_requires: str,
+                 batch_name=None,
+                 depends_on_previous=False):
+        self.job_info = self.JOB_INFO
+        self.batch_name = batch_name
+        self.depends_on_previous = depends_on_previous
 
-    def get_job_name(self):
-        pass
-        # # to be implemented
-        # name = "{}_{}".format(name, self.job_type)
-        # return name
+        self.job_info.update({
+            "Name": job_title,
+            "UserName": user_name,
+            "Frames": frame_range.frange
+        })
 
-    def get_output_dir(self):
-        pass
+        self.plugin_info = {
+            "RezRequires": rez_requires
+        }
+        if batch_name is not None:
+            self.job_info.update({
+                "BatchName": self.batch_name
+            })
 
     def set_group(self, group):
         self.job_info.update({'Group': group})
@@ -58,12 +60,15 @@ class DeadlineJobTemplate:
     def set_pool(self, pool):
         self.job_info.update({'Pool': pool})
 
-    def set_chunksize(self, chunksize):
-        self.job_info.update({'ChunkSize': chunksize})
+    def set_chunk_size(self, chunk_size):
+        self.job_info.update({'ChunkSize': chunk_size})
 
     def set_priority(self, value):
         flog.info(f"priority = {value}")
         self.job_info.update({"Priority": value})
+
+    def set_dependency(self, job_id):
+        self.job_info.update({'JobDependencies': job_id})
 
 
 class DeadlineCommandLineJob(DeadlineJobTemplate):
@@ -72,26 +77,16 @@ class DeadlineCommandLineJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
                  user_name: str,
-                 command: str,
                  frame_range: FrameSet,
-                 group=DEFAULT_GROUP,
-                 pool=DEFAULT_POOL,
-                 chunk_size=DEFAULT_CHUNKSIZE,
-                 batch_name=None):
+                 command: str,
+                 rez_requires: str,
+                 batch_name=None,
+                 depends_on_previous=False):
+        super().__init__(job_title, user_name, frame_range, rez_requires, batch_name, depends_on_previous)
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
-        self.batch_name = batch_name
-        self.group = group
-        self.pool = pool
-
         self.job_info.update({
-            "Name": job_title,
-            "UserName": user_name,
-            "Frames": frame_range.frange,
-            "ChunkSize": chunk_size,
-            "Group": self.group,
-            "Pool": self.pool,
             "Plugin": "CommandLine"
         })
 
@@ -100,177 +95,116 @@ class DeadlineCommandLineJob(DeadlineJobTemplate):
             "Arguments": command
         })
 
-        if batch_name is not None:
-            self.job_info.update({
-                "BatchName": self.batch_name
-            })
-
 
 class DeadlineVrayJob(DeadlineJobTemplate):
-    def __init__(self,
-                 job_title: str,
+    def __init__(self, job_title: str,
                  user_name: str,
-                 scenefile_name: str,
-                 outputfile_name: str,
                  frame_range: FrameSet,
                  rez_requires: str,
-                 group=DEFAULT_GROUP,
-                 pool=DEFAULT_POOL,
-                 chunk_size=DEFAULT_CHUNKSIZE,
-                 batch_name=None):
+                 file_path: str,
+                 output_path: str,
+                 batch_name=None,
+                 depends_on_previous=False):
+        super().__init__(job_title, user_name, frame_range, rez_requires, batch_name, depends_on_previous)
+
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
-        self.batch_name = batch_name
-        self.group = group
-        self.pool = pool
-
         self.job_info.update({
-            "Name": job_title,
-            "UserName": user_name,
-            "Frames": frame_range.frange,
-            "ChunkSize": chunk_size,
-            "Group": self.group,
-            "Pool": self.pool,
-            # "RezRequires": rez_requires,
+            "OutputDirectory0": str(Path(output_path).parent),
             "Plugin": "Vray"
         })
 
         self.plugin_info.update({
-            "InputFilename": scenefile_name,
-            "OutputFilename": outputfile_name,
+            "InputFilename": file_path,
+            "OutputFilename": output_path,
         })
-
-        if batch_name is not None:
-            self.job_info.update({
-                "BatchName": self.batch_name
-            })
 
 
 class DeadlineArnoldJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
                  user_name: str,
-                 scenefile_name: str,
-                 output_path: str,
-                 outputfile_name: str,
-                 output_dir: str,
-                 version: str,
                  frame_range: FrameSet,
                  rez_requires: str,
-                 group=DEFAULT_GROUP,
-                 pool=DEFAULT_POOL,
-                 chunk_size=DEFAULT_CHUNKSIZE,
-                 batch_name=None):
+                 file_path: str,
+                 output_path: str,
+
+                 batch_name=None,
+                 depends_on_previous=False):
+        super().__init__(job_title, user_name, frame_range, rez_requires, batch_name, depends_on_previous)
+
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
-        self.batch_name = batch_name
-        self.group = group
-        self.pool = pool
-
         self.job_info.update({
-            "Name": job_title,
-            "UserName": user_name,
-            "Frames": frame_range.frange,
-            "ChunkSize": chunk_size,
-            "Group": self.group,
-            "Pool": self.pool,
-            "OutputDirectory0": output_dir,
-            "OutputFilename0": outputfile_name,
+            "OutputDirectory0": str(Path(output_path).parent),
+            "OutputFilename0": str(Path(output_path).name),
             "Plugin": "Arnold"
         })
 
         self.plugin_info.update({
-            "InputFile": scenefile_name,
-            "OutputFile": output_path,
-            "RezRequires": rez_requires,
-            "Version": version
+            "InputFile": file_path,
+            "OutputFile": output_path
         })
-
-        if batch_name is not None:
-            self.job_info.update({
-                "BatchName": self.batch_name
-            })
 
 
 class DeadlineHuskJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
                  user_name: str,
-                 scenefile_path: str,
-                 outputfile_path: str,
-                 log_level: str,
                  frame_range: FrameSet,
                  rez_requires: str,
-                 batch_name=None):
+                 file_path: str,
+                 output_path: str,
+                 log_level: str,
+                 batch_name=None,
+                 depends_on_previous=False):
+        super().__init__(job_title, user_name, frame_range, rez_requires, batch_name, depends_on_previous)
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
-        self.batch_name = batch_name
-
         self.job_info.update({
-            "Name": job_title,
-            "UserName": user_name,
-            "Frames": frame_range.frange,
+            "OutputDirectory0": str(Path(output_path).parent),
             "Plugin": "Husk_Dev"
         })
 
         self.plugin_info.update({
-            "SceneFile": scenefile_path,
-            "ImageOutputDirectory": outputfile_path,
+            "SceneFile": file_path,
+            "ImageOutputDirectory": output_path,
             "LogLevel": log_level,
-            "RezRequires": rez_requires,
             "HuskRenderExecutable": "C:/Houdini19/bin/husk.exe"
         })
-
-        if batch_name is not None:
-            self.job_info.update({
-                "BatchName": self.batch_name
-            })
-
-        flog.info(self.job_info)
-        flog.info(self.plugin_info)
 
 
 class DeadlineHoudiniJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
                  user_name: str,
-                 scenefile_path: str,
-                 outputfile_path: str,
                  frame_range: FrameSet,
                  rez_requires: str,
+                 file_path: str,
+                 output_path: str,
                  rop_node: str,
                  resolution=None,
                  sim_job=False,
-                 batch_name=None):
-
+                 batch_name=None,
+                 depends_on_previous=False):
+        super().__init__(job_title, user_name, frame_range, rez_requires, batch_name, depends_on_previous)
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
-        self.batch_name = batch_name
         self.job_info.update({
-            "Name": job_title,
-            "UserName": user_name,
-            "Frames": frame_range.frange,
-            "Group": self.group,
-            "Pool": self.pool,
+            "OutputDirectory0": str(Path(output_path).parent),
             "Plugin": "Houdini"
         })
 
         self.plugin_info.update({
-            "SceneFile": scenefile_path,
-            "Output": outputfile_path,
+            "SceneFile": file_path,
+            "Output": output_path,
             "OutputDriver": rop_node,
-            "RezRequires": rez_requires,
             "SimJob": sim_job
         })
-
-        if batch_name is not None:
-            self.job_info.update({
-                "BatchName": self.batch_name
-            })
 
         if resolution is not None:
             self.plugin_info.update({
@@ -280,123 +214,61 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
                 "Height": resolution[1]
             })
 
-        flog.info(self.job_info)
-        flog.info(self.plugin_info)
-
 
 class DeadlineMayaBatchJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
                  user_name: str,
-                 scenefile_name: str,
-                 outputfile_name: str,
-                 renderer: str,
                  frame_range: FrameSet,
                  rez_requires: str,
-                 group=DEFAULT_GROUP,
-                 pool=DEFAULT_POOL,
-                 chunk_size=DEFAULT_CHUNKSIZE,
-                 batch_name=None):
+                 file_path: str,
+                 output_path: str,
+                 renderer: str,
+                 batch_name=None,
+                 depends_on_previous=False):
+        super().__init__(job_title, user_name, frame_range, rez_requires, batch_name, depends_on_previous)
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
-        self.batch_name = batch_name
-        self.group = group
-        self.pool = pool
-
         self.job_info.update({
-            "Name": job_title,
-            "UserName": user_name,
-            "Frames": frame_range.frange,
-            "ChunkSize": chunk_size,
-            "Group": self.group,
-            "Pool": self.pool,
+            "OutputDirectory0": str(Path(output_path).parent),
             "Plugin": "MayaBatch"
         })
 
         self.plugin_info.update({
-            "SceneFile": scenefile_name,
-            "OutputFilePath": outputfile_name,
+            "SceneFile": file_path,
+            "OutputFilePath": output_path,
             "Renderer": renderer,
             "RezRequires": rez_requires,
             "Version": 2022
         })
-
-        if batch_name is not None:
-            self.job_info.update({
-                "BatchName": self.batch_name
-            })
 
 
 class DeadlineNukeJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
                  user_name: str,
-                 scenefile_name: str,
-                 project_path: str,
-                 outputfile_name: str,
                  frame_range: FrameSet,
                  rez_requires: str,
+                 file_path: str,
+                 output_path: str,
+                 project_path: str,
                  write_node: str,
                  use_gpu: bool,
-                 batch_name=None):
+                 batch_name=None,
+                 depends_on_previous=False):
+        super().__init__(job_title, user_name, frame_range, rez_requires, batch_name, depends_on_previous)
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
-        self.batch_name = batch_name
-
         self.job_info.update({
-            "Name": job_title,
-            "UserName": user_name,
-            "Frames": frame_range.frange,
-            # "RezRequires": rez_requires,
+            "OutputDirectory0": str(Path(output_path).parent),
             "Plugin": "Nuke"
         })
 
         self.plugin_info.update({
-            "SceneFile": scenefile_name,
-            "OutputFilePath": outputfile_name,
+            "SceneFile": file_path,
+            "OutputFilePath": output_path,
             "WriteNode": write_node,
             "UseGPU": use_gpu
         })
-
-        if batch_name is not None:
-            self.job_info.update({
-                "BatchName": self.batch_name
-            })
-
-# class DeadlineMayaBatchJob(DeadlineJobTemplate):
-#     # auto filled :
-#     #   - department (task)
-#     #   - pool : mapped by Sid
-#     #   - group render | user
-#
-#     job_type = 'render'
-#     plugin = 'RezMayaBatch'
-#
-#     def __init__(self, path, frame_range, render_path=None, chunk_size=DEFAULT_CHUNKSIZE, priority=50,
-#                  comment=None, renderer=None):
-#         # path to be implemented
-#
-#         self.job_info = self.JOB_INFO
-#         self.plugin_info = self.PLUGIN_INFO
-#
-#         # step_value = 'step{}'.format(step) if step > 1 else ''
-#         # frames = '{}-{}'.format(start, end) + step_value
-#
-#         self.job_info.update({
-#             "Name": self.get_job_name(),  # TODO: add pass ?
-#             "Frames": frame_range,
-#             "department": "to be implemented",
-#             "Priority": str(priority),
-#             "Plugin": self.plugin,
-#             'OutputDirectory0': render_path,
-#             'ChunkSize': chunk_size
-#         })
-#
-#         self.plugin_info.update({
-#             "Version": os.environ["REZ_MAYA_MAJOR_VERSION"],  # needed in "RezMayaBatch.py" in StartJob()
-#             "SceneFile": self.sid.path,
-#             "Renderer": renderer,
-#         })
-#

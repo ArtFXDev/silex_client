@@ -101,9 +101,14 @@ class SubmitToDeadlineCommand(CommandBase):
         # Submit to Deadline Runner
         dr = DeadlineRunner()
 
+        previous_job_id = None
+
         for job in parameters["jobs"]:
+            if job.depends_on_previous is True:
+                job.set_dependency(previous_job_id)
             job.set_group(parameters['groups'])
             job.set_pool(parameters['pools'])
-            job.set_chunksize(parameters['task_size'])
+            job.set_chunk_size(parameters['task_size'])
             job.set_priority(priority_rank.get(parameters['priority_rank']))
-            dr.run(job)
+            previous_job_id = dr.run(job)['_id']
+            flog.info(previous_job_id)

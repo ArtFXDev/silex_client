@@ -24,7 +24,6 @@ requires = [
     "tractor",
     "deadline",
     "Fileseq",
-    "python_dotenv"
 ]
 
 vcs = "git"

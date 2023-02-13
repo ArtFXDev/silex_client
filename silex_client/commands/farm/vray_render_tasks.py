@@ -130,7 +130,7 @@ class VrayRenderTasksCommand(CommandBase):
 
         # Make DeadlineJob
         jobs = []
-        flog.info(commands)
+
         for command in commands:
             # Add batch name if multiple commands are to be submitted
             if len(commands) > 1:
@@ -148,10 +148,10 @@ class VrayRenderTasksCommand(CommandBase):
             job = DeadlineVrayJob(
                 job_title,
                 user,
-                file_name,
-                command['output'],
                 frame_range,
                 command["rez_requires"],
+                file_name,
+                command['output'],
                 batch_name=batch_name
             )
 

@@ -23,6 +23,7 @@ from silex_client.utils.deadline.job import DeadlineHuskJob
 from silex_client.utils.log import flog
 from silex_client.config.priority_rank import priority_rank
 
+
 class HuskRenderTasksCommand(CommandBase):
     """
     Construct Husk render commands
@@ -45,7 +46,7 @@ class HuskRenderTasksCommand(CommandBase):
             "value": False,
             "hide": True,  # Until fixed
         },
-        "LOG_level":{
+        "LOG_level": {
             "labem": "LOG Level",
             "type": SelectParameterMeta(0, 1, 2, 3, 4, 5, 6),
             "value": 0
@@ -69,12 +70,12 @@ class HuskRenderTasksCommand(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
     ):
-        jobs=[]
+        jobs = []
 
         files = parameters["scene_file"]
         flog.info(f"files : {files}, type : {type(files)}")
@@ -85,9 +86,9 @@ class HuskRenderTasksCommand(CommandBase):
             flog.info(parameters['output_filename'].as_posix())
             usd_name = str(scene).split("_")[-1].split(".")[0]
             full_path = (
-                parameters['output_directory']
-                / usd_name
-                / f"{parameters['output_filename']}_{usd_name}.$F4.{parameters['output_extension']}"
+                    parameters['output_directory']
+                    / usd_name
+                    / f"{parameters['output_filename']}_{usd_name}.$F4.{parameters['output_extension']}"
             )
 
             flog.info(f"full_path : {full_path}, type : {type(full_path)}")
@@ -105,14 +106,14 @@ class HuskRenderTasksCommand(CommandBase):
             job = DeadlineHuskJob(
                 job_title=usd_name,
                 user_name=user,
-                scenefile_path=str(scene),
-                outputfile_path=str(full_path),
-                log_level=log_level,
                 frame_range=parameters["frame_range"],
                 rez_requires=f"husk {project}",
+                file_path=str(scene),
+                output_path=str(full_path),
+                log_level=log_level,
                 batch_name=str(parameters['output_directory'])
             )
 
             jobs.append(job)
 
-        return {"jobs" : jobs}
+        return {"jobs": jobs}

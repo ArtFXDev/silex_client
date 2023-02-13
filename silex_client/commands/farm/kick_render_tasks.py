@@ -52,10 +52,6 @@ class KickRenderTasksCommand(CommandBase):
             "value": True,
             "hide": True
         },
-        "version": {
-            "label": "Version",
-            "type": SelectParameterMeta(*['Beta', "Release"]),
-        },
         "output_path": {"type": pathlib.Path, "value": "", "hide": True},
     }
 
@@ -100,20 +96,15 @@ class KickRenderTasksCommand(CommandBase):
             context = action_query.context_metadata
             user_name = cast(str, context["user"]).lower().replace(' ', '.')
 
-            version = parameters['version']
-
             rez_requires = "arnold " + cast(str, action_query.context_metadata["project"]).lower()
 
             job = DeadlineArnoldJob(
                 job_title,
                 user_name,
-                scenefile_path.as_posix(),
-                plugin_output_path,
-                output_filename,
-                output_dir.as_posix(),
-                version,
                 frame_range,
                 rez_requires,
+                scenefile_path.as_posix(),
+                plugin_output_path,
                 batch_name=batch_name
             )
 

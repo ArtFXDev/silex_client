@@ -24,7 +24,7 @@ from silex_client.utils.parameter_types import (
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_client.utils.deadline.job import DeadlineMayaBatchJob
+from silex_client.utils.deadline.job import DeadlineMayaBatchJob, DeadlineCommandLineJob
 
 
 class MayaRenderTasksCommand(CommandBase):
@@ -151,11 +151,11 @@ class MayaRenderTasksCommand(CommandBase):
         job = DeadlineMayaBatchJob(
             scene.stem,
             user,
+            frame_range,
+            rez_requires,
             scene.as_posix(),
             output_path.parent.as_posix(),
-            parameters['renderer'],
-            frame_range,
-            rez_requires
+            parameters['renderer']
         )
 
         jobs.append(job)

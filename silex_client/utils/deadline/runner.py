@@ -10,32 +10,26 @@ Submitter -> holds the connection, wraps the deadline API and submits a job
 
 
 """
-import asyncio
-
 from Deadline.DeadlineConnect import DeadlineCon
 import logging
 import traceback
 import aiohttp
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
+from pathlib import Path
+from silex_client.utils.log import flog
 
 logger = logging.getLogger('deadline')
 
-load_dotenv()
-
-
-# DEADLINE_HOST = os.getenv("DEADLINE_HOST")
-# DEADLINE_PORT = os.getenv("DEADLINE_PORT")
-
+dotenv_path = Path('D:/rez/dev_packages/silex_client/prod.0.1.2/silex_client/utils/deadline/.env')
+load_dotenv(dotenv_path=dotenv_path)
+DEADLINE_HOST = os.getenv('DEADLINE_HOST')
+DEADLINE_PORT = os.getenv('DEADLINE_PORT')
 
 def init_deadline():
     """
     Init and returns the deadline connection, or None if problem
     """
-
-    # TODO replace with var loaded from env and real host name once webservice is running on vm
-    DEADLINE_HOST = 'localhost'
-    DEADLINE_PORT = 8081
 
     # deadline connection
     logger.info('Opening Deadline connection...')
@@ -43,7 +37,6 @@ def init_deadline():
     deadline = DeadlineCon(DEADLINE_HOST, DEADLINE_PORT)
 
     return deadline
-
 
 
 class DeadlineRunner(object):
@@ -58,12 +51,12 @@ class DeadlineRunner(object):
         try:
             logger.debug('About to submit "{}"'.format(job))
             job_submission = self.dl.Jobs.SubmitJob(job.job_info, job.plugin_info)
-            if isinstance(job_submission, str):
-                raise Exception(job_submission)
+            return job_submission
         except Exception as e:
             raise Exception(str(e))
+
     @staticmethod
-    async def query_repos( query_url: str):
+    async def query_repos(query_url: str):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(query_url) as response:
@@ -80,32 +73,12 @@ class DeadlineRunner(object):
 
     @staticmethod
     async def get_groups():
-        groups = await DeadlineRunner.query_repos('http://localhost:8081/api/groups')
+        groups = await DeadlineRunner.query_repos(f'http://{DEADLINE_HOST}:{DEADLINE_PORT}/api/groups')
 
         return groups
 
     @staticmethod
     async def get_pools():
-        pools = await DeadlineRunner.query_repos('http://localhost:8081/api/pools')
+        pools = await DeadlineRunner.query_repos(f'http://{DEADLINE_HOST}:{DEADLINE_PORT}/api/pools')
 
         return pools
-
-
-if __name__ == '__main__':
-    # # usage:
-    # from silex_client.utils.deadline.job import DeadlineMayaBatchJob
-    # job = DeadlineMayaBatchJob()
-    # # dl = init_deadline()
-    # dr = DeadlineRunner()
-    # dr.run(job)
-    """
-    job = Job()
-    jobid = dl.Jobs.SubmitJob(job.jobInfo, job.pluginInfo, idOnly=True).values()[0]
-    """
-    # import os
-    # print(os.environ["REZ_USED_REQUEST"])
-    # for k, v in six.iteritems(os.environ):
-    #     print('{} : {}'.format(k, v))
-    #     pass
-
-    print(asyncio.run(get_groups()))
