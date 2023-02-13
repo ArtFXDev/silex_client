@@ -38,12 +38,6 @@ class VrayRenderTasksCommand(CommandBase):
             "type": FrameSet,
             "value": "1-50x1",
         },
-        "skip_existing": {
-            "label": "Skip existing frames",
-            "type": bool,
-            "value": True,
-            "hide": True
-        },
         "engine": {
             "label": "RT engine",
             "type": RadioSelectParameterMeta(
@@ -83,19 +77,26 @@ class VrayRenderTasksCommand(CommandBase):
             logger: logging.Logger,
     ):
         vrscenes: List[pathlib.Path] = parameters["vrscenes"]
-
         output_directory: pathlib.Path = parameters["output_directory"]
         output_filename: str = parameters["output_filename"]
         output_extension: str = parameters["output_extension"]
-
         frame_range: FrameSet = parameters["frame_range"]
         engine: int = parameters["engine"]
+        user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
+        rez_requires: str = "vray " + cast(str, action_query.context_metadata["project"]).lower()
+        parameter_overrides: bool = parameters["parameter_overrides"]
+        resolution: List[int]
 
-        # Store each render layer cmd into a list
-        commands = []
+        if parameter_overrides:
+            resolution = parameters["resolution"]
+        else:
+            resolution = None
+
+        jobs = []
 
         # One Vrscene file per render layer
         for vrscene in vrscenes:
+
             # Detect the render layer name from the parent folder
             split_by_name = vrscene.stem.split(f"{vrscene.parents[0].stem}_")
 
@@ -105,59 +106,34 @@ class VrayRenderTasksCommand(CommandBase):
                 # Otherwise take the filename
                 layer_name = vrscene.stem
 
-            full_output_path = (
+            output_path = (
                     output_directory
                     / layer_name
                     / f"{output_filename}_{layer_name}.{output_extension}"
-            )
+            ).as_posix()
 
-            rez_requires = "vray " + cast(str, action_query.context_metadata["project"]).lower()
-
-            command = {
-                "rez_requires": rez_requires,
-                "vrscene": vrscene,
-                "vrscene_posix": vrscene.as_posix(),
-                "layer_name": layer_name,
-                "output": full_output_path.as_posix(),
-                "engine": engine
-            }
-            commands.append(command)
-
-        # Building Deadline Job:
-        # Get UserName
-        context = action_query.context_metadata
-        user = cast(str, context["user"]).lower().replace(' ', '.')
-
-        # Make DeadlineJob
-        jobs = []
-
-        for command in commands:
-            # Add batch name if multiple commands are to be submitted
-            if len(commands) > 1:
-                scene = command['vrscene']
-                batch_name = scene.stem.split(f"{scene.parents[0].stem}_")[0][:-1]
-                job_title = command['layer_name']
+            if len(vrscenes) > 1:
+                batch_name = vrscene.stem.split(f"{vrscene.parents[0].stem}_")[0][:-1]
+                job_title = layer_name
 
             else:
                 batch_name = None
-                scene = command['vrscene']
-                job_title = scene.stem.split(f"{scene.parents[0].stem}_")[0][:-1]
+                job_title = vrscene.stem.split(f"{vrscene.parents[0].stem}_")[0][:-1]
 
-            file_name = command['vrscene'].as_posix()
+            file_path = vrscene.as_posix()
 
             job = DeadlineVrayJob(
                 job_title,
-                user,
+                user_name,
                 frame_range,
-                command["rez_requires"],
-                file_name,
-                command['output'],
+                rez_requires,
+                file_path,
+                output_path,
+                engine,
+                resolution,
                 batch_name=batch_name
             )
 
             jobs.append(job)
-
-        for job in jobs:
-            flog.info(job.job_info)
 
         return {"jobs": jobs}

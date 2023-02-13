@@ -103,6 +103,8 @@ class DeadlineVrayJob(DeadlineJobTemplate):
                  rez_requires: str,
                  file_path: str,
                  output_path: str,
+                 engine: int,
+                 resolution=None,
                  batch_name=None,
                  depends_on_previous=False):
         super().__init__(job_title, user_name, frame_range, rez_requires, batch_name, depends_on_previous)
@@ -118,9 +120,16 @@ class DeadlineVrayJob(DeadlineJobTemplate):
         self.plugin_info.update({
             "InputFilename": file_path,
             "OutputFilename": output_path,
+            "VRayEngine": engine
         })
 
-
+        if resolution is not None:
+            self.plugin_info.update({
+                "Width": resolution[0]
+            })
+            self.plugin_info.update({
+                "Height": resolution[1]
+            })
 class DeadlineArnoldJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
@@ -237,7 +246,7 @@ class DeadlineMayaBatchJob(DeadlineJobTemplate):
 
         self.plugin_info.update({
             "SceneFile": file_path,
-            "OutputFilePath": output_path,
+            "OutputFilePath": str(Path(output_path).parent),
             "Renderer": renderer,
             "RezRequires": rez_requires,
             "Version": 2022

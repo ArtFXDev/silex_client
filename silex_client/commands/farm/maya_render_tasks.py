@@ -3,13 +3,9 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from pprint import pformat
 from typing import Any, Dict, List, cast
-
 import fileseq
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder, farm
-from silex_client.utils.frames import split_frameset
 from silex_client.utils.log import flog
 from silex_client.utils.parameter_types import (
     EditableListParameterMeta,
@@ -63,13 +59,9 @@ class MayaRenderTasksCommand(CommandBase):
             "value": False,
         },
         "render_layers": {
-            "label": "Seperate Render layers",
+            "label": "Separate Render layers",
             "type": MultipleSelectParameterMeta(),
         },
-        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
-        "output_folder": {"type": pathlib.Path, "hide": True, "value": ""},
-        "output_filename": {"type": str, "hide": True, "value": ""},
-        "output_extension": {"type": str, "hide": True, "value": "exr"},
         "output_path": {"type": pathlib.Path, "value": "", "hide": True}
     }
 
@@ -128,33 +120,22 @@ class MayaRenderTasksCommand(CommandBase):
             action_query: ActionQuery,
             logger: logging.Logger,
     ):
-        scene: pathlib.Path = parameters["scene_file"]
+        file_path: pathlib.Path = parameters["scene_file"]
         output_path: pathlib.Path = parameters["output_path"]
         frame_range: fileseq.FrameSet = parameters["frame_range"]
+        rez_requires: str = "maya " + cast(str, action_query.context_metadata["project"]).lower()
+        user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
+        job_title: str = file_path.stem
 
-        project = (
-            action_query.context_metadata["project"].lower()
-            if "project" in action_query.context_metadata
-            else None
-        )
-
-        rez_requires = "maya " + project
-
-        # Building Deadline Job:
-        # Get UserName
-        context = action_query.context_metadata
-        user = cast(str, context["user"]).lower().replace(' ', '.')
-
-        # Make DeadlineJob
         jobs = []
 
         job = DeadlineMayaBatchJob(
-            scene.stem,
-            user,
+            job_title,
+            user_name,
             frame_range,
             rez_requires,
-            scene.as_posix(),
-            output_path.parent.as_posix(),
+            file_path.as_posix(),
+            output_path.as_posix(),
             parameters['renderer']
         )
 
