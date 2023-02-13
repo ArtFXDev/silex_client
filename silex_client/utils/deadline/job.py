@@ -200,8 +200,6 @@ class DeadlineHuskJob(DeadlineJobTemplate):
                  log_level: str,
                  frame_range: FrameSet,
                  rez_requires: str,
-                 group=DEFAULT_GROUP,
-                 pool=DEFAULT_POOL,
                  batch_name=None):
 
         self.job_info = dict(self.JOB_INFO)
@@ -213,7 +211,6 @@ class DeadlineHuskJob(DeadlineJobTemplate):
             "Name": job_title,
             "UserName": user_name,
             "Frames": frame_range.frange,
-            "RezRequires": outputfile_path,
             "Plugin": "Husk_Dev"
         })
 
@@ -221,6 +218,7 @@ class DeadlineHuskJob(DeadlineJobTemplate):
             "SceneFile": scenefile_path,
             "ImageOutputDirectory": outputfile_path,
             "LogLevel": log_level,
+            "RezRequires": rez_requires,
             "HuskRenderExecutable": "C:/Houdini19/bin/husk.exe"
         })
 
@@ -243,24 +241,18 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
                  rop_node: str,
                  resolution=None,
                  sim_job=False,
-                 group=DEFAULT_GROUP,
-                 pool=DEFAULT_POOL,
                  batch_name=None):
 
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
         self.batch_name = batch_name
-        self.group = group
-        self.pool = pool
-
         self.job_info.update({
             "Name": job_title,
             "UserName": user_name,
             "Frames": frame_range.frange,
             "Group": self.group,
             "Pool": self.pool,
-            #"RezRequires": rez_requires,
             "Plugin": "Houdini"
         })
 
@@ -268,6 +260,7 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
             "SceneFile": scenefile_path,
             "Output": outputfile_path,
             "OutputDriver": rop_node,
+            "RezRequires": rez_requires,
             "SimJob": sim_job
         })
 
