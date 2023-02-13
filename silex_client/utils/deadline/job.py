@@ -40,6 +40,7 @@ class DeadlineJobTemplate:
     }
 
     def __init__(self):
+        self.job_info = None
         self.job_type = 'job'
 
     def get_job_name(self):
