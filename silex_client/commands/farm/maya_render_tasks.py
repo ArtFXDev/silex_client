@@ -6,7 +6,7 @@ import typing
 from pprint import pformat
 from typing import Any, Dict, List, cast
 
-from fileseq import FrameSet
+import fileseq
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder, farm
 from silex_client.utils.frames import split_frameset
@@ -24,7 +24,7 @@ from silex_client.utils.parameter_types import (
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_client.utils.deadline.job import DeadlineCommandLineJob
+from silex_client.utils.deadline.job import DeadlineMayaBatchJob
 
 
 class MayaRenderTasksCommand(CommandBase):
@@ -54,7 +54,7 @@ class MayaRenderTasksCommand(CommandBase):
         },
         "frame_range": {
             "label": "Frame range",
-            "type": FrameSet,
+            "type": fileseq.FrameSet,
             "value": "1-50x1",
         },
         "keep_output_type": {
@@ -70,6 +70,7 @@ class MayaRenderTasksCommand(CommandBase):
         "output_folder": {"type": pathlib.Path, "hide": True, "value": ""},
         "output_filename": {"type": str, "hide": True, "value": ""},
         "output_extension": {"type": str, "hide": True, "value": "exr"},
+        "output_path": {"type": pathlib.Path, "value": "", "hide": True}
     }
 
     async def setup(
@@ -127,9 +128,9 @@ class MayaRenderTasksCommand(CommandBase):
             action_query: ActionQuery,
             logger: logging.Logger,
     ):
-        flog.info(f'scene path:{parameters["scene_file"]}')
         scene: pathlib.Path = parameters["scene_file"]
-        keep_output_type: bool = parameters["keep_output_type"]
+        output_path: pathlib.Path = parameters["output_path"]
+        frame_range: fileseq.FrameSet = parameters["frame_range"]
 
         project = (
             action_query.context_metadata["project"].lower()
@@ -137,54 +138,7 @@ class MayaRenderTasksCommand(CommandBase):
             else None
         )
 
-        # Build the Maya command
-        maya_cmd = (
-            command_builder.CommandBuilder(
-                "Render",
-                rez_packages=["maya", project],
-                delimiter=" ",
-                dashes="-",
-            )
-            .param("r", parameters["renderer"])
-            .param(
-                "rd",
-                parameters["output_folder"],
-            )
-        )
-
-        if not keep_output_type:
-            maya_cmd.param("of", parameters["output_extension"])
-
-        # Renderer specific options (arnold, vray...)
-        if parameters["renderer"] == "arnold":
-            maya_cmd.param(
-                "skipExistingFrames", str(parameters["skip_existing"]).lower()
-            )
-            maya_cmd.param("ai:lve", 3)  # log level
-            maya_cmd.param("ai:device", parameters['arnold_device'])
-            maya_cmd.param("ai:alf", "true")  # Abort on license fail
-            maya_cmd.param("ai:aerr", "true")  # Abort on error
-            maya_cmd.param("fnc", 3)  # File naming name.#.ext
-        elif parameters["renderer"] == "vray":
-            # Skip existing frames is a different flag
-            # See: https://forums.autodesk.com/t5/maya-forum/maya-batch-with-render-skipexistingframes/td-p/11117913
-            maya_cmd.param("rep", 0 if parameters["skip_existing"] else 1)
-
-        # Deadline frame variable substitution
-        maya_cmd.param("s", "<STARTFRAME>")
-        maya_cmd.param("e", "<ENDFRAME>")
-
-        render_layers = []
-        for render_layer in parameters["render_layers"]:
-            render_layers.append(render_layer)
-
-        maya_cmd.param("rl", render_layers)
-        output_filename = f"{parameters['output_filename']}"
-        maya_cmd.param("im", output_filename)
-        maya_cmd.value(scene.as_posix())
-
-        # Typical maya batch command:
-        # cmd = "rez env maya testpipe -- Render -r arnold -rd M:/testpipe/shots/s01/p010/lighting_main/publish/v000/exr/render -of exr -skipExistingFrames true -ai:lve 2 -ai:device 0 -ai:alf true -ai:aerr true -fnc 3 -im testpipe_s01_p010_lighting_main_publish_v000_render_defaultRenderLayer -rl defaultRenderLayer -s 1 -e 10 M:/testpipe/shots/s01/p010/lighting_main/publish/v000/ma/main/testpipe_s01_p010_lighting_main_publish_v000_main.ma
+        rez_requires = "maya " + project
 
         # Building Deadline Job:
         # Get UserName
@@ -194,17 +148,14 @@ class MayaRenderTasksCommand(CommandBase):
         # Make DeadlineJob
         jobs = []
 
-        # Truncate 'rez' from command
-        # TODO ideally we should use the command builder to do that?
-        cmd = str(maya_cmd).split(' ', 1)[1]
-
-
-
-        job = DeadlineCommandLineJob(
+        job = DeadlineMayaBatchJob(
             scene.stem,
             user,
-            cmd,
-            parameters['frame_range'],
+            scene.as_posix(),
+            output_path.parent.as_posix(),
+            parameters['renderer'],
+            frame_range,
+            rez_requires
         )
 
         jobs.append(job)

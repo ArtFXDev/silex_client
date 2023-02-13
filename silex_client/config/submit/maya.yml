@@ -52,6 +52,8 @@ maya:
               value: !command-output "build_output_path:build_output_path:file_name"
             output_extension:
               value: !command-output "build_output_path:select_extension"
+            output_path:
+              value: !command-output "build_output_path:build_output_path:full_path"
 
         submit_to_deadline:
           label: "Submit"
