@@ -21,7 +21,7 @@ class DeadlineJobTemplate:
     JOB_INFO = {
         # "Name": self.get_jobname(),
         "Group": DEFAULT_GROUP,
-        #"Priority": '50',
+        # "Priority": '50',
         "UserName": getpass.getuser().lower(),  # already checked by submitter
         # "Plugin": "RezHoudini",
         # "LimitGroups": DEFAULT_LIMIT_GROUP,
@@ -52,7 +52,6 @@ class DeadlineJobTemplate:
     def get_output_dir(self):
         pass
 
-
     def set_group(self, group):
         self.job_info.update({'Group': group})
 
@@ -68,7 +67,6 @@ class DeadlineJobTemplate:
 
 
 class DeadlineCommandLineJob(DeadlineJobTemplate):
-
     EXECUTABLE = "C:\\rez\\__install__\\Scripts\\rez\\rez.exe"
 
     def __init__(self,
@@ -80,7 +78,6 @@ class DeadlineCommandLineJob(DeadlineJobTemplate):
                  pool=DEFAULT_POOL,
                  chunk_size=DEFAULT_CHUNKSIZE,
                  batch_name=None):
-
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
@@ -108,6 +105,7 @@ class DeadlineCommandLineJob(DeadlineJobTemplate):
                 "BatchName": self.batch_name
             })
 
+
 class DeadlineVrayJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
@@ -120,7 +118,6 @@ class DeadlineVrayJob(DeadlineJobTemplate):
                  pool=DEFAULT_POOL,
                  chunk_size=DEFAULT_CHUNKSIZE,
                  batch_name=None):
-
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
@@ -149,6 +146,7 @@ class DeadlineVrayJob(DeadlineJobTemplate):
                 "BatchName": self.batch_name
             })
 
+
 class DeadlineArnoldJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
@@ -164,7 +162,6 @@ class DeadlineArnoldJob(DeadlineJobTemplate):
                  pool=DEFAULT_POOL,
                  chunk_size=DEFAULT_CHUNKSIZE,
                  batch_name=None):
-
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
@@ -196,6 +193,7 @@ class DeadlineArnoldJob(DeadlineJobTemplate):
                 "BatchName": self.batch_name
             })
 
+
 class DeadlineHuskJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
@@ -206,7 +204,6 @@ class DeadlineHuskJob(DeadlineJobTemplate):
                  frame_range: FrameSet,
                  rez_requires: str,
                  batch_name=None):
-
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
@@ -234,6 +231,7 @@ class DeadlineHuskJob(DeadlineJobTemplate):
 
         flog.info(self.job_info)
         flog.info(self.plugin_info)
+
 
 class DeadlineHoudiniJob(DeadlineJobTemplate):
     def __init__(self,
@@ -274,10 +272,9 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
                 "BatchName": self.batch_name
             })
 
-
         if resolution is not None:
             self.plugin_info.update({
-               "Width": resolution[0]
+                "Width": resolution[0]
             })
             self.plugin_info.update({
                 "Height": resolution[1]
@@ -286,20 +283,20 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
         flog.info(self.job_info)
         flog.info(self.plugin_info)
 
+
 class DeadlineMayaBatchJob(DeadlineJobTemplate):
     def __init__(self,
                  job_title: str,
                  user_name: str,
                  scenefile_name: str,
                  outputfile_name: str,
-                 renderer : str,
+                 renderer: str,
                  frame_range: FrameSet,
                  rez_requires: str,
                  group=DEFAULT_GROUP,
                  pool=DEFAULT_POOL,
                  chunk_size=DEFAULT_CHUNKSIZE,
                  batch_name=None):
-
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
@@ -314,21 +311,22 @@ class DeadlineMayaBatchJob(DeadlineJobTemplate):
             "ChunkSize": chunk_size,
             "Group": self.group,
             "Pool": self.pool,
-            # "RezRequires": rez_requires,
             "Plugin": "MayaBatch"
         })
 
         self.plugin_info.update({
             "SceneFile": scenefile_name,
-            "ProjectPath": project_path,
             "OutputFilePath": outputfile_name,
-            "Renderer": renderer
+            "Renderer": renderer,
+            "RezRequires": rez_requires,
+            "Version": 2022
         })
 
         if batch_name is not None:
             self.job_info.update({
                 "BatchName": self.batch_name
             })
+
 
 class DeadlineNukeJob(DeadlineJobTemplate):
     def __init__(self,
@@ -342,7 +340,6 @@ class DeadlineNukeJob(DeadlineJobTemplate):
                  write_node: str,
                  use_gpu: bool,
                  batch_name=None):
-
         self.job_info = dict(self.JOB_INFO)
         self.plugin_info = dict(self.PLUGIN_INFO)
 
@@ -367,7 +364,6 @@ class DeadlineNukeJob(DeadlineJobTemplate):
             self.job_info.update({
                 "BatchName": self.batch_name
             })
-
 
 # class DeadlineMayaBatchJob(DeadlineJobTemplate):
 #     # auto filled :
