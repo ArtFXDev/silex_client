@@ -80,9 +80,9 @@ class KickRenderTasksCommand(CommandBase):
                 job_title,
                 user_name,
                 frame_range,
-                rez_requires,
                 file_path.as_posix(),
                 plugin_output_path,
+                rez_requires,
                 batch_name=batch_name
             )
 

@@ -107,10 +107,10 @@ class HuskRenderTasksCommand(CommandBase):
                 job_title=usd_name,
                 user_name=user,
                 frame_range=parameters["frame_range"],
-                rez_requires=f"husk {project}",
                 file_path=str(scene),
                 output_path=str(full_path),
                 log_level=log_level,
+                rez_requires=f"husk {project}",
                 batch_name=str(parameters['output_directory'])
             )
 

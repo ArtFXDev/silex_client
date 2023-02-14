@@ -133,10 +133,10 @@ class MayaRenderTasksCommand(CommandBase):
             job_title,
             user_name,
             frame_range,
-            rez_requires,
             file_path.as_posix(),
             output_path.as_posix(),
-            parameters['renderer']
+            parameters['renderer'],
+            rez_requires=rez_requires,
         )
 
         jobs.append(job)

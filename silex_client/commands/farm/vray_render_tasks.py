@@ -126,11 +126,11 @@ class VrayRenderTasksCommand(CommandBase):
                 job_title,
                 user_name,
                 frame_range,
-                rez_requires,
                 file_path,
                 output_path,
                 engine,
                 resolution,
+                rez_requires=rez_requires,
                 batch_name=batch_name
             )
 

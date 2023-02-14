@@ -110,5 +110,5 @@ class SubmitToDeadlineCommand(CommandBase):
             job.set_pool(parameters['pools'])
             job.set_chunk_size(parameters['task_size'])
             job.set_priority(priority_rank.get(parameters['priority_rank']))
-            previous_job_id = dr.run(job)['_id']
-            flog.info(previous_job_id)
+            previous_job_id = dr.run(job)
+            flog.info(job)

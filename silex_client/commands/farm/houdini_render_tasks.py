@@ -150,11 +150,11 @@ class HoudiniRenderTasksCommand(CommandBase):
                 job_title=rop_name,
                 user_name=user,
                 frame_range=frame_range,
-                rez_requires=f"houdini {project} {renderer}",
                 file_path=str(scene),
                 output_path=str(full_output_file),
                 rop_node=rop_node,
                 resolution=resolution,
+                rez_requires=f"houdini {project} {renderer}",
                 batch_name=scene.stem
             )
 
