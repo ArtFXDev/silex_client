@@ -17,15 +17,15 @@ import aiohttp
 import os
 from dotenv import load_dotenv
 from pathlib import Path
-from silex_client.utils.log import flog
 
 logger = logging.getLogger('deadline')
 
 dotenv_path = Path('D:/rez/dev_packages/silex_client/prod.0.1.2/silex_client/utils/deadline/.env')
 load_dotenv(dotenv_path=dotenv_path)
-DEADLINE_HOST = os.getenv('DEADLINE_HOST')
-DEADLINE_PORT = os.getenv('DEADLINE_PORT')
-
+# DEADLINE_HOST = os.getenv('DEADLINE_HOST') #deadline
+# DEADLINE_PORT = os.getenv('DEADLINE_PORT') #8081
+DEADLINE_HOST = "deadline"
+DEADLINE_PORT = "8081"
 def init_deadline():
     """
     Init and returns the deadline connection, or None if problem

@@ -12,6 +12,7 @@ import logging
 
 log = logging.getLogger('deadline')
 from silex_client.utils.log import flog
+from pprint import pformat
 
 
 class DeadlineJobTemplate:
@@ -64,11 +65,12 @@ class DeadlineJobTemplate:
         self.job_info.update({'ChunkSize': chunk_size})
 
     def set_priority(self, value):
-        flog.info(f"priority = {value}")
         self.job_info.update({"Priority": value})
 
     def set_dependency(self, job_id):
         self.job_info.update({'JobDependencies': job_id})
+    def __str__(self):
+        return f"[job.{self.__class__.__name__}]\nINFO: {pformat(self.job_info)}\nPLUGIN: {pformat(self.plugin_info)}"
 
 
 class DeadlineCommandLineJob(DeadlineJobTemplate):
@@ -138,7 +140,6 @@ class DeadlineArnoldJob(DeadlineJobTemplate):
                  rez_requires: str,
                  file_path: str,
                  output_path: str,
-
                  batch_name=None,
                  depends_on_previous=False):
         super().__init__(job_title, user_name, frame_range, rez_requires, batch_name, depends_on_previous)
@@ -259,9 +260,8 @@ class DeadlineNukeJob(DeadlineJobTemplate):
                  user_name: str,
                  frame_range: FrameSet,
                  rez_requires: str,
-                 file_path: str,
-                 output_path: str,
-                 project_path: str,
+                 scenefile_name: str,
+                 outputfile_name: str,
                  write_node: str,
                  use_gpu: bool,
                  batch_name=None,
@@ -271,13 +271,15 @@ class DeadlineNukeJob(DeadlineJobTemplate):
         self.plugin_info = dict(self.PLUGIN_INFO)
 
         self.job_info.update({
-            "OutputDirectory0": str(Path(output_path).parent),
+            "OutputDirectory0": str(Path(outputfile_name).parent),
             "Plugin": "Nuke"
         })
 
         self.plugin_info.update({
-            "SceneFile": file_path,
-            "OutputFilePath": output_path,
+            "SceneFile": scenefile_name,
+            "OutputFilePath": outputfile_name,
             "WriteNode": write_node,
-            "UseGPU": use_gpu
+            "UseGPU": use_gpu,
+            "Version":"13.2"
         })
+
