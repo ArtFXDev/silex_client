@@ -93,7 +93,7 @@ class CommandLineJob(DeadlineJob):
         super().__init__(job_title, user_name, frame_range, rez_requires, batch_name, depends_on_previous)
 
         self.job_info.update({
-            "Plugin": "CommandLine"
+            "Plugin": "RezCommandLine"
         })
 
         self.plugin_info.update({
@@ -150,7 +150,7 @@ class ArnoldJob(DeadlineJob):
         self.job_info.update({
             "OutputDirectory0": str(Path(output_path).parent),
             "OutputFilename0": str(Path(output_path).name),
-            "Plugin": "Arnold"
+            "Plugin": "RezArnold"
         })
 
         self.plugin_info.update({
@@ -204,7 +204,7 @@ class HoudiniJob(DeadlineJob):
 
         self.job_info.update({
             "OutputDirectory0": str(Path(output_path).parent),
-            "Plugin": "Houdini"
+            "Plugin": "RezHoudini"
         })
 
         self.plugin_info.update({
