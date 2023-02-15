@@ -260,6 +260,7 @@ class NukeJob(DeadlineJob):
                  output_path: str,
                  write_node: str,
                  use_gpu: bool,
+                 nuke_x: bool,
                  rez_requires: Optional[str] = None,
                  batch_name: Optional[str] = None,
                  depends_on_previous: bool = False):
@@ -276,6 +277,7 @@ class NukeJob(DeadlineJob):
             "OutputFilePath": output_path,
             "WriteNode": write_node,
             "UseGPU": use_gpu,
+            "NukeX": nuke_x,
             "Version":"13.2"
         })
 

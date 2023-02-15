@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
@@ -16,6 +16,9 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
+from silex_client.utils.deadline.job import NukeJob
+
+
 class NukeRenderTasksCommand(CommandBase):
     """
     Construct Nuke render commands
@@ -25,33 +28,38 @@ class NukeRenderTasksCommand(CommandBase):
         "scene_file": {
             "label": "Scene file",
             "type": TaskFileParameterMeta(extensions=[".nk"]),
+            "hide": False
         },
         "frame_range": {
             "label": "Frame range",
             "type": FrameSet,
             "value": "1-50x1",
+            "hide": False
         },
         "enable_gpu": {
             "label": "Enable GPU",
             "type": bool,
             "value": True,
+            "hide": False
         },
-        "task_size": {
-            "label": "Task size",
-            "tooltip": "Number of frames per computer",
-            "type": int,
-            "value": 10,
-        },
-        "write_node": {
-            "label": "Write node",
-            "tooltip": "Name of the write node to execute",
-            "type": str,
+        "nuke_x": {
+            "label": "Nuke X",
+            "type": bool,
+            "value": True,
+            "hide" : False
         },
         "use_selection": {
             "label": "Fill selected write node",
             "tooltip": "This feature works only if you launched this submit from nuke",
             "type": bool,
             "value": False,
+            "hide": True
+        },
+        "write_node": {
+            "label": "Write node",
+            "tooltip": "Name of the write node to execute",
+            "type": str,
+            'hide': False
         },
     }
 
@@ -62,12 +70,7 @@ class NukeRenderTasksCommand(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        scene: pathlib.Path = parameters["scene_file"]
-        frame_range: FrameSet = parameters["frame_range"]
-        enable_gpu: bool = parameters["enable_gpu"]
-        task_size: int = parameters["task_size"]
-        write_node: str = parameters["write_node"]
-
+        '''
         nuke_cmd = command_builder.CommandBuilder(
             "nuke",
             rez_packages=["nuke", action_query.context_metadata["project"].lower()],
@@ -101,10 +104,37 @@ class NukeRenderTasksCommand(CommandBase):
             )
 
             tasks.append(task)
+        '''
+        scene: pathlib.Path = parameters["scene_file"]
+        frame_range: FrameSet = parameters["frame_range"]
+        enable_gpu: bool = parameters["enable_gpu"]
+        write_node: str = parameters["write_node"]
+        full_path = ""
+
+        ###### BUILD DEADLINE JOB
+        context = action_query.context_metadata
+        user = context["user"].lower().replace(' ', '.')
+        project = cast(str, action_query.context_metadata["project"]).lower()
+
+        jobs = []
+
+        job = NukeJob(
+            job_title=write_node,
+            user_name=user,
+            file_path=str(scene),
+            output_path=str(full_path),
+            frame_range=frame_range,
+            rez_requires=f"nuke {project}",
+            write_node=write_node,
+            use_gpu=enable_gpu,
+            nuke_x=parameters["nuke_x"],
+            batch_name="test_nuke"
+        )
+
+        jobs.append(job)
 
         return {
-            "tasks": tasks,
-            "file_name": scene.stem,
+            "tasks": jobs
         }
 
     async def setup(
