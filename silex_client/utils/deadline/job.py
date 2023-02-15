@@ -79,6 +79,8 @@ class DeadlineJob:
 
 
 class CommandLineJob(DeadlineJob):
+
+    # This used only in the non rez version.
     EXECUTABLE = "C:\\rez\\__install__\\Scripts\\rez\\rez.exe"
 
     def __init__(self,
@@ -175,14 +177,14 @@ class HuskJob(DeadlineJob):
 
         self.job_info.update({
             "OutputDirectory0": str(Path(output_path).parent),
-            "Plugin": "Husk_Dev"
+            "Plugin": "RezHusk"
         })
 
         self.plugin_info.update({
             "SceneFile": file_path,
             "ImageOutputDirectory": output_path,
             "LogLevel": log_level,
-            "HuskRenderExecutable": "C:/Houdini19/bin/husk.exe"
+            # "HuskRenderExecutable": "C:/Houdini19/bin/husk.exe"
         })
 
 
@@ -239,11 +241,12 @@ class MayaBatchJob(DeadlineJob):
 
         self.job_info.update({
             "OutputDirectory0": str(Path(output_path).parent),
-            "Plugin": "MayaBatch"
+            "Plugin": "RezMayaBatch"
         })
 
         self.plugin_info.update({
             "SceneFile": file_path,
+            "OutputFilePrefix": str(Path(output_path).stem),
             "OutputFilePath": str(Path(output_path).parent),
             "Renderer": renderer,
             "RezRequires": rez_requires,
