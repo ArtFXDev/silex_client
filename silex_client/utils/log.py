@@ -43,7 +43,7 @@ __FILE_FORMAT__ = "[SILEX]\
     [%(asctime)s] %(levelname)s|\
     [%(module)s.%(funcName)s] %(message)-50s (%(lineno)d)"
 
-log_path = f"{tempfile.gettempdir()}/silex_client_logs"
+log_path = f"{tempfile.gettempdir()}/silex_client_logs"  # under Windows look for %TEMP%\silex_client_logs
 # print(log_path)
 
 os.makedirs(log_path, exist_ok=True)
