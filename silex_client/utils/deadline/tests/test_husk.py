@@ -1,16 +1,15 @@
 """
-Test for the vray Submitter
+Test for the Husk Submitter
 
 Passed on the rez plugin on machine md8-2017-046, 15/2/2023
-Passed on the base plugin on machine md8-2017-046, 15/2/2023
 
 """
-
 import getpass
+import logging
 
 import fileseq
 
-from silex_client.utils.deadline.job import VrayJob
+from silex_client.utils.deadline.job import HuskJob
 from silex_client.utils.deadline.runner import DeadlineRunner
 
 
@@ -18,13 +17,14 @@ if __name__ == "__main__":
     # Submit to Deadline Runner
     dr = DeadlineRunner()
 
-    job = VrayJob(
-        job_title="silex_test_job_rez_vray",
+    job = HuskJob(
+        job_title="silex_test_job_rez_husk",
         user_name=getpass.getuser().lower(),
         frame_range=fileseq.FrameSet("1-5"),
-        file_path="M:/testpipe/shots/s01/p010/lighting_maya_vray/publish/v000/vrscene/texture_test/test_no_layers.vrscene",
-        output_path="M:/testpipe/shots/s01/p010/lighting_maya_vray/publish/v000/exr/render/test_no_layers/testpipe_s01_p010_lighting_maya_vray_publish_v000_render_test_no_layers.exr",
-        rez_requires="vray testpipe",
+        file_path="M:/testpipe/shots/s02/p010/lighting_main_husk/publish/v000/usd/main/testpipe_s02_p010_lighting_main_husk_publish_v000_main.usd",
+        output_path="M:/testpipe/shots/s02/p010/lighting_main_husk/publish/v000/exr/render/testpipe_s02_p010_lighting_main_husk_publish_v000_render.$F4.exr",
+        log_level=logging.DEBUG,
+        rez_requires="houdini testpipe",
         batch_name="silex_test_jobs",
     )
 
@@ -38,8 +38,9 @@ if __name__ == "__main__":
     # job.job_info["InitialStatus"] = "Suspended"
 
     # Uncomment to test the base plugin
-    # job.job_info["Plugin"] = "Vray"
-    # job.job_info["Name"] = "silex_test_job_vray"
+    # job.job_info["Plugin"] = "Husk_Dev"
+    # job.job_info["Name"] = "silex_test_job_husk"
+    # job.plugin_info["HuskRenderExecutable"] = "C:/Houdini19/bin/husk.exe"
 
     print(job)
     done = dr.run(job)["_id"]

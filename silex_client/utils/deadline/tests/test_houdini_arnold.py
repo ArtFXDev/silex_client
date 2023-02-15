@@ -2,7 +2,9 @@
 Test for the Houdini Submitter
 with arnold scene
 
-Passed on the non rez plugin on machine md8-2017-046, 15/2/2023
+Passed on the base plugin on md8-2017-046, 15/2/2023
+Passed on the rez plugin on md8-2017-046, 15/2/2023
+Failed on md9-2018-05 "FailRenderException : Error: No module named 'vfh_py'"
 
 """
 import getpass
@@ -18,7 +20,7 @@ if __name__ == "__main__":
     dr = DeadlineRunner()
 
     job = HoudiniJob(
-        job_title="silex_test_job_houdini_rez_arnold",
+        job_title="silex_test_job_rez_houdini_arnold",
         user_name=getpass.getuser().lower(),
         frame_range=fileseq.FrameSet("1-5"),
         file_path="M:/testpipe/shots/s01/p010/lighting_hou_arnold/publish/v000/hip/main/testpipe_s01_p010_lighting_hou_arnold_publish_v000_main.hipnc",
@@ -38,7 +40,10 @@ if __name__ == "__main__":
 
     # extras
     # job.job_info["InitialStatus"] = "Suspended"
-    job.job_info["Plugin"] = "RezHoudini"
+
+    # Uncomment to test the base plugin
+    # job.job_info["Plugin"] = "Houdini"
+    # job.job_info["Name"] = "silex_test_job_houdini_arnold"
 
     print(job)
     done = dr.run(job)["_id"]

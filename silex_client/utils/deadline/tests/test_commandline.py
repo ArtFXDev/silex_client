@@ -1,3 +1,15 @@
+"""
+Test for the RezCommandLine Submitter
+
+Passed on the base plugin on machine md8-2017-046, 15/2/2023
+With a rezified command.
+
+Passed on the rez plugin on machine md8-2017-046, 15/2/2023
+(With the Houdini Vray command)
+
+
+
+"""
 import getpass
 
 import fileseq
@@ -21,40 +33,28 @@ if __name__ == "__main__":
     dr = DeadlineRunner()
 
     job = CommandLineJob(
-        job_title="silex_test_job",
-        user_name=getpass.getuser().lower(),
-        frame_range=fileseq.FrameSet("1-5"),
-        command=full_cmd,
-        rez_requires=rez_requires,
-    )
-
-    job.set_group("pipeline")
-    # job.set_pool(parameters["pools"])
-    job.set_chunk_size(5)
-    job.set_priority(60)
-    job.job_info["InitialStatus"] = "Suspended"
-    # job.plugin_info["ShellExecute"] = True
-
-    print(job)
-    done = dr.run(job)['_id']
-    print(f"Result: {done}")
-
-
-    rezjob = CommandLineJob(
-        job_title="silex_test_job",
+        job_title="silex_test_job_rez_commandline",
         user_name=getpass.getuser().lower(),
         frame_range=fileseq.FrameSet("1-5"),
         command=argument_cmd,
         rez_requires=rez_requires,
+        batch_name="silex_test_jobs",
     )
 
+    # optionals
     job.set_group("pipeline")
     # job.set_pool(parameters["pools"])
-    job.set_chunk_size(5)
-    job.set_priority(60)
-    job.job_info["InitialStatus"] = "Suspended"
-    job.job_info["Plugin"] = "RezCommandLine"
+    # job.set_chunk_size(5)
+    # job.set_priority(60)
 
-    # print(job)
-    # done = dr.run(job)
-    # print(f"Result: {done}")
+    # extras
+    # job.job_info["InitialStatus"] = "Suspended"
+
+    # Uncomment to test the base plugin
+    # job.job_info["Plugin"] = "CommandLine"
+    # job.job_info["Name"] = "silex_test_job_commandline"
+    # job.plugin_info["Arguments"] = full_cmd
+
+    print(job)
+    done = dr.run(job)["_id"]
+    print(f"Result: {done}")

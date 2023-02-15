@@ -2,7 +2,9 @@
 Test for the Houdini Submitter
 with vray scene
 
-Passed on the non rez plugin on machine md8-2017-046, 15/2/2023
+Passed on the base plugin on md8-2017-046, 15/2/2023
+Passed on the rez plugin on md9-2018-05, 15/2/2023
+
 
 """
 
@@ -39,7 +41,10 @@ if __name__ == "__main__":
 
     # extras
     # job.job_info["InitialStatus"] = "Suspended"
-    job.job_info["Plugin"] = "RezHoudini"
+
+    # Uncomment to test the base plugin
+    # job.job_info["Plugin"] = "Houdini"
+    # job.job_info["Name"] = "silex_test_job_houdini_vray"
 
     print(job)
     done = dr.run(job)["_id"]
