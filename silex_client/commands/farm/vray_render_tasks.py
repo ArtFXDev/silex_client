@@ -17,7 +17,7 @@ from silex_client.utils.log import flog
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
-from silex_client.utils.deadline.job import DeadlineVrayJob
+from silex_client.utils.deadline.job import VrayJob
 
 
 class VrayRenderTasksCommand(CommandBase):
@@ -122,13 +122,13 @@ class VrayRenderTasksCommand(CommandBase):
 
             file_path = vrscene.as_posix()
 
-            job = DeadlineVrayJob(
+            job = VrayJob(
                 job_title,
                 user_name,
                 frame_range,
                 file_path,
                 output_path,
-                engine,
+                # engine, FIXME: engine actually doesn't work, looks like it never worked.
                 resolution,
                 rez_requires=rez_requires,
                 batch_name=batch_name

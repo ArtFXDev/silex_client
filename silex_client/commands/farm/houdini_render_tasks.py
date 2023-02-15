@@ -27,7 +27,7 @@ if typing.TYPE_CHECKING:
 import os
 import subprocess
 
-from silex_client.utils.deadline.job import DeadlineHoudiniJob
+from silex_client.utils.deadline.job import HoudiniJob
 
 
 class HoudiniRenderTasksCommand(CommandBase):
@@ -146,7 +146,7 @@ class HoudiniRenderTasksCommand(CommandBase):
             if renderer == 'mantra':
                 renderer = ''
 
-            job = DeadlineHoudiniJob(
+            job = HoudiniJob(
                 job_title=rop_name,
                 user_name=user,
                 frame_range=frame_range,

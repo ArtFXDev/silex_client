@@ -19,7 +19,7 @@ from silex_client.utils.parameter_types import (
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_client.utils.deadline.job import DeadlineHuskJob
+from silex_client.utils.deadline.job import HuskJob
 from silex_client.utils.log import flog
 from silex_client.config.priority_rank import priority_rank
 
@@ -103,7 +103,7 @@ class HuskRenderTasksCommand(CommandBase):
             log_level = parameters["LOG_level"]
             flog.info(f"LOG level : {log_level}, type: {type(log_level)}")
 
-            job = DeadlineHuskJob(
+            job = HuskJob(
                 job_title=usd_name,
                 user_name=user,
                 frame_range=parameters["frame_range"],

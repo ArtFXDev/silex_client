@@ -1,3 +1,7 @@
+"""
+https://docs.thinkboxsoftware.com/products/deadline/10.1/1_User%20Manual/manual/manual-submission.html
+
+"""
 import os
 from typing import Optional, List, Any, Dict
 from pprint import pformat
@@ -6,27 +10,24 @@ from fileseq import FrameSet
 from pathlib import Path
 from silex_client.utils.log import logger
 
-DEFAULT_GROUP = ''
-DEFAULT_POOL = ''
-DEFAULT_CHUNKSIZE = 5
-
 import logging
-
 log = logging.getLogger('deadline')
 from silex_client.utils.log import flog
 
 
-class DeadlineJobTemplate:
+class DeadlineJob:
     """
     Job with default params
     """
 
     JOB_INFO = {
-        "Group": DEFAULT_GROUP,
+        "Group": "",
         "MachineName": os.environ['COMPUTERNAME'],
         'MachineLimit': 0,
-        'Pool': DEFAULT_POOL,
-        "ChunkSize": DEFAULT_CHUNKSIZE,
+        'Pool': "",
+        "ChunkSize": 5,
+        "Priority": 50,
+        # "InitialStatus": "Active"  # < Active / Suspended >
     }
 
     PLUGIN_INFO = {}
@@ -77,7 +78,7 @@ class DeadlineJobTemplate:
         return f"[job.{self.__class__.__name__}]\nINFO: {pformat(self.job_info)}\nPLUGIN: {pformat(self.plugin_info)}"
 
 
-class DeadlineCommandLineJob(DeadlineJobTemplate):
+class CommandLineJob(DeadlineJob):
     EXECUTABLE = "C:\\rez\\__install__\\Scripts\\rez\\rez.exe"
 
     def __init__(self,
@@ -101,14 +102,13 @@ class DeadlineCommandLineJob(DeadlineJobTemplate):
         })
 
 
-class DeadlineVrayJob(DeadlineJobTemplate):
+class VrayJob(DeadlineJob):
     def __init__(self,
                  job_title: str,
                  user_name: str,
                  frame_range: FrameSet,
                  file_path: str,
                  output_path: str,
-                 engine: int,
                  resolution: Optional[List[int]] = None,
                  rez_requires: Optional[str] = None,
                  batch_name: Optional[str] = None,
@@ -118,13 +118,12 @@ class DeadlineVrayJob(DeadlineJobTemplate):
 
         self.job_info.update({
             "OutputDirectory0": str(Path(output_path).parent),
-            "Plugin": "Vray"
+            "Plugin": "RezVray"
         })
 
         self.plugin_info.update({
             "InputFilename": file_path,
             "OutputFilename": output_path,
-            "VRayEngine": engine
         })
 
         if resolution is not None:
@@ -134,7 +133,7 @@ class DeadlineVrayJob(DeadlineJobTemplate):
             })
 
 
-class DeadlineArnoldJob(DeadlineJobTemplate):
+class ArnoldJob(DeadlineJob):
 
     def __init__(self,
                  job_title: str,
@@ -160,7 +159,7 @@ class DeadlineArnoldJob(DeadlineJobTemplate):
         })
 
 
-class DeadlineHuskJob(DeadlineJobTemplate):
+class HuskJob(DeadlineJob):
     def __init__(self,
                  job_title: str,
                  user_name: str,
@@ -187,7 +186,7 @@ class DeadlineHuskJob(DeadlineJobTemplate):
         })
 
 
-class DeadlineHoudiniJob(DeadlineJobTemplate):
+class HoudiniJob(DeadlineJob):
     def __init__(self,
                  job_title: str,
                  user_name: str,
@@ -224,7 +223,7 @@ class DeadlineHoudiniJob(DeadlineJobTemplate):
             })
 
 
-class DeadlineMayaBatchJob(DeadlineJobTemplate):
+class MayaBatchJob(DeadlineJob):
     def __init__(self,
                  job_title: str,
                  user_name: str,
@@ -252,7 +251,7 @@ class DeadlineMayaBatchJob(DeadlineJobTemplate):
         })
 
 
-class DeadlineNukeJob(DeadlineJobTemplate):
+class NukeJob(DeadlineJob):
     def __init__(self,
                  job_title: str,
                  user_name: str,

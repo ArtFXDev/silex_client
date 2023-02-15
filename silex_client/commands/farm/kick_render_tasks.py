@@ -14,7 +14,7 @@ from silex_client.utils.parameter_types import TaskFileParameterMeta
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_client.utils.deadline.job import DeadlineArnoldJob
+from silex_client.utils.deadline.job import ArnoldJob
 
 
 class KickRenderTasksCommand(CommandBase):
@@ -76,7 +76,7 @@ class KickRenderTasksCommand(CommandBase):
 
             job_title: str = ass_folder.stem
 
-            job = DeadlineArnoldJob(
+            job = ArnoldJob(
                 job_title,
                 user_name,
                 frame_range,

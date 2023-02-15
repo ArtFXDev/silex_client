@@ -20,7 +20,7 @@ from silex_client.utils.parameter_types import (
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_client.utils.deadline.job import DeadlineMayaBatchJob, DeadlineCommandLineJob
+from silex_client.utils.deadline.job import MayaBatchJob, CommandLineJob
 
 
 class MayaRenderTasksCommand(CommandBase):
@@ -129,7 +129,7 @@ class MayaRenderTasksCommand(CommandBase):
 
         jobs = []
 
-        job = DeadlineMayaBatchJob(
+        job = MayaBatchJob(
             job_title,
             user_name,
             frame_range,
