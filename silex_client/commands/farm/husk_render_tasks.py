@@ -110,7 +110,7 @@ class HuskRenderTasksCommand(CommandBase):
                 file_path=str(scene),
                 output_path=str(full_path),
                 log_level=log_level,
-                rez_requires=f"husk {project}",
+                rez_requires=f"houdini {project}",
                 batch_name=str(parameters['output_directory'])
             )
 
