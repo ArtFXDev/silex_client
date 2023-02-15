@@ -123,7 +123,7 @@ class MayaRenderTasksCommand(CommandBase):
         file_path: pathlib.Path = parameters["scene_file"]
         output_path: pathlib.Path = parameters["output_path"]
         frame_range: fileseq.FrameSet = parameters["frame_range"]
-        rez_requires: str = "maya " + cast(str, action_query.context_metadata["project"]).lower()
+        rez_requires: str = "maya " + parameters['renderer'] + " " + cast(str, action_query.context_metadata["project"]).lower()
         user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
         job_title: str = file_path.stem
 
