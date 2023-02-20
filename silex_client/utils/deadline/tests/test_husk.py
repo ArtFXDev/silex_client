@@ -4,6 +4,7 @@ Test for the Husk Submitter
 Passed on the rez plugin on machine md8-2017-046, 15/2/2023
 
 """
+
 import getpass
 import logging
 
@@ -13,10 +14,7 @@ from silex_client.utils.deadline.job import HuskJob
 from silex_client.utils.deadline.runner import DeadlineRunner
 
 
-if __name__ == "__main__":
-    # Submit to Deadline Runner
-    dr = DeadlineRunner()
-
+def get_husk_job():
     job = HuskJob(
         job_title="silex_test_job_rez_husk",
         user_name=getpass.getuser().lower(),
@@ -42,6 +40,17 @@ if __name__ == "__main__":
     # job.job_info["Name"] = "silex_test_job_husk"
     # job.plugin_info["HuskRenderExecutable"] = "C:/Houdini19/bin/husk.exe"
 
+    return job
+
+
+if __name__ == "__main__":
+    print("Test husk Start")
+
+    # Submit to Deadline Runner
+    dr = DeadlineRunner()
+
+    job = get_husk_job()
+    # job.job_info["Allowlist"] = "md8-2017-046"
     print(job)
-    done = dr.run(job)["_id"]
+    done = dr.run(job)
     print(f"Result: {done}")

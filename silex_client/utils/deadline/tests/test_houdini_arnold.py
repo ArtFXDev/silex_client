@@ -15,10 +15,7 @@ from silex_client.utils.deadline.job import HoudiniJob
 from silex_client.utils.deadline.runner import DeadlineRunner
 
 
-if __name__ == "__main__":
-    # Submit to Deadline Runner
-    dr = DeadlineRunner()
-
+def get_houdini_arnold_job():
     job = HoudiniJob(
         job_title="silex_test_job_rez_houdini_arnold",
         user_name=getpass.getuser().lower(),
@@ -45,6 +42,17 @@ if __name__ == "__main__":
     # job.job_info["Plugin"] = "Houdini"
     # job.job_info["Name"] = "silex_test_job_houdini_arnold"
 
+    return job
+
+
+if __name__ == "__main__":
+    print("Test houdini_arnold Start")
+
+    # Submit to Deadline Runner
+    dr = DeadlineRunner()
+
+    job = get_houdini_arnold_job()
+    # job.job_info["Allowlist"] = "md8-2017-046"
     print(job)
-    done = dr.run(job)["_id"]
+    done = dr.run(job)
     print(f"Result: {done}")

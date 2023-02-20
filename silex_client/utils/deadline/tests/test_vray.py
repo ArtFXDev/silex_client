@@ -14,14 +14,11 @@ from silex_client.utils.deadline.job import VrayJob
 from silex_client.utils.deadline.runner import DeadlineRunner
 
 
-if __name__ == "__main__":
-    # Submit to Deadline Runner
-    dr = DeadlineRunner()
-
+def get_vray_job():
     job = VrayJob(
         job_title="silex_test_job_rez_vray",
         user_name=getpass.getuser().lower(),
-        frame_range=fileseq.FrameSet("1-5"),
+        frame_range=fileseq.FrameSet("1-2"),
         file_path="M:/testpipe/shots/s01/p010/lighting_maya_vray/publish/v000/vrscene/texture_test/test_no_layers.vrscene",
         output_path="M:/testpipe/shots/s01/p010/lighting_maya_vray/publish/v000/exr/render/test_no_layers/testpipe_s01_p010_lighting_maya_vray_publish_v000_render_test_no_layers.exr",
         rez_requires="vray testpipe",
@@ -41,6 +38,17 @@ if __name__ == "__main__":
     # job.job_info["Plugin"] = "Vray"
     # job.job_info["Name"] = "silex_test_job_vray"
 
+    return job
+
+
+if __name__ == "__main__":
+    print("Test vray Start")
+
+    # Submit to Deadline Runner
+    dr = DeadlineRunner()
+
+    job = get_vray_job()
+    # job.job_info["Allowlist"] = "md8-2017-046"
     print(job)
-    done = dr.run(job)["_id"]
+    done = dr.run(job)
     print(f"Result: {done}")
