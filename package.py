@@ -21,7 +21,7 @@ requires = [
     "dacite",
     "python_dotenv",
     "setuptools",
-    "tractor",
+    # "tractor",
     "deadline",
     "Fileseq",
 ]
@@ -54,6 +54,9 @@ def commands():
     Set the environment variables for silex_client
     """
     import os
+
+    env.DEADLINE_HOST.set("localhost")
+    env.DEADLINE_PORT.set("8081")
 
     env.PATH.append("{root}/silex_client")
     env.PATH.append("{root}/tools")
