@@ -40,8 +40,8 @@ class DeadlineJob:
         batch_name: Optional[str] = None,
         depends_on_previous: bool = False,
     ):
-        self.job_info: Dict[str, Any] = self.JOB_INFO
-        self.plugin_info: Dict[str, Any] = self.PLUGIN_INFO
+        self.job_info: Dict[str, Any] = self.JOB_INFO.copy()
+        self.plugin_info: Dict[str, Any] = self.PLUGIN_INFO.copy()
 
         self.batch_name = batch_name  # used ?
         self.depends_on_previous = depends_on_previous
@@ -228,7 +228,7 @@ class HoudiniJob(DeadlineJob):
             batch_name,
             depends_on_previous,
         )
-
+        # self.job_info = dict(self.JOB_INFO)
         self.job_info.update(
             {"OutputDirectory0": str(Path(output_path).parent), "Plugin": "RezHoudini"}
         )
