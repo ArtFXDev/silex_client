@@ -1,26 +1,31 @@
-from pprint import pprint
+
 from silex_client.utils.deadline.runner import init_deadline, DeadlineRunner
+from silex_client.utils.deadline.tests.test_arnold import get_arnold_job
+from silex_client.utils.deadline.tests.test_husk import get_husk_job
 from silex_client.utils.deadline.tests.test_vray import get_vray_job
 
 dl = init_deadline()
 dr = DeadlineRunner()
 
-group = "pipeline"
-submitter = "vray"
-job_getter = get_vray_job
-name = f"test__{submitter}"
+group = "classrooms"
+job_getters = [get_arnold_job, get_vray_job, get_husk_job]
 
-workers = dl.Slaves.GetSlaveNamesInGroup(group)
-job = job_getter()
-job.job_info["BatchName"] = f"TEST_workers__{group}"
-job.job_info["Group"] = group
 
-for worker in workers:
+for job_getter in job_getters:
 
-    job.job_info["Name"] = f"{name}__{worker}"
-    job.job_info["Allowlist"] = worker
-    print(job)
-    done = dr.run(job)
-    print(f"Result: {done}")
+    name = f"test__{str(job_getter).split('_')[1]}"
+
+    workers = dl.Slaves.GetSlaveNamesInGroup(group)
+    job = job_getter()
+    job.job_info["BatchName"] = f"TEST_workers__{group}"
+    job.job_info["Group"] = group
+
+    for worker in workers:
+
+        job.job_info["Name"] = f"{name}__{worker}"
+        job.job_info["Allowlist"] = worker
+        print(job)
+        done = dr.run(job)
+        print(f"Result: {done}")
 
 
