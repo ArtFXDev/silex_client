@@ -2,25 +2,25 @@ from __future__ import annotations
 
 import logging
 import os
-import pathlib
+from pathlib import Path
 import typing
-from typing import Any, Dict, List
-
+from typing import Any, Dict, List, cast
+from silex_client.utils.log import flog
 import fileseq
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder, farm, frames
 from silex_client.utils.parameter_types import TaskFileParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
+from silex_client.utils.deadline.job import ArnoldJob
+
 
 class KickRenderTasksCommand(CommandBase):
     """
-    Put the given file on database and to locked file system
+    Construct Arnold Deadline Job.
     """
-
     parameters = {
         "ass_folders": {
             "label": "Select Ass folders (render layers)",
@@ -28,115 +28,64 @@ class KickRenderTasksCommand(CommandBase):
                 extensions=[".ass"], directory=True, multiple=True
             ),
         },
-        "use_xgen": {
-            "label": "Use XGen",
-            "type": bool,
-            "value": False,
-        },
-        "use_mtoa": {
-            "label": "Use Maya shaders (MtoA)",
-            "type": bool,
-            "value": False,
-        },
         "frame_range": {
             "label": "Frame range",
             "type": fileseq.FrameSet,
             "value": "1-50x1",
         },
-        "task_size": {
-            "label": "Task size",
-            "tooltip": "Number of frames per computer",
-            "type": int,
-            "value": 10,
-        },
-        "skip_existing": {
-            "label": "Skip existing frames",
-            "type": bool,
-            "value": True,
-        },
-        "output_path": {"type": pathlib.Path, "value": "", "hide": True},
+        "output_path": {"type": Path, "value": "", "hide": True},
     }
 
     @CommandBase.conform_command()
     async def __call__(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
     ):
-        ass_folders: List[pathlib.Path] = parameters["ass_folders"]
-        output_path: pathlib.Path = parameters["output_path"]
+        ass_folders: List[Path] = parameters["ass_folders"]
+        output_path: Path = parameters["output_path"]
         frame_range: fileseq.FrameSet = parameters["frame_range"]
-        task_size: int = parameters["task_size"]
-        skip_existing = int(parameters["skip_existing"])
+        rez_requires: str = "arnold " + cast(str, action_query.context_metadata["project"]).lower()
+        user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
 
-        tasks: List[farm.Task] = []
-
+        # List other ass files in dir
         ass_files = [
-            f for f in os.listdir(ass_folders[0]) if pathlib.Path(f).suffix == ".ass"
+            f for f in os.listdir(ass_folders[0]) if Path(str(f)).suffix == ".ass"
         ]
 
+        tmp = Path(str(ass_files[0]))
+        batch_name: str = tmp.stem.rsplit('_', 1)[0]
+
+        jobs = []
+
+        # for each render layer:
         for ass_folder in ass_folders:
-            output_path_layer = (
-                output_path.parent
-                / ass_folder.stem
-                / f"{output_path.stem}_{ass_folder.stem}{''.join(output_path.suffixes)}"
+            ass_files = [
+                f for f in os.listdir(ass_folder) if Path(f).suffix == ".ass"
+            ]
+
+            # use first file of sequence, Arnold find the rest of the sequence
+            file_path: Path = ass_folder.joinpath(str(ass_files[0]))
+
+            output_filename: str = f"{output_path.stem}_{ass_folder.stem}{''.join(output_path.suffixes)}"
+
+            output_dir: Path = output_path.parent
+
+            plugin_output_path: str = str(output_dir) + output_filename
+
+            job_title: str = ass_folder.stem
+
+            job = ArnoldJob(
+                job_title,
+                user_name,
+                frame_range,
+                file_path.as_posix(),
+                plugin_output_path,
+                rez_requires,
+                batch_name=batch_name
             )
 
-            kick_cmd = (
-                command_builder.CommandBuilder(
-                    "python",
-                    rez_packages=[
-                        "krender",
-                        action_query.context_metadata["project"].lower(),
-                    ],
-                )
-                .param("m")
-                .value("krender")
-                .param("assFolder", ass_folder.as_posix())
-                .param("imgFile", output_path_layer.as_posix())
-                .param("skipExistingFrames", skip_existing)
-            )
+            jobs.append(job)
 
-            if parameters["use_xgen"]:
-                kick_cmd.add_rez_package("xgen")
-                kick_cmd.param(
-                    "pluginLibraries",
-                    "C:/PROGRA~1/Autodesk/Arnold/maya2022/procedurals",
-                )
-
-            if parameters["use_mtoa"]:
-                kick_cmd.param(
-                    "pluginLibraries",
-                    "C:/PROGRA~1/Autodesk/Arnold/maya2022/shaders",
-                )
-
-            folder_task = farm.Task(title=ass_folder.stem)
-            frame_chunks = frames.split_frameset(frame_range, task_size)
-
-            for chunk in frame_chunks:
-                chunk_cmd = kick_cmd.deepcopy()
-
-                chunk_cmd.param("frames", str(chunk))
-                task = farm.Task(title=str(chunk))
-
-                command = farm.wrap_command(
-                    [
-                        farm.get_mount_command(
-                            action_query.context_metadata.get("project_nas")
-                        ),
-                        farm.get_clear_frames_command(output_path_layer.parent, chunk),
-                    ],
-                    cmd=farm.Command(chunk_cmd.as_argv()),
-                )
-                task.addCommand(command)
-
-                if len(ass_folders) > 1:
-                    folder_task.addChild(task)
-                else:
-                    tasks.append(task)
-
-            if len(ass_folders) > 1:
-                tasks.append(folder_task)
-
-        return {"tasks": tasks, "file_name": ass_files[0]}
+        return {"jobs": jobs}

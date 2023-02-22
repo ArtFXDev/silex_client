@@ -13,11 +13,15 @@ nuke:
             frame_range:
               value: "1001-1050x1"
 
-        submit_to_tractor:
-          path: "silex_client.commands.farm.submit_to_tractor.SubmitToTractorCommand"
+        submit_to_deadline:
+          label: "Submit"
+          path: "silex_client.commands.farm.submit_to_deadline.SubmitToDeadlineCommand"
           ask_user: true
           parameters:
-            job_title:
-              value: !command-output "submit_job:build_nuke_tasks:file_name"
-            tasks:
+            #jobs:
+            #  value: !command_output "submit_job:build_nuke_tasks:jobs"
+              #value: "test"
+            #job_title:
+            #  value: !command-output "submit_job:build_nuke_tasks:file_name"
+            jobs:
               value: !command-output "submit_job:build_nuke_tasks:tasks"

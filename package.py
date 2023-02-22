@@ -1,7 +1,7 @@
 # pylint: skip-file
 name = "silex_client"
 timestamp = 0
-version = "0.3.0"
+version = "deadline-0.0.1"
 
 authors = ["ArtFx TD gang"]
 
@@ -21,7 +21,7 @@ requires = [
     "dacite",
     "python_dotenv",
     "setuptools",
-    "tractor",
+    "deadline",
     "Fileseq",
 ]
 
@@ -53,6 +53,9 @@ def commands():
     Set the environment variables for silex_client
     """
     import os
+
+    env.DEADLINE_HOST.set("deadline")
+    env.DEADLINE_PORT.set("8081")
 
     env.PATH.append("{root}/silex_client")
     env.PATH.append("{root}/tools")

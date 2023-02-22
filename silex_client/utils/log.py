@@ -12,9 +12,11 @@ https://logzero.readthedocs.io/
 import logging
 import os
 import sys
+import tempfile
 
 import logzero
 from logzero import logger
+from logzero import setup_logger
 
 # Formatting of the output log to look like
 __LOG_FORMAT__ = "[SILEX]\
@@ -35,3 +37,17 @@ if env_log_level not in logging._nameToLevel:
 
 log_level = getattr(logging, env_log_level)
 logger.setLevel(log_level)  # set default level
+
+# File logger for dev and debug
+__FILE_FORMAT__ = "[SILEX]\
+    [%(asctime)s] %(levelname)s|\
+    [%(module)s.%(funcName)s] %(message)-50s (%(lineno)d)"
+
+log_path = f"{tempfile.gettempdir()}/silex_client_logs"  # under Windows look for %TEMP%\silex_client_logs
+# print(log_path)
+
+os.makedirs(log_path, exist_ok=True)
+os.chmod(log_path, 0o0777)
+formatter = logging.Formatter(__FILE_FORMAT__)
+flog = setup_logger(name="flog", logfile=f"{log_path}/flog.log", level=logzero.DEBUG, formatter=formatter)
+# flog.info("test")
