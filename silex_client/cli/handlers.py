@@ -15,13 +15,15 @@ from silex_client.action.action_query import ActionQuery
 from silex_client.core.context import Context
 from silex_client.resolve.config import Config
 from silex_client.utils.authentification import authentificate_gazu
-from silex_client.utils.log import logger
+from silex_client.utils.log import logger, flog
+from pprint import pprint
 
 
 def action_handler(action_name: str, **kwargs) -> None:
     """
     Execute the given action in the resolved context
     """
+    flog.info("je suis le action handler")
     if kwargs.get("list", False):
         # Just print the available actions
         action_names = [action["name"] for action in Config.get().actions]
@@ -96,6 +98,7 @@ def launch_handler(dcc: str, **kwargs) -> None:
     """
     Run the given command in the selected context
     """
+    flog.info("je suis le launch handler")
     if not authentificate_gazu():
         raise Exception(
             "Could not connect to the zou database, please connect to your account with silex"
@@ -124,5 +127,5 @@ def launch_handler(dcc: str, **kwargs) -> None:
     if additional_args is not None:
         command.extend(additional_args.split(" "))
 
-    logger.error(command)
+    flog.info(pprint(command))
     subprocess.Popen(command, cwd=os.getcwd(), shell=True)
