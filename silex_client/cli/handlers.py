@@ -124,4 +124,5 @@ def launch_handler(dcc: str, **kwargs) -> None:
     if additional_args is not None:
         command.extend(additional_args.split(" "))
 
+    logger.error(command)
     subprocess.Popen(command, cwd=os.getcwd(), shell=True)
