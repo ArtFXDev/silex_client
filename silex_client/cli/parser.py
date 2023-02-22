@@ -5,11 +5,12 @@ Entry point for the CLI tools of silex
 """
 
 import argparse
+from typing import Callable, Dict, Optional
 
 from silex_client.cli import handlers
 
 
-def main():
+def main(handlers_mapping: Optional[Dict[str, Callable]] = None):
     """
     Parse the given arguments and call the appropriate handlers
     """
@@ -18,6 +19,8 @@ def main():
         "command": handlers.command_handler,
         "launch": handlers.launch_handler,
     }
+    if handlers_mapping:
+        HANDLERS_MAPPING.update(handlers_mapping)
 
     context_parser = argparse.ArgumentParser(add_help=False)
     context_parser.add_argument(
@@ -124,6 +127,20 @@ def main():
         "--file",
         "-f",
         help="The file to open within the dcc",
+        type=str,
+        required=False,
+    )
+    launcher_parser.add_argument(
+        "--action",
+        "-a",
+        help="the action we want to execute when file open",
+        type=str,
+        required=False,
+    )
+    launcher_parser.add_argument(
+        "--command",
+        "-cm",
+        help="the command to execute when the file open",
         type=str,
         required=False,
     )

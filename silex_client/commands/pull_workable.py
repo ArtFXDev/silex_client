@@ -6,10 +6,15 @@ import pathlib
 import re
 import typing
 from typing import Any, Dict
+import gazu.files
+import fileseq
 
+
+import asyncio
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.commands.build_work_path import BuildWorkPath
+from silex_client.utils import command_builder
 from silex_client.core.context import Context
 from silex_client.utils.files import expand_path
 from silex_client.utils.log import flog
@@ -20,6 +25,17 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
+def cast(typ, val):
+    return val
+
+ExtensioToDcc = {
+    ".hip": "houdini",
+    ".hipnc":"houdini",
+    ".ma":"maya",
+    ".mb":"maya",
+    ".nk":"nuke",
+    ".blend":"blender"
+}
 class SelectPull(BuildWorkPath):
     """
     Select the file to pull into the current work directory
@@ -65,9 +81,54 @@ class SelectPull(BuildWorkPath):
         mode: str = parameters["mode"]
         mode_templates = Context.get()["project_file_tree"].get(mode)
 
-        work_path = pathlib.Path(
-            await super().__call__(parameters, action_query, logger)
-        )
+        # Get The TaskID ===========================================================================================
+        taskId = os.environ["SILEX_TASK_ID"]
+
+
+        # Build the work path =======================================================================================
+        task = await gazu.task.get_task(action_query.context_metadata["task_id"])
+
+        extensionList: list [str] = parameters["publish"].suffixes
+        extension = ''.join(map(str,extensionList))
+
+
+        async def work_and_full_path(version: int) -> tuple[str, str]:
+            work_path: str = await gazu.files.build_working_file_path(
+                task, software=None, revision=version, sep=os.path.sep
+            )
+            full_path = f"{work_path}{extension}"
+            return work_path, full_path
+
+        # Build the work path
+        initial_version = 1
+        version = initial_version
+        work_path, full_path = await work_and_full_path(initial_version)
+
+        existing_sequences = fileseq.findSequencesOnDisk(os.path.dirname(full_path))
+
+        # Change to the good version ===================================================================================
+        matching_sequence = None
+        for sequence in existing_sequences:
+            # Check if the filename is present in any of the file sequences
+            if pathlib.Path(full_path) in [
+                pathlib.Path(path) for path in sequence
+            ]:
+                # Set the version to the latest of that sequence
+                last_version = sequence.frameSet()[-1] + 1
+
+                # If the version is greater, use that
+                if last_version > version:
+                    version = last_version
+                    matching_sequence = sequence
+
+        # We also increment when an existing sequence was found
+        if parameters["increment"]:
+            version += 1
+
+        if version != initial_version:
+            # Rebuild the file path again with the new version
+            _, full_path = await work_and_full_path(version)
+
 
         publishes = [publish]
         if not publish.is_dir():
@@ -75,7 +136,37 @@ class SelectPull(BuildWorkPath):
         else:
             publishes = list(publish.iterdir())
 
-        # This is for publishes, to allow the user to skip the pull or not before publish
+        # get the associated dcc to extension ==========================================================================
+
+        dcc = ExtensioToDcc[extension]
+
+        # Create command to launch dcc =============================================================================
+
+        project = cast(str, action_query.context_metadata["project"]).lower()
+        launch_cmd = command_builder.CommandBuilder(
+            f"silex launch {dcc}",
+            rez_packages=[f"silex_{dcc}", project],
+            delimiter=" ",
+            dashes="--",
+        )
+        launch_cmd.param("task-id")
+        launch_cmd.value(taskId)
+        launch_cmd.param("file")
+        launch_cmd.value(str(parameters["publish"]))
+        launch_cmd.param("action")
+        launch_cmd.value('rename')
+
+
+        os.system(str(launch_cmd))
+
+
+
+
+
+
+
+
+        """# This is for publishes, to allow the user to skip the pull or not before publish
         if all(file.exists() for file in publishes) and publishes and prompt:
             response = await self.prompt_user(
                 action_query,
@@ -109,8 +200,11 @@ class SelectPull(BuildWorkPath):
         # Extract informations about the file to pull and build a new path in the work folder
         # from these informations.
         expanded_path = expand_path(publish)
+        flog.info(expanded_path["Name"])
+        work_folder = pathlib.Path(full_path).parent
+        flog.info(work_folder)
         pull_path = (
-            work_path.parent
+            work_folder
             / "publish_backup"
             / expanded_path["OutputType"]
             / expanded_path["Name"]
@@ -126,7 +220,4 @@ class SelectPull(BuildWorkPath):
         if versions:
             version = "v" + str(int(versions[-1].lstrip("v")) + 1).zfill(3)
 
-        flog.info({"pull_dst": pull_path / version, "pull_src": publishes})
-        return {"pull_dst": pull_path / version, "pull_src": publishes}
-
-
+        flog.info({"pull_dst": pull_path / version, "pull_src": publishes})"""

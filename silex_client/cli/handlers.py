@@ -13,6 +13,7 @@ from concurrent import futures
 import gazu.files
 from silex_client.action.action_query import ActionQuery
 from silex_client.core.context import Context
+from silex_client.utils.log import flog
 from silex_client.resolve.config import Config
 from silex_client.utils.authentification import authentificate_gazu
 from silex_client.utils.log import logger
@@ -110,18 +111,23 @@ def launch_handler(dcc: str, **kwargs) -> None:
 
     command = [dcc]
 
+
     if kwargs.get("task_id") is not None:
         os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
 
     if kwargs.get("file") is not None:
         command.append(kwargs["file"])
 
+    actions = Config.get().actions
+
     # check for env variable
     if os.environ.get("SILEX_DCC_BIN") is not None:
         command[0] = os.environ["SILEX_DCC_BIN"]
 
+
     additional_args = os.environ.get("SILEX_DCC_BIN_ARGS")
     if additional_args is not None:
         command.extend(additional_args.split(" "))
+
 
     subprocess.Popen(command, cwd=os.getcwd(), shell=True)

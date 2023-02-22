@@ -1,0 +1,23 @@
+pullWorkable:
+  shelf: "input"
+  thumbnail: "pull.svg"
+
+
+  steps:
+    pull:
+      label: "Versioning"
+      index: 20
+      commands:
+        select_pull:
+          label: "Prompt versionning"
+          path: "silex_client.commands.pull_workable.SelectPull"
+          ask_user: false
+          parameters:
+            prompt: false
+            increment:
+              value: false
+              hide: true
+
+
+
+

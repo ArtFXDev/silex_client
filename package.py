@@ -1,7 +1,7 @@
 # pylint: skip-file
 name = "silex_client"
 timestamp = 0
-version = "0.3.0"
+version = "prod.0.1.2"
 
 authors = ["ArtFx TD gang"]
 
@@ -21,7 +21,6 @@ requires = [
     "dacite",
     "python_dotenv",
     "setuptools",
-    "tractor",
     "Fileseq",
 ]
 
