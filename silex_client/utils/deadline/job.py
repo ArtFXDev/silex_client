@@ -2,10 +2,10 @@
 https://docs.thinkboxsoftware.com/products/deadline/10.1/1_User%20Manual/manual/manual-submission.html
 
 """
-import os
 from typing import Optional, List, Any, Dict
 from pprint import pformat
 
+import socket
 from fileseq import FrameSet
 from pathlib import Path
 
@@ -21,7 +21,7 @@ class DeadlineJob:
 
     JOB_INFO = {
         "Group": "",
-        "MachineName": os.environ["COMPUTERNAME"],
+        "MachineName": socket.gethostname(),
         "MachineLimit": 0,
         "Pool": "",
         "ChunkSize": 5,
