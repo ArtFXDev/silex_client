@@ -109,6 +109,8 @@ def launch_handler(dcc: str, **kwargs) -> None:
         return
 
     command = [dcc]
+    args_list = []
+
 
     if kwargs.get("task_id") is not None:
         os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
@@ -118,10 +120,13 @@ def launch_handler(dcc: str, **kwargs) -> None:
 
     # check for env variable
     if os.environ.get("SILEX_DCC_BIN") is not None:
-        command[0] = os.environ["SILEX_DCC_BIN"]
+        command.pop(0)
+        args_list = [os.environ["SILEX_DCC_BIN"]]
 
     additional_args = os.environ.get("SILEX_DCC_BIN_ARGS")
     if additional_args is not None:
-        command.extend(additional_args.split(" "))
+        args_list.extend(additional_args.split(" "))
 
-    subprocess.Popen(command, cwd=os.getcwd(), shell=True)
+    new_command = args_list + command
+
+    subprocess.Popen(new_command, cwd=os.getcwd(), shell=True)
