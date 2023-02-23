@@ -3,6 +3,7 @@ name = "silex_client"
 timestamp = 0
 version = "prod.0.1.2"
 
+
 authors = ["ArtFx TD gang"]
 
 description = """
@@ -21,6 +22,7 @@ requires = [
     "dacite",
     "python_dotenv",
     "setuptools",
+    "deadline",
     "Fileseq",
 ]
 
@@ -52,6 +54,9 @@ def commands():
     Set the environment variables for silex_client
     """
     import os
+
+    env.DEADLINE_HOST.set("deadline")
+    env.DEADLINE_PORT.set("8081")
 
     env.PATH.append("{root}/silex_client")
     env.PATH.append("{root}/tools")

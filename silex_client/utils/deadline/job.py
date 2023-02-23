@@ -1,87 +1,328 @@
+"""
+https://docs.thinkboxsoftware.com/products/deadline/10.1/1_User%20Manual/manual/manual-submission.html
 
-import os
-import getpass
+"""
+from typing import Optional, List, Any, Dict
+from pprint import pformat
 
-from silex_client.utils.log import logger as log
-
-DEFAULT_GROUP = ''
-DEFAULT_POOL = ''
-DEFAULT_CHUNKSIZE = 5
+import socket
+from fileseq import FrameSet
+from pathlib import Path
 
 import logging
-log = logging.getLogger('deadline')
 
-class DeadlineJobTemplate:
+log = logging.getLogger("deadline")
+
+
+class DeadlineJob:
     """
     Job with default params
     """
 
     JOB_INFO = {
-        # "Name": self.get_jobname(),
-        "Group": DEFAULT_GROUP,
-        "Priority": '50',
-        "UserName": getpass.getuser().lower(),  # already checked by submitter
-        # "Plugin": "RezHoudini",
-        # "LimitGroups": DEFAULT_LIMIT_GROUP,
-        "MachineName": os.environ['COMPUTERNAME'],
-        # "ConcurrentTasks": self.submit_node.evalParm("concurrentTasks"),
-        'MachineLimit': 0,
-        'Pool': DEFAULT_POOL,
-        # 'OutputDirectory0': self.get_output_dir(),
-        # 'InitialStatus': 'Suspended'
-        # "Frames": frames,
-        "ChunkSize": DEFAULT_CHUNKSIZE,
+        "Group": "",
+        "MachineName": socket.gethostname(),
+        "MachineLimit": 0,
+        "Pool": "",
+        "ChunkSize": 5,
+        "Priority": 50,
+        # "InitialStatus": "Active"  # < Active / Suspended >
     }
 
-    PLUGIN_INFO = {
-        #"RezRequires": os.environ["REZ_USED_REQUEST"],
-    }
+    PLUGIN_INFO = {}
 
-    def __init__(self):
-        self.job_type = 'job'
+    def __init__(
+        self,
+        job_title: str,
+        user_name: str,
+        frame_range: FrameSet,
+        rez_requires: Optional[str] = None,
+        batch_name: Optional[str] = None,
+        depends_on_previous: bool = False,
+    ):
+        self.job_info: Dict[str, Any] = self.JOB_INFO.copy()
+        self.plugin_info: Dict[str, Any] = self.PLUGIN_INFO.copy()
 
-    def get_job_name(self):
-        # to be implemented
-        name = "{}_{}".format(name, self.job_type)
-        return name
+        self.batch_name = batch_name  # used ?
+        self.depends_on_previous = depends_on_previous
 
-    def get_output_dir(self):
-        pass
+        self.job_info.update(
+            {"Name": job_title, "UserName": user_name, "Frames": frame_range.frange}
+        )
+        self.plugin_info.update({"RezRequires": rez_requires})
+        if batch_name:
+            self.job_info.update({"BatchName": batch_name})
+
+    def set_group(self, group):
+        self.job_info.update({"Group": group})
+
+    def set_pool(self, pool):
+        self.job_info.update({"Pool": pool})
+
+    def set_chunk_size(self, chunk_size):
+        self.job_info.update({"ChunkSize": chunk_size})
+
+    def set_priority(self, value):
+        self.job_info.update({"Priority": value})
+
+    def set_dependency(self, job_id):
+        self.job_info.update({"JobDependencies": job_id})
+
+    def __str__(self):
+        return f"[job.{self.__class__.__name__}]\nINFO: {pformat(self.job_info)}\nPLUGIN: {pformat(self.plugin_info)}"
 
 
-class DeadlineMayaBatchJob(DeadlineJobTemplate):
+class CommandLineJob(DeadlineJob):
+    # This used only in the non rez version.
+    EXECUTABLE = "C:\\rez\\__install__\\Scripts\\rez\\rez.exe"
 
-    # auto filled :
-    #   - department (task)
-    #   - pool : mapped by Sid
-    #   - group render | user
+    def __init__(
+        self,
+        job_title: str,
+        user_name: str,
+        frame_range: FrameSet,
+        command: str,
+        rez_requires: Optional[str] = None,
+        batch_name: Optional[str] = None,
+        depends_on_previous: bool = False,
+    ):
+        super().__init__(
+            job_title,
+            user_name,
+            frame_range,
+            rez_requires,
+            batch_name,
+            depends_on_previous,
+        )
 
-    job_type = 'render'
-    plugin = 'RezMayaBatch'
+        self.job_info.update({"Plugin": "RezCommandLine"})
 
-    def __init__(self, path, render_path=None, start=None, end=None, step=1, chunk_size=DEFAULT_CHUNKSIZE, priority=50,
-                 comment=None, renderer=None):
+        self.plugin_info.update({"Executable": self.EXECUTABLE, "Arguments": command})
 
-        # path to be implemented
 
-        self.job_info = self.JOB_INFO
-        self.plugin_info = self.PLUGIN_INFO
+class VrayJob(DeadlineJob):
+    def __init__(
+        self,
+        job_title: str,
+        user_name: str,
+        frame_range: FrameSet,
+        file_path: str,
+        output_path: str,
+        resolution: Optional[List[int]] = None,
+        rez_requires: Optional[str] = None,
+        batch_name: Optional[str] = None,
+        depends_on_previous: bool = False,
+    ):
+        super().__init__(
+            job_title,
+            user_name,
+            frame_range,
+            rez_requires,
+            batch_name,
+            depends_on_previous,
+        )
 
-        step_value = 'step{}'.format(step) if step > 1 else ''
-        frames = '{}-{}'.format(start, end) + step_value
+        self.job_info.update(
+            {"OutputDirectory0": str(Path(output_path).parent), "Plugin": "RezVray"}
+        )
 
-        self.job_info.update({
-            "Name": self.get_job_name(),  # TODO: add pass ?
-            "Frames": frames,
-            "department": "to be implemented",
-            "Priority": str(priority),
-            "Plugin": self.plugin,
-            'OutputDirectory0': render_path,
-            'ChunkSize': chunk_size
-        })
+        self.plugin_info.update(
+            {
+                "InputFilename": file_path,
+                "OutputFilename": output_path,
+            }
+        )
 
-        self.plugin_info.update({
-            "Version": os.environ["REZ_MAYA_MAJOR_VERSION"],  # needed in "RezMayaBatch.py" in StartJob()
-            "SceneFile": self.sid.path,
-            "Renderer": renderer,
-        })
+        if resolution is not None:
+            self.plugin_info.update({"Width": resolution[0], "Height": resolution[1]})
+
+
+class ArnoldJob(DeadlineJob):
+    def __init__(
+        self,
+        job_title: str,
+        user_name: str,
+        frame_range: FrameSet,
+        file_path: str,
+        output_path: str,
+        rez_requires: Optional[str] = None,
+        batch_name: Optional[str] = None,
+        depends_on_previous: bool = False,
+    ):
+        super().__init__(
+            job_title,
+            user_name,
+            frame_range,
+            rez_requires,
+            batch_name,
+            depends_on_previous,
+        )
+
+        self.job_info.update(
+            {
+                "OutputDirectory0": str(Path(output_path).parent),
+                "OutputFilename0": str(Path(output_path).name),
+                "Plugin": "RezArnold",
+            }
+        )
+
+        self.plugin_info.update({"InputFile": file_path, "OutputFile": output_path})
+
+
+class HuskJob(DeadlineJob):
+    def __init__(
+        self,
+        job_title: str,
+        user_name: str,
+        frame_range: FrameSet,
+        file_path: str,
+        output_path: str,
+        log_level: str,
+        rez_requires: Optional[str] = None,
+        batch_name: Optional[str] = None,
+        depends_on_previous: bool = False,
+    ):
+        super().__init__(
+            job_title,
+            user_name,
+            frame_range,
+            rez_requires,
+            batch_name,
+            depends_on_previous,
+        )
+
+        self.job_info.update(
+            {"OutputDirectory0": str(Path(output_path).parent), "Plugin": "RezHusk"}
+        )
+
+        self.plugin_info.update(
+            {
+                "SceneFile": file_path,
+                "ImageOutputDirectory": output_path,
+                "LogLevel": log_level,
+                # "HuskRenderExecutable": "C:/Houdini19/bin/husk.exe"
+            }
+        )
+
+
+class HoudiniJob(DeadlineJob):
+    def __init__(
+        self,
+        job_title: str,
+        user_name: str,
+        frame_range: FrameSet,
+        file_path: str,
+        output_path: str,
+        rop_node: str,
+        resolution=None,
+        sim_job=False,
+        rez_requires: Optional[str] = None,
+        batch_name: Optional[str] = None,
+        depends_on_previous: bool = False,
+    ):
+        super().__init__(
+            job_title,
+            user_name,
+            frame_range,
+            rez_requires,
+            batch_name,
+            depends_on_previous,
+        )
+        # self.job_info = dict(self.JOB_INFO)
+        self.job_info.update(
+            {"OutputDirectory0": str(Path(output_path).parent), "Plugin": "RezHoudini"}
+        )
+
+        self.plugin_info.update(
+            {
+                "SceneFile": file_path,
+                "Output": output_path,
+                "OutputDriver": rop_node,
+                "SimJob": sim_job,
+            }
+        )
+
+        if resolution is not None:
+            self.plugin_info.update({"Width": resolution[0]})
+            self.plugin_info.update({"Height": resolution[1]})
+
+
+class MayaBatchJob(DeadlineJob):
+    def __init__(
+        self,
+        job_title: str,
+        user_name: str,
+        frame_range: FrameSet,
+        file_path: str,
+        output_path: str,
+        renderer: str,
+        rez_requires: Optional[str] = None,
+        batch_name: Optional[str] = None,
+        depends_on_previous: bool = False,
+    ):
+        super().__init__(
+            job_title,
+            user_name,
+            frame_range,
+            rez_requires,
+            batch_name,
+            depends_on_previous,
+        )
+
+        self.job_info.update(
+            {
+                "OutputDirectory0": str(Path(output_path).parent),
+                "Plugin": "RezMayaBatch",
+            }
+        )
+
+        self.plugin_info.update(
+            {
+                "SceneFile": file_path,
+                "OutputFilePrefix": str(Path(output_path).stem),
+                "OutputFilePath": str(Path(output_path).parent),
+                "Renderer": renderer,
+                "RezRequires": rez_requires,
+                "Version": 2022,
+            }
+        )
+
+
+class NukeJob(DeadlineJob):
+    def __init__(
+        self,
+        job_title: str,
+        user_name: str,
+        frame_range: FrameSet,
+        file_path: str,
+        output_path: str,
+        write_node: str,
+        use_gpu: bool,
+        nuke_x: bool,
+        rez_requires: Optional[str] = None,
+        batch_name: Optional[str] = None,
+        depends_on_previous: bool = False,
+    ):
+        super().__init__(
+            job_title,
+            user_name,
+            frame_range,
+            rez_requires,
+            batch_name,
+            depends_on_previous,
+        )
+
+        self.job_info.update(
+            {"OutputDirectory0": str(Path(output_path).parent), "Plugin": "Nuke"}
+        )
+
+        self.plugin_info.update(
+            {
+                "SceneFile": file_path,
+                "OutputFilePath": output_path,
+                "WriteNode": write_node,
+                "UseGPU": use_gpu,
+                "NukeX": nuke_x,
+                "Version": "13.2",
+            }
+        )

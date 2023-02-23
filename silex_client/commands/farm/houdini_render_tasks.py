@@ -6,15 +6,17 @@ import pathlib
 import tempfile
 import typing
 from typing import Any, Dict, List, Union, cast
+from silex_client.utils.log import flog
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder, farm, frames
 from silex_client.utils.parameter_types import (
-    IntArrayParameterMeta,
     MultipleSelectParameterMeta,
+    SelectParameterMeta,
     TaskFileParameterMeta,
     TextParameterMeta,
+    IntArrayParameterMeta
 )
 from silex_client.utils.thread import execute_in_thread
 
@@ -24,6 +26,8 @@ if typing.TYPE_CHECKING:
 
 import os
 import subprocess
+
+from silex_client.utils.deadline.job import HoudiniJob
 
 
 class HoudiniRenderTasksCommand(CommandBase):
@@ -41,24 +45,26 @@ class HoudiniRenderTasksCommand(CommandBase):
             "type": FrameSet,
             "value": "1-50x1",
         },
-        "task_size": {
-            "label": "Task size",
-            "tooltip": "Number of frames per computer",
-            "type": int,
-            "value": 10,
+        "output_filename": {
+            "type": pathlib.Path,
+            "hide": True,
+            "value": ""
+        },
+        "renderer": {
+            "label": "Renderer",
+            "type": SelectParameterMeta("vray", "arnold", "mantra"),
+            "value": "vray",
         },
         "skip_existing": {
             "label": "Skip existing frames",
             "type": bool,
-            "value": False,
-            "hide": True,
+            "value": True,
+            "hide": True  # Until fixed
         },
-        "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
-        "skip_existing": {"label": "Skip existing frames", "type": bool, "value": True},
         "rop_from_hip": {
             "label": "Get ROP node list from scene file",
             "type": bool,
-            "value": False,
+            "value": False
         },
         "get_rop_progress": {
             "type": TextParameterMeta(
@@ -76,6 +82,7 @@ class HoudiniRenderTasksCommand(CommandBase):
             "type": bool,
             "label": "Parameter overrides",
             "value": False,
+            "hide": True,  # Until fixed
         },
         "resolution": {
             "label": "Resolution (width, height)",
@@ -92,116 +99,75 @@ class HoudiniRenderTasksCommand(CommandBase):
             "type": str,
             "hide": True,
             "value": "",
-        },
+        }
     }
 
     @CommandBase.conform_command()
     async def __call__(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
     ):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
-        task_size: int = parameters["task_size"]
         skip_existing = parameters["skip_existing"]
         parameter_overrides: bool = parameters["parameter_overrides"]
-        resolution: List[int] = parameters["resolution"]
+        resolution: List[int]
+        if parameter_overrides:
+            resolution = parameters["resolution"]
+        else:
+            resolution = None
         rop_nodes: Union[str, List[str]] = parameters["rop_nodes"]
         output_file = pathlib.Path(parameters["output_filename"])
 
         if not isinstance(rop_nodes, list):
             rop_nodes = rop_nodes.split(" ")
 
-        tasks: List[farm.Task] = []
+        # For each rop_node
+        jobs = []
 
         for rop_node in rop_nodes:
-            rop_name = rop_node.split("/")[-1]
+            ###### BUILD DEADLINE JOB
 
-            full_output_file = (
-                output_file.parent
-                / rop_name
-                / f"{output_file.stem}_{rop_name}.$F4{''.join(output_file.suffixes)}"
-            )
-
-            # Build the render command
+            context = action_query.context_metadata
+            user = context["user"].lower().replace(' ', '.')
             project = cast(str, action_query.context_metadata["project"]).lower()
-            houdini_cmd = (
-                command_builder.CommandBuilder(
-                    "hython",
-                    rez_packages=[
-                        "houdini",
-                        project,
-                    ],
-                    delimiter=" ",
-                )
-                .param("m", "hrender")
-                .value(scene.as_posix())
-                .param("d", rop_node)
-                .param("o", full_output_file.as_posix())
-                .param("v")
-                .param("S", condition=skip_existing)
+            rop_name = rop_node.split("/")[-1]
+            full_output_file = (
+                    output_file.parent
+                    / rop_name
+                    / f"{output_file.stem}_{rop_name}.$F4{''.join(output_file.suffixes)}"
             )
 
-            if parameter_overrides:
-                houdini_cmd.param("w", resolution[0])
-                houdini_cmd.param("h", resolution[1])
+            flog.info(f"resolution : {resolution}")
 
-            rop_task = farm.Task(title=f"ROP node: {rop_name}")
-            frame_chunks = frames.split_frameset(frame_range, task_size)
+            renderer = parameters['renderer']
+            if renderer == 'mantra':
+                renderer = ''
 
-            # Create tasks for each frame chunk
-            for chunk in frame_chunks:
-                chunk_cmd = houdini_cmd.deepcopy()
-                chunk_cmd.param("f", farm.frameset_to_frames_str(chunk))
+            job = HoudiniJob(
+                job_title=rop_name,
+                user_name=user,
+                frame_range=frame_range,
+                file_path=str(scene),
+                output_path=str(full_output_file),
+                rop_node=rop_node,
+                resolution=resolution,
+                rez_requires=f"houdini {project} {renderer}",
+                batch_name=scene.stem
+            )
 
-                # In case of a more complicated setup add a pre and cleanup command
-                if len(parameters["pre_command"]) and len(
-                    parameters["cleanup_command"]
-                ):
-                    mount_cmd = farm.get_mount_command(
-                        action_query.context_metadata.get("project_nas")
-                    )
+            # add job to the job list
+            jobs.append(job)
 
-                    chunk_cmd = farm.wrap_command(
-                        pres=[
-                            mount_cmd,
-                            farm.Command(argv=parameters["pre_command"].split(" ")),
-                            farm.get_clear_frames_command(
-                                full_output_file.parent, chunk
-                            ),
-                        ],
-                        cmd=farm.Command(chunk_cmd.as_argv()),
-                        post=farm.Command(parameters["cleanup_command"].split(" ")),
-                    )
-                else:
-                    # Wrap the command with the mount drive
-                    chunk_cmd = farm.wrap_command(
-                        [
-                            farm.get_mount_command(
-                                action_query.context_metadata["project_nas"]
-                            ),
-                            farm.get_clear_frames_command(
-                                full_output_file.parent, chunk
-                            ),
-                        ],
-                        cmd=farm.Command(chunk_cmd.as_argv()),
-                    )
-
-                task = farm.Task(title=str(chunk))
-                task.addCommand(chunk_cmd)
-                rop_task.addChild(task)
-
-            tasks.append(rop_task)
-
-        return {"tasks": tasks, "file_name": scene.stem}
+        return {"jobs": jobs}
 
     async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
     ):
         scene: pathlib.Path = parameters["scene_file"]
         rop_from_hip: bool = parameters["rop_from_hip"]
