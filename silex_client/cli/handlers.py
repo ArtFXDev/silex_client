@@ -13,7 +13,6 @@ from concurrent import futures
 import gazu.files
 from silex_client.action.action_query import ActionQuery
 from silex_client.core.context import Context
-from silex_client.utils.log import flog
 from silex_client.resolve.config import Config
 from silex_client.utils.authentification import authentificate_gazu
 from silex_client.utils.log import logger
@@ -97,7 +96,6 @@ def launch_handler(dcc: str, **kwargs) -> None:
     """
     Run the given command in the selected context
     """
-    flog.info("je suis le launch handler")
     if not authentificate_gazu():
         raise Exception(
             "Could not connect to the zou database, please connect to your account with silex"
@@ -131,6 +129,5 @@ def launch_handler(dcc: str, **kwargs) -> None:
         args_list.extend(additional_args.split(" "))
 
     new_command = args_list + command
-    flog.info(new_command)
 
     subprocess.Popen(new_command, cwd=os.getcwd(), shell=True)
