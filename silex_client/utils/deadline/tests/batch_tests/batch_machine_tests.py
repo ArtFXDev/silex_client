@@ -8,6 +8,7 @@ dl = init_deadline()
 dr = DeadlineRunner()
 
 group = "classrooms"
+group = "pfe"
 job_getters = [get_arnold_job, get_vray_job, get_husk_job]
 
 
@@ -19,6 +20,7 @@ for job_getter in job_getters:
     job = job_getter()
     job.job_info["BatchName"] = f"TEST_workers__{group}"
     job.job_info["Group"] = group
+    job.job_info["InitialStatus"] = "Suspended"
 
     for worker in workers:
 
