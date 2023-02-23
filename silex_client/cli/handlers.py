@@ -13,17 +13,16 @@ from concurrent import futures
 import gazu.files
 from silex_client.action.action_query import ActionQuery
 from silex_client.core.context import Context
+from silex_client.utils.log import flog
 from silex_client.resolve.config import Config
 from silex_client.utils.authentification import authentificate_gazu
-from silex_client.utils.log import logger, flog
-from pprint import pprint
+from silex_client.utils.log import logger
 
 
 def action_handler(action_name: str, **kwargs) -> None:
     """
     Execute the given action in the resolved context
     """
-    flog.info("je suis le action handler")
     if kwargs.get("list", False):
         # Just print the available actions
         action_names = [action["name"] for action in Config.get().actions]
@@ -112,20 +111,25 @@ def launch_handler(dcc: str, **kwargs) -> None:
         return
 
     command = [dcc]
+    args_list = []
+
 
     if kwargs.get("task_id") is not None:
         os.environ["SILEX_TASK_ID"] = kwargs["task_id"]
 
     if kwargs.get("file") is not None:
         command.append(kwargs["file"])
+    actions = Config.get().actions
 
     # check for env variable
     if os.environ.get("SILEX_DCC_BIN") is not None:
-        command[0] = os.environ["SILEX_DCC_BIN"]
+        command.pop(0)
+        args_list = [os.environ["SILEX_DCC_BIN"]]
 
     additional_args = os.environ.get("SILEX_DCC_BIN_ARGS")
     if additional_args is not None:
-        command.extend(additional_args.split(" "))
+        args_list.extend(additional_args.split(" "))
 
-    flog.info(pprint(command))
-    subprocess.Popen(command, cwd=os.getcwd(), shell=True)
+    new_command = args_list + command
+
+    subprocess.Popen(new_command, cwd=os.getcwd(), shell=True)
