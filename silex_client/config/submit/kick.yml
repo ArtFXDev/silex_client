@@ -49,12 +49,10 @@ kick:
             output_path:
               value: !command-output "build_output_path:build_output_path:full_path"
 
-        submit_to_tractor:
+        submit_to_deadline:
           label: "Submit"
-          path: "silex_client.commands.farm.submit_to_tractor.SubmitToTractorCommand"
+          path: "silex_client.commands.farm.submit_to_deadline.SubmitToDeadlineCommand"
           ask_user: true
           parameters:
-            job_title:
-              value: !command-output "kick_render:kick_render_tasks:file_name"
-            tasks:
-              value: !command-output "kick_render:kick_render_tasks:tasks"
+            jobs:
+              value: !command-output "kick_render:kick_render_tasks:jobs"

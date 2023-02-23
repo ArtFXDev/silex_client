@@ -1,0 +1,23 @@
+tester:
+  steps:
+    setup:
+      label: "Setup"
+      commands:
+        get_input:
+          label: "Get Test input"
+          path: "silex_client.commands.tester_get_input.InputTester"
+          ask_user: true
+          parameters:
+            message: "message"
+
+        submit_to_deadline:
+          label: "Submit to deadline"
+          path: "silex_client.commands.farm.submit_to_deadline.SubmitToDeadlineCommand"
+          parameters:
+            message: 
+              value: !command-output "setup:get_input:message"
+            something:
+              value: !command-output "setup:get_input:something"
+
+
+

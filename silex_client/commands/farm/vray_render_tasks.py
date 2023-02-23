@@ -7,16 +7,17 @@ from typing import Any, Dict, List, cast
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder, farm, frames
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
     RadioSelectParameterMeta,
     TaskFileParameterMeta,
 )
+from silex_client.utils.log import flog
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
+from silex_client.utils.deadline.job import VrayJob
 
 
 class VrayRenderTasksCommand(CommandBase):
@@ -37,17 +38,6 @@ class VrayRenderTasksCommand(CommandBase):
             "type": FrameSet,
             "value": "1-50x1",
         },
-        "task_size": {
-            "label": "Task size",
-            "tooltip": "Number of frames per computer",
-            "type": int,
-            "value": 10,
-        },
-        "skip_existing": {
-            "label": "Skip existing frames",
-            "type": bool,
-            "value": True,
-        },
         "engine": {
             "label": "RT engine",
             "type": RadioSelectParameterMeta(
@@ -59,6 +49,7 @@ class VrayRenderTasksCommand(CommandBase):
             "type": bool,
             "label": "Parameter overrides",
             "value": False,
+            "hide": True
         },
         "resolution": {
             "label": "Resolution (width, height)",
@@ -69,10 +60,10 @@ class VrayRenderTasksCommand(CommandBase):
     }
 
     async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
     ):
         # Overriding resolution is optional
         hide_overrides = not parameters["parameter_overrides"]
@@ -80,27 +71,32 @@ class VrayRenderTasksCommand(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
+            self,
+            parameters: Dict[str, Any],
+            action_query: ActionQuery,
+            logger: logging.Logger,
     ):
         vrscenes: List[pathlib.Path] = parameters["vrscenes"]
-
         output_directory: pathlib.Path = parameters["output_directory"]
         output_filename: str = parameters["output_filename"]
         output_extension: str = parameters["output_extension"]
-
-        engine: int = parameters["engine"]
         frame_range: FrameSet = parameters["frame_range"]
-        task_size: int = parameters["task_size"]
-        skip_existing = int(parameters["skip_existing"])
+        engine: int = parameters["engine"]
+        user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
+        rez_requires: str = "vray " + cast(str, action_query.context_metadata["project"]).lower()
         parameter_overrides: bool = parameters["parameter_overrides"]
-        resolution: List[int] = parameters["resolution"]
+        resolution: List[int]
 
-        tasks: List[farm.Task] = []
+        if parameter_overrides:
+            resolution = parameters["resolution"]
+        else:
+            resolution = None
 
+        jobs = []
+
+        # One Vrscene file per render layer
         for vrscene in vrscenes:
+
             # Detect the render layer name from the parent folder
             split_by_name = vrscene.stem.split(f"{vrscene.parents[0].stem}_")
 
@@ -110,64 +106,34 @@ class VrayRenderTasksCommand(CommandBase):
                 # Otherwise take the filename
                 layer_name = vrscene.stem
 
-            full_output_path = (
-                output_directory
-                / layer_name
-                / f"{output_filename}_{layer_name}.{output_extension}"
-            )
-
-            # Build the V-Ray command
-            project = cast(str, action_query.context_metadata["project"]).lower()
-            vray_cmd = command_builder.CommandBuilder(
-                "vray",
-                rez_packages=["vray", project],
-            )
-            vray_cmd.param("skipExistingFrames", skip_existing)
-            vray_cmd.disable(["display", "progressUseColor", "progressUseCR"])
-            vray_cmd.param("progressIncrement", 5)
-            vray_cmd.param("verboseLevel", 3)
-            vray_cmd.param("rtEngine", engine)
-            vray_cmd.param("sceneFile", vrscene.as_posix())
-            vray_cmd.param("imgFile", full_output_path.as_posix())
-
-            if parameter_overrides:
-                vray_cmd.param("imgWidth", resolution[0]).param(
-                    "imgHeight", resolution[1]
-                )
-
-            render_layer_task = farm.Task(title=layer_name)
-            frame_chunks = frames.split_frameset(frame_range, task_size)
-
-            # Creating tasks for each frame chunk
-            for chunk in frame_chunks:
-                chunk_cmd = vray_cmd.deepcopy()
-
-                chunk_cmd.param("frames", farm.frameset_to_frames_str(chunk))
-
-                task = farm.Task(title=str(chunk))
-
-                project_nas = cast(
-                    str, action_query.context_metadata.get("project_nas")
-                )
-
-                command = farm.wrap_command(
-                    [
-                        farm.get_mount_command(project_nas),
-                        farm.get_clear_frames_command(full_output_path.parent, chunk),
-                    ],
-                    cmd=farm.Command(chunk_cmd.as_argv()),
-                )
-                task.addCommand(command)
-
-                if len(vrscenes) > 1:
-                    render_layer_task.addChild(task)
-                else:
-                    tasks.append(task)
+            output_path = (
+                    output_directory
+                    / layer_name
+                    / f"{output_filename}_{layer_name}.{output_extension}"
+            ).as_posix()
 
             if len(vrscenes) > 1:
-                tasks.append(render_layer_task)
+                batch_name = vrscene.stem.split(f"{vrscene.parents[0].stem}_")[0][:-1]
+                job_title = layer_name
 
-        return {
-            "file_name": vrscenes[0].stem,
-            "tasks": tasks,
-        }
+            else:
+                batch_name = None
+                job_title = vrscene.stem.split(f"{vrscene.parents[0].stem}_")[0][:-1]
+
+            file_path = vrscene.as_posix()
+
+            job = VrayJob(
+                job_title,
+                user_name,
+                frame_range,
+                file_path,
+                output_path,
+                # engine, FIXME: engine actually doesn't work, looks like it never worked.
+                resolution,
+                rez_requires=rez_requires,
+                batch_name=batch_name
+            )
+
+            jobs.append(job)
+
+        return {"jobs": jobs}
