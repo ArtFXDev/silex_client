@@ -117,7 +117,6 @@ def launch_handler(dcc: str, **kwargs) -> None:
 
     if kwargs.get("file") is not None:
         command.append(kwargs["file"])
-    actions = Config.get().actions
 
     # check for env variable
     if os.environ.get("SILEX_DCC_BIN") is not None:
