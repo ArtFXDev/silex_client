@@ -68,6 +68,12 @@ class DeadlineJob:
     def set_dependency(self, job_id):
         self.job_info.update({"JobDependencies": job_id})
 
+    def set_delay(self):
+        self.job_info.update({
+            "JobDelay": "00:00:05:00",
+            "PreJobScript": r"\\deadline\DeadlineRepository\scripts\Jobs\add_delay.py"
+        })
+
     def __str__(self):
         return f"[job.{self.__class__.__name__}]\nINFO: {pformat(self.job_info)}\nPLUGIN: {pformat(self.plugin_info)}"
 
