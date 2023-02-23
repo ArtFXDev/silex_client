@@ -97,6 +97,7 @@ def launch_handler(dcc: str, **kwargs) -> None:
     """
     Run the given command in the selected context
     """
+    flog.info("je suis le launch handler")
     if not authentificate_gazu():
         raise Exception(
             "Could not connect to the zou database, please connect to your account with silex"
@@ -110,6 +111,7 @@ def launch_handler(dcc: str, **kwargs) -> None:
         return
 
     command = [dcc]
+    args_list = []
 
 
     if kwargs.get("task_id") is not None:
@@ -117,17 +119,18 @@ def launch_handler(dcc: str, **kwargs) -> None:
 
     if kwargs.get("file") is not None:
         command.append(kwargs["file"])
-
     actions = Config.get().actions
 
     # check for env variable
     if os.environ.get("SILEX_DCC_BIN") is not None:
-        command[0] = os.environ["SILEX_DCC_BIN"]
-
+        command.pop(0)
+        args_list = [os.environ["SILEX_DCC_BIN"]]
 
     additional_args = os.environ.get("SILEX_DCC_BIN_ARGS")
     if additional_args is not None:
-        command.extend(additional_args.split(" "))
+        args_list.extend(additional_args.split(" "))
 
+    new_command = args_list + command
+    flog.info(new_command)
 
-    subprocess.Popen(command, cwd=os.getcwd(), shell=True)
+    subprocess.Popen(new_command, cwd=os.getcwd(), shell=True)
