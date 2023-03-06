@@ -8,10 +8,10 @@ from silex_client.utils.deadline.tests.test_vray import get_vray_job
 dl = init_deadline()
 dr = DeadlineRunner()
 
-group = "classrooms"
-# group = "pfe"
-job_getters = [get_vray_job]  # , get_arnold_job, get_husk_job]
-
+job_getters = {'vray': get_vray_job,
+               'arnold': get_arnold_job,
+               'husk': get_husk_job,
+               }
 
 @lru_cache()
 def get_completed_job_names():
@@ -26,28 +26,58 @@ def get_active_job_names():
     return [job.get('Props').get('Name') for job in jobs]
 
 
-for job_getter in job_getters:
+def launch_worker_test_jobs(group, plugins, skip_completed=True, skip_active=True, start_suspended=True, machines_only=None):
 
-    name = f"test__{str(job_getter).split('_')[1]}"
+    print(f"Submitting batch jobs for {group} & Plugins: {plugins}. {machines_only or ''}")
 
-    workers = dl.Slaves.GetSlaveNamesInGroup(group)
-    job = job_getter()
-    job.job_info["BatchName"] = f"TEST_workers__{group}"
-    job.job_info["Group"] = group
-    # job.job_info["InitialStatus"] = "Suspended"
+    submitted = []
 
-    for worker in workers:
+    for job_getter in [job_getters.get(plugin) for plugin in plugins]:
 
-        job_name = f"{name}__{worker}"
+        name = f"test__{str(job_getter).split('_')[1]}"
 
-        if job_name in get_completed_job_names() or job_name in get_active_job_names():
-            print(f"Job {job_name} exists. Skipped.")
-            continue
+        workers = dl.Slaves.GetSlaveNamesInGroup(group)
+        job = job_getter()
+        job.job_info["BatchName"] = f"TEST_workers__{group}"
+        job.job_info["Group"] = group
+        if start_suspended:
+            job.job_info["InitialStatus"] = "Suspended"
 
-        job.job_info["Name"] = job_name
-        job.job_info["Allowlist"] = worker
-        # print(job)
-        done = dr.run(job)
-        print(f"Result: {done}")
+        for worker in workers:
 
+            if machines_only and worker not in machines_only:
+                print(f"Worker {worker} is not in {machines_only}. Skipped.")
+                continue
+
+            job_name = f"{name}__{worker}"
+
+            if skip_completed and job_name in get_completed_job_names():
+                print(f"Job {job_name} is completed. Skipped.")
+                continue
+
+            if skip_active and job_name in get_active_job_names():
+                print(f"Job {job_name} is active. Skipped.")
+                continue
+
+            job.job_info["Name"] = job_name
+            job.job_info["Allowlist"] = worker
+            # print(job)
+            done = dr.run(job)
+            print(f"Submitted : {done}")
+            submitted.append(done)
+
+    if not submitted:
+        print("Nothing was submitted. Check params.")
+        return
+
+    print(f"Submitted {len(submitted)} jobs.")
+
+
+if __name__ == "__main__":
+
+    print("Test launch_worker_test_jobs Start")
+    group = "classrooms"
+    # group = "pfe"
+    # launch_worker_test_jobs(group, plugins=['vray', 'arnold', 'husk], start_suspended=False)
+    launch_worker_test_jobs(group, plugins=['arnold'], start_suspended=False)
 
