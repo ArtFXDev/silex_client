@@ -57,6 +57,12 @@ class VrayRenderTasksCommand(CommandBase):
             "value": [1920, 1080],
             "hide": True,
         },
+        "publish_folder":{
+            "label" : "Create a folder by render layer (disable if a vrscene by frame)",
+            "type": bool,
+            "value": True,
+            "hide": False
+        }
     }
 
     async def setup(
@@ -81,7 +87,7 @@ class VrayRenderTasksCommand(CommandBase):
         output_filename: str = parameters["output_filename"]
         output_extension: str = parameters["output_extension"]
         frame_range: FrameSet = parameters["frame_range"]
-        engine: int = parameters["engine"]
+        publish_folder = parameters["publish_folder"]
         user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
         rez_requires: str = "vray " + cast(str, action_query.context_metadata["project"]).lower()
         parameter_overrides: bool = parameters["parameter_overrides"]
@@ -97,6 +103,8 @@ class VrayRenderTasksCommand(CommandBase):
         # One Vrscene file per render layer
         for vrscene in vrscenes:
 
+            file_path = vrscene.as_posix()
+
             # Detect the render layer name from the parent folder
             split_by_name = vrscene.stem.split(f"{vrscene.parents[0].stem}_")
 
@@ -106,32 +114,26 @@ class VrayRenderTasksCommand(CommandBase):
                 # Otherwise take the filename
                 layer_name = vrscene.stem
 
+            publish_name = file_path.split("/")[9]
+
+            folder_name = publish_name
+            if publish_folder:
+                folder_name = publish_name + "_" + layer_name
+
             output_path = (
                     output_directory
-                    / layer_name
+                    / folder_name
                     / f"{output_filename}_{layer_name}.{output_extension}"
             ).as_posix()
 
-            if len(vrscenes) > 1:
-                batch_name = vrscene.stem.split(f"{vrscene.parents[0].stem}_")[0][:-1]
-                job_title = layer_name
-
-            else:
-                batch_name = None
-                job_title = vrscene.stem.split(f"{vrscene.parents[0].stem}_")[0][:-1]
-
-            file_path = vrscene.as_posix()
 
             job = VrayJob(
-                job_title,
                 user_name,
                 frame_range,
                 file_path,
                 output_path,
-                # engine, FIXME: engine actually doesn't work, looks like it never worked.
                 resolution,
-                rez_requires=rez_requires,
-                batch_name=batch_name
+                rez_requires=rez_requires
             )
 
             jobs.append(job)

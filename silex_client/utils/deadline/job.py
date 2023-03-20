@@ -25,25 +25,28 @@ class DeadlineJob:
         "MachineLimit": 0,
         "Pool": "",
         "ChunkSize": 5,
-        "Priority": 50,
-        # "InitialStatus": "Active"  # < Active / Suspended >
+        "Priority": 50
     }
 
     PLUGIN_INFO = {}
 
     def __init__(
         self,
-        job_title: str,
         user_name: str,
         frame_range: FrameSet,
+        file_path: str,
         rez_requires: Optional[str] = None,
-        batch_name: Optional[str] = None,
         depends_on_previous: bool = False,
+
     ):
         self.job_info: Dict[str, Any] = self.JOB_INFO.copy()
         self.plugin_info: Dict[str, Any] = self.PLUGIN_INFO.copy()
 
-        self.batch_name = batch_name  # used ?
+        # get job_name and batch_name
+        path_split = file_path.split("/")
+        batch_name = "_".join(path_split[1:-3])
+        job_title = path_split[-1].split(".")[0]
+
         self.depends_on_previous = depends_on_previous
 
         self.job_info.update(
@@ -109,23 +112,20 @@ class CommandLineJob(DeadlineJob):
 class VrayJob(DeadlineJob):
     def __init__(
         self,
-        job_title: str,
         user_name: str,
         frame_range: FrameSet,
         file_path: str,
         output_path: str,
         resolution: Optional[List[int]] = None,
         rez_requires: Optional[str] = None,
-        batch_name: Optional[str] = None,
         depends_on_previous: bool = False,
     ):
         super().__init__(
-            job_title,
             user_name,
             frame_range,
+            file_path,
             rez_requires,
-            batch_name,
-            depends_on_previous,
+            depends_on_previous
         )
 
         self.job_info.update(
