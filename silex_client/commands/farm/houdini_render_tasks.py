@@ -111,7 +111,7 @@ class HoudiniRenderTasksCommand(CommandBase):
     ):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
-        skip_existing = parameters["skip_existing"]
+        #skip_existing = parameters["skip_existing"]
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int]
         if parameter_overrides:
@@ -133,29 +133,27 @@ class HoudiniRenderTasksCommand(CommandBase):
             context = action_query.context_metadata
             user = context["user"].lower().replace(' ', '.')
             project = cast(str, action_query.context_metadata["project"]).lower()
+            publish_name = str(scene).split("\\")[9]
             rop_name = rop_node.split("/")[-1]
+            folder = publish_name + "_" + rop_name
             full_output_file = (
                     output_file.parent
-                    / rop_name
-                    / f"{output_file.stem}_{rop_name}.$F4{''.join(output_file.suffixes)}"
+                    / folder
+                    / f"{output_file.stem}_{publish_name}_{rop_name}.$F4{''.join(output_file.suffixes)}"
             )
-
-            flog.info(f"resolution : {resolution}")
 
             renderer = parameters['renderer']
             if renderer == 'mantra':
                 renderer = ''
 
             job = HoudiniJob(
-                job_title=rop_name,
                 user_name=user,
                 frame_range=frame_range,
                 file_path=str(scene),
                 output_path=str(full_output_file),
                 rop_node=rop_node,
                 resolution=resolution,
-                rez_requires=f"houdini {project} {renderer}",
-                batch_name=scene.stem
+                rez_requires=f"houdini {project} {renderer}"
             )
 
             # add job to the job list

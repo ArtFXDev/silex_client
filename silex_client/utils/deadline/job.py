@@ -162,7 +162,7 @@ class ArnoldJob(DeadlineJob):
             user_name,
             frame_range,
             file_path,
-            output_path,
+            output_path.replace("\\", "/"),
             rez_requires,
             depends_on_previous,
         )

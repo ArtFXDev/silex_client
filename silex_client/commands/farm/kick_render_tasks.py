@@ -54,9 +54,6 @@ class KickRenderTasksCommand(CommandBase):
             f for f in os.listdir(ass_folders[0]) if Path(str(f)).suffix == ".ass"
         ]
 
-        tmp = Path(str(ass_files[0]))
-        batch_name: str = tmp.stem.rsplit('_', 1)[0]
-
         jobs = []
 
         # for each render layer:
@@ -67,25 +64,43 @@ class KickRenderTasksCommand(CommandBase):
 
             # use first file of sequence, Arnold find the rest of the sequence
             file_path: Path = ass_folder.joinpath(str(ass_files[0]))
+            file_path = file_path.as_posix()
+            publish_name = file_path.split("/")[9]
+            folder_name = publish_name + "_" + ass_folder.stem
 
-            output_filename: str = f"{output_path.stem}_{ass_folder.stem}{''.join(output_path.suffixes)}"
+            output_filename: str = f"{output_path.stem}_{folder_name}{''.join(output_path.suffixes)}"
 
-            output_dir: Path = output_path.parent
+            output_dir: Path = (
+                            output_path.parent
+                            / folder_name
+                            )
 
-            plugin_output_path: str = str(output_dir) + output_filename
+            plugin_output_path: str = str(output_dir) + "/" + output_filename
 
-            job_title: str = ass_folder.stem
+            create_dir(str(output_dir), folder_name)
 
             job = ArnoldJob(
-                job_title,
                 user_name,
                 frame_range,
-                file_path.as_posix(),
+                file_path,
                 plugin_output_path,
-                rez_requires,
-                batch_name=batch_name
+                rez_requires
             )
 
             jobs.append(job)
 
         return {"jobs": jobs}
+
+def create_dir(path, folder):
+    path_split = path.split("\\")
+
+    tars_path = "\\\\tars/" + path_split[1]
+    ana_path = "\\\\ana/" + path_split[1]
+    if os.path.isdir(tars_path):
+        path_split[0] = tars_path
+    if os.path.isdir(ana_path):
+        path_split[0] = ana_path
+
+    path_create = "/".join(path_split[0:-1]) + "/" + folder
+    if not os.path.isdir(path_create):
+        os.mkdir(path_create)

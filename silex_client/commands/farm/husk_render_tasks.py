@@ -3,14 +3,11 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, cast
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder, farm
-from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import (
-    IntArrayParameterMeta,
     TaskFileParameterMeta,
     SelectParameterMeta
 )
@@ -21,7 +18,6 @@ if typing.TYPE_CHECKING:
 
 from silex_client.utils.deadline.job import HuskJob
 from silex_client.utils.log import flog
-from silex_client.config.priority_rank import priority_rank
 
 
 class HuskRenderTasksCommand(CommandBase):
@@ -85,10 +81,12 @@ class HuskRenderTasksCommand(CommandBase):
             flog.info(parameters['output_directory'])
             flog.info(parameters['output_filename'].as_posix())
             usd_name = str(scene).split("_")[-1].split(".")[0]
+            publish_name = str(file).split("\\")[9]
+            folder_name = publish_name + "_" + usd_name
             full_path = (
                     parameters['output_directory']
-                    / usd_name
-                    / f"{parameters['output_filename']}_{usd_name}.$F4.{parameters['output_extension']}"
+                    / folder_name
+                    / f"{parameters['output_filename']}_{folder_name}.$F4.{parameters['output_extension']}"
             )
 
             flog.info(f"full_path : {full_path}, type : {type(full_path)}")
@@ -104,14 +102,12 @@ class HuskRenderTasksCommand(CommandBase):
             flog.info(f"LOG level : {log_level}, type: {type(log_level)}")
 
             job = HuskJob(
-                job_title=usd_name,
                 user_name=user,
                 frame_range=parameters["frame_range"],
                 file_path=str(scene),
                 output_path=str(full_path),
                 log_level=log_level,
-                rez_requires=f"houdini {project}",
-                batch_name=str(parameters['output_directory'])
+                rez_requires=f"houdini {project}"
             )
 
             jobs.append(job)

@@ -121,24 +121,32 @@ class MayaRenderTasksCommand(CommandBase):
             logger: logging.Logger,
     ):
         file_path: pathlib.Path = parameters["scene_file"]
-        output_path: pathlib.Path = parameters["output_path"]
-        frame_range: fileseq.FrameSet = parameters["frame_range"]
-        rez_requires: str = "maya " + parameters['renderer'] + " " + cast(str, action_query.context_metadata["project"]).lower()
-        user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
-        job_title: str = file_path.stem
+        publish_name = str(file_path).split("\\")[9]
+
+        layers = parameters["render_layers"]
 
         jobs = []
+        for layer in layers:
+            folder = publish_name + "_" + str(layer)
 
-        job = MayaBatchJob(
-            job_title,
-            user_name,
-            frame_range,
-            file_path.as_posix(),
-            output_path.as_posix(),
-            parameters['renderer'],
-            rez_requires=rez_requires,
-        )
+            output_path: pathlib.Path = parameters["output_path"]
+            output_split = str(output_path).split("\\")
+            output_split[9] += "/" + folder
+            output_path = "/".join(output_split)
 
-        jobs.append(job)
+            frame_range: fileseq.FrameSet = parameters["frame_range"]
+            rez_requires: str = "maya " + parameters['renderer'] + " " + cast(str, action_query.context_metadata["project"]).lower()
+            user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
+
+            job = MayaBatchJob(
+                user_name,
+                frame_range,
+                file_path.as_posix(),
+                output_path,
+                parameters['renderer'],
+                rez_requires=rez_requires,
+            )
+
+            jobs.append(job)
 
         return {"jobs": jobs}

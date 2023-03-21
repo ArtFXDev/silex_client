@@ -123,7 +123,7 @@ class VrayRenderTasksCommand(CommandBase):
             output_path = (
                     output_directory
                     / folder_name
-                    / f"{output_filename}_{layer_name}.{output_extension}"
+                    / f"{output_filename}_{folder_name}.{output_extension}"
             ).as_posix()
 
 
