@@ -45,9 +45,9 @@ class DeadlineJob:
         self.plugin_info: Dict[str, Any] = self.PLUGIN_INFO.copy()
 
         # get job_name and batch_name
-        path_split = file_path.split("/")
-        batch_name = "_".join(path_split[1:-2])
-        job_title = output_path.split("/")[-2]
+        path_split = output_path.split("/")
+        batch_name = "_".join(path_split[1:6])
+        job_title = path_split[-2]
         flog.info(f"batch_name = {batch_name}")
         flog.info(f"job_title = {job_title}")
 

@@ -6,7 +6,6 @@ import pathlib
 import tempfile
 import typing
 from typing import Any, Dict, List, Union, cast
-from silex_client.utils.log import flog
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
@@ -43,7 +42,7 @@ class HoudiniRenderTasksCommand(CommandBase):
         "frame_range": {
             "label": "Frame range",
             "type": FrameSet,
-            "value": "1-50x1",
+            "value": "1001-1050x1",
         },
         "output_filename": {
             "type": pathlib.Path,

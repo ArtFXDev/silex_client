@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import typing
 from typing import Any, Dict, List, cast
-from silex_client.utils.log import flog
 import fileseq
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import TaskFileParameterMeta
@@ -31,7 +30,7 @@ class KickRenderTasksCommand(CommandBase):
         "frame_range": {
             "label": "Frame range",
             "type": fileseq.FrameSet,
-            "value": "1-50x1",
+            "value": "1001-1050x1",
         },
         "output_path": {"type": Path, "value": "", "hide": True},
     }

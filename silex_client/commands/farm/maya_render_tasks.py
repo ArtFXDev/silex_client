@@ -51,7 +51,7 @@ class MayaRenderTasksCommand(CommandBase):
         "frame_range": {
             "label": "Frame range",
             "type": fileseq.FrameSet,
-            "value": "1-50x1",
+            "value": "1001-1050x1",
         },
         "keep_output_type": {
             "label": "Keep output type specified in the scene",
@@ -72,8 +72,6 @@ class MayaRenderTasksCommand(CommandBase):
             logger: logging.Logger,
     ):
         if parameters["scene_file_out_of_pipeline"]:
-            flog.info("scene_file")
-            flog.info(self.command_buffer.parameters["scene_file"])
             self.command_buffer.parameters["scene_file"].type = PathParameterMeta(
                 [".ma", ".mb"]
             )

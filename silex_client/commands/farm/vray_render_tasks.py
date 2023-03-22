@@ -4,6 +4,8 @@ import logging
 import pathlib
 import typing
 from typing import Any, Dict, List, cast
+import os
+from pathlib import Path
 
 from fileseq import FrameSet
 from silex_client.action.command_base import CommandBase
@@ -12,7 +14,6 @@ from silex_client.utils.parameter_types import (
     RadioSelectParameterMeta,
     TaskFileParameterMeta,
 )
-from silex_client.utils.log import flog
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -36,7 +37,7 @@ class VrayRenderTasksCommand(CommandBase):
         "frame_range": {
             "label": "Frame range",
             "type": FrameSet,
-            "value": "1-50x1",
+            "value": "1001-1050x1",
         },
         "engine": {
             "label": "RT engine",
@@ -56,12 +57,6 @@ class VrayRenderTasksCommand(CommandBase):
             "type": IntArrayParameterMeta(2),
             "value": [1920, 1080],
             "hide": True,
-        },
-        "publish_folder":{
-            "label" : "Create a folder by render layer (disable if a vrscene by frame)",
-            "type": bool,
-            "value": True,
-            "hide": False
         }
     }
 
@@ -82,12 +77,12 @@ class VrayRenderTasksCommand(CommandBase):
             action_query: ActionQuery,
             logger: logging.Logger,
     ):
+
         vrscenes: List[pathlib.Path] = parameters["vrscenes"]
         output_directory: pathlib.Path = parameters["output_directory"]
         output_filename: str = parameters["output_filename"]
         output_extension: str = parameters["output_extension"]
         frame_range: FrameSet = parameters["frame_range"]
-        publish_folder = parameters["publish_folder"]
         user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
         rez_requires: str = "vray " + cast(str, action_query.context_metadata["project"]).lower()
         parameter_overrides: bool = parameters["parameter_overrides"]
@@ -103,7 +98,17 @@ class VrayRenderTasksCommand(CommandBase):
         # One Vrscene file per render layer
         for vrscene in vrscenes:
 
-            file_path = vrscene.as_posix()
+            vr_files = []
+            if os.path.isfile(vrscene):
+                vr_files = [vrscene]
+            else:
+                vr_files = [
+                    f for f in os.listdir(vrscene) if Path(f).suffix == ".vrscene"
+                ]
+
+            # use first file of sequence, vray find the rest of the sequence
+            file_path: Path = vrscene.joinpath(str(vr_files[0]))
+            file_path = file_path.as_posix()
 
             # Detect the render layer name from the parent folder
             split_by_name = vrscene.stem.split(f"{vrscene.parents[0].stem}_")
@@ -114,11 +119,14 @@ class VrayRenderTasksCommand(CommandBase):
                 # Otherwise take the filename
                 layer_name = vrscene.stem
 
-            publish_name = file_path.split("/")[9]
+            path_split = file_path.split('/')
 
-            folder_name = publish_name
-            if publish_folder:
-                folder_name = publish_name + "_" + layer_name
+            folder_name = ""
+
+            if len(path_split) <= 11:
+                folder_name = f"{path_split[9]}_{layer_name}"
+            elif len(path_split) >= 12:
+                folder_name = f"{path_split[9]}_{path_split[10]}"
 
             output_path = (
                     output_directory

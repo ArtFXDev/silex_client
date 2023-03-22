@@ -34,7 +34,7 @@ class HuskRenderTasksCommand(CommandBase):
         "frame_range": {
             "label": "Frame range",
             "type": FrameSet,
-            "value": "1-50x1",
+            "value": "1001-1050x1",
         },
         "skip_existing": {
             "label": "Skip existing frames",
@@ -74,12 +74,11 @@ class HuskRenderTasksCommand(CommandBase):
         jobs = []
 
         files = parameters["scene_file"]
-        flog.info(f"files : {files}, type : {type(files)}")
 
+        # for each files
         for file in files:
+            # paths
             scene: pathlib.Path = file
-            flog.info(parameters['output_directory'])
-            flog.info(parameters['output_filename'].as_posix())
             usd_name = str(scene).split("_")[-1].split(".")[0]
             publish_name = str(file).split("\\")[9]
             folder_name = publish_name + "_" + usd_name
@@ -88,19 +87,16 @@ class HuskRenderTasksCommand(CommandBase):
                     / folder_name
                     / f"{parameters['output_filename']}_{folder_name}.$F4.{parameters['output_extension']}"
             )
-
-            flog.info(f"full_path : {full_path}, type : {type(full_path)}")
-
             project = cast(str, action_query.context_metadata["project"]).lower()
-            flog.info(f"project : {project}, type : {type(project)}")
 
+            # user
             context = action_query.context_metadata
             user = context["user"].lower().replace(' ', '.')
-            flog.info(f"user : {user}, type : {type(user)}")
 
+            # log
             log_level = parameters["LOG_level"]
-            flog.info(f"LOG level : {log_level}, type: {type(log_level)}")
 
+            # create job
             job = HuskJob(
                 user_name=user,
                 frame_range=parameters["frame_range"],
