@@ -15,18 +15,24 @@ job_getters = {'vray': get_vray_job,
 
 @lru_cache()
 def get_completed_job_names():
-    print('Calling DL')
+    """ Currently unused """
     jobs = dl.Jobs.GetJobsInState('Completed')
     return [job.get('Props').get('Name') for job in jobs]
 
 @lru_cache()
 def get_active_job_names():
-    print('Calling DL')
+    """ Currently unused """
     jobs = dl.Jobs.GetJobsInState('Active')
     return [job.get('Props').get('Name') for job in jobs]
 
+@lru_cache()
+def get_all_job_names():
+    print('Calling Deadline')
+    jobs = dl.Jobs.GetJobs()
+    return [job.get('Props').get('Name') for job in jobs]
 
-def launch_worker_test_jobs(group, plugins, skip_completed=True, skip_active=True, start_suspended=True, machines_only=None):
+
+def launch_worker_test_jobs(group, plugins, skip_existing=True, start_suspended=True, machines_only=None):
 
     print(f"Submitting batch jobs for {group} & Plugins: {plugins}. {machines_only or ''}")
 
@@ -51,12 +57,8 @@ def launch_worker_test_jobs(group, plugins, skip_completed=True, skip_active=Tru
 
             job_name = f"{name}__{worker}"
 
-            if skip_completed and job_name in get_completed_job_names():
-                print(f"Job {job_name} is completed. Skipped.")
-                continue
-
-            if skip_active and job_name in get_active_job_names():
-                print(f"Job {job_name} is active. Skipped.")
+            if skip_existing and job_name in get_all_job_names():
+                print(f"Job {job_name} exists. Skipped.")
                 continue
 
             job.job_info["Name"] = job_name
@@ -75,9 +77,42 @@ def launch_worker_test_jobs(group, plugins, skip_completed=True, skip_active=Tru
 
 if __name__ == "__main__":
 
+    groups = ['pfe', 'classrooms']
+
+    import argparse
+    parser = argparse.ArgumentParser(
+        prog="Deadline Submitter Tests",
+        description="Launches test jobs on workers, per region and renderer",
+        epilog="Thanks for using %(prog)s! :)",
+    )
+
+    parser.add_argument(
+        "group", help=f"Group to launch on. Available: {', '.join(groups)}"
+    )
+
+    parser.add_argument("-ar", "--arnold", action="store_true", help="Launch Arnold Jobs")
+    parser.add_argument("-vr", "--vray", action="store_true", help="Launch Vray Jobs")
+    parser.add_argument("-hu", "--husk", action="store_true", help="Launch Husk Jobs")
+
+    parser.add_argument("-s", "--suspend", action="store_true", help="Start suspended")
+
+    args = parser.parse_args()
+
     print("Test launch_worker_test_jobs Start")
-    group = "classrooms"
+    # group = "classrooms"
     # group = "pfe"
+
+    plugins = []
+    if args.arnold:
+        plugins.append('arnold')
+    if args.vray:
+        plugins.append('vray')
+    if args.husk:
+        plugins.append('husk')
+
+    if not plugins:
+        plugins = ['vray', 'arnold', 'husk']
+
     # launch_worker_test_jobs(group, plugins=['vray', 'arnold', 'husk], start_suspended=False)
-    launch_worker_test_jobs(group, plugins=['arnold'], start_suspended=False)
+    launch_worker_test_jobs(args.group, plugins=['vray', 'arnold', 'husk'], start_suspended=args.suspend)
 

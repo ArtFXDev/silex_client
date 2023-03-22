@@ -64,3 +64,6 @@ def commands():
 
     parser_module = ".".join(["silex_client", "cli", "parser"])
     alias("silex", f"python -m {parser_module}")
+
+    # CLI for deadline tests
+    alias("dltest", "python -m silex_client.utils.deadline.tests.batch_tests.batch_machine_tests")
