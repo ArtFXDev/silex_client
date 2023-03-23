@@ -94,6 +94,7 @@ class VrayRenderTasksCommand(CommandBase):
             resolution = None
 
         jobs = []
+        sequence = False
 
         # One Vrscene file per render layer
         for vrscene in vrscenes:
@@ -105,6 +106,7 @@ class VrayRenderTasksCommand(CommandBase):
                 vr_files = [
                     f for f in os.listdir(vrscene) if Path(f).suffix == ".vrscene"
                 ]
+                sequence = True
 
             # use first file of sequence, vray find the rest of the sequence
             file_path: Path = vrscene.joinpath(str(vr_files[0]))
@@ -140,6 +142,7 @@ class VrayRenderTasksCommand(CommandBase):
                 frame_range,
                 file_path,
                 output_path,
+                sequence,
                 resolution,
                 rez_requires=rez_requires
             )
