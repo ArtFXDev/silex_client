@@ -16,6 +16,8 @@ from silex_client.utils.parameter_types import (
     TaskFileParameterMeta,
 )
 
+from silex_client.utils.log import flog
+
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -78,14 +80,25 @@ class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
             action_query: ActionQuery,
             logger: logging.Logger,
     ):
+        context = action_query.context_metadata
+        #flog.info(f"parameters = {action_query.parameters}")
+        #flog.info(f"commands = {action_query.commands}")
+        #flog.info(f"steps = {action_query.steps}")
+        #flog.info(f"store = {action_query.store}")
+        #flog.info(f"status = {action_query.status}")
+        #flog.info(f"name = {action_query.name}")
+        #flog.info(f"execution_type = {action_query.execution_type}")
+        #flog.info(f"current_command_index = {action_query.current_command_index}")
+        #flog.info(f"current_command = {action_query.current_command}")
+        #flog.info(f"is_running = {action_query.is_running}")
 
         vrscenes: List[pathlib.Path] = parameters["vrscenes"]
         output_directory: pathlib.Path = parameters["output_directory"]
         output_filename: str = parameters["output_filename"]
         output_extension: str = parameters["output_extension"]
         frame_range: FrameSet = parameters["frame_range"]
-        user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
-        rez_requires: str = "vray " + cast(str, action_query.context_metadata["project"]).lower()
+        user_name: str = cast(str,context["user"]).lower().replace(' ', '.')
+        rez_requires: str = "vray " + cast(str, context["project"]).lower()
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int]
 
@@ -99,6 +112,8 @@ class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
 
         # One Vrscene file per render layer
         for vrscene in vrscenes:
+
+            flog.info(f"vrscene = {vrscene}")
 
             vr_files = []
             if os.path.isfile(vrscene):
@@ -114,33 +129,22 @@ class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
             file_path = file_path.as_posix()
 
             # Detect the render layer name from the parent folder
-            split_by_name = vrscene.stem.split(f"{vrscene.parents[0].stem}_")
-
-            if len(split_by_name) > 1:
-                layer_name = split_by_name[-1]
-            else:
-                # Otherwise take the filename
+            layer_name = ""
+            if sequence :
                 layer_name = vrscene.stem
+            else:
+                layer_name = str(vrscene.parents[0].stem)
 
-            path_split = file_path.split('/')
-
-            folder_name = ""
-
-            if len(path_split) <= 11:
-                folder_name = f"{path_split[9]}_{layer_name}"
-            elif len(path_split) >= 12:
-                folder_name = f"{path_split[9]}_{path_split[10]}"
-
+            # build output path
             output_path = (
                     output_directory
-                    / folder_name
-                    / f"{output_filename}_{folder_name}.{output_extension}"
+                    / layer_name
+                    / f"{output_filename}_{layer_name}.{output_extension}"
             ).as_posix()
 
             # get job_title and batch_name
-            names = self.define_job_names(output_path)
-            job_title = names.get("job_title")
-            batch_name = names.get("batch_name")
+            job_title = layer_name
+            batch_name = self.get_batch_name(context)
 
             job = VrayJob(
                 job_title,
