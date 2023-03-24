@@ -6,6 +6,8 @@ import typing
 from typing import Any, Dict, cast
 
 from fileseq import FrameSet
+
+from silex_client.commands.farm.deadline_render_task import DeadlineRenderTaskCommand
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import (
     TaskFileParameterMeta,
@@ -17,10 +19,9 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 from silex_client.utils.deadline.job import HuskJob
-from silex_client.utils.log import flog
 
 
-class HuskRenderTasksCommand(CommandBase):
+class HuskRenderTasksCommand(DeadlineRenderTaskCommand):
     """
     Construct Husk render commands
     See: https://www.sidefx.com/docs/houdini/ref/utils/husk.html
@@ -93,16 +94,23 @@ class HuskRenderTasksCommand(CommandBase):
             context = action_query.context_metadata
             user = context["user"].lower().replace(' ', '.')
 
+            # job_title and batch_name
+            names = self.define_job_names(full_path.as_posix())
+            job_title = names.get("job_title")
+            batch_name = names.get("batch_name")
+
             # log
             log_level = parameters["LOG_level"]
 
             # create job
             job = HuskJob(
+                job_title=job_title,
                 user_name=user,
                 frame_range=parameters["frame_range"],
                 file_path=str(scene),
                 output_path=str(full_path),
                 log_level=log_level,
+                batch_name=batch_name,
                 rez_requires=f"houdini {project}"
             )
 

@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 
 from fileseq import FrameSet
+from silex_client.commands.farm.deadline_render_task import DeadlineRenderTaskCommand
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
@@ -21,7 +22,7 @@ if typing.TYPE_CHECKING:
 from silex_client.utils.deadline.job import VrayJob
 
 
-class VrayRenderTasksCommand(CommandBase):
+class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
     """
     Construct V-Ray render commands
     """
@@ -136,14 +137,20 @@ class VrayRenderTasksCommand(CommandBase):
                     / f"{output_filename}_{folder_name}.{output_extension}"
             ).as_posix()
 
+            # get job_title and batch_name
+            names = self.define_job_names(output_path)
+            job_title = names.get("job_title")
+            batch_name = names.get("batch_name")
 
             job = VrayJob(
+                job_title,
                 user_name,
                 frame_range,
                 file_path,
                 output_path,
                 sequence,
-                resolution,
+                batch_name=batch_name,
+                resolution=resolution,
                 rez_requires=rez_requires
             )
 

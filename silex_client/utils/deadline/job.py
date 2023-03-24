@@ -33,23 +33,16 @@ class DeadlineJob:
 
     def __init__(
         self,
+        job_title: str,
         user_name: str,
         frame_range: FrameSet,
-        file_path: str,
-        output_path: str,
+        batch_name: Optional[str] = None,
         rez_requires: Optional[str] = None,
         depends_on_previous: bool = False,
 
     ):
         self.job_info: Dict[str, Any] = self.JOB_INFO.copy()
         self.plugin_info: Dict[str, Any] = self.PLUGIN_INFO.copy()
-
-        # get job_name and batch_name
-        path_split = output_path.split("/")
-        batch_name = "_".join(path_split[1:6])
-        job_title = path_split[-2]
-        flog.info(f"batch_name = {batch_name}")
-        flog.info(f"job_title = {job_title}")
 
         self.depends_on_previous = depends_on_previous
 
@@ -116,31 +109,35 @@ class CommandLineJob(DeadlineJob):
 class VrayJob(DeadlineJob):
     def __init__(
         self,
+        job_title: str,
         user_name: str,
         frame_range: FrameSet,
         file_path: str,
         output_path: str,
+        sequence: bool,
+        batch_name: Optional[str] = None,
         resolution: Optional[List[int]] = None,
         rez_requires: Optional[str] = None,
         depends_on_previous: bool = False,
     ):
         super().__init__(
+            job_title,
             user_name,
             frame_range,
-            file_path,
-            output_path,
+            batch_name,
             rez_requires,
             depends_on_previous
         )
 
         self.job_info.update(
-            {"OutputDirectory0": str(Path(output_path).parent), "Plugin": "RezVray"}
+            {"OutputDirectory0": str(Path(output_path).parent), "Plugin": "RezVrayDev"}
         )
 
         self.plugin_info.update(
             {
                 "InputFilename": file_path,
                 "OutputFilename": output_path,
+                "SeparateFilesPerFrame": sequence
             }
         )
 
@@ -151,18 +148,20 @@ class VrayJob(DeadlineJob):
 class ArnoldJob(DeadlineJob):
     def __init__(
         self,
+        job_title: str,
         user_name: str,
         frame_range: FrameSet,
         file_path: str,
         output_path: str,
+        batch_name: Optional[str] = None,
         rez_requires: Optional[str] = None,
         depends_on_previous: bool = False,
     ):
         super().__init__(
+            job_title,
             user_name,
             frame_range,
-            file_path,
-            output_path.replace("\\", "/"),
+            batch_name,
             rez_requires,
             depends_on_previous,
         )
@@ -181,19 +180,21 @@ class ArnoldJob(DeadlineJob):
 class HuskJob(DeadlineJob):
     def __init__(
         self,
+        job_title: str,
         user_name: str,
         frame_range: FrameSet,
         file_path: str,
         output_path: str,
         log_level: str,
+        batch_name: Optional[str] = None,
         rez_requires: Optional[str] = None,
         depends_on_previous: bool = False,
     ):
         super().__init__(
+            job_title,
             user_name,
             frame_range,
-            file_path.replace("\\", "/"),
-            output_path.replace("\\", "/"),
+            batch_name,
             rez_requires,
             depends_on_previous,
         )
@@ -214,21 +215,23 @@ class HuskJob(DeadlineJob):
 class HoudiniJob(DeadlineJob):
     def __init__(
         self,
+        job_title: str,
         user_name: str,
         frame_range: FrameSet,
         file_path: str,
         output_path: str,
         rop_node: str,
+        batch_name: Optional[str],
         resolution=None,
         sim_job=False,
         rez_requires: Optional[str] = None,
         depends_on_previous: bool = False,
     ):
         super().__init__(
+            job_title,
             user_name,
             frame_range,
-            file_path.replace("\\", "/"),
-            output_path.replace("\\", "/"),
+            batch_name,
             rez_requires,
             depends_on_previous
         )
@@ -254,19 +257,21 @@ class HoudiniJob(DeadlineJob):
 class MayaBatchJob(DeadlineJob):
     def __init__(
         self,
+        job_title: str,
         user_name: str,
         frame_range: FrameSet,
         file_path: str,
         output_path: str,
         renderer: str,
+        batch_name: Optional[str],
         rez_requires: Optional[str] = None,
         depends_on_previous: bool = False,
     ):
         super().__init__(
+            job_title,
             user_name,
             frame_range,
-            file_path,
-            output_path,
+            batch_name,
             rez_requires,
             depends_on_previous,
         )

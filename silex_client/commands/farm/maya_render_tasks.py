@@ -5,8 +5,9 @@ import pathlib
 import typing
 from typing import Any, Dict, List, cast
 import fileseq
+
+from silex_client.commands.farm.deadline_render_task import DeadlineRenderTaskCommand
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.log import flog
 from silex_client.utils.parameter_types import (
     EditableListParameterMeta,
     MultipleSelectParameterMeta,
@@ -20,10 +21,10 @@ from silex_client.utils.parameter_types import (
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_client.utils.deadline.job import MayaBatchJob, CommandLineJob
+from silex_client.utils.deadline.job import MayaBatchJob
 
 
-class MayaRenderTasksCommand(CommandBase):
+class MayaRenderTasksCommand(DeadlineRenderTaskCommand):
     """
     Construct Maya render commands
     """
@@ -130,18 +131,25 @@ class MayaRenderTasksCommand(CommandBase):
             output_path: pathlib.Path = parameters["output_path"]
             output_split = str(output_path).split("\\")
             output_split[9] += "/" + folder
-            output_path = "/".join(output_split)
+            output = "/".join(output_split)
 
             frame_range: fileseq.FrameSet = parameters["frame_range"]
             rez_requires: str = "maya " + parameters['renderer'] + " " + cast(str, action_query.context_metadata["project"]).lower()
             user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
 
+            # get job_title and batch_name
+            names = self.define_job_names(output)
+            job_title = names.get("job_title")
+            batch_name = names.get("batch_name")
+
             job = MayaBatchJob(
+                job_title,
                 user_name,
                 frame_range,
                 file_path.as_posix(),
-                output_path,
+                output,
                 parameters['renderer'],
+                batch_name=batch_name,
                 rez_requires=rez_requires,
             )
 

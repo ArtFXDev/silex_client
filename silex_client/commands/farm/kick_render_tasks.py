@@ -6,6 +6,8 @@ from pathlib import Path
 import typing
 from typing import Any, Dict, List, cast
 import fileseq
+
+from silex_client.commands.farm.deadline_render_task import DeadlineRenderTaskCommand
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import TaskFileParameterMeta
 
@@ -16,7 +18,7 @@ if typing.TYPE_CHECKING:
 from silex_client.utils.deadline.job import ArnoldJob
 
 
-class KickRenderTasksCommand(CommandBase):
+class KickRenderTasksCommand(DeadlineRenderTaskCommand):
     """
     Construct Arnold Deadline Job.
     """
@@ -74,16 +76,23 @@ class KickRenderTasksCommand(CommandBase):
                             / folder_name
                             )
 
-            plugin_output_path: str = str(output_dir) + "/" + output_filename
+            plugin_output_path: str = output_dir.as_posix() + "/" + output_filename
 
             create_dir(str(output_dir), folder_name)
 
+            # get job_title and batch_name
+            names = self.define_job_names(plugin_output_path)
+            job_title = names.get("job_title")
+            batch_name = names.get("batch_name")
+
             job = ArnoldJob(
+                job_title,
                 user_name,
                 frame_range,
-                file_path,
+                str(file_path),
                 plugin_output_path,
-                rez_requires
+                batch_name=batch_name,
+                rez_requires=rez_requires
             )
 
             jobs.append(job)

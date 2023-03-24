@@ -8,6 +8,7 @@ import typing
 from typing import Any, Dict, List, Union, cast
 
 from fileseq import FrameSet
+from silex_client.commands.farm.deadline_render_task import DeadlineRenderTaskCommand
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder, farm, frames
 from silex_client.utils.parameter_types import (
@@ -29,7 +30,7 @@ import subprocess
 from silex_client.utils.deadline.job import HoudiniJob
 
 
-class HoudiniRenderTasksCommand(CommandBase):
+class HoudiniRenderTasksCommand(DeadlineRenderTaskCommand):
     """
     Construct Houdini Command
     """
@@ -145,13 +146,20 @@ class HoudiniRenderTasksCommand(CommandBase):
             if renderer == 'mantra':
                 renderer = ''
 
+            # get job_title and batch_name
+            names = self.define_job_names(full_output_file.as_posix())
+            job_title = names.get("job_title")
+            batch_name = names.get("batch_name")
+
             job = HoudiniJob(
+                job_title=job_title,
                 user_name=user,
                 frame_range=frame_range,
                 file_path=str(scene),
                 output_path=str(full_output_file),
                 rop_node=rop_node,
                 resolution=resolution,
+                batch_name=batch_name,
                 rez_requires=f"houdini {project} {renderer}"
             )
 
