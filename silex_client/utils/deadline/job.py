@@ -90,20 +90,32 @@ class CommandLineJob(DeadlineJob):
         command: str,
         rez_requires: Optional[str] = None,
         batch_name: Optional[str] = None,
+        output_path: Optional[str] = None,
+        is_single_frame: Optional[bool] = False,
         depends_on_previous: bool = False,
     ):
         super().__init__(
-            job_title,
-            user_name,
-            frame_range,
-            rez_requires,
-            batch_name,
-            depends_on_previous,
+            job_title=job_title,
+            user_name=user_name,
+            frame_range=frame_range,
+            rez_requires=rez_requires,
+            batch_name=batch_name,
+            depends_on_previous=depends_on_previous,
         )
 
         self.job_info.update({"Plugin": "RezCommandLine"})
+        if output_path:
+            self.job_info.update(
+                {"OutputDirectory0": str(Path(output_path).parent)}
+            )
 
-        self.plugin_info.update({"Executable": self.EXECUTABLE, "Arguments": command})
+        self.plugin_info.update(
+            {
+                "Executable": self.EXECUTABLE,
+                "Arguments": command,
+                "SingleFramesOnly": is_single_frame
+            }
+        )
 
 
 class VrayJob(DeadlineJob):
