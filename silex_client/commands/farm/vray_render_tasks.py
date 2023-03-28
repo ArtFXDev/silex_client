@@ -98,13 +98,10 @@ class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
             resolution = None
 
         jobs = []
-        sequence = False
+        is_files_per_frames = False
 
         # One Vrscene file per render layer
         for vrscene in vrscenes:
-
-            flog.info(f"vrscene = {vrscene}")
-            flog.info(f"sequence = {sequence}")
 
             vr_files = []
             if os.path.isfile(vrscene):
@@ -113,7 +110,7 @@ class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
                 vr_files = [
                     f for f in os.listdir(vrscene) if Path(f).suffix == ".vrscene"
                 ]
-                sequence = True
+                is_files_per_frames = True
 
             # use first file of sequence, vray find the rest of the sequence
             file_path: Path = vrscene.joinpath(str(vr_files[0]))
@@ -122,7 +119,7 @@ class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
             # Detect the render layer name from the parent folder & create full_output_filename
             full_output_filename = ""
             layer_name = ""
-            if sequence :
+            if is_files_per_frames :
                 layer_name = vrscene.stem
             else:
                 layer_name = str(vrscene.parents[0].stem)
@@ -144,7 +141,7 @@ class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
                 frame_range=frame_range,
                 file_path=file_path,
                 output_path=output_path,
-                sequence=sequence,
+                is_files_per_frames=is_files_per_frames,
                 batch_name=batch_name,
                 resolution=resolution,
                 rez_requires=rez_requires

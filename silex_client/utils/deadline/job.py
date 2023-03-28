@@ -114,7 +114,7 @@ class VrayJob(DeadlineJob):
         frame_range: FrameSet,
         file_path: str,
         output_path: str,
-        sequence: bool,
+        is_files_per_frames: Optional[bool] = False,
         batch_name: Optional[str] = None,
         resolution: Optional[List[int]] = None,
         rez_requires: Optional[str] = None,
@@ -137,7 +137,7 @@ class VrayJob(DeadlineJob):
             {
                 "InputFilename": file_path,
                 "OutputFilename": output_path,
-                "SeparateFilesPerFrame": sequence
+                "SeparateFilesPerFrame": is_files_per_frames
             }
         )
 
