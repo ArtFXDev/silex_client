@@ -113,13 +113,11 @@ class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
                 is_files_per_frames = True
 
             # use first file of sequence, vray find the rest of the sequence
-            file_path: Path = vrscene.joinpath(str(vr_files[0]))
+            file_path = vrscene.joinpath(str(vr_files[0]))
             file_path = file_path.as_posix()
 
             # Detect the render layer name from the parent folder & create full_output_filename
-            full_output_filename = ""
-            layer_name = ""
-            if is_files_per_frames :
+            if is_files_per_frames:
                 layer_name = vrscene.stem
             else:
                 layer_name = str(vrscene.parents[0].stem)
