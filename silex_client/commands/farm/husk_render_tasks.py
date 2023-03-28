@@ -80,9 +80,7 @@ class HuskRenderTasksCommand(DeadlineRenderTaskCommand):
         for file in files:
             # paths
             scene: pathlib.Path = file
-            usd_name = str(scene).split("_")[-1].split(".")[0]
-            publish_name = str(file).split("\\")[9]
-            folder_name = publish_name + "_" + usd_name
+            folder_name = str(file.parent.stem)
             full_path = (
                     parameters['output_directory']
                     / folder_name
@@ -95,9 +93,8 @@ class HuskRenderTasksCommand(DeadlineRenderTaskCommand):
             user = context["user"].lower().replace(' ', '.')
 
             # job_title and batch_name
-            names = self.define_job_names(full_path.as_posix())
-            job_title = names.get("job_title")
-            batch_name = names.get("batch_name")
+            job_title = folder_name
+            batch_name = self.get_batch_name(context)
 
             # log
             log_level = parameters["LOG_level"]

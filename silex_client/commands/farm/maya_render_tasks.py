@@ -119,6 +119,7 @@ class MayaRenderTasksCommand(DeadlineRenderTaskCommand):
             action_query: ActionQuery,
             logger: logging.Logger,
     ):
+        context =  action_query.context_metadata
         file_path: pathlib.Path = parameters["scene_file"]
         publish_name = str(file_path).split("\\")[9]
 
@@ -126,7 +127,7 @@ class MayaRenderTasksCommand(DeadlineRenderTaskCommand):
 
         jobs = []
         for layer in layers:
-            folder = publish_name + "_" + str(layer)
+            folder = str(layer)
 
             output_path: pathlib.Path = parameters["output_path"]
             output_split = str(output_path).split("\\")
@@ -138,17 +139,16 @@ class MayaRenderTasksCommand(DeadlineRenderTaskCommand):
             user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
 
             # get job_title and batch_name
-            names = self.define_job_names(output)
-            job_title = names.get("job_title")
-            batch_name = names.get("batch_name")
+            job_title = str(layer)
+            batch_name = self.get_batch_name(context)
 
             job = MayaBatchJob(
-                job_title,
-                user_name,
-                frame_range,
-                file_path.as_posix(),
-                output,
-                parameters['renderer'],
+                job_title=job_title,
+                user_name=user_name,
+                frame_range=frame_range,
+                file_path=file_path.as_posix(),
+                output_path=output,
+                renderer=parameters['renderer'],
                 batch_name=batch_name,
                 rez_requires=rez_requires,
             )

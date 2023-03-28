@@ -81,16 +81,6 @@ class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
             logger: logging.Logger,
     ):
         context = action_query.context_metadata
-        #flog.info(f"parameters = {action_query.parameters}")
-        #flog.info(f"commands = {action_query.commands}")
-        #flog.info(f"steps = {action_query.steps}")
-        #flog.info(f"store = {action_query.store}")
-        #flog.info(f"status = {action_query.status}")
-        #flog.info(f"name = {action_query.name}")
-        #flog.info(f"execution_type = {action_query.execution_type}")
-        #flog.info(f"current_command_index = {action_query.current_command_index}")
-        #flog.info(f"current_command = {action_query.current_command}")
-        #flog.info(f"is_running = {action_query.is_running}")
 
         vrscenes: List[pathlib.Path] = parameters["vrscenes"]
         output_directory: pathlib.Path = parameters["output_directory"]
@@ -114,6 +104,7 @@ class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
         for vrscene in vrscenes:
 
             flog.info(f"vrscene = {vrscene}")
+            flog.info(f"sequence = {sequence}")
 
             vr_files = []
             if os.path.isfile(vrscene):
@@ -128,7 +119,8 @@ class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
             file_path: Path = vrscene.joinpath(str(vr_files[0]))
             file_path = file_path.as_posix()
 
-            # Detect the render layer name from the parent folder
+            # Detect the render layer name from the parent folder & create full_output_filename
+            full_output_filename = ""
             layer_name = ""
             if sequence :
                 layer_name = vrscene.stem
@@ -147,12 +139,12 @@ class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
             batch_name = self.get_batch_name(context)
 
             job = VrayJob(
-                job_title,
-                user_name,
-                frame_range,
-                file_path,
-                output_path,
-                sequence,
+                job_title=job_title,
+                user_name=user_name,
+                frame_range=frame_range,
+                file_path=file_path,
+                output_path=output_path,
+                sequence=sequence,
                 batch_name=batch_name,
                 resolution=resolution,
                 rez_requires=rez_requires

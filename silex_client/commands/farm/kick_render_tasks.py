@@ -44,6 +44,8 @@ class KickRenderTasksCommand(DeadlineRenderTaskCommand):
             action_query: ActionQuery,
             logger: logging.Logger,
     ):
+        context = action_query.context_metadata
+
         ass_folders: List[Path] = parameters["ass_folders"]
         output_path: Path = parameters["output_path"]
         frame_range: fileseq.FrameSet = parameters["frame_range"]
@@ -66,8 +68,8 @@ class KickRenderTasksCommand(DeadlineRenderTaskCommand):
             # use first file of sequence, Arnold find the rest of the sequence
             file_path: Path = ass_folder.joinpath(str(ass_files[0]))
             file_path = file_path.as_posix()
-            publish_name = file_path.split("/")[9]
-            folder_name = publish_name + "_" + ass_folder.stem
+
+            folder_name = ass_folder.stem
 
             output_filename: str = f"{output_path.stem}_{folder_name}{''.join(output_path.suffixes)}"
 
@@ -81,16 +83,15 @@ class KickRenderTasksCommand(DeadlineRenderTaskCommand):
             create_dir(str(output_dir), folder_name)
 
             # get job_title and batch_name
-            names = self.define_job_names(plugin_output_path)
-            job_title = names.get("job_title")
-            batch_name = names.get("batch_name")
+            job_title = folder_name
+            batch_name = self.get_batch_name(context)
 
             job = ArnoldJob(
-                job_title,
-                user_name,
-                frame_range,
-                str(file_path),
-                plugin_output_path,
+                job_title=job_title,
+                user_name=user_name,
+                frame_range=frame_range,
+                file_path=str(file_path),
+                output_path=plugin_output_path,
                 batch_name=batch_name,
                 rez_requires=rez_requires
             )

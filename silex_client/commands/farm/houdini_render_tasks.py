@@ -133,13 +133,11 @@ class HoudiniRenderTasksCommand(DeadlineRenderTaskCommand):
             context = action_query.context_metadata
             user = context["user"].lower().replace(' ', '.')
             project = cast(str, action_query.context_metadata["project"]).lower()
-            publish_name = str(scene).split("\\")[9]
-            rop_name = rop_node.split("/")[-1]
-            folder = publish_name + "_" + rop_name
+            folder =  rop_node.split("/")[-1]
             full_output_file = (
                     output_file.parent
                     / folder
-                    / f"{output_file.stem}_{publish_name}_{rop_name}.$F4{''.join(output_file.suffixes)}"
+                    / f"{output_file.stem}_{folder}.$F4{''.join(output_file.suffixes)}"
             )
 
             renderer = parameters['renderer']
@@ -147,9 +145,8 @@ class HoudiniRenderTasksCommand(DeadlineRenderTaskCommand):
                 renderer = ''
 
             # get job_title and batch_name
-            names = self.define_job_names(full_output_file.as_posix())
-            job_title = names.get("job_title")
-            batch_name = names.get("batch_name")
+            job_title = folder
+            batch_name = self.get_batch_name(context)
 
             job = HoudiniJob(
                 job_title=job_title,

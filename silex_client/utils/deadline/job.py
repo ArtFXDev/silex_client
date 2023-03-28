@@ -121,16 +121,16 @@ class VrayJob(DeadlineJob):
         depends_on_previous: bool = False,
     ):
         super().__init__(
-            job_title,
-            user_name,
-            frame_range,
-            batch_name,
-            rez_requires,
-            depends_on_previous
+            job_title=job_title,
+            user_name=user_name,
+            frame_range=frame_range,
+            batch_name=batch_name,
+            rez_requires=rez_requires,
+            depends_on_previous=depends_on_previous
         )
 
         self.job_info.update(
-            {"OutputDirectory0": str(Path(output_path).parent), "Plugin": "RezVrayDev"}
+            {"OutputDirectory0": str(Path(output_path).parent), "Plugin": "RezVray"}
         )
 
         self.plugin_info.update(
@@ -158,12 +158,12 @@ class ArnoldJob(DeadlineJob):
         depends_on_previous: bool = False,
     ):
         super().__init__(
-            job_title,
-            user_name,
-            frame_range,
-            batch_name,
-            rez_requires,
-            depends_on_previous,
+            job_title=job_title,
+            user_name=user_name,
+            frame_range=frame_range,
+            batch_name=batch_name,
+            rez_requires=rez_requires,
+            depends_on_previous=depends_on_previous,
         )
 
         self.job_info.update(
@@ -191,12 +191,12 @@ class HuskJob(DeadlineJob):
         depends_on_previous: bool = False,
     ):
         super().__init__(
-            job_title,
-            user_name,
-            frame_range,
-            batch_name,
-            rez_requires,
-            depends_on_previous,
+            job_title=job_title,
+            user_name=user_name,
+            frame_range=frame_range,
+            batch_name=batch_name,
+            rez_requires=rez_requires,
+            depends_on_previous=depends_on_previous,
         )
 
         self.job_info.update(
@@ -228,12 +228,12 @@ class HoudiniJob(DeadlineJob):
         depends_on_previous: bool = False,
     ):
         super().__init__(
-            job_title,
-            user_name,
-            frame_range,
-            batch_name,
-            rez_requires,
-            depends_on_previous
+            job_title=job_title,
+            user_name=user_name,
+            frame_range=frame_range,
+            batch_name=batch_name,
+            rez_requires=rez_requires,
+            depends_on_previous=depends_on_previous
         )
         # self.job_info = dict(self.JOB_INFO)
         self.job_info.update(
@@ -268,12 +268,12 @@ class MayaBatchJob(DeadlineJob):
         depends_on_previous: bool = False,
     ):
         super().__init__(
-            job_title,
-            user_name,
-            frame_range,
-            batch_name,
-            rez_requires,
-            depends_on_previous,
+            job_title=job_title,
+            user_name=user_name,
+            frame_range=frame_range,
+            batch_name=batch_name,
+            rez_requires=rez_requires,
+            depends_on_previous=depends_on_previous,
         )
 
         self.job_info.update(

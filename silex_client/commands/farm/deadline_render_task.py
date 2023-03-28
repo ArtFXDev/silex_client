@@ -13,9 +13,3 @@ class DeadlineRenderTaskCommand(CommandBase):
 
         return f"{project}_{sequence}_{shot}_{task_type}_{task}"
 
-    def get_job_title(self, output_path):
-        path_split = output_path.split("/")
-        job_title = path_split[-2]
-
-        return job_title
-
