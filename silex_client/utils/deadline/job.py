@@ -39,8 +39,10 @@ class DeadlineJob:
         batch_name: Optional[str] = None,
         rez_requires: Optional[str] = None,
         depends_on_previous: bool = False,
-
+        output_path: Optional[str] = None,
     ):
+        self._id = None
+        self._output_path = output_path
         self.job_info: Dict[str, Any] = self.JOB_INFO.copy()
         self.plugin_info: Dict[str, Any] = self.PLUGIN_INFO.copy()
 
@@ -68,14 +70,48 @@ class DeadlineJob:
     def set_dependency(self, job_id):
         self.job_info.update({"JobDependencies": job_id})
 
+    def get_dependency(self):
+        self.job_info.get("JobDependencies")
+
     def set_delay(self):
         self.job_info.update({
             "JobDelay": "00:00:05:00",
             "PreJobScript": r"\\deadline\DeadlineRepository\scripts\Jobs\add_delay.py"
         })
 
+    @property
+    def id(self):
+        """
+        Returns the job ID.
+
+        :return: ID or None if the job was not submitted.
+        """
+        return self._id
+
+    @id.setter
+    def id(self, id):
+        """
+        ID should be set by DeadlineRunner on submission.
+
+        :param id:
+        :return:
+        """
+        self._id = id
+
+    @property
+    def output_path(self):
+        """
+        Returns the path, if set, else None
+        :return:
+        """
+        return self._output_path
+
+    @property
+    def batch_name(self):
+        return self.job_info.get("BatchName")
+
     def __str__(self):
-        return f"[job.{self.__class__.__name__}]\nINFO: {pformat(self.job_info)}\nPLUGIN: {pformat(self.plugin_info)}"
+        return f"[job.{self.__class__.__name__}] ID: {self.id}\nINFO: {pformat(self.job_info)}\nPLUGIN: {pformat(self.plugin_info)}"
 
 
 class CommandLineJob(DeadlineJob):
@@ -101,6 +137,7 @@ class CommandLineJob(DeadlineJob):
             rez_requires=rez_requires,
             batch_name=batch_name,
             depends_on_previous=depends_on_previous,
+            output_path=output_path,
         )
 
         self.job_info.update({"Plugin": "RezCommandLine"})
@@ -138,7 +175,7 @@ class VrayJob(DeadlineJob):
             frame_range=frame_range,
             batch_name=batch_name,
             rez_requires=rez_requires,
-            depends_on_previous=depends_on_previous
+            depends_on_previous=depends_on_previous,
         )
 
         self.job_info.update(
@@ -155,6 +192,16 @@ class VrayJob(DeadlineJob):
 
         if resolution is not None:
             self.plugin_info.update({"Width": resolution[0], "Height": resolution[1]})
+
+    @property
+    def output_path(self):
+        """
+        Returns the path, if set, else None
+        Re-implemented here because the path is stored in the plugin_info.
+
+        :return:
+        """
+        return self.plugin_info.get("OutputFilename")
 
 
 class ArnoldJob(DeadlineJob):
@@ -187,6 +234,16 @@ class ArnoldJob(DeadlineJob):
         )
 
         self.plugin_info.update({"InputFile": file_path, "OutputFile": output_path})
+
+    @property
+    def output_path(self):
+        """
+        Returns the path, if set, else None
+        Re-implemented here because the path is stored in the plugin_info.
+
+        :return:
+        """
+        return self.plugin_info.get("OutputFile")
 
 
 class HuskJob(DeadlineJob):
@@ -222,6 +279,16 @@ class HuskJob(DeadlineJob):
                 "LogLevel": log_level
             }
         )
+
+    @property
+    def output_path(self):
+        """
+        Returns the path, if set, else None
+        Re-implemented here because the path is stored in the plugin_info.
+
+        :return:
+        """
+        return self.plugin_info.get("ImageOutputDirectory")
 
 
 class HoudiniJob(DeadlineJob):
@@ -265,6 +332,16 @@ class HoudiniJob(DeadlineJob):
             self.plugin_info.update({"Width": resolution[0]})
             self.plugin_info.update({"Height": resolution[1]})
 
+    @property
+    def output_path(self):
+        """
+        Returns the path, if set, else None
+        Re-implemented here because the path is stored in the plugin_info.
+
+        :return:
+        """
+        return self.plugin_info.get("Output")
+
 
 class MayaBatchJob(DeadlineJob):
     def __init__(
@@ -286,6 +363,7 @@ class MayaBatchJob(DeadlineJob):
             batch_name=batch_name,
             rez_requires=rez_requires,
             depends_on_previous=depends_on_previous,
+            output_path=output_path,
         )
 
         self.job_info.update(
@@ -347,3 +425,13 @@ class NukeJob(DeadlineJob):
                 "Version": "13.2",
             }
         )
+
+    @property
+    def output_path(self):
+        """
+        Returns the path, if set, else None
+        Re-implemented here because the path is stored in the plugin_info.
+
+        :return:
+        """
+        return self.plugin_info.get("OutputFilePath")
