@@ -109,6 +109,7 @@ class SubmitToDeadlineCommand(CommandBase):
         dr = DeadlineRunner()
 
         previous_job_id = None
+        jobs = []
 
         for job in parameters["jobs"]:
             if job.depends_on_previous is True:
@@ -120,4 +121,7 @@ class SubmitToDeadlineCommand(CommandBase):
             if parameters['delay'] is True:
                 job.set_delay()
             previous_job_id = dr.run(job)
-            flog.info(job)
+            jobs.append(job)
+            # flog.info(job)
+
+        return {"jobs": jobs}
