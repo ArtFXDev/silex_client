@@ -5,8 +5,9 @@ import os
 from pathlib import Path
 import typing
 from typing import Any, Dict, List, cast
-from silex_client.utils.log import flog
 import fileseq
+
+from silex_client.commands.farm.deadline_render_task import DeadlineRenderTaskCommand
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import TaskFileParameterMeta
 
@@ -17,7 +18,7 @@ if typing.TYPE_CHECKING:
 from silex_client.utils.deadline.job import ArnoldJob
 
 
-class KickRenderTasksCommand(CommandBase):
+class KickRenderTasksCommand(DeadlineRenderTaskCommand):
     """
     Construct Arnold Deadline Job.
     """
@@ -31,7 +32,7 @@ class KickRenderTasksCommand(CommandBase):
         "frame_range": {
             "label": "Frame range",
             "type": fileseq.FrameSet,
-            "value": "1-50x1",
+            "value": "1001-1050x1",
         },
         "output_path": {"type": Path, "value": "", "hide": True},
     }
@@ -43,6 +44,8 @@ class KickRenderTasksCommand(CommandBase):
             action_query: ActionQuery,
             logger: logging.Logger,
     ):
+        context = action_query.context_metadata
+
         ass_folders: List[Path] = parameters["ass_folders"]
         output_path: Path = parameters["output_path"]
         frame_range: fileseq.FrameSet = parameters["frame_range"]
@@ -54,9 +57,6 @@ class KickRenderTasksCommand(CommandBase):
             f for f in os.listdir(ass_folders[0]) if Path(str(f)).suffix == ".ass"
         ]
 
-        tmp = Path(str(ass_files[0]))
-        batch_name: str = tmp.stem.rsplit('_', 1)[0]
-
         jobs = []
 
         # for each render layer:
@@ -67,25 +67,49 @@ class KickRenderTasksCommand(CommandBase):
 
             # use first file of sequence, Arnold find the rest of the sequence
             file_path: Path = ass_folder.joinpath(str(ass_files[0]))
+            file_path = file_path.as_posix()
 
-            output_filename: str = f"{output_path.stem}_{ass_folder.stem}{''.join(output_path.suffixes)}"
+            folder_name = ass_folder.stem
 
-            output_dir: Path = output_path.parent
+            output_filename: str = f"{output_path.stem}_{folder_name}{''.join(output_path.suffixes)}"
 
-            plugin_output_path: str = str(output_dir) + output_filename
+            output_dir: Path = (
+                            output_path.parent
+                            / folder_name
+                            )
 
-            job_title: str = ass_folder.stem
+            plugin_output_path: str = output_dir.as_posix() + "/" + output_filename
+
+            create_dir(str(output_dir), folder_name)
+
+            # get job_title and batch_name
+            job_title = folder_name
+            batch_name = self.get_batch_name(context)
 
             job = ArnoldJob(
-                job_title,
-                user_name,
-                frame_range,
-                file_path.as_posix(),
-                plugin_output_path,
-                rez_requires,
-                batch_name=batch_name
+                job_title=job_title,
+                user_name=user_name,
+                frame_range=frame_range,
+                file_path=str(file_path),
+                output_path=plugin_output_path,
+                batch_name=batch_name,
+                rez_requires=rez_requires
             )
 
             jobs.append(job)
 
         return {"jobs": jobs}
+
+def create_dir(path, folder):
+    path_split = path.split("\\")
+
+    tars_path = "\\\\tars/" + path_split[1]
+    ana_path = "\\\\ana/" + path_split[1]
+    if os.path.isdir(tars_path):
+        path_split[0] = tars_path
+    if os.path.isdir(ana_path):
+        path_split[0] = ana_path
+
+    path_create = "/".join(path_split[0:-1]) + "/" + folder
+    if not os.path.isdir(path_create):
+        os.mkdir(path_create)

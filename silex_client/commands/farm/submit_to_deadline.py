@@ -62,6 +62,13 @@ class SubmitToDeadlineCommand(CommandBase):
             "type": SelectParameterMeta("normal", "camap", "test sampling", "priority sup", "retake", "making of",
                                         "personal"),
             "value": "normal"
+        },
+        "delay": {
+            "label": "Delay submit",
+            "type": bool,
+            "tooltip": "If true, job will be rendered in 5 minutes.",
+            "value": False,
+            "hide": False
         }
     }
 
@@ -110,5 +117,7 @@ class SubmitToDeadlineCommand(CommandBase):
             job.set_pool(parameters['pools'])
             job.set_chunk_size(parameters['task_size'])
             job.set_priority(priority_rank.get(parameters['priority_rank']))
+            if parameters['delay'] is True:
+                job.set_delay()
             previous_job_id = dr.run(job)
             flog.info(job)

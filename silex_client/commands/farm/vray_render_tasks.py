@@ -4,14 +4,18 @@ import logging
 import pathlib
 import typing
 from typing import Any, Dict, List, cast
+import os
+from pathlib import Path
 
 from fileseq import FrameSet
+from silex_client.commands.farm.deadline_render_task import DeadlineRenderTaskCommand
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import (
     IntArrayParameterMeta,
     RadioSelectParameterMeta,
     TaskFileParameterMeta,
 )
+
 from silex_client.utils.log import flog
 
 # Forward references
@@ -20,7 +24,7 @@ if typing.TYPE_CHECKING:
 from silex_client.utils.deadline.job import VrayJob
 
 
-class VrayRenderTasksCommand(CommandBase):
+class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
     """
     Construct V-Ray render commands
     """
@@ -36,7 +40,7 @@ class VrayRenderTasksCommand(CommandBase):
         "frame_range": {
             "label": "Frame range",
             "type": FrameSet,
-            "value": "1-50x1",
+            "value": "1001-1050x1",
         },
         "engine": {
             "label": "RT engine",
@@ -56,7 +60,7 @@ class VrayRenderTasksCommand(CommandBase):
             "type": IntArrayParameterMeta(2),
             "value": [1920, 1080],
             "hide": True,
-        },
+        }
     }
 
     async def setup(
@@ -76,14 +80,15 @@ class VrayRenderTasksCommand(CommandBase):
             action_query: ActionQuery,
             logger: logging.Logger,
     ):
+        context = action_query.context_metadata
+
         vrscenes: List[pathlib.Path] = parameters["vrscenes"]
         output_directory: pathlib.Path = parameters["output_directory"]
         output_filename: str = parameters["output_filename"]
         output_extension: str = parameters["output_extension"]
         frame_range: FrameSet = parameters["frame_range"]
-        engine: int = parameters["engine"]
-        user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
-        rez_requires: str = "vray " + cast(str, action_query.context_metadata["project"]).lower()
+        user_name: str = cast(str,context["user"]).lower().replace(' ', '.')
+        rez_requires: str = "vray " + cast(str, context["project"]).lower()
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int]
 
@@ -93,45 +98,51 @@ class VrayRenderTasksCommand(CommandBase):
             resolution = None
 
         jobs = []
+        is_files_per_frames = False
 
         # One Vrscene file per render layer
         for vrscene in vrscenes:
 
-            # Detect the render layer name from the parent folder
-            split_by_name = vrscene.stem.split(f"{vrscene.parents[0].stem}_")
-
-            if len(split_by_name) > 1:
-                layer_name = split_by_name[-1]
+            vr_files = []
+            if os.path.isfile(vrscene):
+                vr_files = [vrscene]
             else:
-                # Otherwise take the filename
-                layer_name = vrscene.stem
+                vr_files = [
+                    f for f in os.listdir(vrscene) if Path(f).suffix == ".vrscene"
+                ]
+                is_files_per_frames = True
 
+            # use first file of sequence, vray find the rest of the sequence
+            file_path = vrscene.joinpath(str(vr_files[0]))
+            file_path = file_path.as_posix()
+
+            # Detect the render layer name from the parent folder & create full_output_filename
+            if is_files_per_frames:
+                layer_name = vrscene.stem
+            else:
+                layer_name = str(vrscene.parents[0].stem)
+
+            # build output path
             output_path = (
                     output_directory
                     / layer_name
                     / f"{output_filename}_{layer_name}.{output_extension}"
             ).as_posix()
 
-            if len(vrscenes) > 1:
-                batch_name = vrscene.stem.split(f"{vrscene.parents[0].stem}_")[0][:-1]
-                job_title = layer_name
-
-            else:
-                batch_name = None
-                job_title = vrscene.stem.split(f"{vrscene.parents[0].stem}_")[0][:-1]
-
-            file_path = vrscene.as_posix()
+            # get job_title and batch_name
+            job_title = layer_name
+            batch_name = self.get_batch_name(context)
 
             job = VrayJob(
-                job_title,
-                user_name,
-                frame_range,
-                file_path,
-                output_path,
-                # engine, FIXME: engine actually doesn't work, looks like it never worked.
-                resolution,
-                rez_requires=rez_requires,
-                batch_name=batch_name
+                job_title=job_title,
+                user_name=user_name,
+                frame_range=frame_range,
+                file_path=file_path,
+                output_path=output_path,
+                is_files_per_frames=is_files_per_frames,
+                batch_name=batch_name,
+                resolution=resolution,
+                rez_requires=rez_requires
             )
 
             jobs.append(job)

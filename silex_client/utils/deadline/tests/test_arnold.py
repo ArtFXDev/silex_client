@@ -18,7 +18,7 @@ def get_arnold_job():
     job = ArnoldJob(
         job_title="silex_test_job_rez_arnold",
         user_name=getpass.getuser().lower(),
-        frame_range=fileseq.FrameSet("1-5"),
+        frame_range=fileseq.FrameSet("1-2"),
         file_path="M:/testpipe/shots/s01/p010/lighting_main/publish/v000/ass/main/renderSetupLayer1/testpipe_s01_p010_lighting_main_publish_v000_main_renderSetupLayer1.0001.ass",
         output_path="M:/testpipe/shots/s01/p010/lighting_main/publish/v000/exr/rendertestpipe_s01_p010_lighting_main_publish_v000_render_renderSetupLayer1.exr",
         rez_requires="arnold testpipe",

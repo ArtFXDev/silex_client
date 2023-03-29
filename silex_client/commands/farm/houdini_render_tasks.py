@@ -6,9 +6,9 @@ import pathlib
 import tempfile
 import typing
 from typing import Any, Dict, List, Union, cast
-from silex_client.utils.log import flog
 
 from fileseq import FrameSet
+from silex_client.commands.farm.deadline_render_task import DeadlineRenderTaskCommand
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder, farm, frames
 from silex_client.utils.parameter_types import (
@@ -30,7 +30,7 @@ import subprocess
 from silex_client.utils.deadline.job import HoudiniJob
 
 
-class HoudiniRenderTasksCommand(CommandBase):
+class HoudiniRenderTasksCommand(DeadlineRenderTaskCommand):
     """
     Construct Houdini Command
     """
@@ -43,7 +43,7 @@ class HoudiniRenderTasksCommand(CommandBase):
         "frame_range": {
             "label": "Frame range",
             "type": FrameSet,
-            "value": "1-50x1",
+            "value": "1001-1050x1",
         },
         "output_filename": {
             "type": pathlib.Path,
@@ -111,7 +111,7 @@ class HoudiniRenderTasksCommand(CommandBase):
     ):
         scene: pathlib.Path = parameters["scene_file"]
         frame_range: FrameSet = parameters["frame_range"]
-        skip_existing = parameters["skip_existing"]
+        #skip_existing = parameters["skip_existing"]
         parameter_overrides: bool = parameters["parameter_overrides"]
         resolution: List[int]
         if parameter_overrides:
@@ -133,29 +133,31 @@ class HoudiniRenderTasksCommand(CommandBase):
             context = action_query.context_metadata
             user = context["user"].lower().replace(' ', '.')
             project = cast(str, action_query.context_metadata["project"]).lower()
-            rop_name = rop_node.split("/")[-1]
+            folder =  rop_node.split("/")[-1]
             full_output_file = (
                     output_file.parent
-                    / rop_name
-                    / f"{output_file.stem}_{rop_name}.$F4{''.join(output_file.suffixes)}"
+                    / folder
+                    / f"{output_file.stem}_{folder}.$F4{''.join(output_file.suffixes)}"
             )
-
-            flog.info(f"resolution : {resolution}")
 
             renderer = parameters['renderer']
             if renderer == 'mantra':
                 renderer = ''
 
+            # get job_title and batch_name
+            job_title = folder
+            batch_name = self.get_batch_name(context)
+
             job = HoudiniJob(
-                job_title=rop_name,
+                job_title=job_title,
                 user_name=user,
                 frame_range=frame_range,
                 file_path=str(scene),
                 output_path=str(full_output_file),
                 rop_node=rop_node,
                 resolution=resolution,
-                rez_requires=f"houdini {project} {renderer}",
-                batch_name=scene.stem
+                batch_name=batch_name,
+                rez_requires=f"houdini {project} {renderer}"
             )
 
             # add job to the job list

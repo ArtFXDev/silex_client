@@ -10,6 +10,7 @@ from fileseq import FrameSet
 from pathlib import Path
 
 import logging
+from silex_client.utils.log import flog
 
 log = logging.getLogger("deadline")
 
@@ -25,8 +26,7 @@ class DeadlineJob:
         "MachineLimit": 0,
         "Pool": "",
         "ChunkSize": 5,
-        "Priority": 50,
-        # "InitialStatus": "Active"  # < Active / Suspended >
+        "Priority": 50
     }
 
     PLUGIN_INFO = {}
@@ -36,14 +36,14 @@ class DeadlineJob:
         job_title: str,
         user_name: str,
         frame_range: FrameSet,
-        rez_requires: Optional[str] = None,
         batch_name: Optional[str] = None,
+        rez_requires: Optional[str] = None,
         depends_on_previous: bool = False,
+
     ):
         self.job_info: Dict[str, Any] = self.JOB_INFO.copy()
         self.plugin_info: Dict[str, Any] = self.PLUGIN_INFO.copy()
 
-        self.batch_name = batch_name  # used ?
         self.depends_on_previous = depends_on_previous
 
         self.job_info.update(
@@ -68,6 +68,12 @@ class DeadlineJob:
     def set_dependency(self, job_id):
         self.job_info.update({"JobDependencies": job_id})
 
+    def set_delay(self):
+        self.job_info.update({
+            "JobDelay": "00:00:05:00",
+            "PreJobScript": r"\\deadline\DeadlineRepository\scripts\Jobs\add_delay.py"
+        })
+
     def __str__(self):
         return f"[job.{self.__class__.__name__}]\nINFO: {pformat(self.job_info)}\nPLUGIN: {pformat(self.plugin_info)}"
 
@@ -84,20 +90,32 @@ class CommandLineJob(DeadlineJob):
         command: str,
         rez_requires: Optional[str] = None,
         batch_name: Optional[str] = None,
+        output_path: Optional[str] = None,
+        is_single_frame: Optional[bool] = False,
         depends_on_previous: bool = False,
     ):
         super().__init__(
-            job_title,
-            user_name,
-            frame_range,
-            rez_requires,
-            batch_name,
-            depends_on_previous,
+            job_title=job_title,
+            user_name=user_name,
+            frame_range=frame_range,
+            rez_requires=rez_requires,
+            batch_name=batch_name,
+            depends_on_previous=depends_on_previous,
         )
 
         self.job_info.update({"Plugin": "RezCommandLine"})
+        if output_path:
+            self.job_info.update(
+                {"OutputDirectory0": str(Path(output_path).parent)}
+            )
 
-        self.plugin_info.update({"Executable": self.EXECUTABLE, "Arguments": command})
+        self.plugin_info.update(
+            {
+                "Executable": self.EXECUTABLE,
+                "Arguments": command,
+                "SingleFramesOnly": is_single_frame
+            }
+        )
 
 
 class VrayJob(DeadlineJob):
@@ -108,18 +126,19 @@ class VrayJob(DeadlineJob):
         frame_range: FrameSet,
         file_path: str,
         output_path: str,
+        is_files_per_frames: Optional[bool] = False,
+        batch_name: Optional[str] = None,
         resolution: Optional[List[int]] = None,
         rez_requires: Optional[str] = None,
-        batch_name: Optional[str] = None,
         depends_on_previous: bool = False,
     ):
         super().__init__(
-            job_title,
-            user_name,
-            frame_range,
-            rez_requires,
-            batch_name,
-            depends_on_previous,
+            job_title=job_title,
+            user_name=user_name,
+            frame_range=frame_range,
+            batch_name=batch_name,
+            rez_requires=rez_requires,
+            depends_on_previous=depends_on_previous
         )
 
         self.job_info.update(
@@ -130,6 +149,7 @@ class VrayJob(DeadlineJob):
             {
                 "InputFilename": file_path,
                 "OutputFilename": output_path,
+                "SeparateFilesPerFrame": is_files_per_frames
             }
         )
 
@@ -145,17 +165,17 @@ class ArnoldJob(DeadlineJob):
         frame_range: FrameSet,
         file_path: str,
         output_path: str,
-        rez_requires: Optional[str] = None,
         batch_name: Optional[str] = None,
+        rez_requires: Optional[str] = None,
         depends_on_previous: bool = False,
     ):
         super().__init__(
-            job_title,
-            user_name,
-            frame_range,
-            rez_requires,
-            batch_name,
-            depends_on_previous,
+            job_title=job_title,
+            user_name=user_name,
+            frame_range=frame_range,
+            batch_name=batch_name,
+            rez_requires=rez_requires,
+            depends_on_previous=depends_on_previous,
         )
 
         self.job_info.update(
@@ -178,17 +198,17 @@ class HuskJob(DeadlineJob):
         file_path: str,
         output_path: str,
         log_level: str,
-        rez_requires: Optional[str] = None,
         batch_name: Optional[str] = None,
+        rez_requires: Optional[str] = None,
         depends_on_previous: bool = False,
     ):
         super().__init__(
-            job_title,
-            user_name,
-            frame_range,
-            rez_requires,
-            batch_name,
-            depends_on_previous,
+            job_title=job_title,
+            user_name=user_name,
+            frame_range=frame_range,
+            batch_name=batch_name,
+            rez_requires=rez_requires,
+            depends_on_previous=depends_on_previous,
         )
 
         self.job_info.update(
@@ -199,8 +219,7 @@ class HuskJob(DeadlineJob):
             {
                 "SceneFile": file_path,
                 "ImageOutputDirectory": output_path,
-                "LogLevel": log_level,
-                # "HuskRenderExecutable": "C:/Houdini19/bin/husk.exe"
+                "LogLevel": log_level
             }
         )
 
@@ -214,19 +233,19 @@ class HoudiniJob(DeadlineJob):
         file_path: str,
         output_path: str,
         rop_node: str,
+        batch_name: Optional[str],
         resolution=None,
         sim_job=False,
         rez_requires: Optional[str] = None,
-        batch_name: Optional[str] = None,
         depends_on_previous: bool = False,
     ):
         super().__init__(
-            job_title,
-            user_name,
-            frame_range,
-            rez_requires,
-            batch_name,
-            depends_on_previous,
+            job_title=job_title,
+            user_name=user_name,
+            frame_range=frame_range,
+            batch_name=batch_name,
+            rez_requires=rez_requires,
+            depends_on_previous=depends_on_previous
         )
         # self.job_info = dict(self.JOB_INFO)
         self.job_info.update(
@@ -256,17 +275,17 @@ class MayaBatchJob(DeadlineJob):
         file_path: str,
         output_path: str,
         renderer: str,
+        batch_name: Optional[str],
         rez_requires: Optional[str] = None,
-        batch_name: Optional[str] = None,
         depends_on_previous: bool = False,
     ):
         super().__init__(
-            job_title,
-            user_name,
-            frame_range,
-            rez_requires,
-            batch_name,
-            depends_on_previous,
+            job_title=job_title,
+            user_name=user_name,
+            frame_range=frame_range,
+            batch_name=batch_name,
+            rez_requires=rez_requires,
+            depends_on_previous=depends_on_previous,
         )
 
         self.job_info.update(
@@ -276,10 +295,12 @@ class MayaBatchJob(DeadlineJob):
             }
         )
 
+        prefix = str(Path(output_path).stem) + "_" + output_path.split("/")[-2]
+
         self.plugin_info.update(
             {
                 "SceneFile": file_path,
-                "OutputFilePrefix": str(Path(output_path).stem),
+                "OutputFilePrefix": prefix,
                 "OutputFilePath": str(Path(output_path).parent),
                 "Renderer": renderer,
                 "RezRequires": rez_requires,

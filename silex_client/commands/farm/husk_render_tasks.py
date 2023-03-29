@@ -3,14 +3,13 @@ from __future__ import annotations
 import logging
 import pathlib
 import typing
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, cast
 
 from fileseq import FrameSet
+
+from silex_client.commands.farm.deadline_render_task import DeadlineRenderTaskCommand
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import command_builder, farm
-from silex_client.utils.frames import split_frameset
 from silex_client.utils.parameter_types import (
-    IntArrayParameterMeta,
     TaskFileParameterMeta,
     SelectParameterMeta
 )
@@ -20,11 +19,9 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 from silex_client.utils.deadline.job import HuskJob
-from silex_client.utils.log import flog
-from silex_client.config.priority_rank import priority_rank
 
 
-class HuskRenderTasksCommand(CommandBase):
+class HuskRenderTasksCommand(DeadlineRenderTaskCommand):
     """
     Construct Husk render commands
     See: https://www.sidefx.com/docs/houdini/ref/utils/husk.html
@@ -38,7 +35,7 @@ class HuskRenderTasksCommand(CommandBase):
         "frame_range": {
             "label": "Frame range",
             "type": FrameSet,
-            "value": "1-50x1",
+            "value": "1001-1050x1",
         },
         "skip_existing": {
             "label": "Skip existing frames",
@@ -78,40 +75,40 @@ class HuskRenderTasksCommand(CommandBase):
         jobs = []
 
         files = parameters["scene_file"]
-        flog.info(f"files : {files}, type : {type(files)}")
 
+        # for each files
         for file in files:
+            # paths
             scene: pathlib.Path = file
-            flog.info(parameters['output_directory'])
-            flog.info(parameters['output_filename'].as_posix())
-            usd_name = str(scene).split("_")[-1].split(".")[0]
+            folder_name = str(file.parent.stem)
             full_path = (
                     parameters['output_directory']
-                    / usd_name
-                    / f"{parameters['output_filename']}_{usd_name}.$F4.{parameters['output_extension']}"
+                    / folder_name
+                    / f"{parameters['output_filename']}_{folder_name}.$F4.{parameters['output_extension']}"
             )
-
-            flog.info(f"full_path : {full_path}, type : {type(full_path)}")
-
             project = cast(str, action_query.context_metadata["project"]).lower()
-            flog.info(f"project : {project}, type : {type(project)}")
 
+            # user
             context = action_query.context_metadata
             user = context["user"].lower().replace(' ', '.')
-            flog.info(f"user : {user}, type : {type(user)}")
 
+            # job_title and batch_name
+            job_title = folder_name
+            batch_name = self.get_batch_name(context)
+
+            # log
             log_level = parameters["LOG_level"]
-            flog.info(f"LOG level : {log_level}, type: {type(log_level)}")
 
+            # create job
             job = HuskJob(
-                job_title=usd_name,
+                job_title=job_title,
                 user_name=user,
                 frame_range=parameters["frame_range"],
                 file_path=str(scene),
                 output_path=str(full_path),
                 log_level=log_level,
-                rez_requires=f"houdini {project}",
-                batch_name=str(parameters['output_directory'])
+                batch_name=batch_name,
+                rez_requires=f"houdini {project}"
             )
 
             jobs.append(job)

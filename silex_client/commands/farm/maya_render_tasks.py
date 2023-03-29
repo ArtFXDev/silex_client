@@ -5,8 +5,9 @@ import pathlib
 import typing
 from typing import Any, Dict, List, cast
 import fileseq
+
+from silex_client.commands.farm.deadline_render_task import DeadlineRenderTaskCommand
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.log import flog
 from silex_client.utils.parameter_types import (
     EditableListParameterMeta,
     MultipleSelectParameterMeta,
@@ -20,10 +21,10 @@ from silex_client.utils.parameter_types import (
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_client.utils.deadline.job import MayaBatchJob, CommandLineJob
+from silex_client.utils.deadline.job import MayaBatchJob
 
 
-class MayaRenderTasksCommand(CommandBase):
+class MayaRenderTasksCommand(DeadlineRenderTaskCommand):
     """
     Construct Maya render commands
     """
@@ -51,7 +52,7 @@ class MayaRenderTasksCommand(CommandBase):
         "frame_range": {
             "label": "Frame range",
             "type": fileseq.FrameSet,
-            "value": "1-50x1",
+            "value": "1001-1050x1",
         },
         "keep_output_type": {
             "label": "Keep output type specified in the scene",
@@ -72,8 +73,6 @@ class MayaRenderTasksCommand(CommandBase):
             logger: logging.Logger,
     ):
         if parameters["scene_file_out_of_pipeline"]:
-            flog.info("scene_file")
-            flog.info(self.command_buffer.parameters["scene_file"])
             self.command_buffer.parameters["scene_file"].type = PathParameterMeta(
                 [".ma", ".mb"]
             )
@@ -120,25 +119,40 @@ class MayaRenderTasksCommand(CommandBase):
             action_query: ActionQuery,
             logger: logging.Logger,
     ):
+        context =  action_query.context_metadata
         file_path: pathlib.Path = parameters["scene_file"]
-        output_path: pathlib.Path = parameters["output_path"]
-        frame_range: fileseq.FrameSet = parameters["frame_range"]
-        rez_requires: str = "maya " + parameters['renderer'] + " " + cast(str, action_query.context_metadata["project"]).lower()
-        user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
-        job_title: str = file_path.stem
+        publish_name = str(file_path).split("\\")[9]
+
+        layers = parameters["render_layers"]
 
         jobs = []
+        for layer in layers:
+            folder = str(layer)
 
-        job = MayaBatchJob(
-            job_title,
-            user_name,
-            frame_range,
-            file_path.as_posix(),
-            output_path.as_posix(),
-            parameters['renderer'],
-            rez_requires=rez_requires,
-        )
+            output_path: pathlib.Path = parameters["output_path"]
+            output_split = str(output_path).split("\\")
+            output_split[9] += "/" + folder
+            output = "/".join(output_split)
 
-        jobs.append(job)
+            frame_range: fileseq.FrameSet = parameters["frame_range"]
+            rez_requires: str = "maya " + parameters['renderer'] + " " + cast(str, action_query.context_metadata["project"]).lower()
+            user_name: str = cast(str, action_query.context_metadata["user"]).lower().replace(' ', '.')
+
+            # get job_title and batch_name
+            job_title = str(layer)
+            batch_name = self.get_batch_name(context)
+
+            job = MayaBatchJob(
+                job_title=job_title,
+                user_name=user_name,
+                frame_range=frame_range,
+                file_path=file_path.as_posix(),
+                output_path=output,
+                renderer=parameters['renderer'],
+                batch_name=batch_name,
+                rez_requires=rez_requires,
+            )
+
+            jobs.append(job)
 
         return {"jobs": jobs}
