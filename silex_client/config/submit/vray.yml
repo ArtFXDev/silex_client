@@ -60,3 +60,11 @@ vray:
           parameters:
             jobs:
               value: !command-output "vray_render:build_vray_tasks:jobs"
+
+        submit_movie:
+          label: "Generate Movie"
+          path: "silex_client.commands.farm.natron_movie_render_tasks.SubmitNatronMoviesCommand"
+          ask_user: true
+          parameters:
+            jobs:
+              value: !command-output "vray_render:submit_to_deadline:jobs"
