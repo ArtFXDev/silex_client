@@ -1,8 +1,5 @@
 """
 
-
-
-
 To test :
 rez env silex_client pycharm testpipe -- silex action tester
 
@@ -10,7 +7,7 @@ rez env silex_client pycharm testpipe -- silex action tester
 Submit test :
 rez env silex_client pycharm testpipe -- silex action submit --task-id 5d539ee9-1f09-4792-8dfe-343c9b411c24
 
-FOr these tests check if the silex_client rez package is resolved to the dev version (work on a copy in dev_packages)
+For these tests check if the silex_client rez package is resolved to the dev version (work on a copy in dev_packages)
 
 """
 
