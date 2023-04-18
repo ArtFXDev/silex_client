@@ -4,6 +4,7 @@ import os
 
 import aiohttp
 from Deadline.DeadlineConnect import DeadlineCon
+from silex_client.utils.deadline.job import DeadlineJob
 
 logger = logging.getLogger("deadline")
 
@@ -34,10 +35,24 @@ class DeadlineRunner:
         if not self.dl:
             self.dl = init_deadline()
 
-    def run(self, job):
+    def run(self, job: DeadlineJob):
+        """
+        Submits a Job object to deadline.
+        On submission, sets the jobs id.
+        If the job has dependencies, it is suspended.
+        Returns the deadline submission data.
+
+        :param job:
+        :return:
+        """
         try:
             logger.debug('About to submit "{}"'.format(job))
             job_submission = self.dl.Jobs.SubmitJob(job.job_info, job.plugin_info)
+            if not job_submission:
+                return None
+            job.id = job_submission.get("_id")
+            if job.get_dependency():
+                self.dl.Jobs.SuspendJob(job.id)
             return job_submission
         except Exception as e:
             raise Exception(str(e))
