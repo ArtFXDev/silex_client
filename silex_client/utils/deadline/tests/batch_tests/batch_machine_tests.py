@@ -99,7 +99,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print("Test launch_worker_test_jobs Start")
-    # group = "classrooms"
+    group = "classrooms"
     # group = "pfe"
 
     plugins = []
@@ -113,6 +113,6 @@ if __name__ == "__main__":
     if not plugins:
         plugins = ['vray', 'arnold', 'husk']
 
-    # launch_worker_test_jobs(group, plugins=['vray', 'arnold', 'husk], start_suspended=False)
+    # launch_worker_test_jobs(group, plugins=['vray', 'arnold', 'husk'], start_suspended=False)
     launch_worker_test_jobs(args.group, plugins=plugins, start_suspended=args.suspend)
 
