@@ -25,7 +25,6 @@ class DeadlineJob:
         "MachineName": socket.gethostname(),
         "MachineLimit": 0,
         "Pool": "",
-        "SecondaryPool": "",
         "ChunkSize": 5,
         "Priority": 50
     }
@@ -61,9 +60,6 @@ class DeadlineJob:
 
     def set_pool(self, pool):
         self.job_info.update({"Pool": pool})
-
-    def set_secondary_pool(self, secondary_pool):
-        self.job_info.update({"SecondaryPool": secondary_pool})
 
     def set_chunk_size(self, chunk_size):
         self.job_info.update({"ChunkSize": chunk_size})
