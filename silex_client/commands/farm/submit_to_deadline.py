@@ -1,8 +1,5 @@
 """
 
-
-
-
 To test :
 rez env silex_client pycharm testpipe -- silex action tester
 
@@ -19,7 +16,6 @@ from __future__ import annotations
 import logging
 import typing
 from typing import Any, Dict
-from datetime import timedelta
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import SelectParameterMeta
 from silex_client.utils.deadline.runner import DeadlineRunner
@@ -47,6 +43,11 @@ class SubmitToDeadlineCommand(CommandBase):
         },
         "pools": {
             "label": "Pools",
+            "type": SelectParameterMeta(),
+            "hide": False,
+        },
+        "secondary_pool": {
+            "label": "Secondary pool",
             "type": SelectParameterMeta(),
             "hide": False,
         },
@@ -101,6 +102,9 @@ class SubmitToDeadlineCommand(CommandBase):
             # Populate pools parameter with Deadline pools
             self.command_buffer.parameters['pools'].rebuild_type(*deadline_pools)
             self.command_buffer.parameters['pools'].value = deadline_pools
+            # Populate secondary_pool parameter with Deadline secondary pools
+            self.command_buffer.parameters['secondary_pool'].rebuild_type(*deadline_pools)
+            self.command_buffer.parameters['secondary_pool'].value = deadline_pools
 
             # Store the query so it doesn't get executed unnecessarily
             action_query.store["deadline_query_groups_pools"] = True
@@ -136,6 +140,7 @@ class SubmitToDeadlineCommand(CommandBase):
 
             job.set_group(parameters['groups'])
             job.set_pool(parameters['pools'])
+            job.set_secondary_pool(parameters['secondary_pool'])
             job.set_chunk_size(parameters['task_size'])
             job.set_priority(priority_rank.get(parameters['priority_rank']))
 
