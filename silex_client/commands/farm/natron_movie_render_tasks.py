@@ -47,7 +47,7 @@ class SubmitNatronMoviesCommand(DeadlineRenderTaskCommand):
             action_query: ActionQuery,
             logger: logging.Logger,
     ):
-        # set hide about movie
+        # hide resolution if movie is not true
         resolution = self.command_buffer.parameters.get('resolution')
         is_movie = self.command_buffer.parameters.get('movie')
         if not is_movie.get_value(action_query):
@@ -64,13 +64,16 @@ class SubmitNatronMoviesCommand(DeadlineRenderTaskCommand):
             action_query: ActionQuery,
             logger: logging.Logger,
     ):
-        # Submit to Deadline Runner
-        dr = DeadlineRunner()
-
-        context = action_query.context_metadata
+        """
+        If movies are asked, submits a movie_job for each render jobs.
+        """
 
         # run movie
         if parameters.get('movie'):
+            # Submit to Deadline Runner
+            dr = DeadlineRunner()
+            context = action_query.context_metadata
+
             for job in parameters.get('jobs'):
 
                 # set up command

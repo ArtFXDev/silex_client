@@ -40,6 +40,7 @@ class DeadlineRunner:
         Submits a Job object to deadline.
         On submission, sets the jobs id.
         If the job has dependencies, it is suspended.
+        If the job has a delay, it is pended.
         Returns the deadline submission data.
 
         :param job:
@@ -53,6 +54,8 @@ class DeadlineRunner:
             job.id = job_submission.get("_id")
             if job.get_dependency():
                 self.dl.Jobs.SuspendJob(job.id)
+            if job.is_delay():
+                self.dl.Jobs.PendJob(job.id)
             return job_submission
         except Exception as e:
             raise Exception(str(e))

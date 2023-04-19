@@ -6,11 +6,11 @@ from typing import Optional, List, Any, Dict
 from pprint import pformat
 
 import socket
+from math import floor
 from fileseq import FrameSet
 from pathlib import Path
 
 import logging
-from silex_client.utils.log import flog
 
 log = logging.getLogger("deadline")
 
@@ -74,11 +74,30 @@ class DeadlineJob:
     def get_dependency(self):
         self.job_info.get("JobDependencies")
 
-    def set_delay(self):
+    def set_delay(self, minutes: int):
+        """
+        Convert number of minutes in format days:hours:minutes:seconds
+        Update job_info to add delay.
+
+        :param minutes: Number of minutes (int)
+        """
+
+        days = floor(minutes / 1440)
+        leftover_minutes = minutes % 1440
+        hours = floor(leftover_minutes / 60)
+        minute = minutes - (days*1440) - (hours*60)
         self.job_info.update({
-            "JobDelay": "00:00:05:00",
-            "PreJobScript": r"\\deadline\DeadlineRepository\scripts\Jobs\add_delay.py"
+            "JobDelay": f"{days}:{hours}:{minute}:00",
+            "ScheduledType": "Once"
         })
+
+    def is_delay(self):
+        """
+        Returns if the job has delay.
+
+        :return: True if delay, False if not
+        """
+        return 'JobDelay' in self.job_info
 
     @property
     def id(self):

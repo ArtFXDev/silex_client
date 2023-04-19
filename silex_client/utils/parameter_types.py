@@ -82,7 +82,6 @@ def IntArrayParameterMeta(size: int):
     }
     return CommandParameterMeta("IntArrayParameter", (list,), attributes)
 
-
 def RangeParameterMeta(
     start: int,
     end: int,

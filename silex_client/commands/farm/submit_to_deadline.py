@@ -15,13 +15,11 @@ FOr these tests check if the silex_client rez package is resolved to the dev ver
 """
 
 from __future__ import annotations
-from pathlib import Path
 
 import logging
 import typing
 from typing import Any, Dict
-from fileseq import FrameSet
-
+from datetime import timedelta
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import SelectParameterMeta
 from silex_client.utils.deadline.runner import DeadlineRunner
@@ -72,6 +70,12 @@ class SubmitToDeadlineCommand(CommandBase):
             "tooltip": "If true, job will be rendered in 5 minutes.",
             "value": False,
             "hide": False
+        },
+        "minutes":{
+            'label': "Delay in minutes",
+            "type": int,
+            "value": 5,
+            "hide": True
         }
     }
 
@@ -101,6 +105,14 @@ class SubmitToDeadlineCommand(CommandBase):
             # Store the query so it doesn't get executed unnecessarily
             action_query.store["deadline_query_groups_pools"] = True
 
+        # set hide about movie
+        minutes = self.command_buffer.parameters.get('minutes')
+        is_delay = self.command_buffer.parameters.get('delay')
+        if not is_delay.get_value(action_query):
+            minutes.hide = True
+        else:
+            minutes.hide = False
+
     @CommandBase.conform_command()
     async def __call__(
             self,
@@ -119,12 +131,13 @@ class SubmitToDeadlineCommand(CommandBase):
             # set job datas
             if job.depends_on_previous is True:
                 job.set_dependency(previous_job_id)
+            if parameters['delay'] is True:
+                job.set_delay(parameters["minutes"])
+
             job.set_group(parameters['groups'])
             job.set_pool(parameters['pools'])
             job.set_chunk_size(parameters['task_size'])
             job.set_priority(priority_rank.get(parameters['priority_rank']))
-            if parameters['delay'] is True:
-                job.set_delay()
 
             # run job
             previous_job_id = dr.run(job).get('_id')
