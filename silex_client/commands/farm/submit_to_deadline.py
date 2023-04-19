@@ -15,14 +15,15 @@ FOr these tests check if the silex_client rez package is resolved to the dev ver
 """
 
 from __future__ import annotations
+from pathlib import Path
 
 import logging
 import typing
 from typing import Any, Dict
-from silex_client.action.command_base import CommandBase
-from silex_client.utils.log import flog
-from silex_client.utils.parameter_types import SelectParameterMeta
+from fileseq import FrameSet
 
+from silex_client.action.command_base import CommandBase
+from silex_client.utils.parameter_types import SelectParameterMeta
 from silex_client.utils.deadline.runner import DeadlineRunner
 from silex_client.config.priority_rank import priority_rank
 
@@ -56,12 +57,14 @@ class SubmitToDeadlineCommand(CommandBase):
             "tooltip": "Number of frames per computer",
             "type": int,
             "value": 10,
+            "hide": False
         },
         "priority_rank": {
             "label": "Priority rank",
             "type": SelectParameterMeta("normal", "camap", "test sampling", "priority sup", "retake", "making of",
                                         "personal"),
-            "value": "normal"
+            "value": "normal",
+            "hide": False
         },
         "delay": {
             "label": "Delay submit",
@@ -82,6 +85,7 @@ class SubmitToDeadlineCommand(CommandBase):
         Setup parameters by querying the Deadline repository
         '''
 
+        # get group and pool list
         if 'deadline_query_groups_pools' not in action_query.store:
 
             deadline_groups = await DeadlineRunner.get_groups()
@@ -109,9 +113,10 @@ class SubmitToDeadlineCommand(CommandBase):
         dr = DeadlineRunner()
 
         previous_job_id = None
-        jobs = []
+        jobs = parameters.get('jobs')
 
-        for job in parameters["jobs"]:
+        for job in jobs:
+            # set job datas
             if job.depends_on_previous is True:
                 job.set_dependency(previous_job_id)
             job.set_group(parameters['groups'])
@@ -120,8 +125,8 @@ class SubmitToDeadlineCommand(CommandBase):
             job.set_priority(priority_rank.get(parameters['priority_rank']))
             if parameters['delay'] is True:
                 job.set_delay()
-            previous_job_id = dr.run(job)
-            jobs.append(job)
-            # flog.info(job)
+
+            # run job
+            previous_job_id = dr.run(job).get('_id')
 
         return {"jobs": jobs}

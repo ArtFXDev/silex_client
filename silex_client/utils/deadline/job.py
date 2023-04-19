@@ -43,6 +43,7 @@ class DeadlineJob:
     ):
         self._id = None
         self._output_path = output_path
+        self._frame_range = frame_range
         self.job_info: Dict[str, Any] = self.JOB_INFO.copy()
         self.plugin_info: Dict[str, Any] = self.PLUGIN_INFO.copy()
 
@@ -105,6 +106,14 @@ class DeadlineJob:
         :return:
         """
         return self._output_path
+
+    @property
+    def frame_range(self):
+        """
+        Returns the frame range (type FrameSet), if set, else None
+        :return:
+        """
+        return self._frame_range
 
     @property
     def batch_name(self):

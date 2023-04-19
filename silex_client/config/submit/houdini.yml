@@ -60,9 +60,9 @@ houdini:
               value: !command-output "houdini_render:build_houdini_tasks:jobs"
 
         submit_movie:
-          label: "Generate Movie"
+          label: "Generate a movie by job"
           path: "silex_client.commands.farm.natron_movie_render_tasks.SubmitNatronMoviesCommand"
-          ask_user: true
+          ask_user: True
           parameters:
             jobs:
-              value: !command-output "houdini_render:submit_to_deadline:jobs"
+              value: !command-output "vray_render:submit_to_deadline:jobs"

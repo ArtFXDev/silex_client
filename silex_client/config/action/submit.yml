@@ -4,7 +4,7 @@ submit:
 
   steps:
     setup:
-      lavel: "Setup"
+      label: "Setup"
       index: 50
       commands:
         get_submiter:

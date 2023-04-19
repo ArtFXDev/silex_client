@@ -16,8 +16,6 @@ from silex_client.utils.parameter_types import (
     TaskFileParameterMeta,
 )
 
-from silex_client.utils.log import flog
-
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -60,7 +58,8 @@ class VrayRenderTasksCommand(DeadlineRenderTaskCommand):
             "type": IntArrayParameterMeta(2),
             "value": [1920, 1080],
             "hide": True,
-        }
+        },
+
     }
 
     async def setup(
