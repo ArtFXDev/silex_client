@@ -4,7 +4,7 @@ To test :
 rez env silex_client pycharm testpipe -- silex action tester
 
 
-Sublit test :
+Submit test :
 rez env silex_client pycharm testpipe -- silex action submit --task-id 5d539ee9-1f09-4792-8dfe-343c9b411c24
 
 FOr these tests check if the silex_client rez package is resolved to the dev version (work on a copy in dev_packages)
@@ -41,8 +41,8 @@ class SubmitToDeadlineCommand(CommandBase):
             "type": SelectParameterMeta(),
             "hide": False,
         },
-        "pools": {
-            "label": "Pools",
+        "pool": {
+            "label": "Pool",
             "type": SelectParameterMeta(),
             "hide": False,
         },
@@ -100,9 +100,8 @@ class SubmitToDeadlineCommand(CommandBase):
             self.command_buffer.parameters['groups'].rebuild_type(*deadline_groups)
             self.command_buffer.parameters['groups'].value = deadline_groups
             # Populate pools parameter with Deadline pools
-            self.command_buffer.parameters['pools'].rebuild_type(*deadline_pools)
-            self.command_buffer.parameters['pools'].value = deadline_pools
-            # Populate secondary_pool parameter with Deadline secondary pools
+            self.command_buffer.parameters['pool'].rebuild_type(*deadline_pools)
+            self.command_buffer.parameters['pool'].value = deadline_pools
             self.command_buffer.parameters['secondary_pool'].rebuild_type(*deadline_pools)
             self.command_buffer.parameters['secondary_pool'].value = deadline_pools
 
@@ -139,7 +138,7 @@ class SubmitToDeadlineCommand(CommandBase):
                 job.set_delay(parameters["minutes"])
 
             job.set_group(parameters['groups'])
-            job.set_pool(parameters['pools'])
+            job.set_pool(parameters['pool'])
             job.set_secondary_pool(parameters['secondary_pool'])
             job.set_chunk_size(parameters['task_size'])
             job.set_priority(priority_rank.get(parameters['priority_rank']))
