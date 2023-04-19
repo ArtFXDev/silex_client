@@ -50,6 +50,4 @@ os.makedirs(log_path, exist_ok=True)
 os.chmod(log_path, 0o0777)
 formatter = logging.Formatter(__FILE_FORMAT__)
 flog = setup_logger(name="flog", logfile=f"{log_path}/flog.log", level=logzero.DEBUG, formatter=formatter)
-
 # flog.info("test")
-

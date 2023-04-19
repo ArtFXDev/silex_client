@@ -56,3 +56,11 @@ kick:
           parameters:
             jobs:
               value: !command-output "kick_render:kick_render_tasks:jobs"
+
+        submit_movie:
+          label: "Generate a movie by job"
+          path: "silex_client.commands.farm.natron_movie_render_tasks.SubmitNatronMoviesCommand"
+          ask_user: True
+          parameters:
+            jobs:
+              value: !command-output "vray_render:submit_to_deadline:jobs"

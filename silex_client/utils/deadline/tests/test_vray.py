@@ -13,6 +13,9 @@ import fileseq
 from silex_client.utils.deadline.job import VrayJob
 from silex_client.utils.deadline.runner import DeadlineRunner
 
+# Recursion test (render is black)
+# file_path = "M:/testpipe/shots/s01/p040/finallayout_main/publish/v000/vrecusiontest/Test_Renderer.vrscene",
+# output_path = "M:/testpipe/shots/s01/p040/finallayout_main/publish/v000/exr/render/vrecusiontest/testpipe_s01_p040_finallayout_main_publish_v000_render_vrecusiontest.exr",
 
 def get_vray_job():
     job = VrayJob(

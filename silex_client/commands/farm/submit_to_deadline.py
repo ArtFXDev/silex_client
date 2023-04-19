@@ -17,9 +17,7 @@ import logging
 import typing
 from typing import Any, Dict
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.log import flog
 from silex_client.utils.parameter_types import SelectParameterMeta
-
 from silex_client.utils.deadline.runner import DeadlineRunner
 from silex_client.config.priority_rank import priority_rank
 
@@ -58,12 +56,14 @@ class SubmitToDeadlineCommand(CommandBase):
             "tooltip": "Number of frames per computer",
             "type": int,
             "value": 10,
+            "hide": False
         },
         "priority_rank": {
             "label": "Priority rank",
             "type": SelectParameterMeta("normal", "camap", "test sampling", "priority sup", "retake", "making of",
                                         "personal"),
-            "value": "normal"
+            "value": "normal",
+            "hide": False
         },
         "delay": {
             "label": "Delay submit",
@@ -71,6 +71,12 @@ class SubmitToDeadlineCommand(CommandBase):
             "tooltip": "If true, job will be rendered in 5 minutes.",
             "value": False,
             "hide": False
+        },
+        "minutes":{
+            'label': "Delay in minutes",
+            "type": int,
+            "value": 5,
+            "hide": True
         }
     }
 
@@ -84,6 +90,7 @@ class SubmitToDeadlineCommand(CommandBase):
         Setup parameters by querying the Deadline repository
         '''
 
+        # get group and pool list
         if 'deadline_query_groups_pools' not in action_query.store:
 
             deadline_groups = await DeadlineRunner.get_groups()
@@ -101,6 +108,14 @@ class SubmitToDeadlineCommand(CommandBase):
             # Store the query so it doesn't get executed unnecessarily
             action_query.store["deadline_query_groups_pools"] = True
 
+        # set hide about movie
+        minutes = self.command_buffer.parameters.get('minutes')
+        is_delay = self.command_buffer.parameters.get('delay')
+        if not is_delay.get_value(action_query):
+            minutes.hide = True
+        else:
+            minutes.hide = False
+
     @CommandBase.conform_command()
     async def __call__(
             self,
@@ -113,16 +128,22 @@ class SubmitToDeadlineCommand(CommandBase):
         dr = DeadlineRunner()
 
         previous_job_id = None
+        jobs = parameters.get('jobs')
 
-        for job in parameters["jobs"]:
+        for job in jobs:
+            # set job datas
             if job.depends_on_previous is True:
                 job.set_dependency(previous_job_id)
+            if parameters['delay'] is True:
+                job.set_delay(parameters["minutes"])
+
             job.set_group(parameters['groups'])
             job.set_pool(parameters['pool'])
             job.set_secondary_pool(parameters['secondary_pool'])
             job.set_chunk_size(parameters['task_size'])
             job.set_priority(priority_rank.get(parameters['priority_rank']))
-            if parameters['delay'] is True:
-                job.set_delay()
-            previous_job_id = dr.run(job)
-            flog.info(job)
+
+            # run job
+            previous_job_id = dr.run(job).get('_id')
+
+        return {"jobs": jobs}
