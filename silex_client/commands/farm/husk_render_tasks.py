@@ -108,7 +108,7 @@ class HuskRenderTasksCommand(DeadlineRenderTaskCommand):
                 output_path=str(full_path),
                 log_level=log_level,
                 batch_name=batch_name,
-                rez_requires=f"houdini {project}"
+                rez_requires=f"karma {project}"
             )
 
             jobs.append(job)
