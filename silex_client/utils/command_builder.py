@@ -72,7 +72,7 @@ class CommandBuilder:
 
         args: List[str] = []
 
-        for (key, value) in self.params:
+        for key, value in self.params:
             if key:
                 param = f"{self.dashes}{key}"
 

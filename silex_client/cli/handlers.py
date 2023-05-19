@@ -11,6 +11,7 @@ import subprocess
 from concurrent import futures
 
 import gazu.files
+
 from silex_client.action.action_query import ActionQuery
 from silex_client.core.context import Context
 from silex_client.resolve.config import Config
@@ -24,7 +25,10 @@ def action_handler(action_name: str, **kwargs) -> None:
     """
     if kwargs.get("list", False):
         # Just print the available actions
-        action_names = [action["name"] for action in Config.get().actions]
+        config = Config.get()
+        action_names = [action["name"] for action in config.actions]
+
+        print(f"Searched in: {config.action_search_path}")
         print("Available actions :")
         pprint.pprint(action_names)
         return
@@ -102,7 +106,7 @@ def launch_handler(dcc: str, **kwargs) -> None:
         )
 
     softwares = asyncio.run(gazu.files.all_softwares())
-    if not dcc in [software["short_name"] for software in softwares]:
+    if dcc not in [software["short_name"] for software in softwares]:
         logger.error(
             "Could not launch the given dcc: The selected dcc %s does not exists", dcc
         )
@@ -110,7 +114,6 @@ def launch_handler(dcc: str, **kwargs) -> None:
 
     command = [dcc]
     args_list = []
-
 
     if kwargs.get("task_id") is not None:
         os.environ["SILEX_TASK_ID"] = kwargs["task_id"]

@@ -21,7 +21,7 @@ from silex_client.resolve.config_types import ActionYAML
 from silex_client.resolve.loader import Loader
 from silex_client.utils.log import logger
 
-search_path = Optional[List[str]]
+SearchPaths = List[str]
 
 
 class Config:
@@ -33,12 +33,12 @@ class Config:
 
     def __init__(
         self,
-        config_search_path: search_path = None,
+        config_search_paths: Optional[SearchPaths] = None,
     ):
         # Add the custom action config search path
-        self.action_search_path = config_search_path
-        if config_search_path is None:
-            self.action_search_path = Config.get_default_action_search_path()
+        self.action_search_path = (
+            config_search_paths or Config.get_default_action_search_path()
+        )
 
     @staticmethod
     def get() -> Config:
@@ -52,7 +52,7 @@ class Config:
         """
         Find all the configs in the given paths
         """
-        found_actions = []
+        found_actions: List[Dict[str, str]] = []
 
         for path in search_path:
             if not os.path.isdir(path):
@@ -71,9 +71,8 @@ class Config:
         """
         List of all the available actions config found in the given category
         """
-        return self.find_config(
-            [os.path.join(path, category) for path in self.action_search_path]
-        )
+        categories = [os.path.join(path, category) for path in self.action_search_path]
+        return self.find_config(categories)
 
     @property
     def actions(self) -> List[Dict[str, str]]:

@@ -46,7 +46,7 @@ async def refresh_token() -> bool:
             ) as response:
                 gazu.client.set_tokens(await response.json())
                 return True
-        except:
+        except Exception:
             return False
 
 
@@ -79,7 +79,7 @@ def authentificate_gazu() -> bool:
     # Make sure the authentification worked
     try:
         asyncio.run(gazu.client.host_is_valid())
-    except (ClientConnectionError):
+    except ClientConnectionError:
         logger.warning("Connection with the zou api could not be established")
         return False
 

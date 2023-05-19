@@ -11,7 +11,7 @@ from silex_client.commands.farm.deadline_render_task import DeadlineRenderTaskCo
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import (
     TaskFileParameterMeta,
-    SelectParameterMeta
+    SelectParameterMeta,
 )
 
 # Forward references
@@ -30,7 +30,9 @@ class HuskRenderTasksCommand(DeadlineRenderTaskCommand):
     parameters = {
         "scene_file": {
             "label": "Scene file",
-            "type": TaskFileParameterMeta(extensions=[".usd", ".usda", ".usdc"], multiple=True),
+            "type": TaskFileParameterMeta(
+                extensions=[".usd", ".usda", ".usdc"], multiple=True
+            ),
         },
         "frame_range": {
             "label": "Frame range",
@@ -46,31 +48,19 @@ class HuskRenderTasksCommand(DeadlineRenderTaskCommand):
         "LOG_level": {
             "labem": "LOG Level",
             "type": SelectParameterMeta(0, 1, 2, 3, 4, 5, 6),
-            "value": 0
+            "value": 0,
         },
-        "output_directory": {
-            "type": pathlib.Path,
-            "hide": True,
-            "value": ""
-        },
-        "output_filename": {
-            "type": pathlib.Path,
-            "hide": True,
-            "value": ""
-        },
-        "output_extension": {
-            "type": str,
-            "hide": True,
-            "value": "exr"
-        }
+        "output_directory": {"type": pathlib.Path, "hide": True, "value": ""},
+        "output_filename": {"type": pathlib.Path, "hide": True, "value": ""},
+        "output_extension": {"type": str, "hide": True, "value": "exr"},
     }
 
     @CommandBase.conform_command()
     async def __call__(
-            self,
-            parameters: Dict[str, Any],
-            action_query: ActionQuery,
-            logger: logging.Logger,
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         jobs = []
 
@@ -82,15 +72,15 @@ class HuskRenderTasksCommand(DeadlineRenderTaskCommand):
             scene: pathlib.Path = file
             folder_name = str(file.parent.stem)
             full_path = (
-                    parameters['output_directory']
-                    / folder_name
-                    / f"{parameters['output_filename']}_{folder_name}.$F4.{parameters['output_extension']}"
+                parameters["output_directory"]
+                / folder_name
+                / f"{parameters['output_filename']}_{folder_name}.$F4.{parameters['output_extension']}"
             )
             project = cast(str, action_query.context_metadata["project"]).lower()
 
             # user
             context = action_query.context_metadata
-            user = context["user"].lower().replace(' ', '.')
+            user = context["user"].lower().replace(" ", ".")
 
             # job_title and batch_name
             job_title = folder_name
@@ -108,7 +98,7 @@ class HuskRenderTasksCommand(DeadlineRenderTaskCommand):
                 output_path=str(full_path),
                 log_level=log_level,
                 batch_name=batch_name,
-                rez_requires=f"houdini {project}"
+                rez_requires=f"houdini {project}",
             )
 
             jobs.append(job)
