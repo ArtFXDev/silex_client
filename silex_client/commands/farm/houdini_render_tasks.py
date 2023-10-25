@@ -110,6 +110,7 @@ class HoudiniRenderTasksCommand(CommandBase):
             logger: logging.Logger,
     ):
         scene: pathlib.Path = parameters["scene_file"]
+        print(scene)
         frame_range: FrameSet = parameters["frame_range"]
         skip_existing = parameters["skip_existing"]
         parameter_overrides: bool = parameters["parameter_overrides"]

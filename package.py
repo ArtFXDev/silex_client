@@ -1,7 +1,7 @@
 # pylint: skip-file
 name = "silex_client"
 timestamp = 0
-version = "prod.0.1.2"
+version = "prod.0.1.0"
 
 
 authors = ["ArtFx TD gang"]
