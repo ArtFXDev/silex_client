@@ -55,7 +55,7 @@ def commands():
     """
     import os
 
-    env.DEADLINE_HOST.set("deadline")
+    env.DEADLINE_HOST.set("http://10.34.69.18:8081/")
     env.DEADLINE_PORT.set("8081")
 
     env.PATH.append("{root}/silex_client")
