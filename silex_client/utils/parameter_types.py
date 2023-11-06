@@ -175,7 +175,6 @@ def TaskFileParameterMeta(
     def __init__(self, value):
         if not isinstance(value, list):
             value = [value]
-
         for index, item in enumerate(value):
             value[index] = pathlib.Path(item)
 
@@ -421,3 +420,6 @@ def UnionParameterMeta(types: List[Type]):
     }
 
     return CommandParameterMeta("UnionParameter", (object,), attributes)
+
+if __name__ == "__main__":
+    TaskFileParameterMeta(extensions=["hip","hipnc"])

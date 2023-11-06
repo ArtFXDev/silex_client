@@ -128,7 +128,6 @@ class BuildRenderPath(CommandBase):
             name=task_name,
             mode = "render"
         )
-        print(output_path)
         return pathlib.Path(output_path)
 
     @CommandBase.conform_command()
