@@ -38,7 +38,7 @@ class HoudiniRenderTasksCommand(DeadlineRenderTaskCommand):
     parameters = {
         "scene_file": {
             "label": "Scene file",
-            "type": TaskFileParameterMeta(extensions=[".hip", ".hipnc"]),
+            "type": TaskFileParameterMeta(),
         },
         "frame_range": {
             "label": "Frame range",
@@ -172,6 +172,7 @@ class HoudiniRenderTasksCommand(DeadlineRenderTaskCommand):
             logger: logging.Logger,
     ):
         scene: pathlib.Path = parameters["scene_file"]
+        print(scene)
         rop_from_hip: bool = parameters["rop_from_hip"]
         previous_hip_value = action_query.store.get(
             "submit_houdini_temp_hip_filepath", None
