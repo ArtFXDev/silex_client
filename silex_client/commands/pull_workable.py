@@ -156,7 +156,7 @@ class SelectPull(BuildWorkPath):
         launch_cmd.param("action")
         launch_cmd.value('rename')
 
-        print(launch_cmd)
+       
 
         os.system(str(launch_cmd))
 

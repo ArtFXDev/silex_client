@@ -18,7 +18,6 @@ if typing.TYPE_CHECKING:
 
 class BuildWorkPath(CommandBase):
 
-    print("je suis dans le build work path")
     """
     Build the path where the work files should be saved to
     """
