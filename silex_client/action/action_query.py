@@ -78,7 +78,7 @@ class ActionQuery:
         if step_by_step:
             command_iterator = [next(self.command_iterator)]
 
-        # Execut all the commands one by one
+        # Execute all the commands one by one
         for command in command_iterator:
             # Set the status to initialized
             command.status = Status.INITIALIZED

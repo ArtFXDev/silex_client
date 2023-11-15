@@ -2,7 +2,7 @@ houdini:
   label: "Submit houdini"
   steps:
     build_output_path:
-      label: "Build output path"
+      label: "Build render path"
       index: 10
       commands:
         select_extension:
@@ -19,8 +19,8 @@ houdini:
             param_name: "Render type"
 
         build_output_path:
-          label: "Build output path"
-          path: "silex_client.commands.build_output_path.BuildOutputPath"
+          label: "Build render path"
+          path: "silex_client.commands.build_render_path.BuildRenderPath"
           tooltip: "Build the complete output path"
           ask_user: true
           parameters:
