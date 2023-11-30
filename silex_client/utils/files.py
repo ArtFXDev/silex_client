@@ -56,6 +56,16 @@ def is_valid_pipeline_path(file_path: pathlib.Path, mode: str = "output") -> boo
 
     return bool(expand_path(file_path, mode))
 
+def is_valid_pipeline_path_nuke(file_path: pathlib.Path, mode: str = "output") -> bool:
+    """
+    Same as is_valid_pipeline_path but according to the pipeline 2024 for nuke
+    """
+    mode_templates = Context.get()["project_file_tree"].get(mode, {})
+    if mode_templates.get("mountpoint") != file_path.drive and "O:" != file_path.drive:
+        return False
+
+    return bool(expand_path(file_path, mode))
+
 
 def expand_path(file_path: pathlib.Path, mode: str = "output") -> Dict[str, str]:
     """
