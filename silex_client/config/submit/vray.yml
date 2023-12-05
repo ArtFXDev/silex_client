@@ -1,7 +1,7 @@
 vray:
   label: "Submit V-Ray scene"
   steps:
-    build_output_path:
+    build_render_path:
       label: "Build output path"
       index: 10
       commands:
@@ -16,9 +16,9 @@ vray:
               - "jpg"
               - "tiff"
 
-        build_output_path:
+        build_render_path:
           label: "Build output path"
-          path: "silex_client.commands.build_output_path.BuildOutputPath"
+          path: "silex_client.commands.build_render_path.BuildRenderPath"
           tooltip: "Build the complete output path"
           ask_user: true
           parameters:
