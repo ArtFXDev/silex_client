@@ -12,6 +12,7 @@ from silex_client.action.command_base import CommandBase
 from silex_client.commands.build_output_path import BuildOutputPath
 from silex_client.utils.parameter_types import PathParameterMeta, TextParameterMeta
 from silex_client.action.parameter_buffer import ParameterBuffer
+from pprint import pprint
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -107,6 +108,9 @@ class BuildOutputPathConform(BuildOutputPath):
         action_query.store[input_key] = result
 
         result["store_conform_key"] = input_key
+        # print(self.command_buffer.parameters["task"])
+        # print(self.command_buffer.parameters["task"].value)
+        
         return result
 
     async def setup(

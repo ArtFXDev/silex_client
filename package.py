@@ -61,6 +61,7 @@ def commands():
     env.PATH.append("{root}/silex_client")
     env.PATH.append("{root}/tools")
     env.PYTHONPATH.append("{root}")
+    env.PYTHONPATH.append("C:/Arnold/python")
     env.SILEX_ACTION_CONFIG.prepend("{root}/silex_client/config")
 
     parser_module = ".".join(["silex_client", "cli", "parser"])

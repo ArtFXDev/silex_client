@@ -13,7 +13,9 @@ from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import ListParameterMeta, TextParameterMeta
 from silex_client.utils import files, constants
 
-import silex_maya.utils.thread as thread_maya
+# import silex_maya.utils.thread as thread_maya
+from silex_client.utils.thread import execute_in_thread
+from pprint import pprint
 
 
 # Forward references
@@ -35,21 +37,23 @@ class GetAssReferences(CommandBase):
     """
 
     parameters = {
-        "ass_files": {"type": ListParameterMeta(pathlib.Path), "value": []}, "skip_pipeline_files":{'type': bool, "value": True}, "skip_prompt":{'type': bool, "value": False}, 
+        "ass_files": {"type": ListParameterMeta(pathlib.Path), "value": []}, "skip_pipeline_files":{'type': bool, "value": True}, "skip_prompt":{'type': bool, "value": False},
+        "task_id":{'type':str, "value":""} 
     }
 
-    def _get_references_in_ass(self, ass_file: pathlib.Path, skip_pipeline_files: bool) -> Dict[str, pathlib.Path]:
+    def _get_references_in_ass(self, ass_file: pathlib.Path, skip_pipeline_files: bool, task_id: str = "" ) -> Dict[str, pathlib.Path]:
         """Parse an .ass file for references then return a dictionary : dict(node_name: reference_path)"""
 
         # Open ass file
         AiBegin()
-        AiMsgSetConsoleFlags(AI_LOG_ALL)
-        AiASSLoad(str(ass_file), AI_NODE_ALL)
+        universe = AiUniverse()
+        AiMsgSetConsoleFlags(universe,AI_LOG_ALL)
+        AiASSLoad(universe ,str(ass_file), AI_NODE_ALL)
 
         node_to_path_dict = dict()
 
         # Iter through all shading nodes
-        iter = AiUniverseGetNodeIterator(AI_NODE_ALL)
+        iter = AiUniverseGetNodeIterator(universe, AI_NODE_ALL)
 
         while not AiNodeIteratorFinished(iter):
             node = AiNodeIteratorGetNext(iter)
@@ -58,7 +62,9 @@ class GetAssReferences(CommandBase):
             for node_type in NODE_TYPES:
                 if AiNodeIs(node, node_type):
                     path = pathlib.Path(AiNodeGetStr( node, "filename" ))
-                    if skip_pipeline_files and files.is_valid_pipeline_path(pathlib.Path(path)): 
+                    # if skip_pipeline_files and files.is_valid_pipeline_path(pathlib.Path(path)): 
+                    if skip_pipeline_files and files.is_valid_pipeline_path_ass(pathlib.Path(path),task_id): 
+                    
                         continue
 
                     node_to_path_dict[node_name] = path
@@ -78,12 +84,14 @@ class GetAssReferences(CommandBase):
         ass_files: List[pathlib.Path] = parameters["ass_files"]
         skip_pipeline_files: bool = parameters["skip_pipeline_files"]
         skip_prompt: bool = parameters["skip_prompt"]
+        task_id: str = parameters["task_id"]
 
+        
         # Get texture paths in the .ass file
         node_to_path_dict: Dict[
             str, pathlib.Path
-        ] = await thread_maya.execute_in_main_thread(
-            self._get_references_in_ass, ass_files[0], skip_pipeline_files
+        ] = await execute_in_thread(
+            self._get_references_in_ass, ass_files[0], skip_pipeline_files, task_id
         )
 
 

@@ -17,7 +17,8 @@ from silex_client.utils.parameter_types import (
     PathParameterMeta,
     AnyParameter,
 )
-import silex_maya.utils.thread as thread_maya
+# import silex_maya.utils.thread as thread_maya
+from silex_client.utils.thread import execute_in_thread
 
 
 # Forward references
@@ -48,12 +49,13 @@ class SetAssReferences(CommandBase):
 
             # Open ass files
             AiBegin()
-            AiMsgSetConsoleFlags(AI_LOG_ALL)
+            universe = AiUniverse()
+            AiMsgSetConsoleFlags(universe, AI_LOG_ALL)
 
-            AiASSLoad(str(ass), AI_NODE_ALL)
+            AiASSLoad(universe, str(ass), AI_NODE_ALL)
 
             # Iter through all shading nodes
-            iter = AiUniverseGetNodeIterator(AI_NODE_ALL)
+            iter = AiUniverseGetNodeIterator(universe, AI_NODE_ALL)
 
             while not AiNodeIteratorFinished(iter):
                 node = AiNodeIteratorGetNext(iter)
@@ -122,6 +124,6 @@ class SetAssReferences(CommandBase):
             SharedVariable(len(ass_files)),
             0.2,
         ):
-            await thread_maya.execute_in_main_thread(self._set_reference_in_ass, progress, new_ass_files, ass_files, node_names, references)
+            await execute_in_thread(self._set_reference_in_ass, progress, new_ass_files, ass_files, node_names, references)
 
         return {"new_ass_files": new_ass_files}

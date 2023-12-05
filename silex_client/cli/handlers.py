@@ -87,6 +87,8 @@ def command_handler(command_name: str, **kwargs) -> None:
     if kwargs.get("list", False):
         # Just print the available actions
         print("Available commands  :")
+        command_names = [command["name"] for command in Config.get().command]
+        pprint.pprint(command_names)
         return
 
     raise NotImplementedError("This feature is still WIP")

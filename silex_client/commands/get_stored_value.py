@@ -54,6 +54,7 @@ class GetStoredValue(CommandBase):
         if key_suffix:
             key = f"{key}:{key_suffix}"
 
+
         value = action_query.store.get(key, default)
         return {"value": value, "key": key}
 

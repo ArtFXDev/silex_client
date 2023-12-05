@@ -93,6 +93,7 @@ ass:
           path: "silex_client.commands.get_ass_references.GetAssReferences"
           parameters:
             ass_files: !command-output "input:input:file_paths"
+            task_id: !command-output "get_conform_location:build_output_path:task"
         conform_references:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"

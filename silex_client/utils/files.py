@@ -11,11 +11,15 @@ import pathlib
 import re
 import sys
 import unicodedata
+import asyncio
 from typing import List, Dict, Union
 from silex_client.utils.constants import ENV_VARIABLE_FORMAT
 
 import fileseq
 from silex_client.core.context import Context
+
+from silex_client.action.action_query import ActionQuery
+
 
 # Sadly, Python fails to provide the following magic number for us.
 ERROR_INVALID_NAME = 123
@@ -45,16 +49,42 @@ def expand_environment_variable(path: pathlib.Path) -> pathlib.Path:
 
     return path
 
+# this function is the same of is valid pipeline path but if we dont give task-id in command try to build context
+def is_valid_pipeline_path_ass(file_path: pathlib.Path, task_id:str ,  mode: str = "output") -> bool:
+    """
+    Test if the given path is a valid path in the pipeline or not
+    """
+    if(Context.get()["project_file_tree"] is not None):
+        mode_templates = Context.get()["project_file_tree"].get(mode, {})
+        if mode_templates.get("mountpoint") != file_path.drive:
+            return False
+
+        return bool(expand_path(file_path, mode))
+
+    else: 
+        resolve_context = asyncio.run(Context.resolve_context(task_id))
+        mode_templates = resolve_context["project_file_tree"].get(mode,{})
+        if mode_templates.get("mountpoint") != file_path.drive:
+            return False
+        
+        return bool(expand_path(file_path, mode))
+     
+
+        
+
+    
 
 def is_valid_pipeline_path(file_path: pathlib.Path, mode: str = "output") -> bool:
     """
     Test if the given path is a valid path in the pipeline or not
     """
+    print(Context.get()["task_id"])
     mode_templates = Context.get()["project_file_tree"].get(mode, {})
     if mode_templates.get("mountpoint") != file_path.drive:
         return False
 
     return bool(expand_path(file_path, mode))
+
 
 def is_valid_pipeline_path_nuke(file_path: pathlib.Path, mode: str = "output") -> bool:
     """
