@@ -1,8 +1,0 @@
-test:
-  steps:
-    input:
-      index: 10
-      hide: True
-      commands:
-        input:
-          path: "silex_client.commands.get_ass_references.GetAssReferences"

@@ -81,7 +81,7 @@ class SetAssReferences(CommandBase):
 
             # Save .ass file to new location
             os.makedirs(new_path.parents[0], exist_ok=True)
-            AiASSWrite(str(new_path), AI_NODE_ALL, False)
+            AiASSWrite(universe, str(new_path), AI_NODE_ALL, False)
             AiEnd()
 
     @CommandBase.conform_command()
