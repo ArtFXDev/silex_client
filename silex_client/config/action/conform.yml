@@ -40,6 +40,6 @@ conform:
           path: "silex_client.commands.user.silex_coins.AddSilexCoinsCommand"
           parameters:
             amount:
-              value: 5
+              value: 10
             count_commands:
               value: true

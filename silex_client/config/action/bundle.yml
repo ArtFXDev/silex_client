@@ -38,6 +38,6 @@ bundle:
           path: "silex_client.commands.user.silex_coins.AddSilexCoinsCommand"
           parameters:
             amount:
-              value: 5
+              value: 20
             count_commands:
               value: true

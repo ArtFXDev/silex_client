@@ -39,5 +39,4 @@ if __name__ == "__main__":
     job.set_chunk_size(5)
     job.set_priority(10)
 
-    flog.info(job)
     done = dr.run(job)

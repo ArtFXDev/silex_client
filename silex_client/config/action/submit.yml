@@ -31,4 +31,4 @@ submit:
           path: "silex_client.commands.user.silex_coins.AddSilexCoinsCommand"
           parameters:
             amount:
-              value: 3
+              value: 6

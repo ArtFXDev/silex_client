@@ -84,7 +84,7 @@ class BuildWorkPath(CommandBase):
         work_path, full_path = await work_and_full_path(initial_version)
 
         existing_sequences = fileseq.findSequencesOnDisk(os.path.dirname(full_path))
-        flog.info(existing_sequences)
+      
 
         # Only get the sequences of that software
         software_sequences = [
@@ -92,7 +92,7 @@ class BuildWorkPath(CommandBase):
             for seq in existing_sequences
             if software["file_extension"] in seq.extension()
         ]
-        flog.info(software_sequences)
+
 
         matching_sequence = None
 
@@ -117,7 +117,6 @@ class BuildWorkPath(CommandBase):
             # Rebuild the file path again with the new version
             _, full_path = await work_and_full_path(version)
 
-        flog.info(full_path)
 
         return full_path
 

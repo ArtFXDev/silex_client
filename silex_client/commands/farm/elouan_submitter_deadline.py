@@ -39,7 +39,7 @@ class ElouanSubmitterDeadline(CommandBase):
         },
     }
 
-    flog.error("in the class")
+
 
     @CommandBase.conform_command()
     async def __call__(
@@ -49,7 +49,6 @@ class ElouanSubmitterDeadline(CommandBase):
             logger: logging.Logger,
     ):
         logger.info(parameters["message"])
-        flog.info("hello")
-        flog.error(parameters)
+
 
         return {"message": "yo man"}

@@ -8,7 +8,6 @@ default:
       commands:
         input:
           path: "silex_client.commands.pass.Pass"
-
     conform:
       label: "Conform"
       index: 20
@@ -20,6 +19,12 @@ default:
             key: "build_output_path_task_id"
             key_suffix: !command-output "input:input:file_paths"
           hide: true
+        skip:
+          label: "skip this conform"
+          path: "silex_client.commands.exit_step.ExitStep"
+          parameters:
+            enable: false
+          ask_user: true
         build_output_path:
           label: "Build output path"
           path: "silex_client.commands.build_output_path_conform.BuildOutputPathConform"

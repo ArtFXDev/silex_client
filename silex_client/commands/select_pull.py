@@ -126,7 +126,7 @@ class SelectPull(BuildWorkPath):
         if versions:
             version = "v" + str(int(versions[-1].lstrip("v")) + 1).zfill(3)
 
-        flog.info({"pull_dst": pull_path / version, "pull_src": publishes})
+   
         return {"pull_dst": pull_path / version, "pull_src": publishes}
 
 
